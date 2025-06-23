@@ -2,6 +2,7 @@ use std::option::Option;
 
 use crate::job::Job;
 use crate::race::Race;
+use crate::status::{Status, StatusKind, calc_status};
 
 #[derive(Debug, Clone)]
 pub struct Chara {
@@ -16,6 +17,13 @@ pub struct Chara {
 impl Chara {
     pub fn builder() -> CharaBuilder {
         CharaBuilder::default()
+    }
+
+    pub fn status(&self, kind: StatusKind) -> i32 {
+        let grade_race = self.race.status_grade(kind);
+        let status_race = calc_status(kind, grade_race, self.main_lv);
+
+        return status_race.floor() as i32;
     }
 }
 
@@ -110,5 +118,25 @@ mod tests {
 
         assert_eq!(chara.support_job, None);
         assert_eq!(chara.support_lv, None);
+    }
+
+    #[test]
+    fn test_chara_status() {
+        let race = Race::Hum;
+        let main_lv = 99;
+        let kind = StatusKind::Str;
+
+        // Charaインスタンスを作成
+        let chara = Chara::builder()
+            .race(Race::Hum)
+            .main_job(Job::War, 99)
+            .support_job(Job::Drg, 59)
+            .master_lv(50)
+            .build()
+            .expect("Failed to build Chara");
+
+        // TODO: Fix the expected after support job and mlv.
+        assert_eq!(chara.status(StatusKind::Hp), 485);
+        assert_eq!(chara.status(StatusKind::Str), 37);
     }
 }

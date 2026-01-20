@@ -73,6 +73,24 @@ const GRADE_COEF_BP: [[f32; 4]; Grade::COUNT] = [
     [2.0, 0.2, 0.42, 0.39],
 ];
 
+// Master Level bonus per level for each stat
+// HP: +7, MP: +2 (only if job has MP), BP stats: +1
+const MASTER_LV_BONUS: [i32; StatusKind::COUNT] = [
+    7, // HP
+    2, // MP (only applied if main job has MP)
+    1, // STR
+    1, // DEX
+    1, // VIT
+    1, // AGI
+    1, // INT
+    1, // MND
+    1, // CHR
+];
+
+pub fn calc_master_lv_bonus(kind: StatusKind, mlv: i32) -> i32 {
+    MASTER_LV_BONUS[kind as usize] * mlv
+}
+
 impl Grade {
     pub fn base(&self, kind: StatusKind) -> f32 {
         match kind {

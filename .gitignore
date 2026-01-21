@@ -1,2 +1,3 @@
 Cargo.lock
 rust/target
+web/pkg/

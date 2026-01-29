@@ -165,6 +165,29 @@ mod tests {
     }
 
     #[test]
+    fn test_chara_status_cor_sam() {
+        // Gal/Cor99/Sam/MLV50
+        // Support calc lv = 99/2 + 50/5 = 49 + 10 = 59
+        let chara = Chara::builder()
+            .race(Race::Gal)
+            .main_job(Job::Cor, 99)
+            .support_job(Job::Sam, 59)
+            .master_lv(50)
+            .build()
+            .expect("Failed to build Chara");
+
+        assert_eq!(chara.status(StatusKind::Str), 138);
+        assert_eq!(chara.status(StatusKind::Dex), 141);
+        assert_eq!(chara.status(StatusKind::Vit), 143);
+        assert_eq!(chara.status(StatusKind::Agi), 138);
+        assert_eq!(chara.status(StatusKind::Int), 135);
+        assert_eq!(chara.status(StatusKind::Mnd), 132);
+        assert_eq!(chara.status(StatusKind::Chr), 127);
+    }
+
+
+
+    #[test]
     fn test_chara_status_blm_with_mp() {
         // Tar/Blm99/Rdm@59/MLV50
         // Tar has MP grade A, Blm has MP grade B, Rdm has MP grade D

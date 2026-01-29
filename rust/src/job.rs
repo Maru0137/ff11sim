@@ -53,8 +53,8 @@ const JOB_STATUS_GRADES: [[Option<Grade>; StatusKind::COUNT]; Job::COUNT] = [
     [Some(Grade::D), None, Some(Grade::D), Some(Grade::D), Some(Grade::D), Some(Grade::F), Some(Grade::D), Some(Grade::D), Some(Grade::B)],
     // Rng: HP=E, MP=-, STR=E, DEX=D, VIT=D, AGI=A, INT=E, MND=D, CHR=E
     [Some(Grade::E), None, Some(Grade::E), Some(Grade::D), Some(Grade::D), Some(Grade::A), Some(Grade::E), Some(Grade::D), Some(Grade::E)],
-    // Sam: HP=B, MP=-, STR=C, DEX=C, VIT=C, AGI=E, INT=D, MND=D, CHR=D
-    [Some(Grade::B), None, Some(Grade::C), Some(Grade::C), Some(Grade::C), Some(Grade::E), Some(Grade::D), Some(Grade::D), Some(Grade::D)],
+    // Sam: HP=B, MP=-, STR=C, DEX=C, VIT=C, AGI=D, INT=E, MND=E, CHR=D
+    [Some(Grade::B), None, Some(Grade::C), Some(Grade::C), Some(Grade::C), Some(Grade::D), Some(Grade::E), Some(Grade::E), Some(Grade::D)],
     // Nin: HP=D, MP=-, STR=C, DEX=B, VIT=C, AGI=B, INT=D, MND=G, CHR=F
     [Some(Grade::D), None, Some(Grade::C), Some(Grade::B), Some(Grade::C), Some(Grade::B), Some(Grade::D), Some(Grade::G), Some(Grade::F)],
     // Drg: HP=B, MP=-, STR=B, DEX=D, VIT=C, AGI=D, INT=F, MND=E, CHR=C

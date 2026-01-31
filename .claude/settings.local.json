@@ -1,0 +1,13 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(cargo --version:*)",
+      "Bash(cargo test --help:*)",
+      "WebFetch(domain:wiki.ffo.jp)",
+      "Bash(cargo build:*)",
+      "Bash(cargo test:*)",
+      "Bash(export PATH=\"$HOME/.cargo/bin:$PATH\")",
+      "Bash(git push:*)"
+    ]
+  }
+}

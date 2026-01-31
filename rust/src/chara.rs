@@ -2,7 +2,7 @@ use std::option::Option;
 
 use crate::job::Job;
 use crate::race::Race;
-use crate::status::{calc_master_lv_bonus, calc_status, StatusKind};
+use crate::status::{calc_master_lv_bonus, calc_status, MeritPoints, StatusKind};
 
 #[derive(Debug, Clone)]
 pub struct Chara {
@@ -12,6 +12,7 @@ pub struct Chara {
     pub support_job: Option<Job>,
     pub support_lv: Option<i32>,
     pub master_lv: i32,
+    pub merit_points: MeritPoints,
 }
 
 impl Chara {
@@ -47,7 +48,10 @@ impl Chara {
         // Master level bonus
         let mlv_bonus = calc_master_lv_bonus(kind, self.master_lv);
 
-        (status_race + status_main_job + status_support_job).floor() as i32 + mlv_bonus
+        // Merit point bonus
+        let merit_bonus = self.merit_points.status_bonus(kind);
+
+        (status_race + status_main_job + status_support_job).floor() as i32 + mlv_bonus + merit_bonus
     }
 }
 
@@ -59,6 +63,7 @@ pub struct CharaBuilder {
     support_job: Option<Job>,
     support_lv: Option<i32>,
     master_lv: Option<i32>,
+    merit_points: MeritPoints,
 }
 
 impl CharaBuilder {
@@ -90,6 +95,11 @@ impl CharaBuilder {
         self
     }
 
+    pub fn merit_points(mut self, merit_points: MeritPoints) -> Self {
+        self.merit_points = merit_points;
+        self
+    }
+
     pub fn build(self) -> Result<Chara, &'static str> {
         Ok(Chara {
             race: self.race.ok_or("race is required")?,
@@ -98,6 +108,7 @@ impl CharaBuilder {
             support_job: self.support_job,
             support_lv: self.support_lv,
             master_lv: self.master_lv.ok_or("master_lv is required")?,
+            merit_points: self.merit_points,
         })
     }
 }

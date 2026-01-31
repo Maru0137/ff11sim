@@ -91,6 +91,55 @@ pub fn calc_master_lv_bonus(kind: StatusKind, mlv: i32) -> i32 {
     MASTER_LV_BONUS[kind as usize] * mlv
 }
 
+// Merit point bonus per rank for each stat
+// HP/MP: +10 per rank, other stats: +1 per rank
+const MERIT_POINT_BONUS: [i32; StatusKind::COUNT] = [
+    10, // HP
+    10, // MP
+    1,  // STR
+    1,  // DEX
+    1,  // VIT
+    1,  // AGI
+    1,  // INT
+    1,  // MND
+    1,  // CHR
+];
+
+#[derive(Debug, Clone, Copy, Default)]
+pub struct MeritPoints {
+    pub hp: i32,
+    pub mp: i32,
+    pub str_: i32,
+    pub dex: i32,
+    pub vit: i32,
+    pub agi: i32,
+    pub int: i32,
+    pub mnd: i32,
+    pub chr: i32,
+}
+
+impl MeritPoints {
+    fn get(&self, kind: StatusKind) -> i32 {
+        match kind {
+            StatusKind::Hp => self.hp,
+            StatusKind::Mp => self.mp,
+            StatusKind::Str => self.str_,
+            StatusKind::Dex => self.dex,
+            StatusKind::Vit => self.vit,
+            StatusKind::Agi => self.agi,
+            StatusKind::Int => self.int,
+            StatusKind::Mnd => self.mnd,
+            StatusKind::Chr => self.chr,
+        }
+    }
+
+    pub fn status_bonus(&self, kind: StatusKind) -> i32 {
+        let rank = self.get(kind);
+        assert!(rank >= 0 && rank <= 15, "merit point rank must be between 0 and 15");
+        MERIT_POINT_BONUS[kind as usize] * rank
+    }
+}
+
 impl Grade {
     pub fn base(&self, kind: StatusKind) -> f32 {
         match kind {

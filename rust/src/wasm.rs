@@ -4,7 +4,7 @@ use wasm_bindgen::prelude::*;
 use crate::chara::Chara;
 use crate::job::Job;
 use crate::race::Race;
-use crate::status::StatusKind;
+use crate::status::{MeritPoints, StatusKind};
 
 #[cfg(target_arch = "wasm32")]
 #[wasm_bindgen(start)]
@@ -64,6 +64,44 @@ fn str_to_job(s: &str) -> Option<Job> {
     }
 }
 
+#[derive(Serialize, Deserialize, Default)]
+pub struct MeritPointsInput {
+    #[serde(default)]
+    pub hp: i32,
+    #[serde(default)]
+    pub mp: i32,
+    #[serde(default)]
+    pub str_: i32,
+    #[serde(default)]
+    pub dex: i32,
+    #[serde(default)]
+    pub vit: i32,
+    #[serde(default)]
+    pub agi: i32,
+    #[serde(default)]
+    pub int: i32,
+    #[serde(default)]
+    pub mnd: i32,
+    #[serde(default)]
+    pub chr: i32,
+}
+
+impl From<MeritPointsInput> for MeritPoints {
+    fn from(input: MeritPointsInput) -> Self {
+        MeritPoints {
+            hp: input.hp,
+            mp: input.mp,
+            str_: input.str_,
+            dex: input.dex,
+            vit: input.vit,
+            agi: input.agi,
+            int: input.int,
+            mnd: input.mnd,
+            chr: input.chr,
+        }
+    }
+}
+
 #[wasm_bindgen]
 pub fn calculate_status(
     race: &str,
@@ -72,14 +110,24 @@ pub fn calculate_status(
     support_job: Option<String>,
     support_lv: Option<i32>,
     master_lv: i32,
+    merit_points_js: JsValue,
 ) -> Result<JsValue, JsValue> {
     let race = str_to_race(race).ok_or_else(|| JsValue::from_str("Invalid race"))?;
     let main_job = str_to_job(main_job).ok_or_else(|| JsValue::from_str("Invalid main job"))?;
 
+    let merit_points: MeritPoints = if merit_points_js.is_undefined() || merit_points_js.is_null() {
+        MeritPoints::default()
+    } else {
+        let input: MeritPointsInput = serde_wasm_bindgen::from_value(merit_points_js)
+            .map_err(|e| JsValue::from_str(&format!("Invalid merit points: {}", e)))?;
+        input.into()
+    };
+
     let mut builder = Chara::builder()
         .race(race)
         .main_job(main_job, main_lv)
-        .master_lv(master_lv);
+        .master_lv(master_lv)
+        .merit_points(merit_points);
 
     if let (Some(sj), Some(sl)) = (support_job, support_lv) {
         let support_job = str_to_job(&sj).ok_or_else(|| JsValue::from_str("Invalid support job"))?;

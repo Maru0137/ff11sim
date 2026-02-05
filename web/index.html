@@ -10,7 +10,7 @@
         }
         body {
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            max-width: 800px;
+            max-width: 900px;
             margin: 0 auto;
             padding: 20px;
             background-color: #1a1a2e;
@@ -21,6 +21,38 @@
             color: #f0c040;
             text-shadow: 2px 2px 4px rgba(0,0,0,0.5);
         }
+        /* Tabs */
+        .tabs {
+            display: flex;
+            gap: 4px;
+            margin-bottom: 0;
+        }
+        .tab-btn {
+            padding: 10px 20px;
+            background: #0f0f23;
+            color: #aaa;
+            border: 1px solid #444;
+            border-bottom: none;
+            border-radius: 8px 8px 0 0;
+            cursor: pointer;
+            font-size: 14px;
+        }
+        .tab-btn.active {
+            background: #16213e;
+            color: #f0c040;
+            border-color: #f0c040;
+        }
+        .tab-content {
+            display: none;
+            background: #16213e;
+            padding: 20px;
+            border-radius: 0 10px 10px 10px;
+            border: 1px solid #444;
+        }
+        .tab-content.active {
+            display: block;
+        }
+        /* Common */
         .container {
             display: grid;
             grid-template-columns: 1fr 1fr;
@@ -38,6 +70,11 @@
             border-bottom: 2px solid #f0c040;
             padding-bottom: 10px;
         }
+        h3 {
+            color: #f0c040;
+            margin: 0 0 10px 0;
+            font-size: 14px;
+        }
         .form-group {
             margin-bottom: 15px;
         }
@@ -46,7 +83,7 @@
             margin-bottom: 5px;
             color: #aaa;
         }
-        select, input[type="number"] {
+        select, input[type="number"], input[type="text"] {
             width: 100%;
             padding: 8px;
             border: 1px solid #444;
@@ -104,11 +141,6 @@
             background: #0f0f23;
             border-radius: 5px;
         }
-        .merit-section h3 {
-            margin: 0 0 15px 0;
-            color: #f0c040;
-            font-size: 14px;
-        }
         .merit-grid {
             display: grid;
             grid-template-columns: repeat(3, 1fr);
@@ -127,6 +159,103 @@
             padding: 5px;
             font-size: 12px;
         }
+        /* Character registration */
+        .btn {
+            padding: 8px 16px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 14px;
+            color: #fff;
+        }
+        .btn-primary {
+            background: #2196f3;
+        }
+        .btn-primary:hover {
+            background: #1976d2;
+        }
+        .btn-danger {
+            background: #f44336;
+        }
+        .btn-danger:hover {
+            background: #d32f2f;
+        }
+        .btn-group {
+            display: flex;
+            gap: 8px;
+            margin-top: 15px;
+        }
+        .job-level-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 10px;
+        }
+        .job-level-table th,
+        .job-level-table td {
+            padding: 4px 8px;
+            text-align: center;
+            border-bottom: 1px solid #333;
+        }
+        .job-level-table th {
+            color: #f0c040;
+            font-size: 12px;
+        }
+        .job-level-table td {
+            font-size: 13px;
+        }
+        .job-level-table input {
+            width: 60px;
+            padding: 4px;
+            font-size: 12px;
+            text-align: center;
+        }
+        .job-level-table .job-name {
+            color: #aaa;
+            text-align: left;
+            font-weight: bold;
+        }
+        .char-list {
+            list-style: none;
+            padding: 0;
+            margin: 10px 0;
+        }
+        .char-list li {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 8px 12px;
+            background: #0f0f23;
+            border-radius: 5px;
+            margin-bottom: 4px;
+            cursor: pointer;
+        }
+        .char-list li:hover {
+            background: #1a1a3e;
+        }
+        .char-list li.selected {
+            border: 1px solid #f0c040;
+        }
+        .char-list .char-info {
+            color: #eee;
+        }
+        .char-list .char-race {
+            color: #aaa;
+            font-size: 12px;
+            margin-left: 8px;
+        }
+        .char-list .char-actions {
+            display: flex;
+            gap: 4px;
+        }
+        .char-list .btn-sm {
+            padding: 4px 8px;
+            font-size: 11px;
+        }
+        .empty-msg {
+            color: #666;
+            text-align: center;
+            padding: 20px;
+        }
         @media (max-width: 600px) {
             .container {
                 grid-template-columns: 1fr;
@@ -137,279 +266,535 @@
 <body>
     <h1>FF11 Status Simulator</h1>
 
-    <div class="container">
-        <div class="input-section">
-            <h2>Character Settings</h2>
+    <div class="tabs">
+        <button class="tab-btn active" data-tab="tab-characters">Character Management</button>
+        <button class="tab-btn" data-tab="tab-calc">Status Calculation</button>
+    </div>
 
-            <div class="form-group">
-                <label for="race">Race</label>
-                <select id="race">
-                    <option value="Hum">Hume</option>
-                    <option value="Elv">Elvaan</option>
-                    <option value="Tar">Tarutaru</option>
-                    <option value="Mit">Mithra</option>
-                    <option value="Gal">Galka</option>
-                </select>
-            </div>
-
-            <div class="form-group">
-                <label for="mainJob">Main Job</label>
-                <select id="mainJob">
-                    <option value="War">Warrior</option>
-                    <option value="Mnk">Monk</option>
-                    <option value="Whm">White Mage</option>
-                    <option value="Blm">Black Mage</option>
-                    <option value="Rdm">Red Mage</option>
-                    <option value="Thf">Thief</option>
-                    <option value="Pld">Paladin</option>
-                    <option value="Drk">Dark Knight</option>
-                    <option value="Bst">Beastmaster</option>
-                    <option value="Brd">Bard</option>
-                    <option value="Rng">Ranger</option>
-                    <option value="Sam">Samurai</option>
-                    <option value="Nin">Ninja</option>
-                    <option value="Drg">Dragoon</option>
-                    <option value="Smn">Summoner</option>
-                    <option value="Blu">Blue Mage</option>
-                    <option value="Cor">Corsair</option>
-                    <option value="Pup">Puppetmaster</option>
-                    <option value="Dnc">Dancer</option>
-                    <option value="Sch">Scholar</option>
-                    <option value="Geo">Geomancer</option>
-                    <option value="Run">Rune Fencer</option>
-                </select>
-            </div>
-
-            <div class="form-group">
-                <label for="mainLv">Main Job Level (1-99)</label>
-                <input type="number" id="mainLv" min="1" max="99" value="99">
-            </div>
-
-            <div class="form-group">
-                <label for="masterLv">Master Level (0-50)</label>
-                <input type="number" id="masterLv" min="0" max="50" value="0">
-            </div>
-
-            <div class="form-group">
-                <div class="checkbox-group">
-                    <input type="checkbox" id="useSupport">
-                    <label for="useSupport" style="display: inline; margin: 0;">Use Support Job</label>
+    <!-- Tab 1: Character Management -->
+    <div id="tab-characters" class="tab-content active">
+        <div class="container">
+            <div>
+                <h2>Registered Characters</h2>
+                <ul class="char-list" id="charList">
+                    <li class="empty-msg">No characters registered</li>
+                </ul>
+                <div class="btn-group">
+                    <button class="btn btn-primary" id="btnNewChar">New Character</button>
                 </div>
             </div>
 
-            <div id="supportSection" class="support-section hidden">
+            <div id="charEditSection" class="hidden">
+                <h2 id="charEditTitle">New Character</h2>
                 <div class="form-group">
-                    <label for="supportJob">Support Job</label>
-                    <select id="supportJob">
-                        <option value="War">Warrior</option>
-                        <option value="Mnk">Monk</option>
-                        <option value="Whm">White Mage</option>
-                        <option value="Blm">Black Mage</option>
-                        <option value="Rdm">Red Mage</option>
-                        <option value="Thf">Thief</option>
-                        <option value="Pld">Paladin</option>
-                        <option value="Drk">Dark Knight</option>
-                        <option value="Bst">Beastmaster</option>
-                        <option value="Brd">Bard</option>
-                        <option value="Rng">Ranger</option>
-                        <option value="Sam">Samurai</option>
-                        <option value="Nin">Ninja</option>
-                        <option value="Drg">Dragoon</option>
-                        <option value="Smn">Summoner</option>
-                        <option value="Blu">Blue Mage</option>
-                        <option value="Cor">Corsair</option>
-                        <option value="Pup">Puppetmaster</option>
-                        <option value="Dnc">Dancer</option>
-                        <option value="Sch">Scholar</option>
-                        <option value="Geo">Geomancer</option>
-                        <option value="Run">Rune Fencer</option>
+                    <label for="charName">Name</label>
+                    <input type="text" id="charName" placeholder="Character name">
+                </div>
+                <div class="form-group">
+                    <label for="charRace">Race</label>
+                    <select id="charRace">
+                        <option value="Hum">Hume</option>
+                        <option value="Elv">Elvaan</option>
+                        <option value="Tar">Tarutaru</option>
+                        <option value="Mit">Mithra</option>
+                        <option value="Gal">Galka</option>
+                    </select>
+                </div>
+
+                <h3>Job Levels</h3>
+                <table class="job-level-table">
+                    <thead>
+                        <tr>
+                            <th>Job</th>
+                            <th>Lv</th>
+                            <th>MLv</th>
+                        </tr>
+                    </thead>
+                    <tbody id="jobLevelTable"></tbody>
+                </table>
+
+                <div class="merit-section">
+                    <h3>Merit Points (0-15)</h3>
+                    <div class="merit-grid">
+                        <div class="merit-item">
+                            <label for="charMeritHp">HP</label>
+                            <input type="number" id="charMeritHp" min="0" max="15" value="15">
+                        </div>
+                        <div class="merit-item">
+                            <label for="charMeritMp">MP</label>
+                            <input type="number" id="charMeritMp" min="0" max="15" value="15">
+                        </div>
+                        <div class="merit-item">
+                            <label for="charMeritStr">STR</label>
+                            <input type="number" id="charMeritStr" min="0" max="15" value="15">
+                        </div>
+                        <div class="merit-item">
+                            <label for="charMeritDex">DEX</label>
+                            <input type="number" id="charMeritDex" min="0" max="15" value="15">
+                        </div>
+                        <div class="merit-item">
+                            <label for="charMeritVit">VIT</label>
+                            <input type="number" id="charMeritVit" min="0" max="15" value="15">
+                        </div>
+                        <div class="merit-item">
+                            <label for="charMeritAgi">AGI</label>
+                            <input type="number" id="charMeritAgi" min="0" max="15" value="15">
+                        </div>
+                        <div class="merit-item">
+                            <label for="charMeritInt">INT</label>
+                            <input type="number" id="charMeritInt" min="0" max="15" value="15">
+                        </div>
+                        <div class="merit-item">
+                            <label for="charMeritMnd">MND</label>
+                            <input type="number" id="charMeritMnd" min="0" max="15" value="15">
+                        </div>
+                        <div class="merit-item">
+                            <label for="charMeritChr">CHR</label>
+                            <input type="number" id="charMeritChr" min="0" max="15" value="15">
+                        </div>
+                    </div>
+                </div>
+
+                <div class="btn-group">
+                    <button class="btn btn-primary" id="btnSaveChar">Save</button>
+                    <button class="btn btn-danger" id="btnCancelEdit">Cancel</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Tab 2: Status Calculation (from profile) -->
+    <div id="tab-calc" class="tab-content">
+        <div class="container">
+            <div class="input-section">
+                <h2>Calculation Settings</h2>
+
+                <div class="form-group">
+                    <label for="calcChar">Character</label>
+                    <select id="calcChar">
+                        <option value="">-- Select Character --</option>
                     </select>
                 </div>
 
                 <div class="form-group">
-                    <label for="supportLv">Support Job Level (auto-calculated)</label>
-                    <input type="number" id="supportLv" min="1" max="99" value="49" readonly>
+                    <label for="calcMainJob">Main Job</label>
+                    <select id="calcMainJob">
+                        <option value="">-- Select Main Job --</option>
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <label for="calcSupportJob">Support Job</label>
+                    <select id="calcSupportJob">
+                        <option value="">None</option>
+                    </select>
+                </div>
+
+                <div id="calcInfo" class="support-section hidden">
+                    <p style="margin:0;color:#aaa;font-size:13px;" id="calcInfoText"></p>
                 </div>
             </div>
 
-            <div class="merit-section">
-                <h3>Merit Points (0-15)</h3>
-                <div class="merit-grid">
-                    <div class="merit-item">
-                        <label for="meritHp">HP</label>
-                        <input type="number" id="meritHp" min="0" max="15" value="0">
+            <div class="result-section">
+                <h2>Status</h2>
+                <div class="stat-grid">
+                    <div class="stat-item">
+                        <span class="stat-name">HP</span>
+                        <span class="stat-value hp" id="calcStatHp">-</span>
                     </div>
-                    <div class="merit-item">
-                        <label for="meritMp">MP</label>
-                        <input type="number" id="meritMp" min="0" max="15" value="0">
+                    <div class="stat-item">
+                        <span class="stat-name">MP</span>
+                        <span class="stat-value mp" id="calcStatMp">-</span>
                     </div>
-                    <div class="merit-item">
-                        <label for="meritStr">STR</label>
-                        <input type="number" id="meritStr" min="0" max="15" value="0">
+                    <div class="stat-item">
+                        <span class="stat-name">STR</span>
+                        <span class="stat-value" id="calcStatStr">-</span>
                     </div>
-                    <div class="merit-item">
-                        <label for="meritDex">DEX</label>
-                        <input type="number" id="meritDex" min="0" max="15" value="0">
+                    <div class="stat-item">
+                        <span class="stat-name">DEX</span>
+                        <span class="stat-value" id="calcStatDex">-</span>
                     </div>
-                    <div class="merit-item">
-                        <label for="meritVit">VIT</label>
-                        <input type="number" id="meritVit" min="0" max="15" value="0">
+                    <div class="stat-item">
+                        <span class="stat-name">VIT</span>
+                        <span class="stat-value" id="calcStatVit">-</span>
                     </div>
-                    <div class="merit-item">
-                        <label for="meritAgi">AGI</label>
-                        <input type="number" id="meritAgi" min="0" max="15" value="0">
+                    <div class="stat-item">
+                        <span class="stat-name">AGI</span>
+                        <span class="stat-value" id="calcStatAgi">-</span>
                     </div>
-                    <div class="merit-item">
-                        <label for="meritInt">INT</label>
-                        <input type="number" id="meritInt" min="0" max="15" value="0">
+                    <div class="stat-item">
+                        <span class="stat-name">INT</span>
+                        <span class="stat-value" id="calcStatInt">-</span>
                     </div>
-                    <div class="merit-item">
-                        <label for="meritMnd">MND</label>
-                        <input type="number" id="meritMnd" min="0" max="15" value="0">
+                    <div class="stat-item">
+                        <span class="stat-name">MND</span>
+                        <span class="stat-value" id="calcStatMnd">-</span>
                     </div>
-                    <div class="merit-item">
-                        <label for="meritChr">CHR</label>
-                        <input type="number" id="meritChr" min="0" max="15" value="0">
+                    <div class="stat-item">
+                        <span class="stat-name">CHR</span>
+                        <span class="stat-value" id="calcStatChr">-</span>
                     </div>
-                </div>
-            </div>
-        </div>
-
-        <div class="result-section">
-            <h2>Status</h2>
-            <div class="stat-grid">
-                <div class="stat-item">
-                    <span class="stat-name">HP</span>
-                    <span class="stat-value hp" id="statHp">-</span>
-                </div>
-                <div class="stat-item">
-                    <span class="stat-name">MP</span>
-                    <span class="stat-value mp" id="statMp">-</span>
-                </div>
-                <div class="stat-item">
-                    <span class="stat-name">STR</span>
-                    <span class="stat-value" id="statStr">-</span>
-                </div>
-                <div class="stat-item">
-                    <span class="stat-name">DEX</span>
-                    <span class="stat-value" id="statDex">-</span>
-                </div>
-                <div class="stat-item">
-                    <span class="stat-name">VIT</span>
-                    <span class="stat-value" id="statVit">-</span>
-                </div>
-                <div class="stat-item">
-                    <span class="stat-name">AGI</span>
-                    <span class="stat-value" id="statAgi">-</span>
-                </div>
-                <div class="stat-item">
-                    <span class="stat-name">INT</span>
-                    <span class="stat-value" id="statInt">-</span>
-                </div>
-                <div class="stat-item">
-                    <span class="stat-name">MND</span>
-                    <span class="stat-value" id="statMnd">-</span>
-                </div>
-                <div class="stat-item">
-                    <span class="stat-name">CHR</span>
-                    <span class="stat-value" id="statChr">-</span>
                 </div>
             </div>
         </div>
     </div>
 
     <script type="module">
-        import init, { calculate_status } from './pkg/ff11sim.js';
+        import init, { calculate_status_from_profile } from './pkg/ff11sim.js';
 
         let wasmReady = false;
 
-        async function initWasm() {
-            await init();
-            wasmReady = true;
-            updateStatus();
+        const JOBS = [
+            { key: 'War', name: 'Warrior' },
+            { key: 'Mnk', name: 'Monk' },
+            { key: 'Whm', name: 'White Mage' },
+            { key: 'Blm', name: 'Black Mage' },
+            { key: 'Rdm', name: 'Red Mage' },
+            { key: 'Thf', name: 'Thief' },
+            { key: 'Pld', name: 'Paladin' },
+            { key: 'Drk', name: 'Dark Knight' },
+            { key: 'Bst', name: 'Beastmaster' },
+            { key: 'Brd', name: 'Bard' },
+            { key: 'Rng', name: 'Ranger' },
+            { key: 'Sam', name: 'Samurai' },
+            { key: 'Nin', name: 'Ninja' },
+            { key: 'Drg', name: 'Dragoon' },
+            { key: 'Smn', name: 'Summoner' },
+            { key: 'Blu', name: 'Blue Mage' },
+            { key: 'Cor', name: 'Corsair' },
+            { key: 'Pup', name: 'Puppetmaster' },
+            { key: 'Dnc', name: 'Dancer' },
+            { key: 'Sch', name: 'Scholar' },
+            { key: 'Geo', name: 'Geomancer' },
+            { key: 'Run', name: 'Rune Fencer' },
+        ];
+
+        const RACE_NAMES = {
+            'Hum': 'Hume', 'Elv': 'Elvaan', 'Tar': 'Tarutaru', 'Mit': 'Mithra', 'Gal': 'Galka'
+        };
+
+        // --- localStorage helpers ---
+        const STORAGE_KEY = 'ff11sim_characters';
+
+        function loadCharacters() {
+            try {
+                const data = localStorage.getItem(STORAGE_KEY);
+                return data ? JSON.parse(data) : [];
+            } catch {
+                return [];
+            }
         }
 
-        function updateSupportLv() {
-            const mainLv = parseInt(document.getElementById('mainLv').value) || 99;
-            const masterLv = parseInt(document.getElementById('masterLv').value) || 0;
-            const supportLv = Math.floor(mainLv / 2) + Math.floor(masterLv / 5);
-            document.getElementById('supportLv').value = supportLv;
+        function saveCharacters(characters) {
+            localStorage.setItem(STORAGE_KEY, JSON.stringify(characters));
         }
 
-        function updateStatus() {
-            if (!wasmReady) return;
+        // --- Tab switching ---
+        document.querySelectorAll('.tab-btn').forEach(btn => {
+            btn.addEventListener('click', () => {
+                document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+                document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+                btn.classList.add('active');
+                document.getElementById(btn.dataset.tab).classList.add('active');
+            });
+        });
 
-            const race = document.getElementById('race').value;
-            const mainJob = document.getElementById('mainJob').value;
-            const mainLv = parseInt(document.getElementById('mainLv').value) || 99;
-            const masterLv = parseInt(document.getElementById('masterLv').value) || 0;
-            const useSupport = document.getElementById('useSupport').checked;
+        // ==============================================
+        // Tab 1: Character Management
+        // ==============================================
 
-            let supportJob = null;
-            let supportLv = null;
+        let editingCharName = null; // null = new character, string = editing existing
 
-            if (useSupport) {
-                supportJob = document.getElementById('supportJob').value;
-                supportLv = parseInt(document.getElementById('supportLv').value);
+        function buildJobLevelTable() {
+            const tbody = document.getElementById('jobLevelTable');
+            tbody.innerHTML = '';
+            JOBS.forEach(job => {
+                const tr = document.createElement('tr');
+                tr.innerHTML = `
+                    <td class="job-name">${job.key}</td>
+                    <td><input type="number" id="jl_${job.key}_lv" min="0" max="99" value="99"></td>
+                    <td><input type="number" id="jl_${job.key}_mlv" min="0" max="50" value="0"></td>
+                `;
+                tbody.appendChild(tr);
+            });
+        }
+
+        function renderCharList() {
+            const characters = loadCharacters();
+            const list = document.getElementById('charList');
+            if (characters.length === 0) {
+                list.innerHTML = '<li class="empty-msg">No characters registered</li>';
+            } else {
+                list.innerHTML = '';
+                characters.forEach(ch => {
+                    const li = document.createElement('li');
+                    li.innerHTML = `
+                        <span>
+                            <span class="char-info">${ch.name}</span>
+                            <span class="char-race">${RACE_NAMES[ch.race] || ch.race}</span>
+                        </span>
+                        <span class="char-actions">
+                            <button class="btn btn-primary btn-sm" data-edit="${ch.name}">Edit</button>
+                            <button class="btn btn-danger btn-sm" data-delete="${ch.name}">Delete</button>
+                        </span>
+                    `;
+                    list.appendChild(li);
+                });
+            }
+            // Update calc tab character selector
+            updateCalcCharSelector();
+        }
+
+        function showEditForm(character) {
+            const section = document.getElementById('charEditSection');
+            section.classList.remove('hidden');
+
+            if (character) {
+                editingCharName = character.name;
+                document.getElementById('charEditTitle').textContent = 'Edit Character';
+                document.getElementById('charName').value = character.name;
+                document.getElementById('charRace').value = character.race;
+                JOBS.forEach(job => {
+                    const jl = character.job_levels[job.key] || { level: 0, master_lv: 0 };
+                    document.getElementById(`jl_${job.key}_lv`).value = jl.level;
+                    document.getElementById(`jl_${job.key}_mlv`).value = jl.master_lv;
+                });
+                const mp = character.merit_points || {};
+                document.getElementById('charMeritHp').value = mp.hp || 0;
+                document.getElementById('charMeritMp').value = mp.mp || 0;
+                document.getElementById('charMeritStr').value = mp.str_ || 0;
+                document.getElementById('charMeritDex').value = mp.dex || 0;
+                document.getElementById('charMeritVit').value = mp.vit || 0;
+                document.getElementById('charMeritAgi').value = mp.agi || 0;
+                document.getElementById('charMeritInt').value = mp.int || 0;
+                document.getElementById('charMeritMnd').value = mp.mnd || 0;
+                document.getElementById('charMeritChr').value = mp.chr || 0;
+            } else {
+                editingCharName = null;
+                document.getElementById('charEditTitle').textContent = 'New Character';
+                document.getElementById('charName').value = '';
+                document.getElementById('charRace').value = 'Hum';
+                JOBS.forEach(job => {
+                    document.getElementById(`jl_${job.key}_lv`).value = 99;
+                    document.getElementById(`jl_${job.key}_mlv`).value = 0;
+                });
+                ['Hp','Mp','Str','Dex','Vit','Agi','Int','Mnd','Chr'].forEach(s => {
+                    document.getElementById(`charMerit${s}`).value = 15;
+                });
+            }
+        }
+
+        function hideEditForm() {
+            document.getElementById('charEditSection').classList.add('hidden');
+            editingCharName = null;
+        }
+
+        function saveCharacter() {
+            const name = document.getElementById('charName').value.trim();
+            if (!name) {
+                alert('Please enter a character name.');
+                return;
             }
 
-            const meritPoints = {
-                hp: parseInt(document.getElementById('meritHp').value) || 0,
-                mp: parseInt(document.getElementById('meritMp').value) || 0,
-                str_: parseInt(document.getElementById('meritStr').value) || 0,
-                dex: parseInt(document.getElementById('meritDex').value) || 0,
-                vit: parseInt(document.getElementById('meritVit').value) || 0,
-                agi: parseInt(document.getElementById('meritAgi').value) || 0,
-                int: parseInt(document.getElementById('meritInt').value) || 0,
-                mnd: parseInt(document.getElementById('meritMnd').value) || 0,
-                chr: parseInt(document.getElementById('meritChr').value) || 0,
+            const race = document.getElementById('charRace').value;
+            const job_levels = {};
+            JOBS.forEach(job => {
+                const lv = parseInt(document.getElementById(`jl_${job.key}_lv`).value) || 0;
+                const mlv = parseInt(document.getElementById(`jl_${job.key}_mlv`).value) || 0;
+                job_levels[job.key] = { level: lv, master_lv: mlv };
+            });
+
+            const merit_points = {
+                hp: parseInt(document.getElementById('charMeritHp').value) || 0,
+                mp: parseInt(document.getElementById('charMeritMp').value) || 0,
+                str_: parseInt(document.getElementById('charMeritStr').value) || 0,
+                dex: parseInt(document.getElementById('charMeritDex').value) || 0,
+                vit: parseInt(document.getElementById('charMeritVit').value) || 0,
+                agi: parseInt(document.getElementById('charMeritAgi').value) || 0,
+                int: parseInt(document.getElementById('charMeritInt').value) || 0,
+                mnd: parseInt(document.getElementById('charMeritMnd').value) || 0,
+                chr: parseInt(document.getElementById('charMeritChr').value) || 0,
+            };
+
+            const characters = loadCharacters();
+
+            if (editingCharName) {
+                const idx = characters.findIndex(c => c.name === editingCharName);
+                if (idx >= 0) {
+                    characters[idx] = { name, race, job_levels, merit_points };
+                }
+            } else {
+                if (characters.some(c => c.name === name)) {
+                    alert(`Character "${name}" already exists.`);
+                    return;
+                }
+                characters.push({ name, race, job_levels, merit_points });
+            }
+
+            saveCharacters(characters);
+            renderCharList();
+            hideEditForm();
+        }
+
+        function deleteCharacter(name) {
+            if (!confirm(`Delete character "${name}"?`)) return;
+            const characters = loadCharacters().filter(c => c.name !== name);
+            saveCharacters(characters);
+            renderCharList();
+            if (editingCharName === name) hideEditForm();
+        }
+
+        // Event delegation for char list
+        document.getElementById('charList').addEventListener('click', (e) => {
+            const editBtn = e.target.closest('[data-edit]');
+            const deleteBtn = e.target.closest('[data-delete]');
+            if (editBtn) {
+                const name = editBtn.dataset.edit;
+                const characters = loadCharacters();
+                const ch = characters.find(c => c.name === name);
+                if (ch) showEditForm(ch);
+            }
+            if (deleteBtn) {
+                deleteCharacter(deleteBtn.dataset.delete);
+            }
+        });
+
+        document.getElementById('btnNewChar').addEventListener('click', () => showEditForm(null));
+        document.getElementById('btnSaveChar').addEventListener('click', saveCharacter);
+        document.getElementById('btnCancelEdit').addEventListener('click', hideEditForm);
+
+        // ==============================================
+        // Tab 2: Status Calculation from Profile
+        // ==============================================
+
+        function updateCalcCharSelector() {
+            const sel = document.getElementById('calcChar');
+            const currentVal = sel.value;
+            sel.innerHTML = '<option value="">-- Select Character --</option>';
+            loadCharacters().forEach(ch => {
+                const opt = document.createElement('option');
+                opt.value = ch.name;
+                opt.textContent = `${ch.name} (${RACE_NAMES[ch.race] || ch.race})`;
+                sel.appendChild(opt);
+            });
+            // Restore selection if still valid
+            if (currentVal && [...sel.options].some(o => o.value === currentVal)) {
+                sel.value = currentVal;
+            }
+        }
+
+        function updateCalcJobSelectors() {
+            const charName = document.getElementById('calcChar').value;
+            const mainSel = document.getElementById('calcMainJob');
+            const supSel = document.getElementById('calcSupportJob');
+
+            mainSel.innerHTML = '<option value="">-- Select Main Job --</option>';
+            supSel.innerHTML = '<option value="">None</option>';
+
+            if (!charName) return;
+
+            const characters = loadCharacters();
+            const ch = characters.find(c => c.name === charName);
+            if (!ch) return;
+
+            JOBS.forEach(job => {
+                const jl = ch.job_levels[job.key];
+                if (jl && jl.level > 0) {
+                    const mainOpt = document.createElement('option');
+                    mainOpt.value = job.key;
+                    mainOpt.textContent = `${job.name} (Lv${jl.level}/MLv${jl.master_lv})`;
+                    mainSel.appendChild(mainOpt);
+
+                    const supOpt = document.createElement('option');
+                    supOpt.value = job.key;
+                    supOpt.textContent = `${job.name} (Lv${jl.level})`;
+                    supSel.appendChild(supOpt);
+                }
+            });
+        }
+
+        function updateCalcStatus() {
+            if (!wasmReady) return;
+
+            const charName = document.getElementById('calcChar').value;
+            const mainJobKey = document.getElementById('calcMainJob').value;
+
+            const clearStats = () => {
+                ['Hp','Mp','Str','Dex','Vit','Agi','Int','Mnd','Chr'].forEach(s => {
+                    document.getElementById(`calcStat${s}`).textContent = '-';
+                });
+                document.getElementById('calcInfo').classList.add('hidden');
+            };
+
+            if (!charName || !mainJobKey) {
+                clearStats();
+                return;
+            }
+
+            const characters = loadCharacters();
+            const ch = characters.find(c => c.name === charName);
+            if (!ch) {
+                clearStats();
+                return;
+            }
+
+            const supJobKey = document.getElementById('calcSupportJob').value || null;
+
+            // Build profile data matching Rust's CharacterProfile serde format
+            const profile = {
+                name: ch.name,
+                race: ch.race,
+                job_levels: ch.job_levels,
+                merit_points: ch.merit_points,
             };
 
             try {
-                const result = calculate_status(race, mainJob, mainLv, supportJob, supportLv, masterLv, meritPoints);
+                const result = calculate_status_from_profile(profile, mainJobKey, supJobKey);
 
-                document.getElementById('statHp').textContent = result.hp;
-                document.getElementById('statMp').textContent = result.mp;
-                document.getElementById('statStr').textContent = result.str_;
-                document.getElementById('statDex').textContent = result.dex;
-                document.getElementById('statVit').textContent = result.vit;
-                document.getElementById('statAgi').textContent = result.agi;
-                document.getElementById('statInt').textContent = result.int;
-                document.getElementById('statMnd').textContent = result.mnd;
-                document.getElementById('statChr').textContent = result.chr;
+                document.getElementById('calcStatHp').textContent = result.hp;
+                document.getElementById('calcStatMp').textContent = result.mp;
+                document.getElementById('calcStatStr').textContent = result.str_;
+                document.getElementById('calcStatDex').textContent = result.dex;
+                document.getElementById('calcStatVit').textContent = result.vit;
+                document.getElementById('calcStatAgi').textContent = result.agi;
+                document.getElementById('calcStatInt').textContent = result.int;
+                document.getElementById('calcStatMnd').textContent = result.mnd;
+                document.getElementById('calcStatChr').textContent = result.chr;
+
+                // Show info
+                const mainJl = ch.job_levels[mainJobKey] || { level: 0, master_lv: 0 };
+                let infoText = `${RACE_NAMES[ch.race]} / ${mainJobKey} Lv${mainJl.level} MLv${mainJl.master_lv}`;
+                if (supJobKey) {
+                    const supJl = ch.job_levels[supJobKey] || { level: 0, master_lv: 0 };
+                    const cap = Math.floor(mainJl.level / 2) + Math.floor(mainJl.master_lv / 5);
+                    const effectiveLv = Math.min(supJl.level, cap);
+                    infoText += ` / ${supJobKey} Lv${effectiveLv}`;
+                }
+                document.getElementById('calcInfoText').textContent = infoText;
+                document.getElementById('calcInfo').classList.remove('hidden');
             } catch (e) {
-                console.error('Error calculating status:', e);
+                console.error('Error calculating status from profile:', e);
+                clearStats();
             }
         }
 
-        // Event listeners
-        document.getElementById('useSupport').addEventListener('change', (e) => {
-            const section = document.getElementById('supportSection');
-            if (e.target.checked) {
-                section.classList.remove('hidden');
-            } else {
-                section.classList.add('hidden');
-            }
-            updateStatus();
+        document.getElementById('calcChar').addEventListener('change', () => {
+            updateCalcJobSelectors();
+            updateCalcStatus();
         });
+        document.getElementById('calcMainJob').addEventListener('change', updateCalcStatus);
+        document.getElementById('calcSupportJob').addEventListener('change', updateCalcStatus);
 
-        ['race', 'mainJob', 'mainLv', 'masterLv', 'supportJob'].forEach(id => {
-            document.getElementById(id).addEventListener('change', () => {
-                updateSupportLv();
-                updateStatus();
-            });
-            document.getElementById(id).addEventListener('input', () => {
-                updateSupportLv();
-                updateStatus();
-            });
-        });
-
-        ['meritHp', 'meritMp', 'meritStr', 'meritDex', 'meritVit', 'meritAgi', 'meritInt', 'meritMnd', 'meritChr'].forEach(id => {
-            document.getElementById(id).addEventListener('change', updateStatus);
-            document.getElementById(id).addEventListener('input', updateStatus);
-        });
-
+        // ==============================================
         // Initialize
+        // ==============================================
+        async function initWasm() {
+            await init();
+            wasmReady = true;
+            buildJobLevelTable();
+            renderCharList();
+        }
+
         initWasm();
     </script>
 </body>

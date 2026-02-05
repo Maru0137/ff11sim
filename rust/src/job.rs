@@ -1,7 +1,9 @@
 use crate::status::{Grade, StatusKind};
+use enum_map::Enum;
+use serde::{Deserialize, Serialize};
 use strum::{EnumCount, EnumIter, VariantArray};
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, EnumCount, EnumIter, VariantArray)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, EnumCount, EnumIter, VariantArray, Enum, Serialize, Deserialize)]
 pub enum Job {
     War,
     Mnk,

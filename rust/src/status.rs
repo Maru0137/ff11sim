@@ -105,7 +105,7 @@ const MERIT_POINT_BONUS: [i32; StatusKind::COUNT] = [
     1,  // CHR
 ];
 
-#[derive(Debug, Clone, Copy, Default)]
+#[derive(Debug, Clone, Copy, Default, serde::Serialize, serde::Deserialize)]
 pub struct MeritPoints {
     pub hp: i32,
     pub mp: i32,

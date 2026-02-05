@@ -7,7 +7,10 @@
       "Bash(cargo build:*)",
       "Bash(cargo test:*)",
       "Bash(export PATH=\"$HOME/.cargo/bin:$PATH\")",
-      "Bash(git push:*)"
+      "Bash(git push:*)",
+      "Bash(cargo install:*)",
+      "Bash(wasm-pack build:*)",
+      "Bash(python3:*)"
     ]
   }
 }

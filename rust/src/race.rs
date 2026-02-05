@@ -1,9 +1,10 @@
 use crate::status::{Grade, StatusKind};
 
 use clap::ValueEnum;
+use serde::{Deserialize, Serialize};
 use strum::{EnumCount, EnumIter, VariantArray};
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, EnumCount, EnumIter, VariantArray, ValueEnum)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, EnumCount, EnumIter, VariantArray, ValueEnum, Serialize, Deserialize)]
 pub enum Race {
     Hum,
     Elv,

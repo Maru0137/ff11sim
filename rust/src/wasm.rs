@@ -2,6 +2,7 @@ use serde::{Deserialize, Serialize};
 use wasm_bindgen::prelude::*;
 
 use crate::chara::Chara;
+use crate::character_profile::CharacterProfile;
 use crate::job::Job;
 use crate::race::Race;
 use crate::status::{MeritPoints, StatusKind};
@@ -138,18 +139,7 @@ pub fn calculate_status(
         .build()
         .map_err(|e| JsValue::from_str(e))?;
 
-    let result = StatusResult {
-        hp: chara.status(StatusKind::Hp),
-        mp: chara.status(StatusKind::Mp),
-        str_: chara.status(StatusKind::Str),
-        dex: chara.status(StatusKind::Dex),
-        vit: chara.status(StatusKind::Vit),
-        agi: chara.status(StatusKind::Agi),
-        int: chara.status(StatusKind::Int),
-        mnd: chara.status(StatusKind::Mnd),
-        chr: chara.status(StatusKind::Chr),
-    };
-
+    let result = chara_to_status_result(&chara);
     serde_wasm_bindgen::to_value(&result).map_err(|e| JsValue::from_str(&e.to_string()))
 }
 
@@ -190,4 +180,49 @@ pub fn get_jobs() -> Vec<JsValue> {
         JsValue::from_str("Geo"),
         JsValue::from_str("Run"),
     ]
+}
+
+fn chara_to_status_result(chara: &Chara) -> StatusResult {
+    StatusResult {
+        hp: chara.status(StatusKind::Hp),
+        mp: chara.status(StatusKind::Mp),
+        str_: chara.status(StatusKind::Str),
+        dex: chara.status(StatusKind::Dex),
+        vit: chara.status(StatusKind::Vit),
+        agi: chara.status(StatusKind::Agi),
+        int: chara.status(StatusKind::Int),
+        mnd: chara.status(StatusKind::Mnd),
+        chr: chara.status(StatusKind::Chr),
+    }
+}
+
+/// CharacterProfile の JSON データからステータスを計算する。
+/// profile_js: CharacterProfile を JSON シリアライズした JsValue
+/// main_job: メインジョブ名（例: "War"）
+/// support_job: サポートジョブ名（例: "Drg"）、なしの場合は None
+#[wasm_bindgen]
+pub fn calculate_status_from_profile(
+    profile_js: JsValue,
+    main_job: &str,
+    support_job: Option<String>,
+) -> Result<JsValue, JsValue> {
+    let profile: CharacterProfile = serde_wasm_bindgen::from_value(profile_js)
+        .map_err(|e| JsValue::from_str(&format!("Invalid profile: {}", e)))?;
+
+    let main_job = str_to_job(main_job)
+        .ok_or_else(|| JsValue::from_str("Invalid main job"))?;
+
+    let support_job = match support_job {
+        Some(ref sj) => Some(
+            str_to_job(sj).ok_or_else(|| JsValue::from_str("Invalid support job"))?,
+        ),
+        None => None,
+    };
+
+    let chara = profile
+        .to_chara(main_job, support_job)
+        .map_err(|e| JsValue::from_str(&e))?;
+
+    let result = chara_to_status_result(&chara);
+    serde_wasm_bindgen::to_value(&result).map_err(|e| JsValue::from_str(&e.to_string()))
 }

@@ -1,0 +1,565 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>FFXI Equipment Search</title>
+    <style>
+        * {
+            box-sizing: border-box;
+        }
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: #1a1a2e;
+            color: #eee;
+            margin: 0;
+            padding: 20px;
+            min-height: 100vh;
+        }
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+        h1 {
+            color: #f0c040;
+            margin-bottom: 20px;
+        }
+        .nav {
+            margin-bottom: 20px;
+        }
+        .nav a {
+            color: #88c0d0;
+            text-decoration: none;
+            margin-right: 20px;
+        }
+        .nav a:hover {
+            text-decoration: underline;
+        }
+
+        /* Search Section */
+        .search-section {
+            background: #16213e;
+            padding: 20px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+        }
+        .search-row {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 15px;
+            flex-wrap: wrap;
+        }
+        .search-input {
+            flex: 1;
+            min-width: 200px;
+            padding: 10px;
+            border: 1px solid #444;
+            border-radius: 4px;
+            background: #0f0f23;
+            color: #eee;
+            font-size: 14px;
+        }
+        select {
+            padding: 10px;
+            border: 1px solid #444;
+            border-radius: 4px;
+            background: #0f0f23;
+            color: #eee;
+            font-size: 14px;
+            min-width: 120px;
+        }
+
+        /* Filters Section */
+        .filters-section {
+            background: #0f0f23;
+            padding: 15px;
+            border-radius: 4px;
+            margin-bottom: 15px;
+        }
+        .filters-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 10px;
+        }
+        .filters-header h3 {
+            margin: 0;
+            font-size: 14px;
+            color: #f0c040;
+        }
+        .filter-row {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 10px;
+            align-items: center;
+            flex-wrap: wrap;
+        }
+        .filter-row select, .filter-row input {
+            padding: 8px;
+            border: 1px solid #444;
+            border-radius: 4px;
+            background: #1a1a2e;
+            color: #eee;
+            font-size: 13px;
+        }
+        .filter-row input {
+            width: 150px;
+        }
+        .btn {
+            padding: 8px 16px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 13px;
+            transition: background 0.2s;
+        }
+        .btn-primary {
+            background: #4a9eff;
+            color: white;
+        }
+        .btn-primary:hover {
+            background: #3a8eef;
+        }
+        .btn-danger {
+            background: #ff4a4a;
+            color: white;
+        }
+        .btn-danger:hover {
+            background: #ef3a3a;
+        }
+        .btn-secondary {
+            background: #555;
+            color: white;
+        }
+        .btn-secondary:hover {
+            background: #666;
+        }
+
+        /* Sort Section */
+        .sort-section {
+            display: flex;
+            gap: 10px;
+            align-items: center;
+            margin-bottom: 15px;
+        }
+        .sort-section label {
+            font-size: 14px;
+        }
+
+        /* Results Section */
+        .results-section {
+            background: #16213e;
+            padding: 20px;
+            border-radius: 8px;
+        }
+        .results-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+        }
+        .results-count {
+            color: #888;
+            font-size: 14px;
+        }
+        .loading {
+            text-align: center;
+            padding: 40px;
+            color: #888;
+        }
+        .error {
+            text-align: center;
+            padding: 40px;
+            color: #ff4a4a;
+        }
+
+        /* Table */
+        .results-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 13px;
+        }
+        .results-table th, .results-table td {
+            padding: 10px 8px;
+            text-align: left;
+            border-bottom: 1px solid #333;
+        }
+        .results-table th {
+            background: #0f0f23;
+            color: #f0c040;
+            cursor: pointer;
+            user-select: none;
+            white-space: nowrap;
+        }
+        .results-table th:hover {
+            background: #1a1a3e;
+        }
+        .results-table th.sorted-asc::after {
+            content: ' ▲';
+            font-size: 10px;
+        }
+        .results-table th.sorted-desc::after {
+            content: ' ▼';
+            font-size: 10px;
+        }
+        .results-table tr:hover {
+            background: #1a1a3e;
+        }
+        .jobs-list, .slots-list {
+            font-size: 11px;
+            color: #88c0d0;
+        }
+
+        /* Pagination */
+        .pagination {
+            display: flex;
+            justify-content: center;
+            gap: 10px;
+            margin-top: 20px;
+        }
+        .pagination button {
+            padding: 8px 16px;
+            border: 1px solid #444;
+            border-radius: 4px;
+            background: #0f0f23;
+            color: #eee;
+            cursor: pointer;
+        }
+        .pagination button:hover:not(:disabled) {
+            background: #1a1a3e;
+        }
+        .pagination button:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+        .pagination .page-info {
+            padding: 8px 16px;
+            color: #888;
+        }
+
+        @media (max-width: 768px) {
+            .search-row, .filter-row {
+                flex-direction: column;
+            }
+            .search-input, select, .filter-row input {
+                width: 100%;
+            }
+            .results-table {
+                font-size: 12px;
+            }
+            .results-table th, .results-table td {
+                padding: 8px 4px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <nav class="nav">
+            <a href="index.html">Status Calculator</a>
+            <a href="search.html">Equipment Search</a>
+        </nav>
+
+        <h1>FFXI Equipment Search</h1>
+
+        <div class="search-section">
+            <div class="search-row">
+                <input type="text" id="searchQuery" class="search-input" placeholder="Search by name (EN/JA)...">
+                <select id="categoryFilter">
+                    <option value="">All Categories</option>
+                </select>
+            </div>
+
+            <div class="filters-section">
+                <div class="filters-header">
+                    <h3>Filters</h3>
+                    <button class="btn btn-secondary" id="addFilterBtn">+ Add Filter</button>
+                </div>
+                <div id="filtersContainer"></div>
+            </div>
+
+            <div class="sort-section">
+                <label>Sort by:</label>
+                <select id="sortBy">
+                    <option value="id">ID</option>
+                    <option value="en">Name (EN)</option>
+                    <option value="ja">Name (JA)</option>
+                    <option value="level">Level</option>
+                    <option value="damage">Damage</option>
+                    <option value="delay">Delay</option>
+                    <option value="category">Category</option>
+                </select>
+                <select id="sortOrder">
+                    <option value="asc">Ascending</option>
+                    <option value="desc">Descending</option>
+                </select>
+                <button class="btn btn-primary" id="searchBtn">Search</button>
+            </div>
+        </div>
+
+        <div class="results-section">
+            <div class="results-header">
+                <span class="results-count" id="resultsCount">Loading...</span>
+            </div>
+            <div id="resultsContainer">
+                <div class="loading">Loading items data...</div>
+            </div>
+            <div class="pagination" id="pagination" style="display: none;">
+                <button id="prevBtn">Previous</button>
+                <span class="page-info" id="pageInfo"></span>
+                <button id="nextBtn">Next</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="js/item-search.js"></script>
+    <script>
+        const itemSearch = new ItemSearch();
+        let currentOffset = 0;
+        const pageSize = 50;
+        let currentResults = null;
+
+        // DOM Elements
+        const searchQuery = document.getElementById('searchQuery');
+        const categoryFilter = document.getElementById('categoryFilter');
+        const sortBy = document.getElementById('sortBy');
+        const sortOrder = document.getElementById('sortOrder');
+        const searchBtn = document.getElementById('searchBtn');
+        const addFilterBtn = document.getElementById('addFilterBtn');
+        const filtersContainer = document.getElementById('filtersContainer');
+        const resultsContainer = document.getElementById('resultsContainer');
+        const resultsCount = document.getElementById('resultsCount');
+        const pagination = document.getElementById('pagination');
+        const prevBtn = document.getElementById('prevBtn');
+        const nextBtn = document.getElementById('nextBtn');
+        const pageInfo = document.getElementById('pageInfo');
+
+        // Initialize
+        async function init() {
+            try {
+                await itemSearch.load();
+                populateCategories();
+                performSearch();
+            } catch (error) {
+                resultsContainer.innerHTML = `<div class="error">Failed to load data: ${error.message}</div>`;
+            }
+        }
+
+        function populateCategories() {
+            const categories = itemSearch.getCategories();
+            categoryFilter.innerHTML = '<option value="">All Categories</option>';
+            for (const cat of categories) {
+                const option = document.createElement('option');
+                option.value = cat;
+                option.textContent = cat;
+                categoryFilter.appendChild(option);
+            }
+        }
+
+        // Filter Management
+        function addFilter() {
+            const properties = itemSearch.getFilterableProperties();
+            const filterRow = document.createElement('div');
+            filterRow.className = 'filter-row';
+
+            const propSelect = document.createElement('select');
+            propSelect.className = 'filter-property';
+            for (const prop of properties) {
+                const option = document.createElement('option');
+                option.value = prop.name;
+                option.dataset.type = prop.type;
+                option.textContent = prop.label;
+                propSelect.appendChild(option);
+            }
+
+            const opSelect = document.createElement('select');
+            opSelect.className = 'filter-operator';
+            updateOperators(opSelect, properties[0].type);
+
+            const valueInput = document.createElement('input');
+            valueInput.type = 'text';
+            valueInput.className = 'filter-value';
+            valueInput.placeholder = 'Value';
+
+            const removeBtn = document.createElement('button');
+            removeBtn.className = 'btn btn-danger';
+            removeBtn.textContent = '×';
+            removeBtn.onclick = () => filterRow.remove();
+
+            propSelect.onchange = () => {
+                const selectedOption = propSelect.options[propSelect.selectedIndex];
+                updateOperators(opSelect, selectedOption.dataset.type);
+            };
+
+            filterRow.appendChild(propSelect);
+            filterRow.appendChild(opSelect);
+            filterRow.appendChild(valueInput);
+            filterRow.appendChild(removeBtn);
+            filtersContainer.appendChild(filterRow);
+        }
+
+        function updateOperators(select, type) {
+            const operators = itemSearch.getOperators(type);
+            select.innerHTML = '';
+            for (const op of operators) {
+                const option = document.createElement('option');
+                option.value = op.value;
+                option.textContent = op.label;
+                select.appendChild(option);
+            }
+        }
+
+        function getFilters() {
+            const filters = [];
+            const rows = filtersContainer.querySelectorAll('.filter-row');
+            for (const row of rows) {
+                const property = row.querySelector('.filter-property').value;
+                const operator = row.querySelector('.filter-operator').value;
+                const value = row.querySelector('.filter-value').value;
+                if (property && operator && value !== '') {
+                    filters.push({ property, operator, value });
+                }
+            }
+            return filters;
+        }
+
+        // Search
+        function performSearch(resetOffset = true) {
+            if (resetOffset) {
+                currentOffset = 0;
+            }
+
+            const results = itemSearch.search({
+                query: searchQuery.value,
+                category: categoryFilter.value,
+                filters: getFilters(),
+                sortBy: sortBy.value,
+                sortOrder: sortOrder.value,
+                limit: pageSize,
+                offset: currentOffset
+            });
+
+            currentResults = results;
+            renderResults(results);
+            updatePagination(results);
+        }
+
+        function renderResults(results) {
+            if (results.items.length === 0) {
+                resultsContainer.innerHTML = '<div class="loading">No items found</div>';
+                resultsCount.textContent = '0 items found';
+                return;
+            }
+
+            resultsCount.textContent = `${results.total.toLocaleString()} items found`;
+
+            const table = document.createElement('table');
+            table.className = 'results-table';
+
+            // Header
+            const thead = document.createElement('thead');
+            const headerRow = document.createElement('tr');
+            const columns = [
+                { key: 'id', label: 'ID' },
+                { key: 'en', label: 'Name (EN)' },
+                { key: 'ja', label: 'Name (JA)' },
+                { key: 'category', label: 'Category' },
+                { key: 'level', label: 'Lv' },
+                { key: 'jobs', label: 'Jobs' },
+                { key: 'slots', label: 'Slots' },
+                { key: 'damage', label: 'Dmg' },
+                { key: 'delay', label: 'Delay' },
+            ];
+
+            for (const col of columns) {
+                const th = document.createElement('th');
+                th.textContent = col.label;
+                th.dataset.key = col.key;
+                th.onclick = () => sortByColumn(col.key);
+
+                if (sortBy.value === col.key) {
+                    th.classList.add(sortOrder.value === 'asc' ? 'sorted-asc' : 'sorted-desc');
+                }
+
+                headerRow.appendChild(th);
+            }
+            thead.appendChild(headerRow);
+            table.appendChild(thead);
+
+            // Body
+            const tbody = document.createElement('tbody');
+            for (const item of results.items) {
+                const row = document.createElement('tr');
+
+                row.innerHTML = `
+                    <td>${item.id}</td>
+                    <td>${item.en || ''}</td>
+                    <td>${item.ja || ''}</td>
+                    <td>${item.category || ''}</td>
+                    <td>${item.level !== undefined ? item.level : '-'}</td>
+                    <td class="jobs-list">${(item.jobs || []).join(', ')}</td>
+                    <td class="slots-list">${(item.slots || []).join(', ')}</td>
+                    <td>${item.damage !== undefined ? item.damage : '-'}</td>
+                    <td>${item.delay !== undefined ? item.delay : '-'}</td>
+                `;
+
+                tbody.appendChild(row);
+            }
+            table.appendChild(tbody);
+
+            resultsContainer.innerHTML = '';
+            resultsContainer.appendChild(table);
+        }
+
+        function sortByColumn(key) {
+            if (sortBy.value === key) {
+                sortOrder.value = sortOrder.value === 'asc' ? 'desc' : 'asc';
+            } else {
+                sortBy.value = key;
+                sortOrder.value = 'asc';
+            }
+            performSearch();
+        }
+
+        function updatePagination(results) {
+            if (results.total <= pageSize) {
+                pagination.style.display = 'none';
+                return;
+            }
+
+            pagination.style.display = 'flex';
+            const currentPage = Math.floor(currentOffset / pageSize) + 1;
+            const totalPages = Math.ceil(results.total / pageSize);
+            pageInfo.textContent = `Page ${currentPage} of ${totalPages}`;
+
+            prevBtn.disabled = currentOffset === 0;
+            nextBtn.disabled = !results.hasMore;
+        }
+
+        // Event Listeners
+        searchBtn.onclick = () => performSearch();
+        addFilterBtn.onclick = addFilter;
+
+        searchQuery.onkeypress = (e) => {
+            if (e.key === 'Enter') performSearch();
+        };
+
+        categoryFilter.onchange = () => performSearch();
+        sortBy.onchange = () => performSearch();
+        sortOrder.onchange = () => performSearch();
+
+        prevBtn.onclick = () => {
+            currentOffset = Math.max(0, currentOffset - pageSize);
+            performSearch(false);
+        };
+
+        nextBtn.onclick = () => {
+            currentOffset += pageSize;
+            performSearch(false);
+        };
+
+        // Start
+        init();
+    </script>
+</body>
+</html>

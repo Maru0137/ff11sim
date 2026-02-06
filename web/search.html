@@ -327,7 +327,9 @@
                     <option value="damage">Damage</option>
                     <option value="delay">Delay</option>
                     <option value="category">Category</option>
+                    <option value="desc_stat">Description Stat</option>
                 </select>
+                <input type="text" id="descStatInput" placeholder="e.g. STR, Attack" style="display: none; width: 100px;">
                 <select id="sortOrder">
                     <option value="asc">Ascending</option>
                     <option value="desc">Descending</option>
@@ -363,6 +365,7 @@
         const slotsFilter = document.getElementById('slotsFilter');
         const jobsFilter = document.getElementById('jobsFilter');
         const sortBy = document.getElementById('sortBy');
+        const descStatInput = document.getElementById('descStatInput');
         const sortOrder = document.getElementById('sortOrder');
         const searchBtn = document.getElementById('searchBtn');
         const addFilterBtn = document.getElementById('addFilterBtn');
@@ -463,6 +466,7 @@
                 job: jobsFilter.value,
                 filters: getFilters(),
                 sortBy: sortBy.value,
+                descStat: descStatInput.value,
                 sortOrder: sortOrder.value,
                 limit: pageSize,
                 offset: currentOffset
@@ -581,7 +585,14 @@
 
         slotsFilter.onchange = () => performSearch();
         jobsFilter.onchange = () => performSearch();
-        sortBy.onchange = () => performSearch();
+        sortBy.onchange = () => {
+            descStatInput.style.display = sortBy.value === 'desc_stat' ? 'inline-block' : 'none';
+            performSearch();
+        };
+        descStatInput.onchange = () => performSearch();
+        descStatInput.onkeypress = (e) => {
+            if (e.key === 'Enter') performSearch();
+        };
         sortOrder.onchange = () => performSearch();
 
         prevBtn.onclick = () => {

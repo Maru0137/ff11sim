@@ -139,6 +139,59 @@ class ItemSearch {
     }
 
     /**
+     * Extract stat value from description
+     * Handles patterns like "STR+5", "ＳＴＲ＋５", "Attack+10", "命中+15"
+     * @param {string} description The item description
+     * @param {string} statName The stat to search for (e.g., "STR", "Attack")
+     * @returns {number} The stat value, or 0 if not found
+     */
+    extractStatFromDescription(description, statName) {
+        if (!description || !statName) return 0;
+
+        // Normalize the stat name (convert to uppercase for comparison)
+        const normalizedStat = statName.toUpperCase();
+
+        // Full-width to half-width conversion map
+        const fullToHalf = {
+            'Ａ': 'A', 'Ｂ': 'B', 'Ｃ': 'C', 'Ｄ': 'D', 'Ｅ': 'E', 'Ｆ': 'F', 'Ｇ': 'G',
+            'Ｈ': 'H', 'Ｉ': 'I', 'Ｊ': 'J', 'Ｋ': 'K', 'Ｌ': 'L', 'Ｍ': 'M', 'Ｎ': 'N',
+            'Ｏ': 'O', 'Ｐ': 'P', 'Ｑ': 'Q', 'Ｒ': 'R', 'Ｓ': 'S', 'Ｔ': 'T', 'Ｕ': 'U',
+            'Ｖ': 'V', 'Ｗ': 'W', 'Ｘ': 'X', 'Ｙ': 'Y', 'Ｚ': 'Z',
+            '０': '0', '１': '1', '２': '2', '３': '3', '４': '4',
+            '５': '5', '６': '6', '７': '7', '８': '8', '９': '9',
+            '＋': '+', '－': '-', '―': '-'
+        };
+
+        // Normalize description (convert full-width to half-width)
+        let normalized = '';
+        for (const char of description) {
+            normalized += fullToHalf[char] || char;
+        }
+        normalized = normalized.toUpperCase();
+
+        // Pattern: STAT+/-NUMBER or STAT NUMBER (with optional spaces)
+        // Match patterns like "STR+5", "STR +5", "STR5", "攻撃力+10"
+        const patterns = [
+            new RegExp(`${normalizedStat}\\s*[+]\\s*(\\d+)`, 'i'),
+            new RegExp(`${normalizedStat}\\s*[-]\\s*(\\d+)`, 'i'),
+        ];
+
+        for (const pattern of patterns) {
+            const match = normalized.match(pattern);
+            if (match) {
+                const value = parseInt(match[1], 10);
+                // Check if it's a negative pattern
+                if (pattern.source.includes('[-]')) {
+                    return -value;
+                }
+                return value;
+            }
+        }
+
+        return 0;
+    }
+
+    /**
      * Search items with filters
      * @param {Object} options Search options
      * @param {string} options.query Text search query (searches en and ja)
@@ -146,6 +199,7 @@ class ItemSearch {
      * @param {string} options.job Job filter
      * @param {Array} options.filters Array of filter objects {property, operator, value}
      * @param {string} options.sortBy Property to sort by
+     * @param {string} options.descStat Stat name for description sorting
      * @param {string} options.sortOrder 'asc' or 'desc'
      * @param {number} options.limit Max results to return
      * @param {number} options.offset Offset for pagination
@@ -157,6 +211,7 @@ class ItemSearch {
             job = '',
             filters = [],
             sortBy = 'id',
+            descStat = '',
             sortOrder = 'asc',
             limit = 50,
             offset = 0
@@ -203,8 +258,16 @@ class ItemSearch {
 
         // Sort
         results.sort((a, b) => {
-            let aVal = a[sortBy];
-            let bVal = b[sortBy];
+            let aVal, bVal;
+
+            // Special handling for description stat sorting
+            if (sortBy === 'desc_stat' && descStat) {
+                aVal = this.extractStatFromDescription(a.description_ja || a.description_en || '', descStat);
+                bVal = this.extractStatFromDescription(b.description_ja || b.description_en || '', descStat);
+            } else {
+                aVal = a[sortBy];
+                bVal = b[sortBy];
+            }
 
             // Handle undefined values
             if (aVal === undefined) aVal = sortOrder === 'asc' ? Infinity : -Infinity;

@@ -36,6 +36,26 @@ jobs:
           cd rust
           wasm-pack build --target web --out-dir ../web/pkg
 
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Download Windower Resources
+        run: |
+          mkdir -p temp_resources
+          curl -o temp_resources/items.lua \
+            "https://raw.githubusercontent.com/Windower/Resources/master/resources_data/items.lua"
+          curl -o temp_resources/item_descriptions.lua \
+            "https://raw.githubusercontent.com/Windower/Resources/master/resources_data/item_descriptions.lua"
+
+      - name: Generate items JSON
+        run: |
+          python scripts/parse_lua_to_json.py \
+            --items temp_resources/items.lua \
+            --descriptions temp_resources/item_descriptions.lua \
+            --output web/data/items.json
+
       - name: Setup Pages
         uses: actions/configure-pages@v4
 

@@ -506,6 +506,7 @@
 
             function jobsToKanji(jobs) {
                 if (!jobs || jobs.length === 0) return '-';
+                if (jobs.length === 22) return 'All Jobs';
                 return jobs.map(j => jobKanji[j] || j).join('');
             }
 

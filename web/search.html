@@ -489,16 +489,25 @@
             const thead = document.createElement('thead');
             const headerRow = document.createElement('tr');
             const columns = [
-                { key: 'id', label: 'ID' },
-                { key: 'en', label: 'Name (EN)' },
-                { key: 'ja', label: 'Name (JA)' },
-                { key: 'category', label: 'Category' },
+                { key: 'ja', label: 'Name' },
                 { key: 'level', label: 'Lv' },
                 { key: 'jobs', label: 'Jobs' },
                 { key: 'slots', label: 'Slots' },
-                { key: 'damage', label: 'Dmg' },
-                { key: 'delay', label: 'Delay' },
+                { key: 'description_ja', label: 'Description' },
             ];
+
+            // Job abbreviation to Japanese kanji mapping
+            const jobKanji = {
+                'WAR': '戦', 'MNK': 'モ', 'WHM': '白', 'BLM': '黒', 'RDM': '赤', 'THF': 'シ',
+                'PLD': 'ナ', 'DRK': '暗', 'BST': '獣', 'BRD': '吟', 'RNG': '狩', 'SAM': '侍',
+                'NIN': '忍', 'DRG': '竜', 'SMN': '召', 'BLU': '青', 'COR': 'コ', 'PUP': 'か',
+                'DNC': '踊', 'SCH': '学', 'GEO': '風', 'RUN': '剣'
+            };
+
+            function jobsToKanji(jobs) {
+                if (!jobs || jobs.length === 0) return '-';
+                return jobs.map(j => jobKanji[j] || j).join('');
+            }
 
             for (const col of columns) {
                 const th = document.createElement('th');
@@ -521,15 +530,11 @@
                 const row = document.createElement('tr');
 
                 row.innerHTML = `
-                    <td>${item.id}</td>
-                    <td>${item.en || ''}</td>
                     <td>${item.ja || ''}</td>
-                    <td>${item.category || ''}</td>
                     <td>${item.level !== undefined ? item.level : '-'}</td>
-                    <td class="jobs-list">${(item.jobs || []).join(', ')}</td>
+                    <td class="jobs-list">${jobsToKanji(item.jobs)}</td>
                     <td class="slots-list">${(item.slots || []).join(', ')}</td>
-                    <td>${item.damage !== undefined ? item.damage : '-'}</td>
-                    <td>${item.delay !== undefined ? item.delay : '-'}</td>
+                    <td class="description">${item.description_ja || ''}</td>
                 `;
 
                 tbody.appendChild(row);

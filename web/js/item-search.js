@@ -142,7 +142,8 @@ class ItemSearch {
      * Search items with filters
      * @param {Object} options Search options
      * @param {string} options.query Text search query (searches en and ja)
-     * @param {string} options.category Category filter
+     * @param {string} options.slot Slot filter
+     * @param {string} options.job Job filter
      * @param {Array} options.filters Array of filter objects {property, operator, value}
      * @param {string} options.sortBy Property to sort by
      * @param {string} options.sortOrder 'asc' or 'desc'
@@ -152,7 +153,8 @@ class ItemSearch {
     search(options = {}) {
         const {
             query = '',
-            category = '',
+            slot = '',
+            job = '',
             filters = [],
             sortBy = 'id',
             sortOrder = 'asc',
@@ -173,9 +175,20 @@ class ItemSearch {
             );
         }
 
-        // Category filter
-        if (category) {
-            results = results.filter(item => item.category === category);
+        // Slot filter
+        if (slot) {
+            results = results.filter(item =>
+                item.slots && item.slots.some(s =>
+                    s === slot || (slot === 'ear1' && s === 'ear2') || (slot === 'ring1' && s === 'ring2')
+                )
+            );
+        }
+
+        // Job filter
+        if (job) {
+            results = results.filter(item =>
+                item.jobs && item.jobs.includes(job)
+            );
         }
 
         // Apply custom filters

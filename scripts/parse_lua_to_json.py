@@ -175,9 +175,13 @@ def main():
     descriptions = parse_lua_table(desc_content)
     print(f"  Found {len(descriptions)} descriptions")
 
-    print("Processing items...")
+    print("Processing items (Weapon/Armor only)...")
     processed_items = []
     for item_id, item in sorted(items.items()):
+        # Only include Weapon and Armor categories
+        category = item.get('category', '')
+        if category not in ('Weapon', 'Armor'):
+            continue
         processed = process_item(item, descriptions)
         processed_items.append(processed)
 

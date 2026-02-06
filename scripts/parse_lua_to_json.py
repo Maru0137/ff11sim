@@ -189,6 +189,7 @@ def main():
     }
 
     print(f"Writing JSON to {args.output}...")
+    args.output.parent.mkdir(parents=True, exist_ok=True)
     with open(args.output, 'w', encoding='utf-8') as f:
         json.dump(output, f, ensure_ascii=False, separators=(',', ':'))
 

@@ -287,28 +287,28 @@
                 </select>
                 <select id="jobsFilter">
                     <option value="">全ジョブ</option>
-                    <option value="WAR">戦士</option>
-                    <option value="MNK">モンク</option>
-                    <option value="WHM">白魔道士</option>
-                    <option value="BLM">黒魔道士</option>
-                    <option value="RDM">赤魔道士</option>
-                    <option value="THF">シーフ</option>
-                    <option value="PLD">ナイト</option>
-                    <option value="DRK">暗黒騎士</option>
-                    <option value="BST">獣使い</option>
-                    <option value="BRD">吟遊詩人</option>
-                    <option value="RNG">狩人</option>
+                    <option value="WAR">戦</option>
+                    <option value="MNK">モ</option>
+                    <option value="WHM">白</option>
+                    <option value="BLM">黒</option>
+                    <option value="RDM">赤</option>
+                    <option value="THF">シ</option>
+                    <option value="PLD">ナ</option>
+                    <option value="DRK">暗</option>
+                    <option value="BST">獣</option>
+                    <option value="BRD">吟</option>
+                    <option value="RNG">狩</option>
                     <option value="SAM">侍</option>
-                    <option value="NIN">忍者</option>
-                    <option value="DRG">竜騎士</option>
-                    <option value="SMN">召喚士</option>
-                    <option value="BLU">青魔道士</option>
-                    <option value="COR">コルセア</option>
-                    <option value="PUP">からくり士</option>
-                    <option value="DNC">踊り子</option>
-                    <option value="SCH">学者</option>
-                    <option value="GEO">風水士</option>
-                    <option value="RUN">ルーンフェンサー</option>
+                    <option value="NIN">忍</option>
+                    <option value="DRG">竜</option>
+                    <option value="SMN">召</option>
+                    <option value="BLU">青</option>
+                    <option value="COR">コ</option>
+                    <option value="PUP">か</option>
+                    <option value="DNC">踊</option>
+                    <option value="SCH">学</option>
+                    <option value="GEO">風</option>
+                    <option value="RUN">剣</option>
                 </select>
             </div>
 
@@ -532,7 +532,7 @@
 
             function jobsToKanji(jobs) {
                 if (!jobs || jobs.length === 0) return '-';
-                if (jobs.length === 22) return '全ジョブ';
+                if (jobs.length === 22) return 'All Jobs';
                 return jobs.map(j => jobKanji[j] || j).join('');
             }
 

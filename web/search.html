@@ -212,6 +212,13 @@
         .description {
             white-space: pre-line;
         }
+        .stat-highlight {
+            background-color: #f0c040;
+            color: #1a1a2e;
+            padding: 1px 3px;
+            border-radius: 3px;
+            font-weight: bold;
+        }
 
         /* Pagination */
         .pagination {
@@ -532,6 +539,49 @@
                 return jobs.map(j => jobKanji[j] || j).join('');
             }
 
+            function highlightStat(description, statName) {
+                if (!description || !statName) return description || '';
+
+                // Full-width to half-width for matching
+                const fullToHalf = {
+                    'Ａ': 'A', 'Ｂ': 'B', 'Ｃ': 'C', 'Ｄ': 'D', 'Ｅ': 'E', 'Ｆ': 'F', 'Ｇ': 'G',
+                    'Ｈ': 'H', 'Ｉ': 'I', 'Ｊ': 'J', 'Ｋ': 'K', 'Ｌ': 'L', 'Ｍ': 'M', 'Ｎ': 'N',
+                    'Ｏ': 'O', 'Ｐ': 'P', 'Ｑ': 'Q', 'Ｒ': 'R', 'Ｓ': 'S', 'Ｔ': 'T', 'Ｕ': 'U',
+                    'Ｖ': 'V', 'Ｗ': 'W', 'Ｘ': 'X', 'Ｙ': 'Y', 'Ｚ': 'Z',
+                    '０': '0', '１': '1', '２': '2', '３': '3', '４': '4',
+                    '５': '5', '６': '6', '７': '7', '８': '8', '９': '9',
+                    '＋': '+', '－': '-', '―': '-'
+                };
+
+                // Normalize for pattern matching
+                let normalized = '';
+                for (const char of description) {
+                    normalized += fullToHalf[char] || char;
+                }
+
+                // Create pattern to match stat with value
+                const pattern = new RegExp(`(${statName}\\s*[+\\-]\\s*\\d+)`, 'gi');
+                const match = normalized.match(pattern);
+
+                if (match) {
+                    // Find the original position in the description
+                    const normalizedUpper = normalized.toUpperCase();
+                    const statUpper = statName.toUpperCase();
+                    const idx = normalizedUpper.search(new RegExp(`${statUpper}\\s*[+\\-]\\s*\\d+`, 'i'));
+
+                    if (idx !== -1) {
+                        // Find the end of the match
+                        const matchLen = match[0].length;
+                        const before = description.substring(0, idx);
+                        const matched = description.substring(idx, idx + matchLen);
+                        const after = description.substring(idx + matchLen);
+                        return before + '<span class="stat-highlight">' + matched + '</span>' + after;
+                    }
+                }
+
+                return description;
+            }
+
             for (const col of columns) {
                 const th = document.createElement('th');
                 th.textContent = col.label;
@@ -549,8 +599,14 @@
 
             // Body
             const tbody = document.createElement('tbody');
+            const isStatSort = sortBy.value === 'desc_stat' && descStatInput.value;
             for (const item of results.items) {
                 const row = document.createElement('tr');
+
+                let descHtml = (item.description_ja || '').replace(/\\n/g, '\n');
+                if (isStatSort) {
+                    descHtml = highlightStat(descHtml, descStatInput.value);
+                }
 
                 row.innerHTML = `
                     <td>${item.ja || ''}</td>
@@ -558,7 +614,7 @@
                     <td>${item.item_level !== undefined ? item.item_level : '-'}</td>
                     <td class="jobs-list">${jobsToKanji(item.jobs)}</td>
                     <td class="slots-list">${slotsToJa(item.slots)}</td>
-                    <td class="description">${(item.description_ja || '').replace(/\\n/g, '\n')}</td>
+                    <td class="description">${descHtml}</td>
                 `;
 
                 tbody.appendChild(row);

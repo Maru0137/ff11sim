@@ -38,6 +38,7 @@ class ItemSearch {
             { name: 'ja', type: 'string', label: 'Name (JA)' },
             { name: 'category', type: 'string', label: 'Category' },
             { name: 'level', type: 'number', label: 'Level' },
+            { name: 'item_level', type: 'number', label: 'Item Level' },
             { name: 'damage', type: 'number', label: 'Damage' },
             { name: 'delay', type: 'number', label: 'Delay' },
             { name: 'skill', type: 'number', label: 'Skill' },

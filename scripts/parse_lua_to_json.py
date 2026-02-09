@@ -118,6 +118,9 @@ def process_item(item: dict, descriptions: dict[int, dict]) -> dict:
     if 'level' in item:
         processed['level'] = item['level']
 
+    if 'item_level' in item:
+        processed['item_level'] = item['item_level']
+
     if 'jobs' in item:
         processed['jobs'] = bitmask_to_list(item['jobs'], JOBS)
 

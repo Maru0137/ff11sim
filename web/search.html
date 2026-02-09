@@ -510,6 +510,23 @@
                 'DNC': '踊', 'SCH': '学', 'GEO': '風', 'RUN': '剣'
             };
 
+            const slotJa = {
+                'main': 'メイン', 'sub': 'サブ', 'range': '遠隔', 'ammo': '矢弾',
+                'head': '頭', 'body': '胴', 'hands': '両手', 'legs': '両脚',
+                'feet': '両足', 'neck': '首', 'waist': '腰', 'ear1': '耳',
+                'ear2': '耳', 'ring1': '指', 'ring2': '指', 'back': '背'
+            };
+
+            function slotsToJa(slots) {
+                if (!slots || slots.length === 0) return '-';
+                const seen = new Set();
+                return slots.map(s => slotJa[s] || s).filter(s => {
+                    if (seen.has(s)) return false;
+                    seen.add(s);
+                    return true;
+                }).join(' ');
+            }
+
             function jobsToKanji(jobs) {
                 if (!jobs || jobs.length === 0) return '-';
                 if (jobs.length === 22) return 'All Jobs';
@@ -541,7 +558,7 @@
                     <td>${item.level !== undefined ? item.level : '-'}</td>
                     <td>${item.item_level !== undefined ? item.item_level : '-'}</td>
                     <td class="jobs-list">${jobsToKanji(item.jobs)}</td>
-                    <td class="slots-list">${(item.slots || []).join(', ')}</td>
+                    <td class="slots-list">${slotsToJa(item.slots)}</td>
                     <td class="description">${item.description_ja || ''}</td>
                 `;
 

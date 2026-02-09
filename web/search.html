@@ -562,7 +562,7 @@
                     <td>${item.item_level !== undefined ? item.item_level : '-'}</td>
                     <td class="jobs-list">${jobsToKanji(item.jobs)}</td>
                     <td class="slots-list">${slotsToJa(item.slots)}</td>
-                    <td class="description">${item.description_ja || ''}</td>
+                    <td class="description">${(item.description_ja || '').replace(/\\n/g, '\n')}</td>
                 `;
 
                 tbody.appendChild(row);

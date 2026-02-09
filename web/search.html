@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>FFXI Equipment Search</title>
+    <title>FFXI 装備検索</title>
     <style>
         * {
             box-sizing: border-box;
@@ -259,100 +259,100 @@
 <body>
     <div class="container">
         <nav class="nav">
-            <a href="index.html">Status Calculator</a>
-            <a href="search.html">Equipment Search</a>
+            <a href="index.html">ステータス計算</a>
+            <a href="search.html">装備検索</a>
         </nav>
 
-        <h1>FFXI Equipment Search</h1>
+        <h1>FFXI 装備検索</h1>
 
         <div class="search-section">
             <div class="search-row">
-                <input type="text" id="searchQuery" class="search-input" placeholder="Search by name (EN/JA)...">
+                <input type="text" id="searchQuery" class="search-input" placeholder="装備名で検索...">
                 <select id="slotsFilter">
-                    <option value="">All Slots</option>
-                    <option value="main">Main</option>
-                    <option value="sub">Sub</option>
-                    <option value="range">Range</option>
-                    <option value="ammo">Ammo</option>
-                    <option value="head">Head</option>
-                    <option value="body">Body</option>
-                    <option value="hands">Hands</option>
-                    <option value="legs">Legs</option>
-                    <option value="feet">Feet</option>
-                    <option value="neck">Neck</option>
-                    <option value="waist">Waist</option>
-                    <option value="ear1">Ear</option>
-                    <option value="ring1">Ring</option>
-                    <option value="back">Back</option>
+                    <option value="">全スロット</option>
+                    <option value="main">メイン</option>
+                    <option value="sub">サブ</option>
+                    <option value="range">遠隔</option>
+                    <option value="ammo">矢弾</option>
+                    <option value="head">頭</option>
+                    <option value="body">胴</option>
+                    <option value="hands">両手</option>
+                    <option value="legs">両脚</option>
+                    <option value="feet">両足</option>
+                    <option value="neck">首</option>
+                    <option value="waist">腰</option>
+                    <option value="ear1">耳</option>
+                    <option value="ring1">指</option>
+                    <option value="back">背</option>
                 </select>
                 <select id="jobsFilter">
-                    <option value="">All Jobs</option>
-                    <option value="WAR">WAR</option>
-                    <option value="MNK">MNK</option>
-                    <option value="WHM">WHM</option>
-                    <option value="BLM">BLM</option>
-                    <option value="RDM">RDM</option>
-                    <option value="THF">THF</option>
-                    <option value="PLD">PLD</option>
-                    <option value="DRK">DRK</option>
-                    <option value="BST">BST</option>
-                    <option value="BRD">BRD</option>
-                    <option value="RNG">RNG</option>
-                    <option value="SAM">SAM</option>
-                    <option value="NIN">NIN</option>
-                    <option value="DRG">DRG</option>
-                    <option value="SMN">SMN</option>
-                    <option value="BLU">BLU</option>
-                    <option value="COR">COR</option>
-                    <option value="PUP">PUP</option>
-                    <option value="DNC">DNC</option>
-                    <option value="SCH">SCH</option>
-                    <option value="GEO">GEO</option>
-                    <option value="RUN">RUN</option>
+                    <option value="">全ジョブ</option>
+                    <option value="WAR">戦士</option>
+                    <option value="MNK">モンク</option>
+                    <option value="WHM">白魔道士</option>
+                    <option value="BLM">黒魔道士</option>
+                    <option value="RDM">赤魔道士</option>
+                    <option value="THF">シーフ</option>
+                    <option value="PLD">ナイト</option>
+                    <option value="DRK">暗黒騎士</option>
+                    <option value="BST">獣使い</option>
+                    <option value="BRD">吟遊詩人</option>
+                    <option value="RNG">狩人</option>
+                    <option value="SAM">侍</option>
+                    <option value="NIN">忍者</option>
+                    <option value="DRG">竜騎士</option>
+                    <option value="SMN">召喚士</option>
+                    <option value="BLU">青魔道士</option>
+                    <option value="COR">コルセア</option>
+                    <option value="PUP">からくり士</option>
+                    <option value="DNC">踊り子</option>
+                    <option value="SCH">学者</option>
+                    <option value="GEO">風水士</option>
+                    <option value="RUN">ルーンフェンサー</option>
                 </select>
             </div>
 
             <div class="filters-section">
                 <div class="filters-header">
-                    <h3>Filters</h3>
-                    <button class="btn btn-secondary" id="addFilterBtn">+ Add Filter</button>
+                    <h3>フィルター</h3>
+                    <button class="btn btn-secondary" id="addFilterBtn">+ フィルター追加</button>
                 </div>
                 <div id="filtersContainer"></div>
             </div>
 
             <div class="sort-section">
-                <label>Sort by:</label>
+                <label>ソート:</label>
                 <select id="sortBy">
                     <option value="id">ID</option>
-                    <option value="en">Name (EN)</option>
-                    <option value="ja">Name (JA)</option>
-                    <option value="level">Level</option>
-                    <option value="item_level">Item Level</option>
-                    <option value="damage">Damage</option>
-                    <option value="delay">Delay</option>
-                    <option value="category">Category</option>
-                    <option value="desc_stat">Description Stat</option>
+                    <option value="en">名前(EN)</option>
+                    <option value="ja">名前(JA)</option>
+                    <option value="level">Lv</option>
+                    <option value="item_level">iLv</option>
+                    <option value="damage">D値</option>
+                    <option value="delay">隔</option>
+                    <option value="category">カテゴリ</option>
+                    <option value="desc_stat">説明文ステータス</option>
                 </select>
-                <input type="text" id="descStatInput" placeholder="e.g. STR, Attack" style="display: none; width: 100px;">
+                <input type="text" id="descStatInput" placeholder="例: STR, 攻" style="display: none; width: 100px;">
                 <select id="sortOrder">
-                    <option value="asc">Ascending</option>
-                    <option value="desc">Descending</option>
+                    <option value="asc">昇順</option>
+                    <option value="desc">降順</option>
                 </select>
-                <button class="btn btn-primary" id="searchBtn">Search</button>
+                <button class="btn btn-primary" id="searchBtn">検索</button>
             </div>
         </div>
 
         <div class="results-section">
             <div class="results-header">
-                <span class="results-count" id="resultsCount">Loading...</span>
+                <span class="results-count" id="resultsCount">読み込み中...</span>
             </div>
             <div id="resultsContainer">
-                <div class="loading">Loading items data...</div>
+                <div class="loading">データを読み込み中...</div>
             </div>
             <div class="pagination" id="pagination" style="display: none;">
-                <button id="prevBtn">Previous</button>
+                <button id="prevBtn">前へ</button>
                 <span class="page-info" id="pageInfo"></span>
-                <button id="nextBtn">Next</button>
+                <button id="nextBtn">次へ</button>
             </div>
         </div>
     </div>
@@ -387,7 +387,7 @@
                 await itemSearch.load();
                 performSearch();
             } catch (error) {
-                resultsContainer.innerHTML = `<div class="error">Failed to load data: ${error.message}</div>`;
+                resultsContainer.innerHTML = `<div class="error">データの読み込みに失敗しました: ${error.message}</div>`;
             }
         }
 
@@ -414,7 +414,7 @@
             const valueInput = document.createElement('input');
             valueInput.type = 'text';
             valueInput.className = 'filter-value';
-            valueInput.placeholder = 'Value';
+            valueInput.placeholder = '値';
 
             const removeBtn = document.createElement('button');
             removeBtn.className = 'btn btn-danger';
@@ -483,12 +483,12 @@
 
         function renderResults(results) {
             if (results.items.length === 0) {
-                resultsContainer.innerHTML = '<div class="loading">No items found</div>';
-                resultsCount.textContent = '0 items found';
+                resultsContainer.innerHTML = '<div class="loading">該当する装備がありません</div>';
+                resultsCount.textContent = '0 件';
                 return;
             }
 
-            resultsCount.textContent = `${results.total.toLocaleString()} items found`;
+            resultsCount.textContent = `${results.total.toLocaleString()} 件`;
 
             const table = document.createElement('table');
             table.className = 'results-table';
@@ -497,12 +497,12 @@
             const thead = document.createElement('thead');
             const headerRow = document.createElement('tr');
             const columns = [
-                { key: 'ja', label: 'Name' },
+                { key: 'ja', label: '名前' },
                 { key: 'level', label: 'Lv' },
                 { key: 'item_level', label: 'iLv' },
-                { key: 'jobs', label: 'Jobs' },
-                { key: 'slots', label: 'Slots' },
-                { key: 'description_ja', label: 'Description' },
+                { key: 'jobs', label: 'ジョブ' },
+                { key: 'slots', label: 'スロット' },
+                { key: 'description_ja', label: '説明' },
             ];
 
             // Job abbreviation to Japanese kanji mapping
@@ -532,7 +532,7 @@
 
             function jobsToKanji(jobs) {
                 if (!jobs || jobs.length === 0) return '-';
-                if (jobs.length === 22) return 'All Jobs';
+                if (jobs.length === 22) return '全ジョブ';
                 return jobs.map(j => jobKanji[j] || j).join('');
             }
 

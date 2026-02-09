@@ -202,6 +202,8 @@ class ItemSearch {
      * @param {string} options.sortBy Property to sort by
      * @param {string} options.descStat Stat name for description sorting
      * @param {string} options.sortOrder 'asc' or 'desc'
+     * @param {boolean} options.ilv119Only If true, filter by item_level 119
+     * @param {Array} options.ilv119Slots Slots that support iLv119 filtering
      * @param {number} options.limit Max results to return
      * @param {number} options.offset Offset for pagination
      */
@@ -214,6 +216,8 @@ class ItemSearch {
             sortBy = 'id',
             descStat = '',
             sortOrder = 'asc',
+            ilv119Only = false,
+            ilv119Slots = [],
             limit = 50,
             offset = 0
         } = options;
@@ -245,6 +249,27 @@ class ItemSearch {
             results = results.filter(item =>
                 item.jobs && item.jobs.includes(job)
             );
+        }
+
+        // iLv119 filter
+        if (ilv119Only && ilv119Slots.length > 0) {
+            if (slot) {
+                // Specific slot selected: filter by item_level 119
+                results = results.filter(item => item.item_level === 119);
+            } else {
+                // All slots: apply iLv119 filter only to items with ilv119-applicable slots
+                results = results.filter(item => {
+                    if (!item.slots || item.slots.length === 0) return true;
+                    // Check if item has any slot in ilv119Slots
+                    const hasIlv119Slot = item.slots.some(s => ilv119Slots.includes(s));
+                    if (hasIlv119Slot) {
+                        // Require item_level 119 for items with ilv119-applicable slots
+                        return item.item_level === 119;
+                    }
+                    // Include items that don't have any ilv119-applicable slots
+                    return true;
+                });
+            }
         }
 
         // Apply custom filters

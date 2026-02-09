@@ -317,6 +317,10 @@
                     <option value="GEO">風</option>
                     <option value="RUN">剣</option>
                 </select>
+                <label id="ilv119Label" style="display: flex; align-items: center; gap: 5px; cursor: pointer;">
+                    <input type="checkbox" id="ilv119Filter" checked>
+                    <span>iLv119のみ</span>
+                </label>
             </div>
 
             <div class="filters-section">
@@ -371,6 +375,8 @@
         const searchQuery = document.getElementById('searchQuery');
         const slotsFilter = document.getElementById('slotsFilter');
         const jobsFilter = document.getElementById('jobsFilter');
+        const ilv119Filter = document.getElementById('ilv119Filter');
+        const ilv119Label = document.getElementById('ilv119Label');
         const sortBy = document.getElementById('sortBy');
         const descStatInput = document.getElementById('descStatInput');
         const sortOrder = document.getElementById('sortOrder');
@@ -384,9 +390,20 @@
         const nextBtn = document.getElementById('nextBtn');
         const pageInfo = document.getElementById('pageInfo');
 
+        // Slots that support iLv119 filter
+        const ILV119_SLOTS = ['main', 'sub', 'range', 'head', 'body', 'hands', 'legs', 'feet'];
+
+        function updateIlv119Visibility() {
+            const selectedSlot = slotsFilter.value;
+            // Show checkbox for: empty (all slots) or slots that support iLv119
+            const showCheckbox = selectedSlot === '' || ILV119_SLOTS.includes(selectedSlot);
+            ilv119Label.style.display = showCheckbox ? 'flex' : 'none';
+        }
+
         // Initialize
         async function init() {
             try {
+                updateIlv119Visibility();
                 await itemSearch.load();
                 performSearch();
             } catch (error) {
@@ -475,6 +492,8 @@
                 sortBy: sortBy.value,
                 descStat: descStatInput.value,
                 sortOrder: sortOrder.value,
+                ilv119Only: ilv119Filter.checked && ilv119Label.style.display !== 'none',
+                ilv119Slots: ILV119_SLOTS,
                 limit: pageSize,
                 offset: currentOffset
             });
@@ -658,8 +677,12 @@
             if (e.key === 'Enter') performSearch();
         };
 
-        slotsFilter.onchange = () => performSearch();
+        slotsFilter.onchange = () => {
+            updateIlv119Visibility();
+            performSearch();
+        };
         jobsFilter.onchange = () => performSearch();
+        ilv119Filter.onchange = () => performSearch();
         sortBy.onchange = () => {
             descStatInput.style.display = sortBy.value === 'desc_stat' ? 'inline-block' : 'none';
             performSearch();

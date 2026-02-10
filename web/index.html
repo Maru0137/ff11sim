@@ -256,6 +256,114 @@
             text-align: center;
             padding: 20px;
         }
+        /* Equipment Set */
+        .equip-slot-row {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin-bottom: 6px;
+        }
+        .equip-slot-label {
+            width: 70px;
+            flex-shrink: 0;
+            font-size: 12px;
+            color: #aaa;
+            text-align: right;
+        }
+        .equip-slot-input-wrapper {
+            position: relative;
+            flex: 1;
+        }
+        .equip-slot-search {
+            width: 100%;
+            padding: 5px 8px;
+            font-size: 12px;
+            border: 1px solid #444;
+            border-radius: 4px;
+            background: #0f0f23;
+            color: #eee;
+        }
+        .equip-slot-search:focus {
+            outline: none;
+            border-color: #f0c040;
+        }
+        .equip-slot-dropdown {
+            position: absolute;
+            top: 100%;
+            left: 0;
+            right: 0;
+            max-height: 200px;
+            overflow-y: auto;
+            background: #0f0f23;
+            border: 1px solid #f0c040;
+            border-radius: 0 0 4px 4px;
+            z-index: 100;
+        }
+        .equip-slot-dropdown-item {
+            padding: 6px 8px;
+            font-size: 12px;
+            cursor: pointer;
+            border-bottom: 1px solid #222;
+        }
+        .equip-slot-dropdown-item:hover {
+            background: #1a1a3e;
+        }
+        .equip-slot-selected {
+            flex: 1;
+            font-size: 12px;
+            color: #88c0d0;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+        .equip-slot-clear {
+            padding: 2px 6px;
+            font-size: 11px;
+            background: #333;
+            color: #aaa;
+            border: none;
+            border-radius: 3px;
+            cursor: pointer;
+        }
+        .equip-slot-clear:hover {
+            background: #f44336;
+            color: #fff;
+        }
+        /* Status table */
+        .status-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 15px;
+        }
+        .status-table th {
+            color: #f0c040;
+            font-size: 12px;
+            padding: 6px 8px;
+            text-align: right;
+            border-bottom: 2px solid #444;
+        }
+        .status-table th:first-child {
+            text-align: left;
+        }
+        .status-table td {
+            padding: 5px 8px;
+            text-align: right;
+            border-bottom: 1px solid #333;
+            font-size: 13px;
+        }
+        .status-table td:first-child {
+            text-align: left;
+            color: #aaa;
+        }
+        .status-table .base-val { color: #4fc3f7; }
+        .status-table .equip-val { color: #88c0d0; }
+        .status-table .total-val { color: #f0c040; font-weight: bold; }
+        .combat-stats-section {
+            margin-top: 10px;
+        }
+        .combat-stats-section h3 {
+            margin: 10px 0 8px 0;
+        }
         @media (max-width: 600px) {
             .container {
                 grid-template-columns: 1fr;
@@ -268,6 +376,7 @@
 
     <div class="tabs">
         <button class="tab-btn active" data-tab="tab-characters">Character Management</button>
+        <button class="tab-btn" data-tab="tab-equipsets">Equipment Set</button>
         <button class="tab-btn" data-tab="tab-calc">Status Calculation</button>
     </div>
 
@@ -363,7 +472,37 @@
         </div>
     </div>
 
-    <!-- Tab 2: Status Calculation (from profile) -->
+    <!-- Tab 2: Equipment Set -->
+    <div id="tab-equipsets" class="tab-content">
+        <div class="container">
+            <div>
+                <h2>Equipment Sets</h2>
+                <ul class="char-list" id="equipSetList">
+                    <li class="empty-msg">No equipment sets registered</li>
+                </ul>
+                <div class="btn-group">
+                    <button class="btn btn-primary" id="btnNewEquipSet">New Equipment Set</button>
+                </div>
+            </div>
+
+            <div id="equipEditSection" class="hidden">
+                <h2 id="equipEditTitle">New Equipment Set</h2>
+                <div class="form-group">
+                    <label for="equipSetName">Name</label>
+                    <input type="text" id="equipSetName" placeholder="Equipment set name">
+                </div>
+
+                <div id="equipSlotsContainer"></div>
+
+                <div class="btn-group">
+                    <button class="btn btn-primary" id="btnSaveEquipSet">Save</button>
+                    <button class="btn btn-danger" id="btnCancelEquipEdit">Cancel</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Tab 3: Status Calculation (from profile) -->
     <div id="tab-calc" class="tab-content">
         <div class="container">
             <div class="input-section">
@@ -390,6 +529,13 @@
                     </select>
                 </div>
 
+                <div class="form-group">
+                    <label for="calcEquipSet">Equipment Set</label>
+                    <select id="calcEquipSet">
+                        <option value="">None</option>
+                    </select>
+                </div>
+
                 <div id="calcInfo" class="support-section hidden">
                     <p style="margin:0;color:#aaa;font-size:13px;" id="calcInfoText"></p>
                 </div>
@@ -397,52 +543,66 @@
 
             <div class="result-section">
                 <h2>Status</h2>
-                <div class="stat-grid">
-                    <div class="stat-item">
-                        <span class="stat-name">HP</span>
-                        <span class="stat-value hp" id="calcStatHp">-</span>
-                    </div>
-                    <div class="stat-item">
-                        <span class="stat-name">MP</span>
-                        <span class="stat-value mp" id="calcStatMp">-</span>
-                    </div>
-                    <div class="stat-item">
-                        <span class="stat-name">STR</span>
-                        <span class="stat-value" id="calcStatStr">-</span>
-                    </div>
-                    <div class="stat-item">
-                        <span class="stat-name">DEX</span>
-                        <span class="stat-value" id="calcStatDex">-</span>
-                    </div>
-                    <div class="stat-item">
-                        <span class="stat-name">VIT</span>
-                        <span class="stat-value" id="calcStatVit">-</span>
-                    </div>
-                    <div class="stat-item">
-                        <span class="stat-name">AGI</span>
-                        <span class="stat-value" id="calcStatAgi">-</span>
-                    </div>
-                    <div class="stat-item">
-                        <span class="stat-name">INT</span>
-                        <span class="stat-value" id="calcStatInt">-</span>
-                    </div>
-                    <div class="stat-item">
-                        <span class="stat-name">MND</span>
-                        <span class="stat-value" id="calcStatMnd">-</span>
-                    </div>
-                    <div class="stat-item">
-                        <span class="stat-name">CHR</span>
-                        <span class="stat-value" id="calcStatChr">-</span>
-                    </div>
+                <table class="status-table">
+                    <thead>
+                        <tr>
+                            <th>Stat</th>
+                            <th>Base</th>
+                            <th>Equip</th>
+                            <th>Total</th>
+                        </tr>
+                    </thead>
+                    <tbody id="statusTableBody">
+                        <tr><td>HP</td><td class="base-val" id="calcBaseHp">-</td><td class="equip-val" id="calcEquipHp">-</td><td class="total-val" id="calcTotalHp">-</td></tr>
+                        <tr><td>MP</td><td class="base-val" id="calcBaseMp">-</td><td class="equip-val" id="calcEquipMp">-</td><td class="total-val" id="calcTotalMp">-</td></tr>
+                        <tr><td>STR</td><td class="base-val" id="calcBaseStr">-</td><td class="equip-val" id="calcEquipStr">-</td><td class="total-val" id="calcTotalStr">-</td></tr>
+                        <tr><td>DEX</td><td class="base-val" id="calcBaseDex">-</td><td class="equip-val" id="calcEquipDex">-</td><td class="total-val" id="calcTotalDex">-</td></tr>
+                        <tr><td>VIT</td><td class="base-val" id="calcBaseVit">-</td><td class="equip-val" id="calcEquipVit">-</td><td class="total-val" id="calcTotalVit">-</td></tr>
+                        <tr><td>AGI</td><td class="base-val" id="calcBaseAgi">-</td><td class="equip-val" id="calcEquipAgi">-</td><td class="total-val" id="calcTotalAgi">-</td></tr>
+                        <tr><td>INT</td><td class="base-val" id="calcBaseInt">-</td><td class="equip-val" id="calcEquipInt">-</td><td class="total-val" id="calcTotalInt">-</td></tr>
+                        <tr><td>MND</td><td class="base-val" id="calcBaseMnd">-</td><td class="equip-val" id="calcEquipMnd">-</td><td class="total-val" id="calcTotalMnd">-</td></tr>
+                        <tr><td>CHR</td><td class="base-val" id="calcBaseChr">-</td><td class="equip-val" id="calcEquipChr">-</td><td class="total-val" id="calcTotalChr">-</td></tr>
+                    </tbody>
+                </table>
+
+                <div class="combat-stats-section">
+                    <h3>Combat Stats (Equipment)</h3>
+                    <table class="status-table">
+                        <thead>
+                            <tr><th>Stat</th><th>Value</th></tr>
+                        </thead>
+                        <tbody id="combatStatsBody">
+                            <tr><td>DEF</td><td class="equip-val" id="calcCombatDef">-</td></tr>
+                            <tr><td>Attack</td><td class="equip-val" id="calcCombatAttack">-</td></tr>
+                            <tr><td>Accuracy</td><td class="equip-val" id="calcCombatAccuracy">-</td></tr>
+                            <tr><td>Evasion</td><td class="equip-val" id="calcCombatEvasion">-</td></tr>
+                            <tr><td>R.Attack</td><td class="equip-val" id="calcCombatRangedAttack">-</td></tr>
+                            <tr><td>R.Accuracy</td><td class="equip-val" id="calcCombatRangedAccuracy">-</td></tr>
+                            <tr><td>M.Atk.Bonus</td><td class="equip-val" id="calcCombatMagicAttack">-</td></tr>
+                            <tr><td>M.Accuracy</td><td class="equip-val" id="calcCombatMagicAccuracy">-</td></tr>
+                            <tr><td>M.Evasion</td><td class="equip-val" id="calcCombatMagicEvasion">-</td></tr>
+                            <tr><td>M.Damage</td><td class="equip-val" id="calcCombatMagicDamage">-</td></tr>
+                            <tr><td>Haste</td><td class="equip-val" id="calcCombatHaste">-</td></tr>
+                            <tr><td>Store TP</td><td class="equip-val" id="calcCombatStoreTp">-</td></tr>
+                            <tr><td>Double Atk.</td><td class="equip-val" id="calcCombatDoubleAttack">-</td></tr>
+                            <tr><td>Triple Atk.</td><td class="equip-val" id="calcCombatTripleAttack">-</td></tr>
+                            <tr><td>Crit.Rate</td><td class="equip-val" id="calcCombatCritRate">-</td></tr>
+                            <tr><td>WS Damage</td><td class="equip-val" id="calcCombatWsDamage">-</td></tr>
+                        </tbody>
+                    </table>
                 </div>
             </div>
         </div>
     </div>
 
+    <script src="js/item-search.js"></script>
+    <script src="js/equip-stats.js"></script>
     <script type="module">
         import init, { calculate_status_from_profile } from './pkg/ff11sim.js';
 
         let wasmReady = false;
+        const itemSearch = new ItemSearch();
+        let itemsLoaded = false;
 
         const JOBS = [
             { key: 'War', name: 'Warrior' },
@@ -473,8 +633,28 @@
             'Hum': 'Hume', 'Elv': 'Elvaan', 'Tar': 'Tarutaru', 'Mit': 'Mithra', 'Gal': 'Galka'
         };
 
+        const EQUIPMENT_SLOTS = [
+            { key: 'main',  label: 'Main' },
+            { key: 'sub',   label: 'Sub' },
+            { key: 'range', label: 'Range' },
+            { key: 'ammo',  label: 'Ammo' },
+            { key: 'head',  label: 'Head' },
+            { key: 'body',  label: 'Body' },
+            { key: 'hands', label: 'Hands' },
+            { key: 'legs',  label: 'Legs' },
+            { key: 'feet',  label: 'Feet' },
+            { key: 'neck',  label: 'Neck' },
+            { key: 'waist', label: 'Waist' },
+            { key: 'ear1',  label: 'Ear 1' },
+            { key: 'ear2',  label: 'Ear 2' },
+            { key: 'ring1', label: 'Ring 1' },
+            { key: 'ring2', label: 'Ring 2' },
+            { key: 'back',  label: 'Back' },
+        ];
+
         // --- localStorage helpers ---
         const STORAGE_KEY = 'ff11sim_characters';
+        const EQUIP_STORAGE_KEY = 'ff11sim_equipsets';
 
         function loadCharacters() {
             try {
@@ -487,6 +667,19 @@
 
         function saveCharacters(characters) {
             localStorage.setItem(STORAGE_KEY, JSON.stringify(characters));
+        }
+
+        function loadEquipSets() {
+            try {
+                const data = localStorage.getItem(EQUIP_STORAGE_KEY);
+                return data ? JSON.parse(data) : [];
+            } catch {
+                return [];
+            }
+        }
+
+        function saveEquipSets(sets) {
+            localStorage.setItem(EQUIP_STORAGE_KEY, JSON.stringify(sets));
         }
 
         // --- Tab switching ---
@@ -503,7 +696,7 @@
         // Tab 1: Character Management
         // ==============================================
 
-        let editingCharName = null; // null = new character, string = editing existing
+        let editingCharName = null;
 
         function buildJobLevelTable() {
             const tbody = document.getElementById('jobLevelTable');
@@ -541,7 +734,6 @@
                     list.appendChild(li);
                 });
             }
-            // Update calc tab character selector
             updateCalcCharSelector();
         }
 
@@ -644,7 +836,6 @@
             if (editingCharName === name) hideEditForm();
         }
 
-        // Event delegation for char list
         document.getElementById('charList').addEventListener('click', (e) => {
             const editBtn = e.target.closest('[data-edit]');
             const deleteBtn = e.target.closest('[data-delete]');
@@ -664,7 +855,254 @@
         document.getElementById('btnCancelEdit').addEventListener('click', hideEditForm);
 
         // ==============================================
-        // Tab 2: Status Calculation from Profile
+        // Tab 2: Equipment Set Management
+        // ==============================================
+
+        let editingEquipSetName = null;
+        let currentEquipSlots = {}; // { slotKey: { item_id, name_en, name_ja } | null }
+
+        function createEmptySlots() {
+            const slots = {};
+            EQUIPMENT_SLOTS.forEach(s => { slots[s.key] = null; });
+            return slots;
+        }
+
+        function buildEquipSlotsUI() {
+            const container = document.getElementById('equipSlotsContainer');
+            container.innerHTML = '';
+            EQUIPMENT_SLOTS.forEach(slot => {
+                const row = document.createElement('div');
+                row.className = 'equip-slot-row';
+
+                const label = document.createElement('span');
+                label.className = 'equip-slot-label';
+                label.textContent = slot.label;
+
+                const inputWrapper = document.createElement('div');
+                inputWrapper.className = 'equip-slot-input-wrapper';
+
+                const input = document.createElement('input');
+                input.type = 'text';
+                input.className = 'equip-slot-search';
+                input.dataset.slot = slot.key;
+                input.placeholder = 'Search...';
+
+                const dropdown = document.createElement('div');
+                dropdown.className = 'equip-slot-dropdown hidden';
+                dropdown.dataset.slot = slot.key;
+
+                inputWrapper.appendChild(input);
+                inputWrapper.appendChild(dropdown);
+
+                const selected = document.createElement('span');
+                selected.className = 'equip-slot-selected';
+                selected.dataset.slot = slot.key;
+                selected.textContent = 'None';
+
+                const clearBtn = document.createElement('button');
+                clearBtn.className = 'equip-slot-clear';
+                clearBtn.dataset.slot = slot.key;
+                clearBtn.textContent = '\u00d7';
+
+                row.appendChild(label);
+                row.appendChild(inputWrapper);
+                row.appendChild(selected);
+                row.appendChild(clearBtn);
+                container.appendChild(row);
+
+                // Setup inline search
+                setupSlotSearch(slot.key, input, dropdown);
+
+                // Clear button
+                clearBtn.addEventListener('click', () => {
+                    currentEquipSlots[slot.key] = null;
+                    selected.textContent = 'None';
+                    input.value = '';
+                });
+            });
+        }
+
+        function setupSlotSearch(slotKey, input, dropdown) {
+            let debounceTimer = null;
+
+            input.addEventListener('input', () => {
+                clearTimeout(debounceTimer);
+                debounceTimer = setTimeout(() => {
+                    const query = input.value.trim();
+                    if (query.length < 2 || !itemsLoaded) {
+                        dropdown.classList.add('hidden');
+                        return;
+                    }
+                    const results = itemSearch.search({
+                        query: query,
+                        slot: slotKey,
+                        limit: 20,
+                    });
+                    renderSlotDropdown(dropdown, results.items, slotKey, input);
+                }, 200);
+            });
+
+            input.addEventListener('blur', () => {
+                setTimeout(() => dropdown.classList.add('hidden'), 200);
+            });
+
+            input.addEventListener('focus', () => {
+                if (input.value.trim().length >= 2 && dropdown.children.length > 0) {
+                    dropdown.classList.remove('hidden');
+                }
+            });
+        }
+
+        function renderSlotDropdown(dropdown, items, slotKey, input) {
+            dropdown.innerHTML = '';
+            if (items.length === 0) {
+                dropdown.classList.add('hidden');
+                return;
+            }
+            items.forEach(item => {
+                const div = document.createElement('div');
+                div.className = 'equip-slot-dropdown-item';
+                div.textContent = `${item.ja || item.en} (${item.en})`;
+                div.addEventListener('mousedown', (e) => {
+                    e.preventDefault();
+                    selectSlotItem(slotKey, item);
+                    dropdown.classList.add('hidden');
+                    input.value = '';
+                });
+                dropdown.appendChild(div);
+            });
+            dropdown.classList.remove('hidden');
+        }
+
+        function selectSlotItem(slotKey, item) {
+            currentEquipSlots[slotKey] = {
+                item_id: item.id,
+                name_en: item.en,
+                name_ja: item.ja,
+            };
+            const selectedSpan = document.querySelector(`.equip-slot-selected[data-slot="${slotKey}"]`);
+            if (selectedSpan) {
+                selectedSpan.textContent = item.ja || item.en;
+            }
+        }
+
+        function renderEquipSetList() {
+            const sets = loadEquipSets();
+            const list = document.getElementById('equipSetList');
+            if (sets.length === 0) {
+                list.innerHTML = '<li class="empty-msg">No equipment sets registered</li>';
+            } else {
+                list.innerHTML = '';
+                sets.forEach(es => {
+                    const li = document.createElement('li');
+                    const count = Object.values(es.slots).filter(v => v !== null).length;
+                    li.innerHTML = `
+                        <span>
+                            <span class="char-info">${es.name}</span>
+                            <span class="char-race">${count} items</span>
+                        </span>
+                        <span class="char-actions">
+                            <button class="btn btn-primary btn-sm" data-equip-edit="${es.name}">Edit</button>
+                            <button class="btn btn-danger btn-sm" data-equip-delete="${es.name}">Delete</button>
+                        </span>
+                    `;
+                    list.appendChild(li);
+                });
+            }
+            updateCalcEquipSetSelector();
+        }
+
+        function showEquipSetEditForm(equipSet) {
+            const section = document.getElementById('equipEditSection');
+            section.classList.remove('hidden');
+
+            if (equipSet) {
+                editingEquipSetName = equipSet.name;
+                document.getElementById('equipEditTitle').textContent = 'Edit Equipment Set';
+                document.getElementById('equipSetName').value = equipSet.name;
+                currentEquipSlots = { ...equipSet.slots };
+                // Update display for each slot
+                EQUIPMENT_SLOTS.forEach(slot => {
+                    const data = currentEquipSlots[slot.key];
+                    const selectedSpan = document.querySelector(`.equip-slot-selected[data-slot="${slot.key}"]`);
+                    if (selectedSpan) {
+                        selectedSpan.textContent = data ? (data.name_ja || data.name_en) : 'None';
+                    }
+                });
+            } else {
+                editingEquipSetName = null;
+                document.getElementById('equipEditTitle').textContent = 'New Equipment Set';
+                document.getElementById('equipSetName').value = '';
+                currentEquipSlots = createEmptySlots();
+                EQUIPMENT_SLOTS.forEach(slot => {
+                    const selectedSpan = document.querySelector(`.equip-slot-selected[data-slot="${slot.key}"]`);
+                    if (selectedSpan) selectedSpan.textContent = 'None';
+                    const input = document.querySelector(`.equip-slot-search[data-slot="${slot.key}"]`);
+                    if (input) input.value = '';
+                });
+            }
+        }
+
+        function hideEquipSetEditForm() {
+            document.getElementById('equipEditSection').classList.add('hidden');
+            editingEquipSetName = null;
+        }
+
+        function saveEquipSet() {
+            const name = document.getElementById('equipSetName').value.trim();
+            if (!name) {
+                alert('Please enter an equipment set name.');
+                return;
+            }
+
+            const sets = loadEquipSets();
+
+            if (editingEquipSetName) {
+                const idx = sets.findIndex(s => s.name === editingEquipSetName);
+                if (idx >= 0) {
+                    sets[idx] = { name, slots: { ...currentEquipSlots } };
+                }
+            } else {
+                if (sets.some(s => s.name === name)) {
+                    alert(`Equipment set "${name}" already exists.`);
+                    return;
+                }
+                sets.push({ name, slots: { ...currentEquipSlots } });
+            }
+
+            saveEquipSets(sets);
+            renderEquipSetList();
+            hideEquipSetEditForm();
+        }
+
+        function deleteEquipSet(name) {
+            if (!confirm(`Delete equipment set "${name}"?`)) return;
+            const sets = loadEquipSets().filter(s => s.name !== name);
+            saveEquipSets(sets);
+            renderEquipSetList();
+            if (editingEquipSetName === name) hideEquipSetEditForm();
+        }
+
+        document.getElementById('equipSetList').addEventListener('click', (e) => {
+            const editBtn = e.target.closest('[data-equip-edit]');
+            const deleteBtn = e.target.closest('[data-equip-delete]');
+            if (editBtn) {
+                const name = editBtn.dataset.equipEdit;
+                const sets = loadEquipSets();
+                const es = sets.find(s => s.name === name);
+                if (es) showEquipSetEditForm(es);
+            }
+            if (deleteBtn) {
+                deleteEquipSet(deleteBtn.dataset.equipDelete);
+            }
+        });
+
+        document.getElementById('btnNewEquipSet').addEventListener('click', () => showEquipSetEditForm(null));
+        document.getElementById('btnSaveEquipSet').addEventListener('click', saveEquipSet);
+        document.getElementById('btnCancelEquipEdit').addEventListener('click', hideEquipSetEditForm);
+
+        // ==============================================
+        // Tab 3: Status Calculation from Profile
         // ==============================================
 
         function updateCalcCharSelector() {
@@ -677,7 +1115,21 @@
                 opt.textContent = `${ch.name} (${RACE_NAMES[ch.race] || ch.race})`;
                 sel.appendChild(opt);
             });
-            // Restore selection if still valid
+            if (currentVal && [...sel.options].some(o => o.value === currentVal)) {
+                sel.value = currentVal;
+            }
+        }
+
+        function updateCalcEquipSetSelector() {
+            const sel = document.getElementById('calcEquipSet');
+            const currentVal = sel.value;
+            sel.innerHTML = '<option value="">None</option>';
+            loadEquipSets().forEach(es => {
+                const opt = document.createElement('option');
+                opt.value = es.name;
+                opt.textContent = es.name;
+                sel.appendChild(opt);
+            });
             if (currentVal && [...sel.options].some(o => o.value === currentVal)) {
                 sel.value = currentVal;
             }
@@ -713,34 +1165,101 @@
             });
         }
 
+        function calculateEquipSetBonuses(equipSetName) {
+            if (!equipSetName || !itemsLoaded) return getEmptyStats();
+
+            const sets = loadEquipSets();
+            const set = sets.find(s => s.name === equipSetName);
+            if (!set) return getEmptyStats();
+
+            const statsArray = [];
+            for (const slotKey of Object.keys(set.slots)) {
+                const slotData = set.slots[slotKey];
+                if (!slotData) continue;
+
+                const item = itemSearch.items.find(i => i.id === slotData.item_id);
+                if (!item || !item.description_en) continue;
+
+                statsArray.push(extractAllStats(item.description_en));
+            }
+
+            return sumStats(statsArray);
+        }
+
+        function formatBonus(value) {
+            if (!value || value === 0) return '-';
+            return value > 0 ? `+${value}` : `${value}`;
+        }
+
+        function formatPctBonus(value) {
+            if (!value || value === 0) return '-';
+            return value > 0 ? `+${value}%` : `${value}%`;
+        }
+
+        const BASE_STATS = [
+            { key: 'Hp', resultKey: 'hp', equipKey: 'hp', pctKey: 'hp_pct' },
+            { key: 'Mp', resultKey: 'mp', equipKey: 'mp', pctKey: 'mp_pct' },
+            { key: 'Str', resultKey: 'str_', equipKey: 'str' },
+            { key: 'Dex', resultKey: 'dex', equipKey: 'dex' },
+            { key: 'Vit', resultKey: 'vit', equipKey: 'vit' },
+            { key: 'Agi', resultKey: 'agi', equipKey: 'agi' },
+            { key: 'Int', resultKey: 'int', equipKey: 'int' },
+            { key: 'Mnd', resultKey: 'mnd', equipKey: 'mnd' },
+            { key: 'Chr', resultKey: 'chr', equipKey: 'chr' },
+        ];
+
+        const COMBAT_STATS = [
+            { id: 'Def', key: 'def' },
+            { id: 'Attack', key: 'attack', pctKey: 'attack_pct' },
+            { id: 'Accuracy', key: 'accuracy' },
+            { id: 'Evasion', key: 'evasion' },
+            { id: 'RangedAttack', key: 'ranged_attack' },
+            { id: 'RangedAccuracy', key: 'ranged_accuracy' },
+            { id: 'MagicAttack', key: 'magic_attack' },
+            { id: 'MagicAccuracy', key: 'magic_accuracy' },
+            { id: 'MagicEvasion', key: 'magic_evasion' },
+            { id: 'MagicDamage', key: 'magic_damage' },
+            { id: 'Haste', key: 'haste_pct', isPct: true },
+            { id: 'StoreTp', key: 'store_tp' },
+            { id: 'DoubleAttack', key: 'double_attack_pct', isPct: true },
+            { id: 'TripleAttack', key: 'triple_attack_pct', isPct: true },
+            { id: 'CritRate', key: 'critical_hit_rate_pct', isPct: true },
+            { id: 'WsDamage', key: 'weapon_skill_damage_pct', isPct: true },
+        ];
+
+        function clearAllStats() {
+            BASE_STATS.forEach(s => {
+                document.getElementById(`calcBase${s.key}`).textContent = '-';
+                document.getElementById(`calcEquip${s.key}`).textContent = '-';
+                document.getElementById(`calcTotal${s.key}`).textContent = '-';
+            });
+            COMBAT_STATS.forEach(s => {
+                document.getElementById(`calcCombat${s.id}`).textContent = '-';
+            });
+            document.getElementById('calcInfo').classList.add('hidden');
+        }
+
         function updateCalcStatus() {
             if (!wasmReady) return;
 
             const charName = document.getElementById('calcChar').value;
             const mainJobKey = document.getElementById('calcMainJob').value;
 
-            const clearStats = () => {
-                ['Hp','Mp','Str','Dex','Vit','Agi','Int','Mnd','Chr'].forEach(s => {
-                    document.getElementById(`calcStat${s}`).textContent = '-';
-                });
-                document.getElementById('calcInfo').classList.add('hidden');
-            };
-
             if (!charName || !mainJobKey) {
-                clearStats();
+                clearAllStats();
                 return;
             }
 
             const characters = loadCharacters();
             const ch = characters.find(c => c.name === charName);
             if (!ch) {
-                clearStats();
+                clearAllStats();
                 return;
             }
 
             const supJobKey = document.getElementById('calcSupportJob').value || null;
+            const equipSetName = document.getElementById('calcEquipSet').value;
 
-            // Build profile data matching Rust's CharacterProfile serde format
             const profile = {
                 name: ch.name,
                 race: ch.race,
@@ -750,16 +1269,50 @@
 
             try {
                 const result = calculate_status_from_profile(profile, mainJobKey, supJobKey);
+                const equip = calculateEquipSetBonuses(equipSetName);
 
-                document.getElementById('calcStatHp').textContent = result.hp;
-                document.getElementById('calcStatMp').textContent = result.mp;
-                document.getElementById('calcStatStr').textContent = result.str_;
-                document.getElementById('calcStatDex').textContent = result.dex;
-                document.getElementById('calcStatVit').textContent = result.vit;
-                document.getElementById('calcStatAgi').textContent = result.agi;
-                document.getElementById('calcStatInt').textContent = result.int;
-                document.getElementById('calcStatMnd').textContent = result.mnd;
-                document.getElementById('calcStatChr').textContent = result.chr;
+                // Update base stats
+                BASE_STATS.forEach(s => {
+                    const baseVal = result[s.resultKey];
+                    const equipFlat = equip[s.equipKey] || 0;
+                    const equipPct = s.pctKey ? (equip[s.pctKey] || 0) : 0;
+
+                    let total = baseVal + equipFlat;
+                    if (equipPct !== 0) {
+                        total += Math.floor(baseVal * equipPct / 100);
+                    }
+
+                    document.getElementById(`calcBase${s.key}`).textContent = baseVal;
+
+                    let equipDisplay = '';
+                    if (equipFlat !== 0) equipDisplay = formatBonus(equipFlat);
+                    if (equipPct !== 0) {
+                        equipDisplay += (equipDisplay ? ' ' : '') + formatPctBonus(equipPct);
+                    }
+                    document.getElementById(`calcEquip${s.key}`).textContent = equipDisplay || '-';
+                    document.getElementById(`calcTotal${s.key}`).textContent = total;
+                });
+
+                // Update combat stats
+                COMBAT_STATS.forEach(s => {
+                    const val = equip[s.key] || 0;
+                    let display = '-';
+                    if (val !== 0) {
+                        if (s.isPct) {
+                            display = formatPctBonus(val);
+                        } else if (s.pctKey) {
+                            const pctVal = equip[s.pctKey] || 0;
+                            display = formatBonus(val);
+                            if (pctVal !== 0) display += ' ' + formatPctBonus(pctVal);
+                        } else {
+                            display = formatBonus(val);
+                        }
+                    } else if (s.pctKey) {
+                        const pctVal = equip[s.pctKey] || 0;
+                        if (pctVal !== 0) display = formatPctBonus(pctVal);
+                    }
+                    document.getElementById(`calcCombat${s.id}`).textContent = display;
+                });
 
                 // Show info
                 const mainJl = ch.job_levels[mainJobKey] || { level: 0, master_lv: 0 };
@@ -770,11 +1323,14 @@
                     const effectiveLv = Math.min(supJl.level, cap);
                     infoText += ` / ${supJobKey} Lv${effectiveLv}`;
                 }
+                if (equipSetName) {
+                    infoText += ` / ${equipSetName}`;
+                }
                 document.getElementById('calcInfoText').textContent = infoText;
                 document.getElementById('calcInfo').classList.remove('hidden');
             } catch (e) {
                 console.error('Error calculating status from profile:', e);
-                clearStats();
+                clearAllStats();
             }
         }
 
@@ -784,15 +1340,21 @@
         });
         document.getElementById('calcMainJob').addEventListener('change', updateCalcStatus);
         document.getElementById('calcSupportJob').addEventListener('change', updateCalcStatus);
+        document.getElementById('calcEquipSet').addEventListener('change', updateCalcStatus);
 
         // ==============================================
         // Initialize
         // ==============================================
         async function initWasm() {
-            await init();
+            await Promise.all([
+                init(),
+                itemSearch.load('./data/items.json').then(() => { itemsLoaded = true; }),
+            ]);
             wasmReady = true;
             buildJobLevelTable();
+            buildEquipSlotsUI();
             renderCharList();
+            renderEquipSetList();
         }
 
         initWasm();

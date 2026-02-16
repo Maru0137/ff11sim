@@ -578,24 +578,19 @@
                     normalized += fullToHalf[char] || char;
                 }
 
-                // Create pattern to match stat with value
-                const pattern = new RegExp(`(${statName}\\s*[+\\-]\\s*\\d+)`, 'gi');
-                const match = normalized.match(pattern);
+                // Single regex to match all patterns: "防77", "DEF:77", "STR+5", "DMG:+165"
+                const statUpper = statName.toUpperCase();
+                const normalizedUpper = normalized.toUpperCase();
+                const highlightRegex = new RegExp(`${statUpper}\\s*(?::\\s*)?[+\\-]?\\s*\\d+`, 'i');
+                const match = normalizedUpper.match(highlightRegex);
 
                 if (match) {
-                    // Find the original position in the description
-                    const normalizedUpper = normalized.toUpperCase();
-                    const statUpper = statName.toUpperCase();
-                    const idx = normalizedUpper.search(new RegExp(`${statUpper}\\s*[+\\-]\\s*\\d+`, 'i'));
-
-                    if (idx !== -1) {
-                        // Find the end of the match
-                        const matchLen = match[0].length;
-                        const before = description.substring(0, idx);
-                        const matched = description.substring(idx, idx + matchLen);
-                        const after = description.substring(idx + matchLen);
-                        return before + '<span class="stat-highlight">' + matched + '</span>' + after;
-                    }
+                    const idx = match.index;
+                    const matchLen = match[0].length;
+                    const before = description.substring(0, idx);
+                    const matched = description.substring(idx, idx + matchLen);
+                    const after = description.substring(idx + matchLen);
+                    return before + '<span class="stat-highlight">' + matched + '</span>' + after;
                 }
 
                 return description;

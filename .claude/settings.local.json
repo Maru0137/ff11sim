@@ -10,7 +10,8 @@
       "Bash(git push:*)",
       "Bash(cargo install:*)",
       "Bash(wasm-pack build:*)",
-      "Bash(python3:*)"
+      "Bash(python3:*)",
+      "Bash(git log:*)"
     ]
   }
 }

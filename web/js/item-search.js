@@ -170,23 +170,14 @@ class ItemSearch {
         }
         normalized = normalized.toUpperCase();
 
-        // Pattern: STAT+/-NUMBER or STAT NUMBER (with optional spaces)
-        // Match patterns like "STR+5", "STR +5", "STR5", "攻撃力+10"
-        const patterns = [
-            new RegExp(`${normalizedStat}\\s*[+]\\s*(\\d+)`, 'i'),
-            new RegExp(`${normalizedStat}\\s*[-]\\s*(\\d+)`, 'i'),
-        ];
-
-        for (const pattern of patterns) {
-            const match = normalized.match(pattern);
-            if (match) {
-                const value = parseInt(match[1], 10);
-                // Check if it's a negative pattern
-                if (pattern.source.includes('[-]')) {
-                    return -value;
-                }
-                return value;
-            }
+        // Single regex to match all patterns: "STR+5", "DEF:77", "DMG:+165", "防77"
+        // Using a single regex ensures .match() returns the first positional match,
+        // avoiding "魔防+20" matching before "防200" when searching for "防"
+        const regex = new RegExp(`${normalizedStat}\\s*(?::\\s*)?([+\\-]?)\\s*(\\d+)`, 'i');
+        const match = normalized.match(regex);
+        if (match) {
+            const value = parseInt(match[2], 10);
+            return match[1] === '-' ? -value : value;
         }
 
         return 0;

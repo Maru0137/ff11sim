@@ -256,6 +256,17 @@
             text-align: center;
             padding: 20px;
         }
+        .equip-group-header {
+            color: #f0c040;
+            font-weight: bold;
+            font-size: 13px;
+            padding: 6px 12px 2px !important;
+            background: none !important;
+            cursor: default !important;
+        }
+        .equip-group-header:hover {
+            background: none !important;
+        }
         /* Equipment Set */
         .equip-slot-row {
             display: flex;
@@ -488,6 +499,12 @@
             <div id="equipEditSection" class="hidden">
                 <h2 id="equipEditTitle">New Equipment Set</h2>
                 <div class="form-group">
+                    <label for="equipSetJob">Main Job</label>
+                    <select id="equipSetJob">
+                        <option value="">-- Select Job --</option>
+                    </select>
+                </div>
+                <div class="form-group">
                     <label for="equipSetName">Name</label>
                     <input type="text" id="equipSetName" placeholder="Equipment set name">
                 </div>
@@ -672,7 +689,9 @@
         function loadEquipSets() {
             try {
                 const data = localStorage.getItem(EQUIP_STORAGE_KEY);
-                return data ? JSON.parse(data) : [];
+                const sets = data ? JSON.parse(data) : [];
+                // Ensure backward compatibility: add job field if missing
+                return sets.map(s => ({ job: '', ...s }));
             } catch {
                 return [];
             }
@@ -859,6 +878,7 @@
         // ==============================================
 
         let editingEquipSetName = null;
+        let currentEquipJob = ''; // Current job key for equip set being edited
         let currentEquipSlots = {}; // { slotKey: { item_id, name_en, name_ja } | null }
 
         function createEmptySlots() {
@@ -936,6 +956,7 @@
                     const results = itemSearch.search({
                         query: query,
                         slot: slotKey,
+                        job: currentEquipJob ? currentEquipJob.toUpperCase() : '',
                         limit: 20,
                     });
                     renderSlotDropdown(dropdown, results.items, slotKey, input);
@@ -993,20 +1014,39 @@
                 list.innerHTML = '<li class="empty-msg">No equipment sets registered</li>';
             } else {
                 list.innerHTML = '';
+                // Group by job
+                const grouped = {};
                 sets.forEach(es => {
-                    const li = document.createElement('li');
-                    const count = Object.values(es.slots).filter(v => v !== null).length;
-                    li.innerHTML = `
-                        <span>
-                            <span class="char-info">${es.name}</span>
-                            <span class="char-race">${count} items</span>
-                        </span>
-                        <span class="char-actions">
-                            <button class="btn btn-primary btn-sm" data-equip-edit="${es.name}">Edit</button>
-                            <button class="btn btn-danger btn-sm" data-equip-delete="${es.name}">Delete</button>
-                        </span>
-                    `;
-                    list.appendChild(li);
+                    const jobKey = es.job || '';
+                    if (!grouped[jobKey]) grouped[jobKey] = [];
+                    grouped[jobKey].push(es);
+                });
+                // Render in job order, uncategorized last
+                const jobOrder = JOBS.map(j => j.key).filter(k => grouped[k]);
+                if (grouped['']) jobOrder.push('');
+
+                jobOrder.forEach(jobKey => {
+                    const jobName = jobKey ? JOBS.find(j => j.key === jobKey)?.name || jobKey : 'Uncategorized';
+                    const header = document.createElement('li');
+                    header.className = 'equip-group-header';
+                    header.textContent = jobName;
+                    list.appendChild(header);
+
+                    grouped[jobKey].forEach(es => {
+                        const li = document.createElement('li');
+                        const count = Object.values(es.slots).filter(v => v !== null).length;
+                        li.innerHTML = `
+                            <span>
+                                <span class="char-info">${es.name}</span>
+                                <span class="char-race">${count} items</span>
+                            </span>
+                            <span class="char-actions">
+                                <button class="btn btn-primary btn-sm" data-equip-edit="${es.name}">Edit</button>
+                                <button class="btn btn-danger btn-sm" data-equip-delete="${es.name}">Delete</button>
+                            </span>
+                        `;
+                        list.appendChild(li);
+                    });
                 });
             }
             updateCalcEquipSetSelector();
@@ -1018,7 +1058,9 @@
 
             if (equipSet) {
                 editingEquipSetName = equipSet.name;
+                currentEquipJob = equipSet.job || '';
                 document.getElementById('equipEditTitle').textContent = 'Edit Equipment Set';
+                document.getElementById('equipSetJob').value = currentEquipJob;
                 document.getElementById('equipSetName').value = equipSet.name;
                 currentEquipSlots = { ...equipSet.slots };
                 // Update display for each slot
@@ -1031,7 +1073,9 @@
                 });
             } else {
                 editingEquipSetName = null;
+                currentEquipJob = '';
                 document.getElementById('equipEditTitle').textContent = 'New Equipment Set';
+                document.getElementById('equipSetJob').value = '';
                 document.getElementById('equipSetName').value = '';
                 currentEquipSlots = createEmptySlots();
                 EQUIPMENT_SLOTS.forEach(slot => {
@@ -1055,19 +1099,20 @@
                 return;
             }
 
+            const job = document.getElementById('equipSetJob').value;
             const sets = loadEquipSets();
 
             if (editingEquipSetName) {
                 const idx = sets.findIndex(s => s.name === editingEquipSetName);
                 if (idx >= 0) {
-                    sets[idx] = { name, slots: { ...currentEquipSlots } };
+                    sets[idx] = { name, job, slots: { ...currentEquipSlots } };
                 }
             } else {
                 if (sets.some(s => s.name === name)) {
                     alert(`Equipment set "${name}" already exists.`);
                     return;
                 }
-                sets.push({ name, slots: { ...currentEquipSlots } });
+                sets.push({ name, job, slots: { ...currentEquipSlots } });
             }
 
             saveEquipSets(sets);
@@ -1100,6 +1145,9 @@
         document.getElementById('btnNewEquipSet').addEventListener('click', () => showEquipSetEditForm(null));
         document.getElementById('btnSaveEquipSet').addEventListener('click', saveEquipSet);
         document.getElementById('btnCancelEquipEdit').addEventListener('click', hideEquipSetEditForm);
+        document.getElementById('equipSetJob').addEventListener('change', (e) => {
+            currentEquipJob = e.target.value;
+        });
 
         // ==============================================
         // Tab 3: Status Calculation from Profile
@@ -1123,13 +1171,59 @@
         function updateCalcEquipSetSelector() {
             const sel = document.getElementById('calcEquipSet');
             const currentVal = sel.value;
+            const mainJobKey = document.getElementById('calcMainJob').value;
             sel.innerHTML = '<option value="">None</option>';
-            loadEquipSets().forEach(es => {
-                const opt = document.createElement('option');
-                opt.value = es.name;
-                opt.textContent = es.name;
-                sel.appendChild(opt);
+
+            const sets = loadEquipSets();
+            // Group by job
+            const grouped = {};
+            sets.forEach(es => {
+                const jobKey = es.job || '';
+                if (!grouped[jobKey]) grouped[jobKey] = [];
+                grouped[jobKey].push(es);
             });
+
+            // If main job is selected, show matching sets first, then others
+            const jobOrder = JOBS.map(j => j.key).filter(k => grouped[k]);
+            if (grouped['']) jobOrder.push('');
+
+            // Prioritize: show matching job's sets at top level, others in optgroups
+            if (mainJobKey && grouped[mainJobKey]) {
+                grouped[mainJobKey].forEach(es => {
+                    const opt = document.createElement('option');
+                    opt.value = es.name;
+                    opt.textContent = es.name;
+                    sel.appendChild(opt);
+                });
+                // Add other jobs in optgroups
+                jobOrder.filter(k => k !== mainJobKey).forEach(jobKey => {
+                    const jobName = jobKey ? JOBS.find(j => j.key === jobKey)?.name || jobKey : 'Uncategorized';
+                    const group = document.createElement('optgroup');
+                    group.label = jobName;
+                    grouped[jobKey].forEach(es => {
+                        const opt = document.createElement('option');
+                        opt.value = es.name;
+                        opt.textContent = es.name;
+                        group.appendChild(opt);
+                    });
+                    sel.appendChild(group);
+                });
+            } else {
+                // No main job selected: show all in optgroups
+                jobOrder.forEach(jobKey => {
+                    const jobName = jobKey ? JOBS.find(j => j.key === jobKey)?.name || jobKey : 'Uncategorized';
+                    const group = document.createElement('optgroup');
+                    group.label = jobName;
+                    grouped[jobKey].forEach(es => {
+                        const opt = document.createElement('option');
+                        opt.value = es.name;
+                        opt.textContent = es.name;
+                        group.appendChild(opt);
+                    });
+                    sel.appendChild(group);
+                });
+            }
+
             if (currentVal && [...sel.options].some(o => o.value === currentVal)) {
                 sel.value = currentVal;
             }
@@ -1338,7 +1432,10 @@
             updateCalcJobSelectors();
             updateCalcStatus();
         });
-        document.getElementById('calcMainJob').addEventListener('change', updateCalcStatus);
+        document.getElementById('calcMainJob').addEventListener('change', () => {
+            updateCalcEquipSetSelector();
+            updateCalcStatus();
+        });
         document.getElementById('calcSupportJob').addEventListener('change', updateCalcStatus);
         document.getElementById('calcEquipSet').addEventListener('change', updateCalcStatus);
 
@@ -1353,6 +1450,14 @@
             wasmReady = true;
             buildJobLevelTable();
             buildEquipSlotsUI();
+            // Populate equipment set job selector
+            const equipJobSel = document.getElementById('equipSetJob');
+            JOBS.forEach(job => {
+                const opt = document.createElement('option');
+                opt.value = job.key;
+                opt.textContent = job.name;
+                equipJobSel.appendChild(opt);
+            });
             renderCharList();
             renderEquipSetList();
         }

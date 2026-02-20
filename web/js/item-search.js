@@ -184,6 +184,17 @@ class ItemSearch {
     }
 
     /**
+     * Extract plus value from item name (e.g., "+2" from "エミネンスコロネット+2")
+     * @param {string} name The item name
+     * @returns {number} The plus value, or 0 if not found
+     */
+    extractPlusValue(name) {
+        if (!name) return 0;
+        const match = name.match(/\+(\d+)$/);
+        return match ? parseInt(match[1], 10) : 0;
+    }
+
+    /**
      * Search items with filters
      * @param {Object} options Search options
      * @param {string} options.query Text search query (searches en and ja)
@@ -274,7 +285,21 @@ class ItemSearch {
         const total = results.length;
 
         // Sort
+        const prioritySlots = ['main', 'sub', 'head', 'body', 'hands', 'legs', 'feet'];
         results.sort((a, b) => {
+            // Priority 1: +value (HQ items like "+2", "+1")
+            const aPlusVal = this.extractPlusValue(a.ja || a.en);
+            const bPlusVal = this.extractPlusValue(b.ja || b.en);
+            if (aPlusVal !== bPlusVal) return bPlusVal - aPlusVal; // descending
+
+            // Priority 2: iLv119 (for specific slots only)
+            if (prioritySlots.includes(slot)) {
+                const aIsIlv119 = a.item_level === 119;
+                const bIsIlv119 = b.item_level === 119;
+                if (aIsIlv119 !== bIsIlv119) return bIsIlv119 ? -1 : 1;
+            }
+
+            // Priority 3: Normal sort
             let aVal, bVal;
 
             // Special handling for description stat sorting

@@ -357,6 +357,20 @@
             line-height: 1.3em;
             max-height: 3.9em;
         }
+        .equip-slot-custom-desc {
+            width: 250px;
+            flex-shrink: 0;
+            padding: 4px 8px;
+            font-size: 11px;
+            border: 1px solid #444;
+            border-radius: 4px;
+            background: #0f0f23;
+            color: #eee;
+        }
+        .equip-slot-custom-desc:focus {
+            outline: none;
+            border-color: #f0c040;
+        }
         .status-section {
             margin-top: 20px;
             padding: 15px;
@@ -989,20 +1003,35 @@
                 description.dataset.slot = slot.key;
                 description.textContent = '';
 
+                const customDescInput = document.createElement('input');
+                customDescInput.type = 'text';
+                customDescInput.className = 'equip-slot-custom-desc';
+                customDescInput.dataset.slot = slot.key;
+                customDescInput.placeholder = 'STR+5 Accuracy+10 ...';
+
                 row.appendChild(label);
                 row.appendChild(inputWrapper);
                 row.appendChild(selected);
                 row.appendChild(clearBtn);
                 row.appendChild(description);
+                row.appendChild(customDescInput);
                 container.appendChild(row);
 
                 setupSlotSearch(slot.key, input, dropdown);
+
+                customDescInput.addEventListener('input', () => {
+                    if (currentEquipSlots[slot.key]) {
+                        currentEquipSlots[slot.key].custom_description = customDescInput.value;
+                        updateEquipEditStatus();
+                    }
+                });
 
                 clearBtn.addEventListener('click', () => {
                     currentEquipSlots[slot.key] = null;
                     selected.textContent = 'None';
                     input.value = '';
                     description.textContent = '';
+                    customDescInput.value = '';
                     updateEquipEditStatus();
                 });
             });
@@ -1074,6 +1103,10 @@
             const descDiv = document.querySelector(`.equip-slot-description[data-slot="${slotKey}"]`);
             if (descDiv) {
                 descDiv.textContent = item.description_ja || item.description_en || '';
+            }
+            const customDescInput = document.querySelector(`.equip-slot-custom-desc[data-slot="${slotKey}"]`);
+            if (customDescInput) {
+                customDescInput.value = '';
             }
             updateEquipEditStatus();
         }
@@ -1165,11 +1198,15 @@
                     const data = currentEquipSlots[slot.key];
                     const input = document.querySelector(`.equip-slot-search[data-slot="${slot.key}"]`);
                     const descDiv = document.querySelector(`.equip-slot-description[data-slot="${slot.key}"]`);
+                    const customDescInput = document.querySelector(`.equip-slot-custom-desc[data-slot="${slot.key}"]`);
                     if (input) {
                         input.value = data ? (data.name_ja || data.name_en || '') : '';
                     }
                     if (descDiv) {
                         descDiv.textContent = data ? (data.description_ja || '') : '';
+                    }
+                    if (customDescInput) {
+                        customDescInput.value = data ? (data.custom_description || '') : '';
                     }
                 });
             } else {
@@ -1181,8 +1218,10 @@
                 EQUIPMENT_SLOTS.forEach(slot => {
                     const input = document.querySelector(`.equip-slot-search[data-slot="${slot.key}"]`);
                     const descDiv = document.querySelector(`.equip-slot-description[data-slot="${slot.key}"]`);
+                    const customDescInput = document.querySelector(`.equip-slot-custom-desc[data-slot="${slot.key}"]`);
                     if (input) input.value = '';
                     if (descDiv) descDiv.textContent = '';
+                    if (customDescInput) customDescInput.value = '';
                 });
             }
 
@@ -1408,11 +1447,18 @@
 
                 const item = itemSearch.items.find(i => i.id === slotData.item_id);
                 console.log('[DEBUG] Slot:', slotKey, 'Item:', item?.en, 'Has description_en:', !!item?.description_en);
-                if (!item || !item.description_en) continue;
 
-                const stats = extractAllStats(item.description_en);
-                console.log('[DEBUG] Extracted stats:', stats);
-                statsArray.push(stats);
+                if (item && item.description_en) {
+                    const stats = extractAllStats(item.description_en);
+                    console.log('[DEBUG] Extracted stats:', stats);
+                    statsArray.push(stats);
+                }
+
+                if (slotData.custom_description) {
+                    const customStats = extractAllStats(slotData.custom_description);
+                    console.log('[DEBUG] Custom stats:', customStats);
+                    statsArray.push(customStats);
+                }
             }
 
             const result = sumStats(statsArray);

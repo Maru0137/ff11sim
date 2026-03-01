@@ -288,23 +288,33 @@
         }
         .equip-slot-search {
             width: 100%;
-            padding: 5px 8px;
+            padding: 5px 28px 5px 8px;
             font-size: 12px;
             border: 1px solid #444;
             border-radius: 4px;
             background: #0f0f23;
             color: #eee;
+            cursor: pointer;
         }
         .equip-slot-search:focus {
             outline: none;
             border-color: #f0c040;
+        }
+        .equip-slot-arrow {
+            position: absolute;
+            right: 8px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: #888;
+            font-size: 10px;
+            pointer-events: none;
         }
         .equip-slot-dropdown {
             position: absolute;
             top: 100%;
             left: 0;
             right: 0;
-            max-height: 200px;
+            max-height: 250px;
             overflow-y: auto;
             background: #0f0f23;
             border: 1px solid #f0c040;
@@ -403,9 +413,67 @@
         .combat-stats-section h3 {
             margin: 10px 0 8px 0;
         }
+        /* Equipment Set selectors */
+        .equipset-selectors {
+            display: flex;
+            gap: 20px;
+            margin-bottom: 15px;
+        }
+        .equipset-selectors .form-group {
+            margin-bottom: 0;
+        }
+        .equipset-selectors select {
+            min-width: 200px;
+        }
+        /* Equipment Set tabs */
+        .equipset-tabs {
+            display: flex;
+            gap: 2px;
+            margin-bottom: 0;
+            flex-wrap: wrap;
+        }
+        .equipset-tab {
+            padding: 8px 16px;
+            background: #0f0f23;
+            color: #aaa;
+            border: 1px solid #444;
+            border-bottom: none;
+            border-radius: 6px 6px 0 0;
+            cursor: pointer;
+            font-size: 13px;
+        }
+        .equipset-tab:hover {
+            background: #1a1a3e;
+            color: #ddd;
+        }
+        .equipset-tab.active {
+            background: #16213e;
+            color: #f0c040;
+            border-color: #f0c040;
+        }
+        .equipset-tab-add {
+            padding: 8px 14px;
+            background: #0f0f23;
+            color: #888;
+            border: 1px dashed #555;
+            border-bottom: none;
+            border-radius: 6px 6px 0 0;
+            cursor: pointer;
+            font-size: 16px;
+            font-weight: bold;
+        }
+        .equipset-tab-add:hover {
+            background: #1a1a3e;
+            color: #f0c040;
+            border-color: #f0c040;
+        }
         @media (max-width: 600px) {
             .container {
                 grid-template-columns: 1fr;
+            }
+            .equipset-selectors {
+                flex-direction: column;
+                gap: 10px;
             }
         }
     </style>
@@ -512,95 +580,86 @@
 
     <!-- Tab 2: Equipment Set -->
     <div id="tab-equipsets" class="tab-content">
-        <div class="container">
-            <div>
-                <h2>Equipment Sets</h2>
-                <ul class="char-list" id="equipSetList">
-                    <li class="empty-msg">No equipment sets registered</li>
-                </ul>
-                <div class="btn-group">
-                    <button class="btn btn-primary" id="btnNewEquipSet">New Equipment Set</button>
+        <div class="equipset-selectors">
+            <div class="form-group">
+                <label for="equipSelectChar">Character</label>
+                <select id="equipSelectChar">
+                    <option value="">-- Select Character --</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label for="equipSelectJob">Job</label>
+                <select id="equipSelectJob" disabled>
+                    <option value="">-- Select Job --</option>
+                </select>
+            </div>
+        </div>
+
+        <div id="equipSetTabBar" class="equipset-tabs hidden"></div>
+
+        <div id="equipEditSection" class="hidden">
+            <div class="form-group">
+                <label for="equipSetName">Name</label>
+                <input type="text" id="equipSetName" placeholder="Equipment set name">
+            </div>
+
+            <div id="equipSlotsContainer"></div>
+
+            <div id="equipStatusSection" class="status-section">
+                <h3>Status</h3>
+                <table class="status-table">
+                    <thead>
+                        <tr>
+                            <th>Stat</th>
+                            <th>Base</th>
+                            <th>Equip</th>
+                            <th>Total</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr><td>HP</td><td class="base-val" id="equipBaseHp">-</td><td class="equip-val" id="equipEquipHp">-</td><td class="total-val" id="equipTotalHp">-</td></tr>
+                        <tr><td>MP</td><td class="base-val" id="equipBaseMp">-</td><td class="equip-val" id="equipEquipMp">-</td><td class="total-val" id="equipTotalMp">-</td></tr>
+                        <tr><td>STR</td><td class="base-val" id="equipBaseStr">-</td><td class="equip-val" id="equipEquipStr">-</td><td class="total-val" id="equipTotalStr">-</td></tr>
+                        <tr><td>DEX</td><td class="base-val" id="equipBaseDex">-</td><td class="equip-val" id="equipEquipDex">-</td><td class="total-val" id="equipTotalDex">-</td></tr>
+                        <tr><td>VIT</td><td class="base-val" id="equipBaseVit">-</td><td class="equip-val" id="equipEquipVit">-</td><td class="total-val" id="equipTotalVit">-</td></tr>
+                        <tr><td>AGI</td><td class="base-val" id="equipBaseAgi">-</td><td class="equip-val" id="equipEquipAgi">-</td><td class="total-val" id="equipTotalAgi">-</td></tr>
+                        <tr><td>INT</td><td class="base-val" id="equipBaseInt">-</td><td class="equip-val" id="equipEquipInt">-</td><td class="total-val" id="equipTotalInt">-</td></tr>
+                        <tr><td>MND</td><td class="base-val" id="equipBaseMnd">-</td><td class="equip-val" id="equipEquipMnd">-</td><td class="total-val" id="equipTotalMnd">-</td></tr>
+                        <tr><td>CHR</td><td class="base-val" id="equipBaseChr">-</td><td class="equip-val" id="equipEquipChr">-</td><td class="total-val" id="equipTotalChr">-</td></tr>
+                    </tbody>
+                </table>
+
+                <div class="combat-stats-section">
+                    <h4>戦闘ステータス（装備）</h4>
+                    <table class="status-table">
+                        <thead>
+                            <tr><th>Stat</th><th>Value</th></tr>
+                        </thead>
+                        <tbody>
+                            <tr><td>防御力</td><td class="equip-val" id="equipCombatDef">-</td></tr>
+                            <tr><td>攻撃力</td><td class="equip-val" id="equipCombatAttack">-</td></tr>
+                            <tr><td>命中</td><td class="equip-val" id="equipCombatAccuracy">-</td></tr>
+                            <tr><td>回避</td><td class="equip-val" id="equipCombatEvasion">-</td></tr>
+                            <tr><td>飛攻</td><td class="equip-val" id="equipCombatRangedAttack">-</td></tr>
+                            <tr><td>飛命</td><td class="equip-val" id="equipCombatRangedAccuracy">-</td></tr>
+                            <tr><td>魔攻</td><td class="equip-val" id="equipCombatMagicAttack">-</td></tr>
+                            <tr><td>魔命</td><td class="equip-val" id="equipCombatMagicAccuracy">-</td></tr>
+                            <tr><td>魔回避</td><td class="equip-val" id="equipCombatMagicEvasion">-</td></tr>
+                            <tr><td>魔法ダメージ</td><td class="equip-val" id="equipCombatMagicDamage">-</td></tr>
+                            <tr><td>ヘイスト</td><td class="equip-val" id="equipCombatHaste">-</td></tr>
+                            <tr><td>ストアTP</td><td class="equip-val" id="equipCombatStoreTp">-</td></tr>
+                            <tr><td>ダブルアタック</td><td class="equip-val" id="equipCombatDoubleAttack">-</td></tr>
+                            <tr><td>トリプルアタック</td><td class="equip-val" id="equipCombatTripleAttack">-</td></tr>
+                            <tr><td>クリティカル</td><td class="equip-val" id="equipCombatCritRate">-</td></tr>
+                            <tr><td>WSダメージ</td><td class="equip-val" id="equipCombatWsDamage">-</td></tr>
+                        </tbody>
+                    </table>
                 </div>
             </div>
 
-            <div id="equipEditSection" class="hidden">
-                <h2 id="equipEditTitle">New Equipment Set</h2>
-                <div class="form-group">
-                    <label for="equipSetJob">Main Job</label>
-                    <select id="equipSetJob">
-                        <option value="">-- Select Job --</option>
-                    </select>
-                </div>
-                <div class="form-group">
-                    <label for="equipSetName">Name</label>
-                    <input type="text" id="equipSetName" placeholder="Equipment set name">
-                </div>
-
-                <div class="form-group">
-                    <label for="equipEditChar">Character (for status calculation)</label>
-                    <select id="equipEditChar">
-                        <option value="">-- Select Character --</option>
-                    </select>
-                </div>
-
-                <div id="equipSlotsContainer"></div>
-
-                <div id="equipStatusSection" class="status-section">
-                    <h3>Status</h3>
-                    <table class="status-table">
-                        <thead>
-                            <tr>
-                                <th>Stat</th>
-                                <th>Base</th>
-                                <th>Equip</th>
-                                <th>Total</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            <tr><td>HP</td><td class="base-val" id="equipBaseHp">-</td><td class="equip-val" id="equipEquipHp">-</td><td class="total-val" id="equipTotalHp">-</td></tr>
-                            <tr><td>MP</td><td class="base-val" id="equipBaseMp">-</td><td class="equip-val" id="equipEquipMp">-</td><td class="total-val" id="equipTotalMp">-</td></tr>
-                            <tr><td>STR</td><td class="base-val" id="equipBaseStr">-</td><td class="equip-val" id="equipEquipStr">-</td><td class="total-val" id="equipTotalStr">-</td></tr>
-                            <tr><td>DEX</td><td class="base-val" id="equipBaseDex">-</td><td class="equip-val" id="equipEquipDex">-</td><td class="total-val" id="equipTotalDex">-</td></tr>
-                            <tr><td>VIT</td><td class="base-val" id="equipBaseVit">-</td><td class="equip-val" id="equipEquipVit">-</td><td class="total-val" id="equipTotalVit">-</td></tr>
-                            <tr><td>AGI</td><td class="base-val" id="equipBaseAgi">-</td><td class="equip-val" id="equipEquipAgi">-</td><td class="total-val" id="equipTotalAgi">-</td></tr>
-                            <tr><td>INT</td><td class="base-val" id="equipBaseInt">-</td><td class="equip-val" id="equipEquipInt">-</td><td class="total-val" id="equipTotalInt">-</td></tr>
-                            <tr><td>MND</td><td class="base-val" id="equipBaseMnd">-</td><td class="equip-val" id="equipEquipMnd">-</td><td class="total-val" id="equipTotalMnd">-</td></tr>
-                            <tr><td>CHR</td><td class="base-val" id="equipBaseChr">-</td><td class="equip-val" id="equipEquipChr">-</td><td class="total-val" id="equipTotalChr">-</td></tr>
-                        </tbody>
-                    </table>
-
-                    <div class="combat-stats-section">
-                        <h4>Combat Stats (Equipment)</h4>
-                        <table class="status-table">
-                            <thead>
-                                <tr><th>Stat</th><th>Value</th></tr>
-                            </thead>
-                            <tbody>
-                                <tr><td>DEF</td><td class="equip-val" id="equipCombatDef">-</td></tr>
-                                <tr><td>Attack</td><td class="equip-val" id="equipCombatAttack">-</td></tr>
-                                <tr><td>Accuracy</td><td class="equip-val" id="equipCombatAccuracy">-</td></tr>
-                                <tr><td>Evasion</td><td class="equip-val" id="equipCombatEvasion">-</td></tr>
-                                <tr><td>R.Attack</td><td class="equip-val" id="equipCombatRangedAttack">-</td></tr>
-                                <tr><td>R.Accuracy</td><td class="equip-val" id="equipCombatRangedAccuracy">-</td></tr>
-                                <tr><td>M.Atk.Bonus</td><td class="equip-val" id="equipCombatMagicAttack">-</td></tr>
-                                <tr><td>M.Accuracy</td><td class="equip-val" id="equipCombatMagicAccuracy">-</td></tr>
-                                <tr><td>M.Evasion</td><td class="equip-val" id="equipCombatMagicEvasion">-</td></tr>
-                                <tr><td>M.Damage</td><td class="equip-val" id="equipCombatMagicDamage">-</td></tr>
-                                <tr><td>Haste</td><td class="equip-val" id="equipCombatHaste">-</td></tr>
-                                <tr><td>Store TP</td><td class="equip-val" id="equipCombatStoreTp">-</td></tr>
-                                <tr><td>Double Atk.</td><td class="equip-val" id="equipCombatDoubleAttack">-</td></tr>
-                                <tr><td>Triple Atk.</td><td class="equip-val" id="equipCombatTripleAttack">-</td></tr>
-                                <tr><td>Crit.Rate</td><td class="equip-val" id="equipCombatCritRate">-</td></tr>
-                                <tr><td>WS Damage</td><td class="equip-val" id="equipCombatWsDamage">-</td></tr>
-                            </tbody>
-                        </table>
-                    </div>
-                </div>
-
-                <div class="btn-group">
-                    <button class="btn btn-primary" id="btnSaveEquipSet">Save</button>
-                    <button class="btn btn-danger" id="btnCancelEquipEdit">Cancel</button>
-                </div>
+            <div class="btn-group">
+                <button class="btn btn-primary" id="btnSaveEquipSet">Save</button>
+                <button class="btn btn-danger" id="btnDeleteEquipSet">Delete</button>
             </div>
         </div>
     </div>
@@ -683,8 +742,8 @@
             try {
                 const data = localStorage.getItem(EQUIP_STORAGE_KEY);
                 const sets = data ? JSON.parse(data) : [];
-                // Ensure backward compatibility: add job field if missing
-                return sets.map(s => ({ job: '', ...s }));
+                // Ensure backward compatibility: add job/character fields if missing
+                return sets.map(s => ({ job: '', character: '', ...s }));
             } catch {
                 return [];
             }
@@ -746,21 +805,8 @@
                     list.appendChild(li);
                 });
             }
-            // Update equipment edit character selector
-            const equipEditCharSel = document.getElementById('equipEditChar');
-            if (equipEditCharSel) {
-                const currentVal = equipEditCharSel.value;
-                equipEditCharSel.innerHTML = '<option value="">-- Select Character --</option>';
-                loadCharacters().forEach(ch => {
-                    const opt = document.createElement('option');
-                    opt.value = ch.name;
-                    opt.textContent = `${ch.name} (${RACE_NAMES[ch.race] || ch.race})`;
-                    equipEditCharSel.appendChild(opt);
-                });
-                if (currentVal && [...equipEditCharSel.options].some(o => o.value === currentVal)) {
-                    equipEditCharSel.value = currentVal;
-                }
-            }
+            // Update equipment set character selector
+            updateEquipCharSelector();
         }
 
         function showEditForm(character) {
@@ -885,8 +931,10 @@
         // ==============================================
 
         let editingEquipSetName = null;
-        let currentEquipJob = ''; // Current job key for equip set being edited
+        let currentEquipChar = ''; // Selected character name
+        let currentEquipJob = ''; // Selected job key
         let currentEquipSlots = {}; // { slotKey: { item_id, name_en, name_ja } | null }
+        let isNewEquipSet = false; // True when creating a new set via "+" tab
 
         function createEmptySlots() {
             const slots = {};
@@ -918,7 +966,12 @@
                 dropdown.className = 'equip-slot-dropdown hidden';
                 dropdown.dataset.slot = slot.key;
 
+                const arrow = document.createElement('span');
+                arrow.className = 'equip-slot-arrow';
+                arrow.textContent = '\u25bc';
+
                 inputWrapper.appendChild(input);
+                inputWrapper.appendChild(arrow);
                 inputWrapper.appendChild(dropdown);
 
                 const selected = document.createElement('span');
@@ -943,10 +996,8 @@
                 row.appendChild(description);
                 container.appendChild(row);
 
-                // Setup inline search
                 setupSlotSearch(slot.key, input, dropdown);
 
-                // Clear button
                 clearBtn.addEventListener('click', () => {
                     currentEquipSlots[slot.key] = null;
                     selected.textContent = 'None';
@@ -960,22 +1011,24 @@
         function setupSlotSearch(slotKey, input, dropdown) {
             let debounceTimer = null;
 
+            function doSearch() {
+                if (!itemsLoaded) {
+                    dropdown.classList.add('hidden');
+                    return;
+                }
+                const query = input.value.trim();
+                const results = itemSearch.search({
+                    query: query,
+                    slot: slotKey,
+                    job: currentEquipJob ? currentEquipJob.toUpperCase() : '',
+                    limit: 30,
+                });
+                renderSlotDropdown(dropdown, results.items, slotKey, input);
+            }
+
             input.addEventListener('input', () => {
                 clearTimeout(debounceTimer);
-                debounceTimer = setTimeout(() => {
-                    const query = input.value.trim();
-                    if (query.length < 2 || !itemsLoaded) {
-                        dropdown.classList.add('hidden');
-                        return;
-                    }
-                    const results = itemSearch.search({
-                        query: query,
-                        slot: slotKey,
-                        job: currentEquipJob ? currentEquipJob.toUpperCase() : '',
-                        limit: 20,
-                    });
-                    renderSlotDropdown(dropdown, results.items, slotKey, input);
-                }, 200);
+                debounceTimer = setTimeout(doSearch, 150);
             });
 
             input.addEventListener('blur', () => {
@@ -983,9 +1036,7 @@
             });
 
             input.addEventListener('focus', () => {
-                if (input.value.trim().length >= 2 && dropdown.children.length > 0) {
-                    dropdown.classList.remove('hidden');
-                }
+                doSearch();
             });
         }
 
@@ -998,12 +1049,11 @@
             items.forEach(item => {
                 const div = document.createElement('div');
                 div.className = 'equip-slot-dropdown-item';
-                div.textContent = `${item.ja || item.en} (${item.en})`;
+                div.textContent = item.ja || item.en;
                 div.addEventListener('mousedown', (e) => {
                     e.preventDefault();
                     selectSlotItem(slotKey, item);
                     dropdown.classList.add('hidden');
-                    input.value = '';
                 });
                 dropdown.appendChild(div);
             });
@@ -1028,62 +1078,89 @@
             updateEquipEditStatus();
         }
 
-        function renderEquipSetList() {
-            const sets = loadEquipSets();
-            const list = document.getElementById('equipSetList');
-            if (sets.length === 0) {
-                list.innerHTML = '<li class="empty-msg">No equipment sets registered</li>';
-            } else {
-                list.innerHTML = '';
-                // Group by job
-                const grouped = {};
-                sets.forEach(es => {
-                    const jobKey = es.job || '';
-                    if (!grouped[jobKey]) grouped[jobKey] = [];
-                    grouped[jobKey].push(es);
-                });
-                // Render in job order, uncategorized last
-                const jobOrder = JOBS.map(j => j.key).filter(k => grouped[k]);
-                if (grouped['']) jobOrder.push('');
+        // Render equipment set tabs for selected character+job
+        function renderEquipSetTabs() {
+            const tabBar = document.getElementById('equipSetTabBar');
+            tabBar.innerHTML = '';
 
-                jobOrder.forEach(jobKey => {
-                    const jobName = jobKey ? JOBS.find(j => j.key === jobKey)?.name || jobKey : 'Uncategorized';
-                    const header = document.createElement('li');
-                    header.className = 'equip-group-header';
-                    header.textContent = jobName;
-                    list.appendChild(header);
-
-                    grouped[jobKey].forEach(es => {
-                        const li = document.createElement('li');
-                        const count = Object.values(es.slots).filter(v => v !== null).length;
-                        li.innerHTML = `
-                            <span>
-                                <span class="char-info">${es.name}</span>
-                                <span class="char-race">${count} items</span>
-                            </span>
-                            <span class="char-actions">
-                                <button class="btn btn-primary btn-sm" data-equip-edit="${es.name}">Edit</button>
-                                <button class="btn btn-danger btn-sm" data-equip-delete="${es.name}">Delete</button>
-                            </span>
-                        `;
-                        list.appendChild(li);
-                    });
-                });
+            if (!currentEquipChar || !currentEquipJob) {
+                tabBar.classList.add('hidden');
+                hideEquipSetEditForm();
+                return;
             }
+
+            tabBar.classList.remove('hidden');
+
+            const sets = loadEquipSets().filter(
+                s => s.character === currentEquipChar && s.job === currentEquipJob
+            );
+
+            sets.forEach(es => {
+                const tab = document.createElement('button');
+                tab.className = 'equipset-tab';
+                tab.textContent = es.name;
+                tab.dataset.equipsetName = es.name;
+                tab.addEventListener('click', () => {
+                    selectEquipSetTab(es.name);
+                });
+                tabBar.appendChild(tab);
+            });
+
+            // "+" tab for new set
+            const addTab = document.createElement('button');
+            addTab.className = 'equipset-tab-add';
+            addTab.textContent = '+';
+            addTab.addEventListener('click', () => {
+                showNewEquipSetForm();
+            });
+            tabBar.appendChild(addTab);
+
+            // Auto-select first tab if any sets exist
+            if (sets.length > 0) {
+                selectEquipSetTab(sets[0].name);
+            } else {
+                hideEquipSetEditForm();
+            }
+        }
+
+        function selectEquipSetTab(name) {
+            isNewEquipSet = false;
+
+            // Update tab active state
+            document.querySelectorAll('.equipset-tab').forEach(t => {
+                t.classList.toggle('active', t.dataset.equipsetName === name);
+            });
+
+            const sets = loadEquipSets();
+            const es = sets.find(
+                s => s.character === currentEquipChar && s.job === currentEquipJob && s.name === name
+            );
+            if (es) {
+                showEquipSetEditForm(es);
+            }
+        }
+
+        function showNewEquipSetForm() {
+            isNewEquipSet = true;
+
+            // Deactivate all tabs
+            document.querySelectorAll('.equipset-tab').forEach(t => t.classList.remove('active'));
+
+            showEquipSetEditForm(null);
         }
 
         function showEquipSetEditForm(equipSet) {
             const section = document.getElementById('equipEditSection');
             section.classList.remove('hidden');
 
+            const deleteBtn = document.getElementById('btnDeleteEquipSet');
+
             if (equipSet) {
                 editingEquipSetName = equipSet.name;
-                currentEquipJob = equipSet.job || '';
-                document.getElementById('equipEditTitle').textContent = 'Edit Equipment Set';
-                document.getElementById('equipSetJob').value = currentEquipJob;
-                document.getElementById('equipSetName').value = equipSet.name;
                 currentEquipSlots = { ...equipSet.slots };
-                // Update display for each slot
+                document.getElementById('equipSetName').value = equipSet.name;
+                deleteBtn.classList.remove('hidden');
+
                 EQUIPMENT_SLOTS.forEach(slot => {
                     const data = currentEquipSlots[slot.key];
                     const input = document.querySelector(`.equip-slot-search[data-slot="${slot.key}"]`);
@@ -1097,11 +1174,10 @@
                 });
             } else {
                 editingEquipSetName = null;
-                currentEquipJob = '';
-                document.getElementById('equipEditTitle').textContent = 'New Equipment Set';
-                document.getElementById('equipSetJob').value = '';
-                document.getElementById('equipSetName').value = '';
                 currentEquipSlots = createEmptySlots();
+                document.getElementById('equipSetName').value = '';
+                deleteBtn.classList.add('hidden');
+
                 EQUIPMENT_SLOTS.forEach(slot => {
                     const input = document.querySelector(`.equip-slot-search[data-slot="${slot.key}"]`);
                     const descDiv = document.querySelector(`.equip-slot-description[data-slot="${slot.key}"]`);
@@ -1109,11 +1185,14 @@
                     if (descDiv) descDiv.textContent = '';
                 });
             }
+
+            updateEquipEditStatus();
         }
 
         function hideEquipSetEditForm() {
             document.getElementById('equipEditSection').classList.add('hidden');
             editingEquipSetName = null;
+            isNewEquipSet = false;
         }
 
         function saveEquipSet() {
@@ -1123,49 +1202,62 @@
                 return;
             }
 
-            const job = document.getElementById('equipSetJob').value;
             const sets = loadEquipSets();
+            const character = currentEquipChar;
+            const job = currentEquipJob;
 
             if (editingEquipSetName) {
-                const idx = sets.findIndex(s => s.name === editingEquipSetName);
+                // Editing existing set
+                const idx = sets.findIndex(
+                    s => s.character === character && s.job === job && s.name === editingEquipSetName
+                );
                 if (idx >= 0) {
-                    sets[idx] = { name, job, slots: { ...currentEquipSlots } };
+                    // Check name uniqueness if renamed
+                    if (name !== editingEquipSetName) {
+                        if (sets.some(s => s.character === character && s.job === job && s.name === name)) {
+                            alert(`Equipment set "${name}" already exists for this character/job.`);
+                            return;
+                        }
+                    }
+                    sets[idx] = { name, job, character, slots: { ...currentEquipSlots } };
                 }
             } else {
-                if (sets.some(s => s.name === name)) {
-                    alert(`Equipment set "${name}" already exists.`);
+                // Creating new set
+                if (sets.some(s => s.character === character && s.job === job && s.name === name)) {
+                    alert(`Equipment set "${name}" already exists for this character/job.`);
                     return;
                 }
-                sets.push({ name, job, slots: { ...currentEquipSlots } });
+                sets.push({ name, job, character, slots: { ...currentEquipSlots } });
             }
 
             saveEquipSets(sets);
-            renderEquipSetList();
-            hideEquipSetEditForm();
+            renderEquipSetTabs();
+            // Select the saved set
+            selectEquipSetTab(name);
         }
 
-        function deleteEquipSet(name) {
-            if (!confirm(`Delete equipment set "${name}"?`)) return;
-            const sets = loadEquipSets().filter(s => s.name !== name);
+        function deleteEquipSet() {
+            if (!editingEquipSetName) return;
+            if (!confirm(`Delete equipment set "${editingEquipSetName}"?`)) return;
+
+            const sets = loadEquipSets().filter(
+                s => !(s.character === currentEquipChar && s.job === currentEquipJob && s.name === editingEquipSetName)
+            );
             saveEquipSets(sets);
-            renderEquipSetList();
-            if (editingEquipSetName === name) hideEquipSetEditForm();
+            editingEquipSetName = null;
+            renderEquipSetTabs();
         }
 
         function updateEquipEditStatus() {
-            console.log('[DEBUG] updateEquipEditStatus called');
-            console.log('[DEBUG] wasmReady:', wasmReady, 'itemsLoaded:', itemsLoaded);
             if (!wasmReady || !itemsLoaded) {
                 clearAllEquipStats();
                 return;
             }
 
-            const charName = document.getElementById('equipEditChar').value;
+            const charName = currentEquipChar;
             const jobKey = currentEquipJob;
-            console.log('[DEBUG] charName:', charName, 'jobKey:', jobKey);
 
             if (!charName || !jobKey) {
-                console.log('[DEBUG] Missing charName or jobKey');
                 clearAllEquipStats();
                 return;
             }
@@ -1184,7 +1276,6 @@
             }
 
             try {
-                // Calculate base stats from character profile
                 const baseStats = calculate_status_from_profile(
                     {
                         name: ch.name,
@@ -1196,11 +1287,9 @@
                     null
                 );
 
-                // Create temporary equip set from current slots
                 const tempEquipSet = { name: '_temp', slots: currentEquipSlots };
                 const equip = calculateEquipSetBonuses(tempEquipSet);
 
-                // Update Base stats
                 document.getElementById('equipBaseHp').textContent = baseStats.HP || 0;
                 document.getElementById('equipBaseMp').textContent = baseStats.MP || 0;
                 document.getElementById('equipBaseStr').textContent = baseStats.STR || 0;
@@ -1211,7 +1300,6 @@
                 document.getElementById('equipBaseMnd').textContent = baseStats.MND || 0;
                 document.getElementById('equipBaseChr').textContent = baseStats.CHR || 0;
 
-                // Update Equip stats
                 const formatStat = (val) => val > 0 ? `+${val}` : val < 0 ? `${val}` : '-';
                 document.getElementById('equipEquipHp').textContent = formatStat(equip.hp);
                 document.getElementById('equipEquipMp').textContent = formatStat(equip.mp);
@@ -1223,7 +1311,6 @@
                 document.getElementById('equipEquipMnd').textContent = formatStat(equip.mnd);
                 document.getElementById('equipEquipChr').textContent = formatStat(equip.chr);
 
-                // Update Total stats
                 document.getElementById('equipTotalHp').textContent = (baseStats.HP || 0) + equip.hp;
                 document.getElementById('equipTotalMp').textContent = (baseStats.MP || 0) + equip.mp;
                 document.getElementById('equipTotalStr').textContent = (baseStats.STR || 0) + equip.str;
@@ -1234,7 +1321,6 @@
                 document.getElementById('equipTotalMnd').textContent = (baseStats.MND || 0) + equip.mnd;
                 document.getElementById('equipTotalChr').textContent = (baseStats.CHR || 0) + equip.chr;
 
-                // Update Combat stats
                 document.getElementById('equipCombatDef').textContent = equip.def || '-';
                 document.getElementById('equipCombatAttack').textContent = equip.attack || '-';
                 document.getElementById('equipCombatAccuracy').textContent = equip.accuracy || '-';
@@ -1271,30 +1357,28 @@
             });
         }
 
-        document.getElementById('equipSetList').addEventListener('click', (e) => {
-            const editBtn = e.target.closest('[data-equip-edit]');
-            const deleteBtn = e.target.closest('[data-equip-delete]');
-            if (editBtn) {
-                const name = editBtn.dataset.equipEdit;
-                const sets = loadEquipSets();
-                const es = sets.find(s => s.name === name);
-                if (es) showEquipSetEditForm(es);
+        // Character selector change
+        document.getElementById('equipSelectChar').addEventListener('change', (e) => {
+            currentEquipChar = e.target.value;
+            const jobSel = document.getElementById('equipSelectJob');
+            if (currentEquipChar) {
+                jobSel.disabled = false;
+            } else {
+                jobSel.disabled = true;
+                jobSel.value = '';
+                currentEquipJob = '';
             }
-            if (deleteBtn) {
-                deleteEquipSet(deleteBtn.dataset.equipDelete);
-            }
+            renderEquipSetTabs();
         });
 
-        document.getElementById('btnNewEquipSet').addEventListener('click', () => showEquipSetEditForm(null));
-        document.getElementById('btnSaveEquipSet').addEventListener('click', saveEquipSet);
-        document.getElementById('btnCancelEquipEdit').addEventListener('click', hideEquipSetEditForm);
-        document.getElementById('equipSetJob').addEventListener('change', (e) => {
+        // Job selector change
+        document.getElementById('equipSelectJob').addEventListener('change', (e) => {
             currentEquipJob = e.target.value;
-            updateEquipEditStatus();
+            renderEquipSetTabs();
         });
-        document.getElementById('equipEditChar').addEventListener('change', () => {
-            updateEquipEditStatus();
-        });
+
+        document.getElementById('btnSaveEquipSet').addEventListener('click', saveEquipSet);
+        document.getElementById('btnDeleteEquipSet').addEventListener('click', deleteEquipSet);
 
         function calculateEquipSetBonuses(equipSetNameOrObject) {
             console.log('[DEBUG] calculateEquipSetBonuses called with:', equipSetNameOrObject);
@@ -1380,6 +1464,22 @@
         // ==============================================
         // Initialize
         // ==============================================
+
+        function updateEquipCharSelector() {
+            const sel = document.getElementById('equipSelectChar');
+            const currentVal = sel.value;
+            sel.innerHTML = '<option value="">-- Select Character --</option>';
+            loadCharacters().forEach(ch => {
+                const opt = document.createElement('option');
+                opt.value = ch.name;
+                opt.textContent = `${ch.name} (${RACE_NAMES[ch.race] || ch.race})`;
+                sel.appendChild(opt);
+            });
+            if (currentVal && [...sel.options].some(o => o.value === currentVal)) {
+                sel.value = currentVal;
+            }
+        }
+
         async function initWasm() {
             await Promise.all([
                 init(),
@@ -1388,8 +1488,9 @@
             wasmReady = true;
             buildJobLevelTable();
             buildEquipSlotsUI();
+
             // Populate equipment set job selector
-            const equipJobSel = document.getElementById('equipSetJob');
+            const equipJobSel = document.getElementById('equipSelectJob');
             JOBS.forEach(job => {
                 const opt = document.createElement('option');
                 opt.value = job.key;
@@ -1397,25 +1498,8 @@
                 equipJobSel.appendChild(opt);
             });
 
-            // Populate equipment edit character selector
-            function updateEquipEditCharSelector() {
-                const sel = document.getElementById('equipEditChar');
-                const currentVal = sel.value;
-                sel.innerHTML = '<option value="">-- Select Character --</option>';
-                loadCharacters().forEach(ch => {
-                    const opt = document.createElement('option');
-                    opt.value = ch.name;
-                    opt.textContent = `${ch.name} (${RACE_NAMES[ch.race] || ch.race})`;
-                    sel.appendChild(opt);
-                });
-                if (currentVal && [...sel.options].some(o => o.value === currentVal)) {
-                    sel.value = currentVal;
-                }
-            }
-            updateEquipEditCharSelector();
-
+            updateEquipCharSelector();
             renderCharList();
-            renderEquipSetList();
         }
 
         initWasm();

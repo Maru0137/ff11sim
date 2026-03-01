@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>FF11 Status Simulator</title>
+    <title>FF11 ステータスシミュレータ</title>
     <style>
         * {
             box-sizing: border-box;
@@ -493,48 +493,48 @@
     </style>
 </head>
 <body>
-    <h1>FF11 Status Simulator</h1>
+    <h1>FF11 ステータスシミュレータ</h1>
 
     <div class="tabs">
-        <button class="tab-btn active" data-tab="tab-characters">Character Management</button>
-        <button class="tab-btn" data-tab="tab-equipsets">Equipment Set</button>
+        <button class="tab-btn active" data-tab="tab-characters">キャラクター管理</button>
+        <button class="tab-btn" data-tab="tab-equipsets">装備セット</button>
     </div>
 
     <!-- Tab 1: Character Management -->
     <div id="tab-characters" class="tab-content active">
         <div class="container">
             <div>
-                <h2>Registered Characters</h2>
+                <h2>登録キャラクター</h2>
                 <ul class="char-list" id="charList">
-                    <li class="empty-msg">No characters registered</li>
+                    <li class="empty-msg">キャラクターが登録されていません</li>
                 </ul>
                 <div class="btn-group">
-                    <button class="btn btn-primary" id="btnNewChar">New Character</button>
+                    <button class="btn btn-primary" id="btnNewChar">新規キャラクター</button>
                 </div>
             </div>
 
             <div id="charEditSection" class="hidden">
-                <h2 id="charEditTitle">New Character</h2>
+                <h2 id="charEditTitle">新規キャラクター</h2>
                 <div class="form-group">
-                    <label for="charName">Name</label>
-                    <input type="text" id="charName" placeholder="Character name">
+                    <label for="charName">名前</label>
+                    <input type="text" id="charName" placeholder="キャラクター名">
                 </div>
                 <div class="form-group">
-                    <label for="charRace">Race</label>
+                    <label for="charRace">種族</label>
                     <select id="charRace">
-                        <option value="Hum">Hume</option>
-                        <option value="Elv">Elvaan</option>
-                        <option value="Tar">Tarutaru</option>
-                        <option value="Mit">Mithra</option>
-                        <option value="Gal">Galka</option>
+                        <option value="Hum">ヒューム</option>
+                        <option value="Elv">エルヴァーン</option>
+                        <option value="Tar">タルタル</option>
+                        <option value="Mit">ミスラ</option>
+                        <option value="Gal">ガルカ</option>
                     </select>
                 </div>
 
-                <h3>Job Levels</h3>
+                <h3>ジョブレベル</h3>
                 <table class="job-level-table">
                     <thead>
                         <tr>
-                            <th>Job</th>
+                            <th>ジョブ</th>
                             <th>Lv</th>
                             <th>MLv</th>
                         </tr>
@@ -543,7 +543,7 @@
                 </table>
 
                 <div class="merit-section">
-                    <h3>Merit Points (0-15)</h3>
+                    <h3>メリットポイント (0-15)</h3>
                     <div class="merit-grid">
                         <div class="merit-item">
                             <label for="charMeritHp">HP</label>
@@ -585,8 +585,8 @@
                 </div>
 
                 <div class="btn-group">
-                    <button class="btn btn-primary" id="btnSaveChar">Save</button>
-                    <button class="btn btn-danger" id="btnCancelEdit">Cancel</button>
+                    <button class="btn btn-primary" id="btnSaveChar">保存</button>
+                    <button class="btn btn-danger" id="btnCancelEdit">キャンセル</button>
                 </div>
             </div>
         </div>
@@ -596,15 +596,15 @@
     <div id="tab-equipsets" class="tab-content">
         <div class="equipset-selectors">
             <div class="form-group">
-                <label for="equipSelectChar">Character</label>
+                <label for="equipSelectChar">キャラクター</label>
                 <select id="equipSelectChar">
-                    <option value="">-- Select Character --</option>
+                    <option value="">-- キャラクターを選択 --</option>
                 </select>
             </div>
             <div class="form-group">
-                <label for="equipSelectJob">Job</label>
+                <label for="equipSelectJob">ジョブ</label>
                 <select id="equipSelectJob" disabled>
-                    <option value="">-- Select Job --</option>
+                    <option value="">-- ジョブを選択 --</option>
                 </select>
             </div>
         </div>
@@ -613,21 +613,21 @@
 
         <div id="equipEditSection" class="hidden">
             <div class="form-group">
-                <label for="equipSetName">Name</label>
-                <input type="text" id="equipSetName" placeholder="Equipment set name">
+                <label for="equipSetName">名前</label>
+                <input type="text" id="equipSetName" placeholder="装備セット名">
             </div>
 
             <div id="equipSlotsContainer"></div>
 
             <div id="equipStatusSection" class="status-section">
-                <h3>Status</h3>
+                <h3>ステータス</h3>
                 <table class="status-table">
                     <thead>
                         <tr>
-                            <th>Stat</th>
-                            <th>Base</th>
-                            <th>Equip</th>
-                            <th>Total</th>
+                            <th>項目</th>
+                            <th>素</th>
+                            <th>装備</th>
+                            <th>合計</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -647,7 +647,7 @@
                     <h4>戦闘ステータス（装備）</h4>
                     <table class="status-table">
                         <thead>
-                            <tr><th>Stat</th><th>Value</th></tr>
+                            <tr><th>項目</th><th>値</th></tr>
                         </thead>
                         <tbody>
                             <tr><td>防御力</td><td class="equip-val" id="equipCombatDef">-</td></tr>
@@ -672,8 +672,8 @@
             </div>
 
             <div class="btn-group">
-                <button class="btn btn-primary" id="btnSaveEquipSet">Save</button>
-                <button class="btn btn-danger" id="btnDeleteEquipSet">Delete</button>
+                <button class="btn btn-primary" id="btnSaveEquipSet">保存</button>
+                <button class="btn btn-danger" id="btnDeleteEquipSet">削除</button>
             </div>
         </div>
     </div>
@@ -688,51 +688,51 @@
         let itemsLoaded = false;
 
         const JOBS = [
-            { key: 'War', name: 'Warrior' },
-            { key: 'Mnk', name: 'Monk' },
-            { key: 'Whm', name: 'White Mage' },
-            { key: 'Blm', name: 'Black Mage' },
-            { key: 'Rdm', name: 'Red Mage' },
-            { key: 'Thf', name: 'Thief' },
-            { key: 'Pld', name: 'Paladin' },
-            { key: 'Drk', name: 'Dark Knight' },
-            { key: 'Bst', name: 'Beastmaster' },
-            { key: 'Brd', name: 'Bard' },
-            { key: 'Rng', name: 'Ranger' },
-            { key: 'Sam', name: 'Samurai' },
-            { key: 'Nin', name: 'Ninja' },
-            { key: 'Drg', name: 'Dragoon' },
-            { key: 'Smn', name: 'Summoner' },
-            { key: 'Blu', name: 'Blue Mage' },
-            { key: 'Cor', name: 'Corsair' },
-            { key: 'Pup', name: 'Puppetmaster' },
-            { key: 'Dnc', name: 'Dancer' },
-            { key: 'Sch', name: 'Scholar' },
-            { key: 'Geo', name: 'Geomancer' },
-            { key: 'Run', name: 'Rune Fencer' },
+            { key: 'War', name: '戦士' },
+            { key: 'Mnk', name: 'モンク' },
+            { key: 'Whm', name: '白魔道士' },
+            { key: 'Blm', name: '黒魔道士' },
+            { key: 'Rdm', name: '赤魔道士' },
+            { key: 'Thf', name: 'シーフ' },
+            { key: 'Pld', name: 'ナイト' },
+            { key: 'Drk', name: '暗黒騎士' },
+            { key: 'Bst', name: '獣使い' },
+            { key: 'Brd', name: '吟遊詩人' },
+            { key: 'Rng', name: '狩人' },
+            { key: 'Sam', name: '侍' },
+            { key: 'Nin', name: '忍者' },
+            { key: 'Drg', name: '竜騎士' },
+            { key: 'Smn', name: '召喚士' },
+            { key: 'Blu', name: '青魔道士' },
+            { key: 'Cor', name: 'コルセア' },
+            { key: 'Pup', name: 'からくり士' },
+            { key: 'Dnc', name: '踊り子' },
+            { key: 'Sch', name: '学者' },
+            { key: 'Geo', name: '風水士' },
+            { key: 'Run', name: '魔導剣士' },
         ];
 
         const RACE_NAMES = {
-            'Hum': 'Hume', 'Elv': 'Elvaan', 'Tar': 'Tarutaru', 'Mit': 'Mithra', 'Gal': 'Galka'
+            'Hum': 'ヒューム', 'Elv': 'エルヴァーン', 'Tar': 'タルタル', 'Mit': 'ミスラ', 'Gal': 'ガルカ'
         };
 
         const EQUIPMENT_SLOTS = [
-            { key: 'main',  label: 'Main' },
-            { key: 'sub',   label: 'Sub' },
-            { key: 'range', label: 'Range' },
-            { key: 'ammo',  label: 'Ammo' },
-            { key: 'head',  label: 'Head' },
-            { key: 'body',  label: 'Body' },
-            { key: 'hands', label: 'Hands' },
-            { key: 'legs',  label: 'Legs' },
-            { key: 'feet',  label: 'Feet' },
-            { key: 'neck',  label: 'Neck' },
-            { key: 'waist', label: 'Waist' },
-            { key: 'ear1',  label: 'Ear 1' },
-            { key: 'ear2',  label: 'Ear 2' },
-            { key: 'ring1', label: 'Ring 1' },
-            { key: 'ring2', label: 'Ring 2' },
-            { key: 'back',  label: 'Back' },
+            { key: 'main',  label: 'メイン' },
+            { key: 'sub',   label: 'サブ' },
+            { key: 'range', label: 'レンジ' },
+            { key: 'ammo',  label: '矢弾' },
+            { key: 'head',  label: '頭' },
+            { key: 'body',  label: '胴' },
+            { key: 'hands', label: '両手' },
+            { key: 'legs',  label: '両脚' },
+            { key: 'feet',  label: '両足' },
+            { key: 'neck',  label: '首' },
+            { key: 'waist', label: '腰' },
+            { key: 'ear1',  label: '耳1' },
+            { key: 'ear2',  label: '耳2' },
+            { key: 'ring1', label: '指1' },
+            { key: 'ring2', label: '指2' },
+            { key: 'back',  label: '背' },
         ];
 
         // --- localStorage helpers ---
@@ -801,7 +801,7 @@
             const characters = loadCharacters();
             const list = document.getElementById('charList');
             if (characters.length === 0) {
-                list.innerHTML = '<li class="empty-msg">No characters registered</li>';
+                list.innerHTML = '<li class="empty-msg">キャラクターが登録されていません</li>';
             } else {
                 list.innerHTML = '';
                 characters.forEach(ch => {
@@ -812,8 +812,8 @@
                             <span class="char-race">${RACE_NAMES[ch.race] || ch.race}</span>
                         </span>
                         <span class="char-actions">
-                            <button class="btn btn-primary btn-sm" data-edit="${ch.name}">Edit</button>
-                            <button class="btn btn-danger btn-sm" data-delete="${ch.name}">Delete</button>
+                            <button class="btn btn-primary btn-sm" data-edit="${ch.name}">編集</button>
+                            <button class="btn btn-danger btn-sm" data-delete="${ch.name}">削除</button>
                         </span>
                     `;
                     list.appendChild(li);
@@ -829,7 +829,7 @@
 
             if (character) {
                 editingCharName = character.name;
-                document.getElementById('charEditTitle').textContent = 'Edit Character';
+                document.getElementById('charEditTitle').textContent = 'キャラクター編集';
                 document.getElementById('charName').value = character.name;
                 document.getElementById('charRace').value = character.race;
                 JOBS.forEach(job => {
@@ -849,7 +849,7 @@
                 document.getElementById('charMeritChr').value = mp.chr || 0;
             } else {
                 editingCharName = null;
-                document.getElementById('charEditTitle').textContent = 'New Character';
+                document.getElementById('charEditTitle').textContent = '新規キャラクター';
                 document.getElementById('charName').value = '';
                 document.getElementById('charRace').value = 'Hum';
                 JOBS.forEach(job => {
@@ -870,7 +870,7 @@
         function saveCharacter() {
             const name = document.getElementById('charName').value.trim();
             if (!name) {
-                alert('Please enter a character name.');
+                alert('キャラクター名を入力してください。');
                 return;
             }
 
@@ -903,7 +903,7 @@
                 }
             } else {
                 if (characters.some(c => c.name === name)) {
-                    alert(`Character "${name}" already exists.`);
+                    alert(`キャラクター「${name}」は既に存在します。`);
                     return;
                 }
                 characters.push({ name, race, job_levels, merit_points });
@@ -915,7 +915,7 @@
         }
 
         function deleteCharacter(name) {
-            if (!confirm(`Delete character "${name}"?`)) return;
+            if (!confirm(`キャラクター「${name}」を削除しますか？`)) return;
             const characters = loadCharacters().filter(c => c.name !== name);
             saveCharacters(characters);
             renderCharList();
@@ -974,7 +974,7 @@
                 input.type = 'text';
                 input.className = 'equip-slot-search';
                 input.dataset.slot = slot.key;
-                input.placeholder = 'Search...';
+                input.placeholder = '検索...';
 
                 const dropdown = document.createElement('div');
                 dropdown.className = 'equip-slot-dropdown hidden';
@@ -991,7 +991,7 @@
                 const selected = document.createElement('span');
                 selected.className = 'equip-slot-selected';
                 selected.dataset.slot = slot.key;
-                selected.textContent = 'None';
+                selected.textContent = '';
 
                 const clearBtn = document.createElement('button');
                 clearBtn.className = 'equip-slot-clear';
@@ -1028,7 +1028,7 @@
 
                 clearBtn.addEventListener('click', () => {
                     currentEquipSlots[slot.key] = null;
-                    selected.textContent = 'None';
+                    selected.textContent = '';
                     input.value = '';
                     description.textContent = '';
                     customDescInput.value = '';
@@ -1239,7 +1239,7 @@
         function saveEquipSet() {
             const name = document.getElementById('equipSetName').value.trim();
             if (!name) {
-                alert('Please enter an equipment set name.');
+                alert('装備セット名を入力してください。');
                 return;
             }
 
@@ -1256,7 +1256,7 @@
                     // Check name uniqueness if renamed
                     if (name !== editingEquipSetName) {
                         if (sets.some(s => s.character === character && s.job === job && s.name === name)) {
-                            alert(`Equipment set "${name}" already exists for this character/job.`);
+                            alert(`装備セット「${name}」は既に存在します。`);
                             return;
                         }
                     }
@@ -1265,7 +1265,7 @@
             } else {
                 // Creating new set
                 if (sets.some(s => s.character === character && s.job === job && s.name === name)) {
-                    alert(`Equipment set "${name}" already exists for this character/job.`);
+                    alert(`装備セット「${name}」は既に存在します。`);
                     return;
                 }
                 sets.push({ name, job, character, slots: { ...currentEquipSlots } });
@@ -1279,7 +1279,7 @@
 
         function deleteEquipSet() {
             if (!editingEquipSetName) return;
-            if (!confirm(`Delete equipment set "${editingEquipSetName}"?`)) return;
+            if (!confirm(`装備セット「${editingEquipSetName}」を削除しますか？`)) return;
 
             const sets = loadEquipSets().filter(
                 s => !(s.character === currentEquipChar && s.job === currentEquipJob && s.name === editingEquipSetName)
@@ -1516,7 +1516,7 @@
         function updateEquipCharSelector() {
             const sel = document.getElementById('equipSelectChar');
             const currentVal = sel.value;
-            sel.innerHTML = '<option value="">-- Select Character --</option>';
+            sel.innerHTML = '<option value="">-- キャラクターを選択 --</option>';
             loadCharacters().forEach(ch => {
                 const opt = document.createElement('option');
                 opt.value = ch.name;

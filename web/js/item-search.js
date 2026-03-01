@@ -9,6 +9,33 @@ class ItemSearch {
     }
 
     /**
+     * Normalize string for search: katakana→hiragana, full-width→half-width, lowercase
+     */
+    normalizeForSearch(str) {
+        if (!str) return '';
+        let result = '';
+        for (const char of str) {
+            const code = char.charCodeAt(0);
+            // Katakana (0x30A1-0x30F6) → Hiragana (subtract 0x60)
+            if (code >= 0x30A1 && code <= 0x30F6) {
+                result += String.fromCharCode(code - 0x60);
+            // Full-width uppercase A-Z (0xFF21-0xFF3A)
+            } else if (code >= 0xFF21 && code <= 0xFF3A) {
+                result += String.fromCharCode(code - 0xFF21 + 0x41);
+            // Full-width lowercase a-z (0xFF41-0xFF5A)
+            } else if (code >= 0xFF41 && code <= 0xFF5A) {
+                result += String.fromCharCode(code - 0xFF41 + 0x61);
+            // Full-width digits 0-9 (0xFF10-0xFF19)
+            } else if (code >= 0xFF10 && code <= 0xFF19) {
+                result += String.fromCharCode(code - 0xFF10 + 0x30);
+            } else {
+                result += char;
+            }
+        }
+        return result.toLowerCase();
+    }
+
+    /**
      * Load items from JSON file
      */
     async load(url = './data/items.json') {
@@ -19,6 +46,13 @@ class ItemSearch {
             }
             const data = await response.json();
             this.items = data.items || [];
+            // Pre-compute normalized names for search
+            for (const item of this.items) {
+                item._nEn = this.normalizeForSearch(item.en);
+                item._nJa = this.normalizeForSearch(item.ja);
+                item._nEnl = this.normalizeForSearch(item.enl);
+                item._nJal = this.normalizeForSearch(item.jal);
+            }
             this.loaded = true;
             console.log(`Loaded ${this.items.length} items`);
             return this.items.length;
@@ -226,14 +260,14 @@ class ItemSearch {
 
         let results = [...this.items];
 
-        // Text search (name)
+        // Text search (name) with normalized matching
         if (query) {
-            const q = query.toLowerCase();
+            const q = this.normalizeForSearch(query);
             results = results.filter(item =>
-                (item.en && item.en.toLowerCase().includes(q)) ||
-                (item.ja && item.ja.includes(query)) ||
-                (item.enl && item.enl.toLowerCase().includes(q)) ||
-                (item.jal && item.jal.includes(query))
+                (item._nEn && item._nEn.includes(q)) ||
+                (item._nJa && item._nJa.includes(q)) ||
+                (item._nEnl && item._nEnl.includes(q)) ||
+                (item._nJal && item._nJal.includes(q))
             );
         }
 

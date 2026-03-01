@@ -10,7 +10,7 @@
         }
         body {
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            max-width: 900px;
+            max-width: 1600px;
             margin: 0 auto;
             padding: 20px;
             background-color: #1a1a2e;
@@ -55,7 +55,7 @@
         /* Common */
         .container {
             display: grid;
-            grid-template-columns: 1fr 1fr;
+            grid-template-columns: 250px 1fr;
             gap: 20px;
         }
         .input-section, .result-section {
@@ -270,12 +270,12 @@
         /* Equipment Set */
         .equip-slot-row {
             display: flex;
-            align-items: center;
+            align-items: flex-start;
             gap: 8px;
             margin-bottom: 6px;
         }
         .equip-slot-label {
-            width: 70px;
+            width: 80px;
             flex-shrink: 0;
             font-size: 12px;
             color: #aaa;
@@ -283,7 +283,8 @@
         }
         .equip-slot-input-wrapper {
             position: relative;
-            flex: 1;
+            width: 350px;
+            flex-shrink: 0;
         }
         .equip-slot-search {
             width: 100%;
@@ -320,12 +321,7 @@
             background: #1a1a3e;
         }
         .equip-slot-selected {
-            flex: 1;
-            font-size: 12px;
-            color: #88c0d0;
-            overflow: hidden;
-            text-overflow: ellipsis;
-            white-space: nowrap;
+            display: none;
         }
         .equip-slot-clear {
             padding: 2px 6px;
@@ -341,13 +337,15 @@
             color: #fff;
         }
         .equip-slot-description {
-            flex: 2;
+            width: 800px;
+            flex-shrink: 0;
             font-size: 11px;
             color: #999;
-            padding-left: 10px;
-            white-space: nowrap;
-            overflow: hidden;
-            text-overflow: ellipsis;
+            padding: 4px 10px;
+            white-space: normal;
+            overflow-y: auto;
+            line-height: 1.3em;
+            max-height: 3.9em;
         }
         .status-section {
             margin-top: 20px;
@@ -748,7 +746,21 @@
                     list.appendChild(li);
                 });
             }
-            updateCalcCharSelector();
+            // Update equipment edit character selector
+            const equipEditCharSel = document.getElementById('equipEditChar');
+            if (equipEditCharSel) {
+                const currentVal = equipEditCharSel.value;
+                equipEditCharSel.innerHTML = '<option value="">-- Select Character --</option>';
+                loadCharacters().forEach(ch => {
+                    const opt = document.createElement('option');
+                    opt.value = ch.name;
+                    opt.textContent = `${ch.name} (${RACE_NAMES[ch.race] || ch.race})`;
+                    equipEditCharSel.appendChild(opt);
+                });
+                if (currentVal && [...equipEditCharSel.options].some(o => o.value === currentVal)) {
+                    equipEditCharSel.value = currentVal;
+                }
+            }
         }
 
         function showEditForm(character) {
@@ -1005,9 +1017,9 @@
                 name_ja: item.ja,
                 description_ja: item.description_ja || '',
             };
-            const selectedSpan = document.querySelector(`.equip-slot-selected[data-slot="${slotKey}"]`);
-            if (selectedSpan) {
-                selectedSpan.textContent = item.ja || item.en;
+            const input = document.querySelector(`.equip-slot-search[data-slot="${slotKey}"]`);
+            if (input) {
+                input.value = item.ja || item.en;
             }
             const descDiv = document.querySelector(`.equip-slot-description[data-slot="${slotKey}"]`);
             if (descDiv) {
@@ -1074,9 +1086,13 @@
                 // Update display for each slot
                 EQUIPMENT_SLOTS.forEach(slot => {
                     const data = currentEquipSlots[slot.key];
-                    const selectedSpan = document.querySelector(`.equip-slot-selected[data-slot="${slot.key}"]`);
-                    if (selectedSpan) {
-                        selectedSpan.textContent = data ? (data.name_ja || data.name_en) : 'None';
+                    const input = document.querySelector(`.equip-slot-search[data-slot="${slot.key}"]`);
+                    const descDiv = document.querySelector(`.equip-slot-description[data-slot="${slot.key}"]`);
+                    if (input) {
+                        input.value = data ? (data.name_ja || data.name_en || '') : '';
+                    }
+                    if (descDiv) {
+                        descDiv.textContent = data ? (data.description_ja || '') : '';
                     }
                 });
             } else {
@@ -1087,10 +1103,10 @@
                 document.getElementById('equipSetName').value = '';
                 currentEquipSlots = createEmptySlots();
                 EQUIPMENT_SLOTS.forEach(slot => {
-                    const selectedSpan = document.querySelector(`.equip-slot-selected[data-slot="${slot.key}"]`);
-                    if (selectedSpan) selectedSpan.textContent = 'None';
                     const input = document.querySelector(`.equip-slot-search[data-slot="${slot.key}"]`);
+                    const descDiv = document.querySelector(`.equip-slot-description[data-slot="${slot.key}"]`);
                     if (input) input.value = '';
+                    if (descDiv) descDiv.textContent = '';
                 });
             }
         }
@@ -1137,6 +1153,8 @@
         }
 
         function updateEquipEditStatus() {
+            console.log('[DEBUG] updateEquipEditStatus called');
+            console.log('[DEBUG] wasmReady:', wasmReady, 'itemsLoaded:', itemsLoaded);
             if (!wasmReady || !itemsLoaded) {
                 clearAllEquipStats();
                 return;
@@ -1144,8 +1162,10 @@
 
             const charName = document.getElementById('equipEditChar').value;
             const jobKey = currentEquipJob;
+            console.log('[DEBUG] charName:', charName, 'jobKey:', jobKey);
 
             if (!charName || !jobKey) {
+                console.log('[DEBUG] Missing charName or jobKey');
                 clearAllEquipStats();
                 return;
             }
@@ -1166,12 +1186,12 @@
             try {
                 // Calculate base stats from character profile
                 const baseStats = calculate_status_from_profile(
-                    JSON.stringify({
+                    {
                         name: ch.name,
                         race: ch.race,
                         job_levels: ch.job_levels,
                         merit_points: ch.merit_points
-                    }),
+                    },
                     jobKey,
                     null
                 );
@@ -1193,44 +1213,44 @@
 
                 // Update Equip stats
                 const formatStat = (val) => val > 0 ? `+${val}` : val < 0 ? `${val}` : '-';
-                document.getElementById('equipEquipHp').textContent = formatStat(equip.HP);
-                document.getElementById('equipEquipMp').textContent = formatStat(equip.MP);
-                document.getElementById('equipEquipStr').textContent = formatStat(equip.STR);
-                document.getElementById('equipEquipDex').textContent = formatStat(equip.DEX);
-                document.getElementById('equipEquipVit').textContent = formatStat(equip.VIT);
-                document.getElementById('equipEquipAgi').textContent = formatStat(equip.AGI);
-                document.getElementById('equipEquipInt').textContent = formatStat(equip.INT);
-                document.getElementById('equipEquipMnd').textContent = formatStat(equip.MND);
-                document.getElementById('equipEquipChr').textContent = formatStat(equip.CHR);
+                document.getElementById('equipEquipHp').textContent = formatStat(equip.hp);
+                document.getElementById('equipEquipMp').textContent = formatStat(equip.mp);
+                document.getElementById('equipEquipStr').textContent = formatStat(equip.str);
+                document.getElementById('equipEquipDex').textContent = formatStat(equip.dex);
+                document.getElementById('equipEquipVit').textContent = formatStat(equip.vit);
+                document.getElementById('equipEquipAgi').textContent = formatStat(equip.agi);
+                document.getElementById('equipEquipInt').textContent = formatStat(equip.int);
+                document.getElementById('equipEquipMnd').textContent = formatStat(equip.mnd);
+                document.getElementById('equipEquipChr').textContent = formatStat(equip.chr);
 
                 // Update Total stats
-                document.getElementById('equipTotalHp').textContent = (baseStats.HP || 0) + equip.HP;
-                document.getElementById('equipTotalMp').textContent = (baseStats.MP || 0) + equip.MP;
-                document.getElementById('equipTotalStr').textContent = (baseStats.STR || 0) + equip.STR;
-                document.getElementById('equipTotalDex').textContent = (baseStats.DEX || 0) + equip.DEX;
-                document.getElementById('equipTotalVit').textContent = (baseStats.VIT || 0) + equip.VIT;
-                document.getElementById('equipTotalAgi').textContent = (baseStats.AGI || 0) + equip.AGI;
-                document.getElementById('equipTotalInt').textContent = (baseStats.INT || 0) + equip.INT;
-                document.getElementById('equipTotalMnd').textContent = (baseStats.MND || 0) + equip.MND;
-                document.getElementById('equipTotalChr').textContent = (baseStats.CHR || 0) + equip.CHR;
+                document.getElementById('equipTotalHp').textContent = (baseStats.HP || 0) + equip.hp;
+                document.getElementById('equipTotalMp').textContent = (baseStats.MP || 0) + equip.mp;
+                document.getElementById('equipTotalStr').textContent = (baseStats.STR || 0) + equip.str;
+                document.getElementById('equipTotalDex').textContent = (baseStats.DEX || 0) + equip.dex;
+                document.getElementById('equipTotalVit').textContent = (baseStats.VIT || 0) + equip.vit;
+                document.getElementById('equipTotalAgi').textContent = (baseStats.AGI || 0) + equip.agi;
+                document.getElementById('equipTotalInt').textContent = (baseStats.INT || 0) + equip.int;
+                document.getElementById('equipTotalMnd').textContent = (baseStats.MND || 0) + equip.mnd;
+                document.getElementById('equipTotalChr').textContent = (baseStats.CHR || 0) + equip.chr;
 
                 // Update Combat stats
-                document.getElementById('equipCombatDef').textContent = equip.DEF || '-';
-                document.getElementById('equipCombatAttack').textContent = equip.Attack || '-';
-                document.getElementById('equipCombatAccuracy').textContent = equip.Accuracy || '-';
-                document.getElementById('equipCombatEvasion').textContent = equip.Evasion || '-';
-                document.getElementById('equipCombatRangedAttack').textContent = equip.RangedAttack || '-';
-                document.getElementById('equipCombatRangedAccuracy').textContent = equip.RangedAccuracy || '-';
-                document.getElementById('equipCombatMagicAttack').textContent = equip.MagicAttackBonus || '-';
-                document.getElementById('equipCombatMagicAccuracy').textContent = equip.MagicAccuracy || '-';
-                document.getElementById('equipCombatMagicEvasion').textContent = equip.MagicEvasion || '-';
-                document.getElementById('equipCombatMagicDamage').textContent = equip.MagicDamage || '-';
-                document.getElementById('equipCombatHaste').textContent = equip.Haste ? `${equip.Haste}%` : '-';
-                document.getElementById('equipCombatStoreTp').textContent = equip.StoreTP || '-';
-                document.getElementById('equipCombatDoubleAttack').textContent = equip.DoubleAttack ? `${equip.DoubleAttack}%` : '-';
-                document.getElementById('equipCombatTripleAttack').textContent = equip.TripleAttack ? `${equip.TripleAttack}%` : '-';
-                document.getElementById('equipCombatCritRate').textContent = equip.CriticalHitRate ? `${equip.CriticalHitRate}%` : '-';
-                document.getElementById('equipCombatWsDamage').textContent = equip.WeaponSkillDamage ? `${equip.WeaponSkillDamage}%` : '-';
+                document.getElementById('equipCombatDef').textContent = equip.def || '-';
+                document.getElementById('equipCombatAttack').textContent = equip.attack || '-';
+                document.getElementById('equipCombatAccuracy').textContent = equip.accuracy || '-';
+                document.getElementById('equipCombatEvasion').textContent = equip.evasion || '-';
+                document.getElementById('equipCombatRangedAttack').textContent = equip.ranged_attack || '-';
+                document.getElementById('equipCombatRangedAccuracy').textContent = equip.ranged_accuracy || '-';
+                document.getElementById('equipCombatMagicAttack').textContent = equip.magic_attack || '-';
+                document.getElementById('equipCombatMagicAccuracy').textContent = equip.magic_accuracy || '-';
+                document.getElementById('equipCombatMagicEvasion').textContent = equip.magic_evasion || '-';
+                document.getElementById('equipCombatMagicDamage').textContent = equip.magic_damage || '-';
+                document.getElementById('equipCombatHaste').textContent = equip.haste_pct ? `${equip.haste_pct}%` : '-';
+                document.getElementById('equipCombatStoreTp').textContent = equip.store_tp || '-';
+                document.getElementById('equipCombatDoubleAttack').textContent = equip.double_attack_pct ? `${equip.double_attack_pct}%` : '-';
+                document.getElementById('equipCombatTripleAttack').textContent = equip.triple_attack_pct ? `${equip.triple_attack_pct}%` : '-';
+                document.getElementById('equipCombatCritRate').textContent = equip.critical_hit_rate_pct ? `${equip.critical_hit_rate_pct}%` : '-';
+                document.getElementById('equipCombatWsDamage').textContent = equip.weapon_skill_damage_pct ? `${equip.weapon_skill_damage_pct}%` : '-';
             } catch (e) {
                 console.error('Error calculating equipment edit status:', e);
                 clearAllEquipStats();
@@ -1276,25 +1296,44 @@
             updateEquipEditStatus();
         });
 
-        function calculateEquipSetBonuses(equipSetName) {
-            if (!equipSetName || !itemsLoaded) return getEmptyStats();
+        function calculateEquipSetBonuses(equipSetNameOrObject) {
+            console.log('[DEBUG] calculateEquipSetBonuses called with:', equipSetNameOrObject);
+            if (!equipSetNameOrObject || !itemsLoaded) {
+                console.log('[DEBUG] No equip set or items not loaded');
+                return getEmptyStats();
+            }
 
-            const sets = loadEquipSets();
-            const set = sets.find(s => s.name === equipSetName);
-            if (!set) return getEmptyStats();
+            let slots;
+            // Handle both string (set name) and object (direct slots)
+            if (typeof equipSetNameOrObject === 'string') {
+                const sets = loadEquipSets();
+                const set = sets.find(s => s.name === equipSetNameOrObject);
+                if (!set) return getEmptyStats();
+                slots = set.slots;
+            } else if (typeof equipSetNameOrObject === 'object' && equipSetNameOrObject.slots) {
+                slots = equipSetNameOrObject.slots;
+            } else {
+                return getEmptyStats();
+            }
 
+            console.log('[DEBUG] Processing slots:', slots);
             const statsArray = [];
-            for (const slotKey of Object.keys(set.slots)) {
-                const slotData = set.slots[slotKey];
+            for (const slotKey of Object.keys(slots)) {
+                const slotData = slots[slotKey];
                 if (!slotData) continue;
 
                 const item = itemSearch.items.find(i => i.id === slotData.item_id);
+                console.log('[DEBUG] Slot:', slotKey, 'Item:', item?.en, 'Has description_en:', !!item?.description_en);
                 if (!item || !item.description_en) continue;
 
-                statsArray.push(extractAllStats(item.description_en));
+                const stats = extractAllStats(item.description_en);
+                console.log('[DEBUG] Extracted stats:', stats);
+                statsArray.push(stats);
             }
 
-            return sumStats(statsArray);
+            const result = sumStats(statsArray);
+            console.log('[DEBUG] Total stats:', result);
+            return result;
         }
 
         function formatBonus(value) {

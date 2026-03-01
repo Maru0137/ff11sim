@@ -1050,6 +1050,8 @@
                     query: query,
                     slot: slotKey,
                     job: currentEquipJob ? currentEquipJob.toUpperCase() : '',
+                    sortBy: 'id',
+                    sortOrder: 'desc',
                     limit: 30,
                 });
                 renderSlotDropdown(dropdown, results.items, slotKey, input);

@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="ja">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -8,6 +9,7 @@
         * {
             box-sizing: border-box;
         }
+
         body {
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
             max-width: 1600px;
@@ -16,17 +18,20 @@
             background-color: #1a1a2e;
             color: #eee;
         }
+
         h1 {
             text-align: center;
             color: #f0c040;
-            text-shadow: 2px 2px 4px rgba(0,0,0,0.5);
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.5);
         }
+
         /* Tabs */
         .tabs {
             display: flex;
             gap: 4px;
             margin-bottom: 0;
         }
+
         .tab-btn {
             padding: 10px 20px;
             background: #0f0f23;
@@ -37,11 +42,13 @@
             cursor: pointer;
             font-size: 14px;
         }
+
         .tab-btn.active {
             background: #16213e;
             color: #f0c040;
             border-color: #f0c040;
         }
+
         .tab-content {
             display: none;
             background: #16213e;
@@ -49,41 +56,52 @@
             border-radius: 0 10px 10px 10px;
             border: 1px solid #444;
         }
+
         .tab-content.active {
             display: block;
         }
+
         /* Common */
         .container {
             display: grid;
             grid-template-columns: 250px 1fr;
             gap: 20px;
         }
-        .input-section, .result-section {
+
+        .input-section,
+        .result-section {
             background: #16213e;
             padding: 20px;
             border-radius: 10px;
-            box-shadow: 0 4px 6px rgba(0,0,0,0.3);
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.3);
         }
+
         h2 {
             margin-top: 0;
             color: #f0c040;
             border-bottom: 2px solid #f0c040;
             padding-bottom: 10px;
         }
+
         h3 {
             color: #f0c040;
             margin: 0 0 10px 0;
             font-size: 14px;
         }
+
         .form-group {
             margin-bottom: 15px;
         }
+
         label {
             display: block;
             margin-bottom: 5px;
             color: #aaa;
         }
-        select, input[type="number"], input[type="text"] {
+
+        select,
+        input[type="number"],
+        input[type="text"] {
             width: 100%;
             padding: 8px;
             border: 1px solid #444;
@@ -92,15 +110,19 @@
             color: #eee;
             font-size: 14px;
         }
-        select:focus, input:focus {
+
+        select:focus,
+        input:focus {
             outline: none;
             border-color: #f0c040;
         }
+
         .stat-grid {
             display: grid;
             grid-template-columns: 1fr 1fr;
             gap: 10px;
         }
+
         .stat-item {
             display: flex;
             justify-content: space-between;
@@ -108,57 +130,75 @@
             background: #0f0f23;
             border-radius: 5px;
         }
+
         .stat-name {
             color: #aaa;
         }
+
         .stat-value {
             font-weight: bold;
             color: #4fc3f7;
         }
-        .stat-value.hp { color: #4caf50; }
-        .stat-value.mp { color: #2196f3; }
+
+        .stat-value.hp {
+            color: #4caf50;
+        }
+
+        .stat-value.mp {
+            color: #2196f3;
+        }
+
         .checkbox-group {
             display: flex;
             align-items: center;
             gap: 10px;
         }
+
         input[type="checkbox"] {
             width: 18px;
             height: 18px;
         }
+
         .support-section {
             padding: 10px;
             background: #0f0f23;
             border-radius: 5px;
             margin-top: 10px;
         }
+
         .hidden {
             display: none;
         }
+
         .merit-section {
             margin-top: 20px;
             padding: 15px;
             background: #0f0f23;
             border-radius: 5px;
         }
+
         .merit-grid {
             display: grid;
             grid-template-columns: repeat(3, 1fr);
             gap: 10px;
         }
+
         .merit-item {
             display: flex;
             flex-direction: column;
         }
+
         .merit-item label {
             font-size: 12px;
             margin-bottom: 3px;
         }
+
         .merit-item input {
             width: 100%;
             padding: 5px;
             font-size: 12px;
         }
+
         /* Character registration */
         .btn {
             padding: 8px 16px;
@@ -168,57 +208,70 @@
             font-size: 14px;
             color: #fff;
         }
+
         .btn-primary {
             background: #2196f3;
         }
+
         .btn-primary:hover {
             background: #1976d2;
         }
+
         .btn-danger {
             background: #f44336;
         }
+
         .btn-danger:hover {
             background: #d32f2f;
         }
+
         .btn-group {
             display: flex;
             gap: 8px;
             margin-top: 15px;
         }
+
         .job-level-table {
             width: 100%;
             border-collapse: collapse;
             margin-top: 10px;
         }
+
         .job-level-table th,
         .job-level-table td {
             padding: 4px 8px;
             text-align: center;
             border-bottom: 1px solid #333;
         }
+
         .job-level-table th {
             color: #f0c040;
             font-size: 12px;
         }
+
         .job-level-table td {
             font-size: 13px;
         }
+
         .job-level-table input {
             width: 60px;
             padding: 4px;
             font-size: 12px;
             text-align: center;
         }
+
         .job-level-table .job-name {
             color: #aaa;
             text-align: left;
             font-weight: bold;
         }
+
         .char-list {
             list-style: none;
             padding: 0;
             margin: 10px 0;
         }
+
         .char-list li {
             display: flex;
             justify-content: space-between;
@@ -229,33 +282,41 @@
             margin-bottom: 4px;
             cursor: pointer;
         }
+
         .char-list li:hover {
             background: #1a1a3e;
         }
+
         .char-list li.selected {
             border: 1px solid #f0c040;
         }
+
         .char-list .char-info {
             color: #eee;
         }
+
         .char-list .char-race {
             color: #aaa;
             font-size: 12px;
             margin-left: 8px;
         }
+
         .char-list .char-actions {
             display: flex;
             gap: 4px;
         }
+
         .char-list .btn-sm {
             padding: 4px 8px;
             font-size: 11px;
         }
+
         .empty-msg {
             color: #666;
             text-align: center;
             padding: 20px;
         }
+
         .equip-group-header {
             color: #f0c040;
             font-weight: bold;
@@ -264,9 +325,11 @@
             background: none !important;
             cursor: default !important;
         }
+
         .equip-group-header:hover {
             background: none !important;
         }
+
         /* Equipment Set */
         .equip-slot-row {
             display: flex;
@@ -274,6 +337,7 @@
             gap: 8px;
             margin-bottom: 6px;
         }
+
         .equip-slot-label {
             width: 80px;
             flex-shrink: 0;
@@ -281,11 +345,13 @@
             color: #aaa;
             text-align: right;
         }
+
         .equip-slot-input-wrapper {
             position: relative;
-            width: 350px;
+            width: 200px;
             flex-shrink: 0;
         }
+
         .equip-slot-search {
             width: 100%;
             padding: 5px 28px 5px 8px;
@@ -296,10 +362,12 @@
             color: #eee;
             cursor: pointer;
         }
+
         .equip-slot-search:focus {
             outline: none;
             border-color: #f0c040;
         }
+
         .equip-slot-arrow {
             position: absolute;
             right: 8px;
@@ -309,6 +377,7 @@
             font-size: 10px;
             pointer-events: none;
         }
+
         .equip-slot-dropdown {
             position: absolute;
             top: 100%;
@@ -321,18 +390,22 @@
             border-radius: 0 0 4px 4px;
             z-index: 100;
         }
+
         .equip-slot-dropdown-item {
             padding: 6px 8px;
             font-size: 12px;
             cursor: pointer;
             border-bottom: 1px solid #222;
         }
+
         .equip-slot-dropdown-item:hover {
             background: #1a1a3e;
         }
+
         .equip-slot-selected {
             display: none;
         }
+
         .equip-slot-clear {
             padding: 2px 6px;
             font-size: 11px;
@@ -342,13 +415,15 @@
             border-radius: 3px;
             cursor: pointer;
         }
+
         .equip-slot-clear:hover {
             background: #f44336;
             color: #fff;
         }
+
         .equip-slot-description {
-            width: 800px;
-            flex-shrink: 0;
+            flex: 1;
+            min-width: 0;
             font-size: 11px;
             color: #999;
             padding: 4px 10px;
@@ -357,9 +432,10 @@
             line-height: 1.3em;
             max-height: 3.9em;
         }
+
         .equip-slot-custom-desc {
-            width: 250px;
-            flex-shrink: 0;
+            flex: 1;
+            min-width: 0;
             padding: 4px 8px;
             font-size: 11px;
             border: 1px solid #444;
@@ -367,37 +443,44 @@
             background: #0f0f23;
             color: #eee;
         }
+
         .equip-slot-custom-desc:focus {
             outline: none;
             border-color: #f0c040;
         }
+
         .status-section {
             margin-top: 20px;
             padding: 15px;
             background: #0f0f23;
             border-radius: 5px;
         }
+
         .status-section h3 {
             margin-top: 0;
             margin-bottom: 10px;
             color: #f0c040;
             font-size: 16px;
         }
+
         .status-section h4 {
             margin-top: 15px;
             margin-bottom: 8px;
             color: #f0c040;
             font-size: 14px;
         }
+
         .combat-stats-section {
             margin-top: 15px;
         }
+
         /* Status table */
         .status-table {
             width: 100%;
             border-collapse: collapse;
             margin-bottom: 15px;
         }
+
         .status-table th {
             color: #f0c040;
             font-size: 12px;
@@ -405,40 +488,59 @@
             text-align: right;
             border-bottom: 2px solid #444;
         }
+
         .status-table th:first-child {
             text-align: left;
         }
+
         .status-table td {
             padding: 5px 8px;
             text-align: right;
             border-bottom: 1px solid #333;
             font-size: 13px;
         }
+
         .status-table td:first-child {
             text-align: left;
             color: #aaa;
         }
-        .status-table .base-val { color: #4fc3f7; }
-        .status-table .equip-val { color: #88c0d0; }
-        .status-table .total-val { color: #f0c040; font-weight: bold; }
+
+        .status-table .base-val {
+            color: #4fc3f7;
+        }
+
+        .status-table .equip-val {
+            color: #88c0d0;
+        }
+
+        .status-table .total-val {
+            color: #f0c040;
+            font-weight: bold;
+        }
+
         .combat-stats-section {
             margin-top: 10px;
         }
+
         .combat-stats-section h3 {
             margin: 10px 0 8px 0;
         }
+
         /* Equipment Set selectors */
         .equipset-selectors {
             display: flex;
             gap: 20px;
             margin-bottom: 15px;
         }
+
         .equipset-selectors .form-group {
             margin-bottom: 0;
         }
+
         .equipset-selectors select {
             min-width: 200px;
         }
+
         /* Equipment Set tabs */
         .equipset-tabs {
             display: flex;
@@ -446,6 +548,7 @@
             margin-bottom: 0;
             flex-wrap: wrap;
         }
+
         .equipset-tab {
             padding: 8px 16px;
             background: #0f0f23;
@@ -456,15 +559,18 @@
             cursor: pointer;
             font-size: 13px;
         }
+
         .equipset-tab:hover {
             background: #1a1a3e;
             color: #ddd;
         }
+
         .equipset-tab.active {
             background: #16213e;
             color: #f0c040;
             border-color: #f0c040;
         }
+
         .equipset-tab-add {
             padding: 8px 14px;
             background: #0f0f23;
@@ -476,15 +582,18 @@
             font-size: 16px;
             font-weight: bold;
         }
+
         .equipset-tab-add:hover {
             background: #1a1a3e;
             color: #f0c040;
             border-color: #f0c040;
         }
+
         @media (max-width: 600px) {
             .container {
                 grid-template-columns: 1fr;
             }
+
             .equipset-selectors {
                 flex-direction: column;
                 gap: 10px;
@@ -492,6 +601,7 @@
         }
     </style>
 </head>
+
 <body>
     <h1>FF11 Status Simulator</h1>
 
@@ -631,15 +741,60 @@
                         </tr>
                     </thead>
                     <tbody>
-                        <tr><td>HP</td><td class="base-val" id="equipBaseHp">-</td><td class="equip-val" id="equipEquipHp">-</td><td class="total-val" id="equipTotalHp">-</td></tr>
-                        <tr><td>MP</td><td class="base-val" id="equipBaseMp">-</td><td class="equip-val" id="equipEquipMp">-</td><td class="total-val" id="equipTotalMp">-</td></tr>
-                        <tr><td>STR</td><td class="base-val" id="equipBaseStr">-</td><td class="equip-val" id="equipEquipStr">-</td><td class="total-val" id="equipTotalStr">-</td></tr>
-                        <tr><td>DEX</td><td class="base-val" id="equipBaseDex">-</td><td class="equip-val" id="equipEquipDex">-</td><td class="total-val" id="equipTotalDex">-</td></tr>
-                        <tr><td>VIT</td><td class="base-val" id="equipBaseVit">-</td><td class="equip-val" id="equipEquipVit">-</td><td class="total-val" id="equipTotalVit">-</td></tr>
-                        <tr><td>AGI</td><td class="base-val" id="equipBaseAgi">-</td><td class="equip-val" id="equipEquipAgi">-</td><td class="total-val" id="equipTotalAgi">-</td></tr>
-                        <tr><td>INT</td><td class="base-val" id="equipBaseInt">-</td><td class="equip-val" id="equipEquipInt">-</td><td class="total-val" id="equipTotalInt">-</td></tr>
-                        <tr><td>MND</td><td class="base-val" id="equipBaseMnd">-</td><td class="equip-val" id="equipEquipMnd">-</td><td class="total-val" id="equipTotalMnd">-</td></tr>
-                        <tr><td>CHR</td><td class="base-val" id="equipBaseChr">-</td><td class="equip-val" id="equipEquipChr">-</td><td class="total-val" id="equipTotalChr">-</td></tr>
+                        <tr>
+                            <td>HP</td>
+                            <td class="base-val" id="equipBaseHp">-</td>
+                            <td class="equip-val" id="equipEquipHp">-</td>
+                            <td class="total-val" id="equipTotalHp">-</td>
+                        </tr>
+                        <tr>
+                            <td>MP</td>
+                            <td class="base-val" id="equipBaseMp">-</td>
+                            <td class="equip-val" id="equipEquipMp">-</td>
+                            <td class="total-val" id="equipTotalMp">-</td>
+                        </tr>
+                        <tr>
+                            <td>STR</td>
+                            <td class="base-val" id="equipBaseStr">-</td>
+                            <td class="equip-val" id="equipEquipStr">-</td>
+                            <td class="total-val" id="equipTotalStr">-</td>
+                        </tr>
+                        <tr>
+                            <td>DEX</td>
+                            <td class="base-val" id="equipBaseDex">-</td>
+                            <td class="equip-val" id="equipEquipDex">-</td>
+                            <td class="total-val" id="equipTotalDex">-</td>
+                        </tr>
+                        <tr>
+                            <td>VIT</td>
+                            <td class="base-val" id="equipBaseVit">-</td>
+                            <td class="equip-val" id="equipEquipVit">-</td>
+                            <td class="total-val" id="equipTotalVit">-</td>
+                        </tr>
+                        <tr>
+                            <td>AGI</td>
+                            <td class="base-val" id="equipBaseAgi">-</td>
+                            <td class="equip-val" id="equipEquipAgi">-</td>
+                            <td class="total-val" id="equipTotalAgi">-</td>
+                        </tr>
+                        <tr>
+                            <td>INT</td>
+                            <td class="base-val" id="equipBaseInt">-</td>
+                            <td class="equip-val" id="equipEquipInt">-</td>
+                            <td class="total-val" id="equipTotalInt">-</td>
+                        </tr>
+                        <tr>
+                            <td>MND</td>
+                            <td class="base-val" id="equipBaseMnd">-</td>
+                            <td class="equip-val" id="equipEquipMnd">-</td>
+                            <td class="total-val" id="equipTotalMnd">-</td>
+                        </tr>
+                        <tr>
+                            <td>CHR</td>
+                            <td class="base-val" id="equipBaseChr">-</td>
+                            <td class="equip-val" id="equipEquipChr">-</td>
+                            <td class="total-val" id="equipTotalChr">-</td>
+                        </tr>
                     </tbody>
                 </table>
 
@@ -647,25 +802,76 @@
                     <h4>戦闘ステータス（装備）</h4>
                     <table class="status-table">
                         <thead>
-                            <tr><th>Stat</th><th>Value</th></tr>
+                            <tr>
+                                <th>Stat</th>
+                                <th>Value</th>
+                            </tr>
                         </thead>
                         <tbody>
-                            <tr><td>防御力</td><td class="equip-val" id="equipCombatDef">-</td></tr>
-                            <tr><td>攻撃力</td><td class="equip-val" id="equipCombatAttack">-</td></tr>
-                            <tr><td>命中</td><td class="equip-val" id="equipCombatAccuracy">-</td></tr>
-                            <tr><td>回避</td><td class="equip-val" id="equipCombatEvasion">-</td></tr>
-                            <tr><td>飛攻</td><td class="equip-val" id="equipCombatRangedAttack">-</td></tr>
-                            <tr><td>飛命</td><td class="equip-val" id="equipCombatRangedAccuracy">-</td></tr>
-                            <tr><td>魔攻</td><td class="equip-val" id="equipCombatMagicAttack">-</td></tr>
-                            <tr><td>魔命</td><td class="equip-val" id="equipCombatMagicAccuracy">-</td></tr>
-                            <tr><td>魔回避</td><td class="equip-val" id="equipCombatMagicEvasion">-</td></tr>
-                            <tr><td>魔法ダメージ</td><td class="equip-val" id="equipCombatMagicDamage">-</td></tr>
-                            <tr><td>ヘイスト</td><td class="equip-val" id="equipCombatHaste">-</td></tr>
-                            <tr><td>ストアTP</td><td class="equip-val" id="equipCombatStoreTp">-</td></tr>
-                            <tr><td>ダブルアタック</td><td class="equip-val" id="equipCombatDoubleAttack">-</td></tr>
-                            <tr><td>トリプルアタック</td><td class="equip-val" id="equipCombatTripleAttack">-</td></tr>
-                            <tr><td>クリティカル</td><td class="equip-val" id="equipCombatCritRate">-</td></tr>
-                            <tr><td>WSダメージ</td><td class="equip-val" id="equipCombatWsDamage">-</td></tr>
+                            <tr>
+                                <td>防御力</td>
+                                <td class="equip-val" id="equipCombatDef">-</td>
+                            </tr>
+                            <tr>
+                                <td>攻撃力</td>
+                                <td class="equip-val" id="equipCombatAttack">-</td>
+                            </tr>
+                            <tr>
+                                <td>命中</td>
+                                <td class="equip-val" id="equipCombatAccuracy">-</td>
+                            </tr>
+                            <tr>
+                                <td>回避</td>
+                                <td class="equip-val" id="equipCombatEvasion">-</td>
+                            </tr>
+                            <tr>
+                                <td>飛攻</td>
+                                <td class="equip-val" id="equipCombatRangedAttack">-</td>
+                            </tr>
+                            <tr>
+                                <td>飛命</td>
+                                <td class="equip-val" id="equipCombatRangedAccuracy">-</td>
+                            </tr>
+                            <tr>
+                                <td>魔攻</td>
+                                <td class="equip-val" id="equipCombatMagicAttack">-</td>
+                            </tr>
+                            <tr>
+                                <td>魔命</td>
+                                <td class="equip-val" id="equipCombatMagicAccuracy">-</td>
+                            </tr>
+                            <tr>
+                                <td>魔回避</td>
+                                <td class="equip-val" id="equipCombatMagicEvasion">-</td>
+                            </tr>
+                            <tr>
+                                <td>魔法ダメージ</td>
+                                <td class="equip-val" id="equipCombatMagicDamage">-</td>
+                            </tr>
+                            <tr>
+                                <td>ヘイスト</td>
+                                <td class="equip-val" id="equipCombatHaste">-</td>
+                            </tr>
+                            <tr>
+                                <td>ストアTP</td>
+                                <td class="equip-val" id="equipCombatStoreTp">-</td>
+                            </tr>
+                            <tr>
+                                <td>ダブルアタック</td>
+                                <td class="equip-val" id="equipCombatDoubleAttack">-</td>
+                            </tr>
+                            <tr>
+                                <td>トリプルアタック</td>
+                                <td class="equip-val" id="equipCombatTripleAttack">-</td>
+                            </tr>
+                            <tr>
+                                <td>クリティカル</td>
+                                <td class="equip-val" id="equipCombatCritRate">-</td>
+                            </tr>
+                            <tr>
+                                <td>WSダメージ</td>
+                                <td class="equip-val" id="equipCombatWsDamage">-</td>
+                            </tr>
                         </tbody>
                     </table>
                 </div>
@@ -717,22 +923,22 @@
         };
 
         const EQUIPMENT_SLOTS = [
-            { key: 'main',  label: 'Main' },
-            { key: 'sub',   label: 'Sub' },
-            { key: 'range', label: 'Range' },
-            { key: 'ammo',  label: 'Ammo' },
-            { key: 'head',  label: 'Head' },
-            { key: 'body',  label: 'Body' },
-            { key: 'hands', label: 'Hands' },
-            { key: 'legs',  label: 'Legs' },
-            { key: 'feet',  label: 'Feet' },
-            { key: 'neck',  label: 'Neck' },
-            { key: 'waist', label: 'Waist' },
-            { key: 'ear1',  label: 'Ear 1' },
-            { key: 'ear2',  label: 'Ear 2' },
-            { key: 'ring1', label: 'Ring 1' },
-            { key: 'ring2', label: 'Ring 2' },
-            { key: 'back',  label: 'Back' },
+            { key: 'main', label: 'メイン' },
+            { key: 'sub', label: 'サブ' },
+            { key: 'range', label: 'レンジ' },
+            { key: 'ammo', label: '矢弾' },
+            { key: 'head', label: '頭' },
+            { key: 'body', label: '胴' },
+            { key: 'hands', label: '両手' },
+            { key: 'legs', label: '両脚' },
+            { key: 'feet', label: '両足' },
+            { key: 'neck', label: '首' },
+            { key: 'waist', label: '腰' },
+            { key: 'ear1', label: '左耳' },
+            { key: 'ear2', label: '右耳' },
+            { key: 'ring1', label: '左指' },
+            { key: 'ring2', label: '右指' },
+            { key: 'back', label: '背' },
         ];
 
         // --- localStorage helpers ---
@@ -856,7 +1062,7 @@
                     document.getElementById(`jl_${job.key}_lv`).value = 99;
                     document.getElementById(`jl_${job.key}_mlv`).value = 0;
                 });
-                ['Hp','Mp','Str','Dex','Vit','Agi','Int','Mnd','Chr'].forEach(s => {
+                ['Hp', 'Mp', 'Str', 'Dex', 'Vit', 'Agi', 'Int', 'Mnd', 'Chr'].forEach(s => {
                     document.getElementById(`charMerit${s}`).value = 15;
                 });
             }
@@ -1102,7 +1308,8 @@
             }
             const descDiv = document.querySelector(`.equip-slot-description[data-slot="${slotKey}"]`);
             if (descDiv) {
-                descDiv.textContent = item.description_ja || item.description_en || '';
+                const raw = item.description_ja || item.description_en || '';
+                descDiv.innerHTML = raw.replace(/\\n/g, '<br>');
             }
             const customDescInput = document.querySelector(`.equip-slot-custom-desc[data-slot="${slotKey}"]`);
             if (customDescInput) {
@@ -1203,7 +1410,8 @@
                         input.value = data ? (data.name_ja || data.name_en || '') : '';
                     }
                     if (descDiv) {
-                        descDiv.textContent = data ? (data.description_ja || '') : '';
+                        const raw = data ? (data.description_ja || '') : '';
+                        descDiv.innerHTML = raw.replace(/\\n/g, '<br>');
                     }
                     if (customDescInput) {
                         customDescInput.value = data ? (data.custom_description || '') : '';
@@ -1389,11 +1597,11 @@
                 document.getElementById(`equipTotal${stat}`).textContent = '-';
             });
             ['Def', 'Attack', 'Accuracy', 'Evasion', 'RangedAttack', 'RangedAccuracy',
-             'MagicAttack', 'MagicAccuracy', 'MagicEvasion', 'MagicDamage', 'Haste',
-             'StoreTp', 'DoubleAttack', 'TripleAttack', 'CritRate', 'WsDamage'].forEach(stat => {
-                const elem = document.getElementById(`equipCombat${stat}`);
-                if (elem) elem.textContent = '-';
-            });
+                'MagicAttack', 'MagicAccuracy', 'MagicEvasion', 'MagicDamage', 'Haste',
+                'StoreTp', 'DoubleAttack', 'TripleAttack', 'CritRate', 'WsDamage'].forEach(stat => {
+                    const elem = document.getElementById(`equipCombat${stat}`);
+                    if (elem) elem.textContent = '-';
+                });
         }
 
         // Character selector change
@@ -1551,4 +1759,5 @@
         initWasm();
     </script>
 </body>
+
 </html>

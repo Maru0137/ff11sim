@@ -1,3 +1,4 @@
 Cargo.lock
 rust/target
 web/pkg/
+web/data/items.json

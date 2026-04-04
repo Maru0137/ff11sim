@@ -119,7 +119,7 @@ pub struct MeritPoints {
 }
 
 impl MeritPoints {
-    fn get(&self, kind: StatusKind) -> i32 {
+    pub fn get(&self, kind: StatusKind) -> i32 {
         match kind {
             StatusKind::Hp => self.hp,
             StatusKind::Mp => self.mp,
@@ -137,6 +137,44 @@ impl MeritPoints {
         let rank = self.get(kind);
         assert!(rank >= 0 && rank <= 15, "merit point rank must be between 0 and 15");
         MERIT_POINT_BONUS[kind as usize] * rank
+    }
+}
+
+#[derive(Debug, Clone, Copy, Default, serde::Serialize, serde::Deserialize)]
+pub struct BonusStats {
+    #[serde(default)]
+    pub hp: i32,
+    #[serde(default)]
+    pub mp: i32,
+    #[serde(default)]
+    pub str_: i32,
+    #[serde(default)]
+    pub dex: i32,
+    #[serde(default)]
+    pub vit: i32,
+    #[serde(default)]
+    pub agi: i32,
+    #[serde(default)]
+    pub int: i32,
+    #[serde(default)]
+    pub mnd: i32,
+    #[serde(default)]
+    pub chr: i32,
+}
+
+impl BonusStats {
+    pub fn get(&self, kind: StatusKind) -> i32 {
+        match kind {
+            StatusKind::Hp => self.hp,
+            StatusKind::Mp => self.mp,
+            StatusKind::Str => self.str_,
+            StatusKind::Dex => self.dex,
+            StatusKind::Vit => self.vit,
+            StatusKind::Agi => self.agi,
+            StatusKind::Int => self.int,
+            StatusKind::Mnd => self.mnd,
+            StatusKind::Chr => self.chr,
+        }
     }
 }
 

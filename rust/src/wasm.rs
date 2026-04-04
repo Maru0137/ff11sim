@@ -5,7 +5,7 @@ use crate::chara::Chara;
 use crate::character_profile::CharacterProfile;
 use crate::job::Job;
 use crate::race::Race;
-use crate::status::{MeritPoints, StatusKind};
+use crate::status::{BonusStats, MeritPoints, StatusKind};
 
 #[cfg(target_arch = "wasm32")]
 #[wasm_bindgen(start)]
@@ -112,6 +112,7 @@ pub fn calculate_status(
     support_lv: Option<i32>,
     master_lv: i32,
     merit_points_js: JsValue,
+    bonus_stats_js: JsValue,
 ) -> Result<JsValue, JsValue> {
     let race = str_to_race(race).ok_or_else(|| JsValue::from_str("Invalid race"))?;
     let main_job = str_to_job(main_job).ok_or_else(|| JsValue::from_str("Invalid main job"))?;
@@ -124,11 +125,19 @@ pub fn calculate_status(
         input.into()
     };
 
+    let bonus_stats: BonusStats = if bonus_stats_js.is_undefined() || bonus_stats_js.is_null() {
+        BonusStats::default()
+    } else {
+        serde_wasm_bindgen::from_value(bonus_stats_js)
+            .map_err(|e| JsValue::from_str(&format!("Invalid bonus stats: {}", e)))?
+    };
+
     let mut builder = Chara::builder()
         .race(race)
         .main_job(main_job, main_lv)
         .master_lv(master_lv)
-        .merit_points(merit_points);
+        .merit_points(merit_points)
+        .bonus_stats(bonus_stats);
 
     if let (Some(sj), Some(sl)) = (support_job, support_lv) {
         let support_job = str_to_job(&sj).ok_or_else(|| JsValue::from_str("Invalid support job"))?;
@@ -205,6 +214,7 @@ pub fn calculate_status_from_profile(
     profile_js: JsValue,
     main_job: &str,
     support_job: Option<String>,
+    bonus_stats_js: JsValue,
 ) -> Result<JsValue, JsValue> {
     let profile: CharacterProfile = serde_wasm_bindgen::from_value(profile_js)
         .map_err(|e| JsValue::from_str(&format!("Invalid profile: {}", e)))?;
@@ -219,9 +229,17 @@ pub fn calculate_status_from_profile(
         None => None,
     };
 
-    let chara = profile
+    let bonus_stats: BonusStats = if bonus_stats_js.is_undefined() || bonus_stats_js.is_null() {
+        BonusStats::default()
+    } else {
+        serde_wasm_bindgen::from_value(bonus_stats_js)
+            .map_err(|e| JsValue::from_str(&format!("Invalid bonus stats: {}", e)))?
+    };
+
+    let mut chara = profile
         .to_chara(main_job, support_job)
         .map_err(|e| JsValue::from_str(&e))?;
+    chara.bonus_stats = bonus_stats;
 
     let result = chara_to_status_result(&chara);
     serde_wasm_bindgen::to_value(&result).map_err(|e| JsValue::from_str(&e.to_string()))

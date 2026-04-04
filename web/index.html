@@ -331,17 +331,32 @@
         }
 
         /* Equipment Set */
+        .equip-slot-grid {
+            display: grid;
+            grid-template-columns: 50px 200px 24px 350px 120px 250px 1fr;
+            gap: 0 8px;
+            align-items: start;
+        }
+
+        .equip-slot-header {
+            display: contents;
+            font-size: 11px;
+            color: #888;
+        }
+
+        .equip-slot-header span {
+            padding-bottom: 4px;
+            border-bottom: 1px solid #444;
+            margin-bottom: 4px;
+            font-size: 11px;
+            color: #888;
+        }
+
         .equip-slot-row {
-            display: flex;
-            align-items: flex-start;
-            gap: 8px;
-            margin-bottom: 6px;
-            min-width: 0;
+            display: contents;
         }
 
         .equip-slot-label {
-            width: 50px;
-            flex-shrink: 0;
             font-size: 12px;
             color: #aaa;
             text-align: right;
@@ -349,8 +364,6 @@
 
         .equip-slot-input-wrapper {
             position: relative;
-            width: 200px;
-            flex-shrink: 0;
         }
 
         .equip-slot-search {
@@ -423,8 +436,6 @@
         }
 
         .equip-slot-description {
-            flex: 1;
-            min-width: 0;
             font-size: 11px;
             color: #999;
             padding: 4px 10px;
@@ -432,10 +443,38 @@
             overflow-y: auto;
             line-height: 1.3em;
             max-height: 3.9em;
+            min-width: 0;
+        }
+
+        .equip-slot-aug-container {
+            display: contents;
+        }
+
+        .equip-slot-aug-path {
+            padding: 4px 6px;
+            font-size: 11px;
+            border: 1px solid #444;
+            border-radius: 4px;
+            background: #0f0f23;
+            color: #eee;
+        }
+
+        .equip-slot-aug-path:focus {
+            outline: none;
+            border-color: #f0c040;
+        }
+
+
+        .equip-slot-aug-text {
+            font-size: 11px;
+            color: #cda;
+            line-height: 1.4;
+            white-space: pre-line;
+            padding: 2px 4px;
+            min-width: 0;
         }
 
         .equip-slot-custom-desc {
-            flex: 1;
             min-width: 0;
             padding: 4px 8px;
             font-size: 11px;
@@ -728,7 +767,7 @@
                 <input type="text" id="equipSetName" placeholder="装備セット名">
             </div>
 
-            <div id="equipSlotsContainer"></div>
+            <div id="equipSlotsContainer" class="equip-slot-grid"></div>
 
             <div id="equipStatusSection" class="status-section">
                 <h3>ステータス</h3>
@@ -871,6 +910,7 @@
         let wasmReady = false;
         const itemSearch = new ItemSearch();
         let itemsLoaded = false;
+        let augmentData = {};
 
         const JOBS = [
             { key: 'War', name: '戦士' },
@@ -1144,6 +1184,17 @@
         function buildEquipSlotsUI() {
             const container = document.getElementById('equipSlotsContainer');
             container.innerHTML = '';
+
+            const headerEl = document.createElement('div');
+            headerEl.className = 'equip-slot-header';
+            const headerLabels = ['スロット', '装備名', '', '説明', 'オーグメント', 'Aug説明', 'カスタム'];
+            headerLabels.forEach(text => {
+                const span = document.createElement('span');
+                span.textContent = text;
+                headerEl.appendChild(span);
+            });
+            container.appendChild(headerEl);
+
             EQUIPMENT_SLOTS.forEach(slot => {
                 const row = document.createElement('div');
                 row.className = 'equip-slot-row';
@@ -1194,15 +1245,47 @@
                 customDescInput.dataset.slot = slot.key;
                 customDescInput.placeholder = 'STR+5 Accuracy+10 ...';
 
+                const augContainer = document.createElement('div');
+                augContainer.className = 'equip-slot-aug-container';
+                augContainer.dataset.slot = slot.key;
+
+                const augPathSelect = document.createElement('select');
+                augPathSelect.className = 'equip-slot-aug-path';
+                augPathSelect.dataset.slot = slot.key;
+
+                const augTextDiv = document.createElement('div');
+                augTextDiv.className = 'equip-slot-aug-text';
+                augTextDiv.dataset.slot = slot.key;
+
+                augContainer.appendChild(augPathSelect);
+                augContainer.appendChild(augTextDiv);
+
                 row.appendChild(label);
                 row.appendChild(inputWrapper);
                 row.appendChild(selected);
                 row.appendChild(clearBtn);
                 row.appendChild(description);
+                row.appendChild(augContainer);
                 row.appendChild(customDescInput);
                 container.appendChild(row);
 
                 setupSlotSearch(slot.key, input, dropdown);
+
+                augPathSelect.addEventListener('change', () => {
+                    if (currentEquipSlots[slot.key]) {
+                        const val = augPathSelect.value;
+                        if (val) {
+                            const [pathIdx, rank] = val.split('-').map(Number);
+                            currentEquipSlots[slot.key].aug_path = pathIdx;
+                            currentEquipSlots[slot.key].aug_rank = rank;
+                        } else {
+                            currentEquipSlots[slot.key].aug_path = null;
+                            currentEquipSlots[slot.key].aug_rank = null;
+                        }
+                        updateAugTextDisplay(slot.key);
+                        updateEquipEditStatus();
+                    }
+                });
 
                 customDescInput.addEventListener('input', () => {
                     if (currentEquipSlots[slot.key]) {
@@ -1217,9 +1300,11 @@
                     input.value = '';
                     description.textContent = '';
                     customDescInput.value = '';
+                    updateAugPathOptions(slot.key);
                     updateEquipEditStatus();
                 });
             });
+
         }
 
         function setupSlotSearch(slotKey, input, dropdown) {
@@ -1282,6 +1367,8 @@
                 name_en: item.en,
                 name_ja: item.ja,
                 description_ja: item.description_ja || '',
+                aug_path: null,
+                aug_rank: null,
             };
             const input = document.querySelector(`.equip-slot-search[data-slot="${slotKey}"]`);
             if (input) {
@@ -1296,6 +1383,7 @@
             if (customDescInput) {
                 customDescInput.value = '';
             }
+            updateAugPathOptions(slotKey);
             updateEquipEditStatus();
         }
 
@@ -1397,6 +1485,7 @@
                     if (customDescInput) {
                         customDescInput.value = data ? (data.custom_description || '') : '';
                     }
+                    updateAugPathOptions(slot.key);
                 });
             } else {
                 editingEquipSetName = null;
@@ -1411,6 +1500,7 @@
                     if (input) input.value = '';
                     if (descDiv) descDiv.textContent = '';
                     if (customDescInput) customDescInput.value = '';
+                    updateAugPathOptions(slot.key);
                 });
             }
 
@@ -1504,19 +1594,24 @@
             }
 
             try {
-                const baseStats = calculate_status_from_profile(
-                    {
-                        name: ch.name,
-                        race: ch.race,
-                        job_levels: ch.job_levels,
-                        merit_points: ch.merit_points
-                    },
-                    jobKey,
-                    null
-                );
+                const profile = {
+                    name: ch.name,
+                    race: ch.race,
+                    job_levels: ch.job_levels,
+                    merit_points: ch.merit_points
+                };
+
+                const baseStats = calculate_status_from_profile(profile, jobKey, null, null);
 
                 const tempEquipSet = { name: '_temp', slots: currentEquipSlots };
                 const equip = calculateEquipSetBonuses(tempEquipSet);
+
+                const bonusStats = {
+                    hp: equip.hp, mp: equip.mp,
+                    str_: equip.str, dex: equip.dex, vit: equip.vit,
+                    agi: equip.agi, int: equip.int, mnd: equip.mnd, chr: equip.chr
+                };
+                const totalStats = calculate_status_from_profile(profile, jobKey, null, bonusStats);
 
                 document.getElementById('equipBaseHp').textContent = baseStats.HP || 0;
                 document.getElementById('equipBaseMp').textContent = baseStats.MP || 0;
@@ -1539,15 +1634,15 @@
                 document.getElementById('equipEquipMnd').textContent = formatStat(equip.mnd);
                 document.getElementById('equipEquipChr').textContent = formatStat(equip.chr);
 
-                document.getElementById('equipTotalHp').textContent = (baseStats.HP || 0) + equip.hp;
-                document.getElementById('equipTotalMp').textContent = (baseStats.MP || 0) + equip.mp;
-                document.getElementById('equipTotalStr').textContent = (baseStats.STR || 0) + equip.str;
-                document.getElementById('equipTotalDex').textContent = (baseStats.DEX || 0) + equip.dex;
-                document.getElementById('equipTotalVit').textContent = (baseStats.VIT || 0) + equip.vit;
-                document.getElementById('equipTotalAgi').textContent = (baseStats.AGI || 0) + equip.agi;
-                document.getElementById('equipTotalInt').textContent = (baseStats.INT || 0) + equip.int;
-                document.getElementById('equipTotalMnd').textContent = (baseStats.MND || 0) + equip.mnd;
-                document.getElementById('equipTotalChr').textContent = (baseStats.CHR || 0) + equip.chr;
+                document.getElementById('equipTotalHp').textContent = totalStats.HP || 0;
+                document.getElementById('equipTotalMp').textContent = totalStats.MP || 0;
+                document.getElementById('equipTotalStr').textContent = totalStats.STR || 0;
+                document.getElementById('equipTotalDex').textContent = totalStats.DEX || 0;
+                document.getElementById('equipTotalVit').textContent = totalStats.VIT || 0;
+                document.getElementById('equipTotalAgi').textContent = totalStats.AGI || 0;
+                document.getElementById('equipTotalInt').textContent = totalStats.INT || 0;
+                document.getElementById('equipTotalMnd').textContent = totalStats.MND || 0;
+                document.getElementById('equipTotalChr').textContent = totalStats.CHR || 0;
 
                 document.getElementById('equipCombatDef').textContent = equip.def || '-';
                 document.getElementById('equipCombatAttack').textContent = equip.attack || '-';
@@ -1608,6 +1703,92 @@
         document.getElementById('btnSaveEquipSet').addEventListener('click', saveEquipSet);
         document.getElementById('btnDeleteEquipSet').addEventListener('click', deleteEquipSet);
 
+        // === Augment helper functions ===
+        const AUGMENT_JA_TO_EN = [
+            // Longer patterns first to avoid partial matches
+            ['ウェポンスキルのダメージ', 'Weapon skill damage'],
+            ['マジックバーストダメージ', 'Magic burst damage'],
+            ['物理ダメージ上限', 'Physical damage limit'],
+            ['被物理ダメージ', 'Physical damage taken'],
+            ['被魔法ダメージ', 'Magic damage taken'],
+            ['クリティカルヒット率', 'Critical hit rate'],
+            ['トリプルアタック', '"Triple Attack"'],
+            ['ダブルアタック', '"Double Attack"'],
+            ['魔法ダメージ', 'Magic Damage'],
+            ['被ダメージ', 'Damage taken'],
+            ['ストアTP', '"Store TP"'],
+            ['ヘイスト', 'Haste'],
+            ['魔回避', 'Magic Evasion'],
+            ['飛攻', 'Ranged Attack'],
+            ['飛命', 'Ranged Accuracy'],
+            ['魔命', 'Magic Accuracy'],
+            ['魔攻', '"Magic Atk. Bonus"'],
+            ['回避', 'Evasion'],
+            ['命中', 'Accuracy'],
+            ['攻', 'Attack'],
+        ];
+
+        function convertAugmentJaToEn(text) {
+            let result = text;
+            for (const [ja, en] of AUGMENT_JA_TO_EN) {
+                result = result.replaceAll(ja, en);
+            }
+            return result;
+        }
+
+        function getItemAugments(itemId) {
+            return augmentData[String(itemId)] || null;
+        }
+
+        function updateAugPathOptions(slotKey) {
+            const augContainer = document.querySelector(`.equip-slot-aug-container[data-slot="${slotKey}"]`);
+            const pathSelect = document.querySelector(`.equip-slot-aug-path[data-slot="${slotKey}"]`);
+            if (!augContainer || !pathSelect) return;
+
+            const slotData = currentEquipSlots[slotKey];
+            const augInfo = slotData ? getItemAugments(slotData.item_id) : null;
+
+            if (!augInfo || !augInfo.paths || augInfo.paths.length === 0) {
+                pathSelect.innerHTML = '<option value="">-- オーグメント --</option>';
+                updateAugTextDisplay(slotKey);
+                return;
+            }
+
+            pathSelect.innerHTML = '<option value="">-- オーグメント --</option>';
+            augInfo.paths.forEach((path, idx) => {
+                if (!path.ranks) return;
+                path.ranks.forEach(r => {
+                    const opt = document.createElement('option');
+                    opt.value = `${idx}-${r.rank}`;
+                    opt.textContent = `${path.type} Rank ${r.rank}`;
+                    pathSelect.appendChild(opt);
+                });
+            });
+
+            if (slotData.aug_path != null && slotData.aug_rank != null) {
+                pathSelect.value = `${slotData.aug_path}-${slotData.aug_rank}`;
+            }
+            updateAugTextDisplay(slotKey);
+        }
+
+        function updateAugTextDisplay(slotKey) {
+            const augTextDiv = document.querySelector(`.equip-slot-aug-text[data-slot="${slotKey}"]`);
+            if (!augTextDiv) return;
+            const slotData = currentEquipSlots[slotKey];
+            const text = getAugmentText(slotData);
+            augTextDiv.textContent = text || '';
+        }
+
+        function getAugmentText(slotData) {
+            if (!slotData || slotData.aug_path == null || slotData.aug_rank == null) return null;
+            const augInfo = getItemAugments(slotData.item_id);
+            if (!augInfo) return null;
+            const path = augInfo.paths[slotData.aug_path];
+            if (!path) return null;
+            const rankEntry = path.ranks.find(r => r.rank === slotData.aug_rank);
+            return rankEntry ? rankEntry.text : null;
+        }
+
         function calculateEquipSetBonuses(equipSetNameOrObject) {
             console.log('[DEBUG] calculateEquipSetBonuses called with:', equipSetNameOrObject);
             if (!equipSetNameOrObject || !itemsLoaded) {
@@ -1641,6 +1822,12 @@
                     const stats = extractAllStats(item.description_en);
                     console.log('[DEBUG] Extracted stats:', stats);
                     statsArray.push(stats);
+                }
+
+                const augText = getAugmentText(slotData);
+                if (augText) {
+                    const augStats = extractAllStats(convertAugmentJaToEn(augText));
+                    statsArray.push(augStats);
                 }
 
                 if (slotData.custom_description) {
@@ -1719,6 +1906,10 @@
             await Promise.all([
                 init(),
                 itemSearch.load('./data/items.json').then(() => { itemsLoaded = true; }),
+                fetch('./data/augments.json')
+                    .then(r => r.json())
+                    .then(d => { augmentData = d.augments || {}; })
+                    .catch(() => { augmentData = {}; }),
             ]);
             wasmReady = true;
             buildJobLevelTable();

@@ -1613,15 +1613,15 @@
                 };
                 const totalStats = calculate_status_from_profile(profile, jobKey, null, bonusStats);
 
-                document.getElementById('equipBaseHp').textContent = baseStats.HP || 0;
-                document.getElementById('equipBaseMp').textContent = baseStats.MP || 0;
-                document.getElementById('equipBaseStr').textContent = baseStats.STR || 0;
-                document.getElementById('equipBaseDex').textContent = baseStats.DEX || 0;
-                document.getElementById('equipBaseVit').textContent = baseStats.VIT || 0;
-                document.getElementById('equipBaseAgi').textContent = baseStats.AGI || 0;
-                document.getElementById('equipBaseInt').textContent = baseStats.INT || 0;
-                document.getElementById('equipBaseMnd').textContent = baseStats.MND || 0;
-                document.getElementById('equipBaseChr').textContent = baseStats.CHR || 0;
+                document.getElementById('equipBaseHp').textContent = baseStats.hp || 0;
+                document.getElementById('equipBaseMp').textContent = baseStats.mp || 0;
+                document.getElementById('equipBaseStr').textContent = baseStats.str_ || 0;
+                document.getElementById('equipBaseDex').textContent = baseStats.dex || 0;
+                document.getElementById('equipBaseVit').textContent = baseStats.vit || 0;
+                document.getElementById('equipBaseAgi').textContent = baseStats.agi || 0;
+                document.getElementById('equipBaseInt').textContent = baseStats.int || 0;
+                document.getElementById('equipBaseMnd').textContent = baseStats.mnd || 0;
+                document.getElementById('equipBaseChr').textContent = baseStats.chr || 0;
 
                 const formatStat = (val) => val > 0 ? `+${val}` : val < 0 ? `${val}` : '-';
                 document.getElementById('equipEquipHp').textContent = formatStat(equip.hp);
@@ -1634,15 +1634,15 @@
                 document.getElementById('equipEquipMnd').textContent = formatStat(equip.mnd);
                 document.getElementById('equipEquipChr').textContent = formatStat(equip.chr);
 
-                document.getElementById('equipTotalHp').textContent = totalStats.HP || 0;
-                document.getElementById('equipTotalMp').textContent = totalStats.MP || 0;
-                document.getElementById('equipTotalStr').textContent = totalStats.STR || 0;
-                document.getElementById('equipTotalDex').textContent = totalStats.DEX || 0;
-                document.getElementById('equipTotalVit').textContent = totalStats.VIT || 0;
-                document.getElementById('equipTotalAgi').textContent = totalStats.AGI || 0;
-                document.getElementById('equipTotalInt').textContent = totalStats.INT || 0;
-                document.getElementById('equipTotalMnd').textContent = totalStats.MND || 0;
-                document.getElementById('equipTotalChr').textContent = totalStats.CHR || 0;
+                document.getElementById('equipTotalHp').textContent = totalStats.hp || 0;
+                document.getElementById('equipTotalMp').textContent = totalStats.mp || 0;
+                document.getElementById('equipTotalStr').textContent = totalStats.str_ || 0;
+                document.getElementById('equipTotalDex').textContent = totalStats.dex || 0;
+                document.getElementById('equipTotalVit').textContent = totalStats.vit || 0;
+                document.getElementById('equipTotalAgi').textContent = totalStats.agi || 0;
+                document.getElementById('equipTotalInt').textContent = totalStats.int || 0;
+                document.getElementById('equipTotalMnd').textContent = totalStats.mnd || 0;
+                document.getElementById('equipTotalChr').textContent = totalStats.chr || 0;
 
                 document.getElementById('equipCombatDef').textContent = equip.def || '-';
                 document.getElementById('equipCombatAttack').textContent = equip.attack || '-';

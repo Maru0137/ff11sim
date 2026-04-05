@@ -13,7 +13,12 @@ function extractAllStats(descriptionEn) {
     if (!descriptionEn) return {};
 
     // Normalize literal \n to actual newlines
-    const text = descriptionEn.replace(/\\n/g, '\n');
+    let text = descriptionEn.replace(/\\n/g, '\n');
+
+    // Expand slash-separated stats: "STR/VIT+10" → "STR+10 VIT+10"
+    text = text.replace(/([A-Z]{2,3}(?:\/[A-Z]{2,3})+)\s*([+-]\s*\d+%?)/g, (_, stats, val) => {
+        return stats.split('/').map(s => s + val).join(' ');
+    });
 
     const result = {};
 

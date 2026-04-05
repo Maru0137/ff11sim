@@ -162,6 +162,8 @@ pub struct BonusStats {
     pub chr: i32,
     #[serde(default)]
     pub def: i32,
+    #[serde(default)]
+    pub magic_def_bonus: i32,
 }
 
 impl BonusStats {
@@ -243,4 +245,10 @@ pub fn calc_defense(vit: i32, lv: i32, equip_def: i32) -> i32 {
         18 + (lv - 89) / 2
     };
     (vit as f32 * 1.5) as i32 + lv + alpha + equip_def
+}
+
+/// 魔法防御力を計算する。
+/// Magic Defense = 100 + equip_mdef
+pub fn calc_magic_defense(equip_mdef: i32) -> i32 {
+    100 + equip_mdef
 }

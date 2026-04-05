@@ -24,6 +24,7 @@ pub struct StatusResult {
     pub int: i32,
     pub mnd: i32,
     pub chr: i32,
+    pub def: i32,
 }
 
 fn str_to_race(s: &str) -> Option<Race> {
@@ -192,16 +193,19 @@ pub fn get_jobs() -> Vec<JsValue> {
 }
 
 fn chara_to_status_result(chara: &Chara) -> StatusResult {
+    use crate::status::calc_defense;
+    let vit = chara.status(StatusKind::Vit);
     StatusResult {
         hp: chara.status(StatusKind::Hp),
         mp: chara.status(StatusKind::Mp),
         str_: chara.status(StatusKind::Str),
         dex: chara.status(StatusKind::Dex),
-        vit: chara.status(StatusKind::Vit),
+        vit,
         agi: chara.status(StatusKind::Agi),
         int: chara.status(StatusKind::Int),
         mnd: chara.status(StatusKind::Mnd),
         chr: chara.status(StatusKind::Chr),
+        def: calc_defense(vit, chara.main_lv, chara.bonus_stats.def),
     }
 }
 

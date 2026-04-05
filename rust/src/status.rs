@@ -160,6 +160,8 @@ pub struct BonusStats {
     pub mnd: i32,
     #[serde(default)]
     pub chr: i32,
+    #[serde(default)]
+    pub def: i32,
 }
 
 impl BonusStats {
@@ -225,4 +227,20 @@ pub fn calc_status(kind: StatusKind, grade: Grade, lv: i32) -> f32 {
         ret += (grade.coef_30plus(kind) * std::cmp::max(lv - 30, 0) as f32 * 2.0).floor() / 2.0;
     }
     return ret;
+}
+
+/// 防御力を計算する。
+/// DEF = int(VIT * 1.5) + Lv + α + equip_def
+/// α: Lv1-50=8, Lv51-59=8+(Lv-50), Lv60-90=18, Lv91-99=18+int((Lv-89)/2)
+pub fn calc_defense(vit: i32, lv: i32, equip_def: i32) -> i32 {
+    let alpha = if lv <= 50 {
+        8
+    } else if lv <= 59 {
+        8 + (lv - 50)
+    } else if lv <= 90 {
+        18
+    } else {
+        18 + (lv - 89) / 2
+    };
+    (vit as f32 * 1.5) as i32 + lv + alpha + equip_def
 }

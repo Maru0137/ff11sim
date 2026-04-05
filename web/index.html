@@ -514,9 +514,14 @@
             margin-top: 15px;
         }
 
+        .status-tables-row {
+            display: flex;
+            gap: 20px;
+            flex-wrap: wrap;
+        }
+
         /* Status table */
         .status-table {
-            width: 100%;
             border-collapse: collapse;
             margin-bottom: 15px;
         }
@@ -777,10 +782,11 @@
 
             <div id="equipStatusSection" class="status-section">
                 <h3>ステータス</h3>
+                <div class="status-tables-row">
                 <table class="status-table">
                     <thead>
                         <tr>
-                            <th>項目</th>
+                            <th></th>
                             <th>素</th>
                             <th>装備</th>
                             <th>合計</th>
@@ -843,6 +849,46 @@
                         </tr>
                     </tbody>
                 </table>
+
+                <table class="status-table">
+                    <thead>
+                        <tr>
+                            <th></th>
+                            <th>装備</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td>防</td>
+                            <td class="equip-val" id="equipDefenseDef">-</td>
+                        </tr>
+                        <tr>
+                            <td>魔防</td>
+                            <td class="equip-val" id="equipDefenseMdef">-</td>
+                        </tr>
+                        <tr>
+                            <td>回避</td>
+                            <td class="equip-val" id="equipDefenseEvasion">-</td>
+                        </tr>
+                        <tr>
+                            <td>魔回避</td>
+                            <td class="equip-val" id="equipDefenseMeva">-</td>
+                        </tr>
+                        <tr>
+                            <td>被ダメ</td>
+                            <td class="equip-val" id="equipDefenseDt">-</td>
+                        </tr>
+                        <tr>
+                            <td>被物理</td>
+                            <td class="equip-val" id="equipDefensePdt">-</td>
+                        </tr>
+                        <tr>
+                            <td>被魔法</td>
+                            <td class="equip-val" id="equipDefenseMdt">-</td>
+                        </tr>
+                    </tbody>
+                </table>
+                </div>
 
                 <div class="combat-stats-section">
                     <h4>戦闘ステータス（装備）</h4>
@@ -1617,7 +1663,8 @@
                 const bonusStats = {
                     hp: equip.hp, mp: equip.mp,
                     str_: equip.str, dex: equip.dex, vit: equip.vit,
-                    agi: equip.agi, int: equip.int, mnd: equip.mnd, chr: equip.chr
+                    agi: equip.agi, int: equip.int, mnd: equip.mnd, chr: equip.chr,
+                    def: equip.def
                 };
                 const totalStats = calculate_status_from_profile(profile, jobKey, supportJob, bonusStats);
 
@@ -1668,6 +1715,14 @@
                 document.getElementById('equipCombatTripleAttack').textContent = equip.triple_attack_pct ? `${equip.triple_attack_pct}%` : '-';
                 document.getElementById('equipCombatCritRate').textContent = equip.critical_hit_rate_pct ? `${equip.critical_hit_rate_pct}%` : '-';
                 document.getElementById('equipCombatWsDamage').textContent = equip.weapon_skill_damage_pct ? `${equip.weapon_skill_damage_pct}%` : '-';
+
+                document.getElementById('equipDefenseDef').textContent = totalStats.def || '-';
+                document.getElementById('equipDefenseMdef').textContent = equip.magic_def_bonus || '-';
+                document.getElementById('equipDefenseEvasion').textContent = equip.evasion || '-';
+                document.getElementById('equipDefenseMeva').textContent = equip.magic_evasion || '-';
+                document.getElementById('equipDefenseDt').textContent = equip.damage_taken_pct ? `${equip.damage_taken_pct}%` : '-';
+                document.getElementById('equipDefensePdt').textContent = equip.physical_damage_taken_pct ? `${equip.physical_damage_taken_pct}%` : '-';
+                document.getElementById('equipDefenseMdt').textContent = equip.magic_damage_taken_pct ? `${equip.magic_damage_taken_pct}%` : '-';
             } catch (e) {
                 console.error('Error calculating equipment edit status:', e);
                 clearAllEquipStats();
@@ -1686,6 +1741,10 @@
                     const elem = document.getElementById(`equipCombat${stat}`);
                     if (elem) elem.textContent = '-';
                 });
+            ['Def', 'Mdef', 'Evasion', 'Meva', 'Dt', 'Pdt', 'Mdt'].forEach(stat => {
+                const elem = document.getElementById(`equipDefense${stat}`);
+                if (elem) elem.textContent = '-';
+            });
         }
 
         // Character selector change

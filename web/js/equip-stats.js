@@ -87,6 +87,12 @@ function extractAllStats(descriptionEn) {
     set('critical_hit_rate_pct', matchSigned('Critical hit rate\\s*([+-])\\s*(\\d+)%'));
     set('weapon_skill_damage_pct', matchSigned('Weapon skill damage\\s*([+-])\\s*(\\d+)%'));
 
+    // === Damage taken stats ===
+    set('damage_taken_pct', matchSigned('(?<!Physical )(?<!Magic )Damage taken\\s*([+-])\\s*(\\d+)%'));
+    set('physical_damage_taken_pct', matchSigned('Physical damage taken\\s*([+-])\\s*(\\d+)%'));
+    set('magic_damage_taken_pct', matchSigned('Magic damage taken\\s*([+-])\\s*(\\d+)%'));
+    set('magic_def_bonus', matchSigned('"Magic Def\\.? Bonus"\\s*([+-])\\s*(\\d+)'));
+
     // === Weapon stats (colon format) ===
     set('dmg', matchColon('DMG:[+]?(\\d+)'));
     set('delay', matchColon('Delay:[+]?(\\d+)'));
@@ -116,6 +122,8 @@ function getEmptyStats() {
         haste_pct: 0, store_tp: 0,
         double_attack_pct: 0, triple_attack_pct: 0,
         critical_hit_rate_pct: 0, weapon_skill_damage_pct: 0,
+        damage_taken_pct: 0, physical_damage_taken_pct: 0, magic_damage_taken_pct: 0,
+        magic_def_bonus: 0,
         dmg: 0, delay: 0,
     };
 }

@@ -757,6 +757,12 @@
                     <option value="">-- ジョブを選択 --</option>
                 </select>
             </div>
+            <div class="form-group">
+                <label for="equipSelectSupportJob">サポートジョブ</label>
+                <select id="equipSelectSupportJob" disabled>
+                    <option value="">-- なし --</option>
+                </select>
+            </div>
         </div>
 
         <div id="equipSetTabBar" class="equipset-tabs hidden"></div>
@@ -1172,6 +1178,7 @@
         let editingEquipSetName = null;
         let currentEquipChar = ''; // Selected character name
         let currentEquipJob = ''; // Selected job key
+        let currentEquipSupportJob = ''; // Selected support job key
         let currentEquipSlots = {}; // { slotKey: { item_id, name_en, name_ja } | null }
         let isNewEquipSet = false; // True when creating a new set via "+" tab
 
@@ -1601,7 +1608,8 @@
                     merit_points: ch.merit_points
                 };
 
-                const baseStats = calculate_status_from_profile(profile, jobKey, null, null);
+                const supportJob = currentEquipSupportJob || null;
+                const baseStats = calculate_status_from_profile(profile, jobKey, supportJob, null);
 
                 const tempEquipSet = { name: '_temp', slots: currentEquipSlots };
                 const equip = calculateEquipSetBonuses(tempEquipSet);
@@ -1611,7 +1619,7 @@
                     str_: equip.str, dex: equip.dex, vit: equip.vit,
                     agi: equip.agi, int: equip.int, mnd: equip.mnd, chr: equip.chr
                 };
-                const totalStats = calculate_status_from_profile(profile, jobKey, null, bonusStats);
+                const totalStats = calculate_status_from_profile(profile, jobKey, supportJob, bonusStats);
 
                 document.getElementById('equipBaseHp').textContent = baseStats.hp || 0;
                 document.getElementById('equipBaseMp').textContent = baseStats.mp || 0;
@@ -1684,12 +1692,16 @@
         document.getElementById('equipSelectChar').addEventListener('change', (e) => {
             currentEquipChar = e.target.value;
             const jobSel = document.getElementById('equipSelectJob');
+            const supportJobSel = document.getElementById('equipSelectSupportJob');
             if (currentEquipChar) {
                 jobSel.disabled = false;
             } else {
                 jobSel.disabled = true;
                 jobSel.value = '';
                 currentEquipJob = '';
+                supportJobSel.disabled = true;
+                supportJobSel.innerHTML = '<option value="">-- なし --</option>';
+                currentEquipSupportJob = '';
             }
             renderEquipSetTabs();
         });
@@ -1697,8 +1709,35 @@
         // Job selector change
         document.getElementById('equipSelectJob').addEventListener('change', (e) => {
             currentEquipJob = e.target.value;
+            updateSupportJobOptions();
             renderEquipSetTabs();
         });
+
+        // Support job selector change
+        document.getElementById('equipSelectSupportJob').addEventListener('change', (e) => {
+            currentEquipSupportJob = e.target.value;
+            updateEquipEditStatus();
+        });
+
+        function updateSupportJobOptions() {
+            const supportJobSel = document.getElementById('equipSelectSupportJob');
+            if (!currentEquipJob) {
+                supportJobSel.disabled = true;
+                supportJobSel.innerHTML = '<option value="">-- なし --</option>';
+                currentEquipSupportJob = '';
+                return;
+            }
+            supportJobSel.disabled = false;
+            supportJobSel.innerHTML = '<option value="">-- なし --</option>';
+            for (const job of JOBS) {
+                if (job.key.toLowerCase() === currentEquipJob) continue;
+                const opt = document.createElement('option');
+                opt.value = job.key.toLowerCase();
+                opt.textContent = job.name;
+                supportJobSel.appendChild(opt);
+            }
+            currentEquipSupportJob = '';
+        }
 
         document.getElementById('btnSaveEquipSet').addEventListener('click', saveEquipSet);
         document.getElementById('btnDeleteEquipSet').addEventListener('click', deleteEquipSet);

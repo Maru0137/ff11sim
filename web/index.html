@@ -1701,12 +1701,12 @@
                 document.getElementById('equipTotalChr').textContent = totalStats.chr || 0;
 
                 document.getElementById('equipCombatDef').textContent = equip.def || '-';
-                document.getElementById('equipCombatAttack').textContent = equip.attack || '-';
-                document.getElementById('equipCombatAccuracy').textContent = equip.accuracy || '-';
-                document.getElementById('equipCombatEvasion').textContent = equip.evasion || '-';
+                document.getElementById('equipCombatAttack').textContent = (equip.attack || 0) + (totalStats.attack_bonus || 0) || '-';
+                document.getElementById('equipCombatAccuracy').textContent = (equip.accuracy || 0) + (totalStats.accuracy_bonus || 0) || '-';
+                document.getElementById('equipCombatEvasion').textContent = (equip.evasion || 0) + (totalStats.evasion_bonus || 0) || '-';
                 document.getElementById('equipCombatRangedAttack').textContent = equip.ranged_attack || '-';
                 document.getElementById('equipCombatRangedAccuracy').textContent = equip.ranged_accuracy || '-';
-                document.getElementById('equipCombatMagicAttack').textContent = equip.magic_attack || '-';
+                document.getElementById('equipCombatMagicAttack').textContent = (equip.magic_attack || 0) + (totalStats.magic_attack_bonus || 0) || '-';
                 document.getElementById('equipCombatMagicAccuracy').textContent = equip.magic_accuracy || '-';
                 document.getElementById('equipCombatMagicEvasion').textContent = equip.magic_evasion || '-';
                 document.getElementById('equipCombatMagicDamage').textContent = equip.magic_damage || '-';
@@ -1719,7 +1719,7 @@
 
                 document.getElementById('equipDefenseDef').textContent = totalStats.def || '-';
                 document.getElementById('equipDefenseMdef').textContent = totalStats.mdef || '-';
-                document.getElementById('equipDefenseEvasion').textContent = equip.evasion || '-';
+                document.getElementById('equipDefenseEvasion').textContent = (equip.evasion || 0) + (totalStats.evasion_bonus || 0) || '-';
                 document.getElementById('equipDefenseMeva').textContent = equip.magic_evasion || '-';
                 document.getElementById('equipDefenseDt').textContent = equip.damage_taken_pct ? `${equip.damage_taken_pct}%` : '-';
                 document.getElementById('equipDefensePdt').textContent = equip.physical_damage_taken_pct ? `${equip.physical_damage_taken_pct}%` : '-';

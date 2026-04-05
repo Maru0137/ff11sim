@@ -3,7 +3,7 @@ use wasm_bindgen::prelude::*;
 
 use crate::chara::Chara;
 use crate::character_profile::CharacterProfile;
-use crate::job::Job;
+use crate::job::{Job, JobTrait};
 use crate::race::Race;
 use crate::status::{BonusStats, MeritPoints, StatusKind};
 
@@ -26,6 +26,11 @@ pub struct StatusResult {
     pub chr: i32,
     pub def: i32,
     pub mdef: i32,
+    pub attack_bonus: i32,
+    pub defense_bonus: i32,
+    pub evasion_bonus: i32,
+    pub accuracy_bonus: i32,
+    pub magic_attack_bonus: i32,
 }
 
 fn str_to_race(s: &str) -> Option<Race> {
@@ -194,8 +199,15 @@ pub fn get_jobs() -> Vec<JsValue> {
 }
 
 fn chara_to_status_result(chara: &Chara) -> StatusResult {
-    use crate::status::calc_defense;
+    use crate::status::{calc_defense, calc_magic_defense};
     let vit = chara.status(StatusKind::Vit);
+    let defense_bonus = chara.job_trait_total(JobTrait::DefenseBonus);
+    let mdef_trait = chara.job_trait_total(JobTrait::MagicDefenseBonus);
+    let attack_bonus = chara.job_trait_total(JobTrait::AttackBonus);
+    let evasion_bonus = chara.job_trait_total(JobTrait::EvasionBonus);
+    let accuracy_bonus = chara.job_trait_total(JobTrait::AccuracyBonus);
+    let magic_attack_bonus = chara.job_trait_total(JobTrait::MagicAttackBonus);
+
     StatusResult {
         hp: chara.status(StatusKind::Hp),
         mp: chara.status(StatusKind::Mp),
@@ -206,8 +218,13 @@ fn chara_to_status_result(chara: &Chara) -> StatusResult {
         int: chara.status(StatusKind::Int),
         mnd: chara.status(StatusKind::Mnd),
         chr: chara.status(StatusKind::Chr),
-        def: calc_defense(vit, chara.main_lv, chara.bonus_stats.def),
-        mdef: crate::status::calc_magic_defense(chara.bonus_stats.magic_def_bonus),
+        def: calc_defense(vit, chara.main_lv, chara.bonus_stats.def) + defense_bonus,
+        mdef: calc_magic_defense(chara.bonus_stats.magic_def_bonus) + mdef_trait,
+        attack_bonus,
+        defense_bonus,
+        evasion_bonus,
+        accuracy_bonus,
+        magic_attack_bonus,
     }
 }
 

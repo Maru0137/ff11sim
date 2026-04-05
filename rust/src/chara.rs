@@ -1,6 +1,6 @@
 use std::option::Option;
 
-use crate::job::Job;
+use crate::job::{job_trait_bonus, Job, JobTrait};
 use crate::race::Race;
 use crate::status::{calc_master_lv_bonus, calc_status, BonusStats, MeritPoints, StatusKind};
 
@@ -52,10 +52,33 @@ impl Chara {
         // Merit point bonus
         let merit_bonus = self.merit_points.status_bonus(kind);
 
+        // Job trait bonus for HP/MP
+        let trait_hp_mp = match kind {
+            StatusKind::Hp => {
+                self.job_trait_total(JobTrait::MaxHpBoost)
+                    + self.job_trait_total(JobTrait::MaxHpBoost2)
+            }
+            StatusKind::Mp => self.job_trait_total(JobTrait::MaxMpBoost),
+            _ => 0,
+        };
+
         (status_race + status_main_job + status_support_job).floor() as i32
             + mlv_bonus
             + merit_bonus
             + self.bonus_stats.get(kind)
+            + trait_hp_mp
+    }
+
+    /// Calculate total job trait bonus from main + support job.
+    pub fn job_trait_total(&self, trait_kind: JobTrait) -> i32 {
+        let main = job_trait_bonus(self.main_job, trait_kind, self.main_lv);
+        let support = match (&self.support_job, &self.support_lv) {
+            (Some(job), Some(lv)) => job_trait_bonus(*job, trait_kind, *lv),
+            _ => 0,
+        };
+        // Traits don't stack additively between main and support;
+        // the higher value is used.
+        std::cmp::max(main, support)
     }
 }
 
@@ -170,7 +193,7 @@ mod tests {
     fn test_chara_status_war_drg() {
         // Hum/War99/Drg/MLV50
         // Support calc lv = 99/2 + 50/5 = 49 + 10 = 59
-        // HP = race(D:485) + job(B:675) + support(B@59:510/2=255) + mlv(350) = 1765
+        // HP = race(D:485) + job(B:675) + support(B@59:510/2=255) + mlv(350) + trait(180) = 1945
         // STR = race(D:37.5) + job(A:45) + support(B@59:30/2=15) + mlv(50) = 147
         let chara = Chara::builder()
             .race(Race::Hum)
@@ -180,7 +203,7 @@ mod tests {
             .build()
             .expect("Failed to build Chara");
 
-        assert_eq!(chara.status(StatusKind::Hp), 1765);
+        assert_eq!(chara.status(StatusKind::Hp), 1945);
         assert_eq!(chara.status(StatusKind::Str), 147);
         // War has no MP grade, so MP should be 0 (no MLV bonus either)
         assert_eq!(chara.status(StatusKind::Mp), 0);
@@ -238,8 +261,8 @@ mod tests {
             .build()
             .expect("Failed to build Chara");
 
-        // HP = race(D:485) + job(B:675) = 1160
-        assert_eq!(chara.status(StatusKind::Hp), 1160);
+        // HP = race(D:485) + job(B:675) + trait(180) = 1340
+        assert_eq!(chara.status(StatusKind::Hp), 1340);
         // STR = race(D:37.5) + job(A:45) = 82
         assert_eq!(chara.status(StatusKind::Str), 82);
     }

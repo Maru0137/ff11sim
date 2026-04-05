@@ -162,7 +162,7 @@ mod tests {
         profile.set_job_level(Job::Drg, 59, 0);
 
         let chara = profile.to_chara(Job::War, Some(Job::Drg)).unwrap();
-        assert_eq!(chara.status(StatusKind::Hp), 1765);
+        assert_eq!(chara.status(StatusKind::Hp), 1945);
         assert_eq!(chara.status(StatusKind::Str), 147);
         assert_eq!(chara.status(StatusKind::Mp), 0);
     }
@@ -201,7 +201,7 @@ mod tests {
         profile.set_job_level(Job::War, 99, 0);
 
         let chara = profile.to_chara(Job::War, None).unwrap();
-        assert_eq!(chara.status(StatusKind::Hp), 1160);
+        assert_eq!(chara.status(StatusKind::Hp), 1340);
         assert_eq!(chara.status(StatusKind::Str), 82);
     }
 
@@ -266,8 +266,8 @@ mod tests {
         };
 
         let chara = profile.to_chara(Job::War, None).unwrap();
-        // HP = race(D:485) + job(B:675) + merit(5*10=50) = 1210
-        assert_eq!(chara.status(StatusKind::Hp), 1210);
+        // HP = race(D:485) + job(B:675) + merit(5*10=50) + trait(180) = 1390
+        assert_eq!(chara.status(StatusKind::Hp), 1390);
         // STR = race(D:37.5) + job(A:45) + merit(3*1=3) = 85
         assert_eq!(chara.status(StatusKind::Str), 85);
     }
@@ -351,7 +351,7 @@ mod tests {
         let chara = registry
             .to_chara("Adventurer", Job::War, Some(Job::Drg))
             .unwrap();
-        assert_eq!(chara.status(StatusKind::Hp), 1765);
+        assert_eq!(chara.status(StatusKind::Hp), 1945);
     }
 
     #[test]

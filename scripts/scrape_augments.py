@@ -278,6 +278,55 @@ INDIVIDUAL_PAGES = [
     ("https://wiki.ffo.jp/html/34648.html", "ロリケートトルク+1"),
     ("https://wiki.ffo.jp/html/35114.html", "ヴィムトルク+1"),
     ("https://wiki.ffo.jp/html/34878.html", "ドミネンスピアス+1"),
+    # Job necklaces (ジョブ首 - デュナミス〜ダイバージェンス〜)
+    ("https://wiki.ffo.jp/html/37202.html", "戦士の数珠"),
+    ("https://wiki.ffo.jp/html/37203.html", "モンクの喉輪"),
+    ("https://wiki.ffo.jp/html/37207.html", "クレリクトルク"),
+    ("https://wiki.ffo.jp/html/37206.html", "ソーサラストール"),
+    ("https://wiki.ffo.jp/html/37204.html", "デュエルトルク"),
+    ("https://wiki.ffo.jp/html/37205.html", "アサシンゴルゲット"),
+    ("https://wiki.ffo.jp/html/37208.html", "騎士の数珠"),
+    ("https://wiki.ffo.jp/html/37209.html", "暗黒の数珠"),
+    ("https://wiki.ffo.jp/html/37210.html", "獣使いの首輪"),
+    ("https://wiki.ffo.jp/html/37211.html", "バードチャーム"),
+    ("https://wiki.ffo.jp/html/37212.html", "スカウトゴルゲット"),
+    ("https://wiki.ffo.jp/html/37213.html", "侍の喉輪"),
+    ("https://wiki.ffo.jp/html/37214.html", "忍者の喉輪"),
+    ("https://wiki.ffo.jp/html/37215.html", "竜騎士の首輪"),
+    ("https://wiki.ffo.jp/html/37216.html", "召喚士の首輪"),
+    ("https://wiki.ffo.jp/html/37217.html", "ミラージストール"),
+    ("https://wiki.ffo.jp/html/37218.html", "コモドアチャーム"),
+    ("https://wiki.ffo.jp/html/37219.html", "絡繰士の首輪"),
+    ("https://wiki.ffo.jp/html/37220.html", "エトワールゴルゲ"),
+    ("https://wiki.ffo.jp/html/37221.html", "アギュトストール"),
+    ("https://wiki.ffo.jp/html/37222.html", "バグアチャーム"),
+    ("https://wiki.ffo.jp/html/37223.html", "フサルクトルク"),
+]
+
+# Master weapons: (url, [NQ, HQ1, HQ2]) — augment table is on NQ page, shared across tiers
+MASTER_WEAPON_PAGES = [
+    ("https://wiki.ffo.jp/html/37240.html", ["ウォリアチョッパー", "アゴージチョッパー", "ラブラウンダ"]),
+    ("https://wiki.ffo.jp/html/37229.html", ["メレーフィスト", "ヘシカスフィスト", "サギッタ"]),
+    ("https://wiki.ffo.jp/html/37245.html", ["クレリクワンド", "パエティワンド", "アスクレピウス"]),
+    ("https://wiki.ffo.jp/html/37247.html", ["ソーサラースタッフ", "アークスタッフ", "カウモダキ"]),
+    ("https://wiki.ffo.jp/html/37230.html", ["デュエルソード", "ヴィティソード", "クロセアモース"]),
+    ("https://wiki.ffo.jp/html/37232.html", ["アサシンナイフ", "プランダナイフ", "ガンドリング"]),
+    ("https://wiki.ffo.jp/html/37236.html", ["ヴァラーソード", "カバラリソード", "モーラルタク"]),
+    ("https://wiki.ffo.jp/html/37241.html", ["アビスサイズ", "ファレサイズ", "ファザータイム"]),
+    ("https://wiki.ffo.jp/html/37239.html", ["モンスターアクス", "アンクサアクス", "パング"]),
+    ("https://wiki.ffo.jp/html/37234.html", ["バードナイフ", "ビフナイフ", "バルフォーク"]),
+    ("https://wiki.ffo.jp/html/37251.html", ["スカウトクロスボウ", "アルケクロスボウ", "シャランガ"]),
+    ("https://wiki.ffo.jp/html/37244.html", ["早乙女の太刀", "左近士の太刀", "無布施経"]),
+    ("https://wiki.ffo.jp/html/37243.html", ["甲賀忍刀", "望月忍刀", "不動正宗"]),
+    ("https://wiki.ffo.jp/html/37242.html", ["ウィルムランス", "テロスレランス", "アラム"]),
+    ("https://wiki.ffo.jp/html/37248.html", ["サマナースタッフ", "グリフスタッフ", "ドラウムスタフィル"]),
+    ("https://wiki.ffo.jp/html/37237.html", ["ミラージソード", "ルラーザソード", "ゾモロネガー"]),
+    ("https://wiki.ffo.jp/html/37235.html", ["コモドアナイフ", "ラヌンナイフ", "ロスタム"]),
+    ("https://wiki.ffo.jp/html/37231.html", ["パンタンフィスト", "ピトルフィスト", "シュコアトル"]),
+    ("https://wiki.ffo.jp/html/37233.html", ["エトワールナイフ", "ホロスナイフ", "セタンコーベル"]),
+    ("https://wiki.ffo.jp/html/37249.html", ["アギュトスタッフ", "ペダゴギスタッフ", "ムサ"]),
+    ("https://wiki.ffo.jp/html/37246.html", ["バグアワンド", "シファンワンド", "ビマ"]),
+    ("https://wiki.ffo.jp/html/37238.html", ["フサルククレイモア", "ペオードクレイモア", "モルゲライ"]),
 ]
 
 # ---------------------------------------------------------------------------
@@ -452,6 +501,7 @@ def parse_individual_page(html):
     Table formats:
       - [Rank, 追加性能] (AT1/AT2, Unity Wanted)
       - [Rank, オーグメント, 必要RP, Total RP] (RMEA)
+      - [Rank, Type:A, Type:B, ..., 累計RP] (Master weapons, job necklaces)
     """
     tables = parse_tables(html)
 
@@ -462,8 +512,32 @@ def parse_individual_page(html):
         if not header or "Rank" not in header[0]:
             continue
 
-        # Augment data is in column 1 (追加性能 or オーグメント)
-        # For RMEA 4-col format, columns 1-3 may each have augment lines
+        # Check for Type columns (Master weapons, job necklaces)
+        type_cols = [(i, h) for i, h in enumerate(header)
+                     if "Type:" in h]
+        if type_cols:
+            paths = {}
+            for row in table[1:]:
+                if len(row) < 2:
+                    continue
+                try:
+                    rank = int(row[0].strip())
+                except ValueError:
+                    continue
+                for col_idx, type_name in type_cols:
+                    if col_idx >= len(row):
+                        break
+                    aug_text = parse_augment_cell(row[col_idx])
+                    if not aug_text:
+                        continue
+                    if type_name not in paths:
+                        paths[type_name] = []
+                    paths[type_name].append({"rank": rank, "text": aug_text})
+            if paths:
+                return [{"type": t, "ranks": r} for t, r in paths.items()]
+            continue
+
+        # Simple format: augment data in column 1
         ranks = []
         for row in table[1:]:
             if len(row) < 2:
@@ -475,7 +549,6 @@ def parse_individual_page(html):
 
             # For multi-column augment format (RMEA), combine all aug columns
             if len(header) >= 4 and "RP" in header[2]:
-                # Columns 1..N-2 are augment data (skip RP columns)
                 parts = []
                 for col_idx in range(1, len(row) - 2):
                     cell = parse_augment_cell(row[col_idx])
@@ -648,7 +721,7 @@ def main():
             print(errors[-1])
         time.sleep(1)
 
-    # --- Individual item pages (AT1/AT2, RMEA) ---
+    # --- Individual item pages (AT1/AT2, RMEA, job necklaces) ---
     for url, item_name in INDIVIDUAL_PAGES:
         print(f"Fetching: {item_name} ({url})")
         try:
@@ -661,6 +734,23 @@ def main():
             register_item(augments, name_to_id, item_name, paths, errors)
         except Exception as e:
             errors.append(f"  Error: {item_name}: {e}")
+            print(errors[-1])
+        time.sleep(1)
+
+    # --- Master weapons (NQ/HQ1/HQ2 share same augments) ---
+    for url, names in MASTER_WEAPON_PAGES:
+        print(f"Fetching master weapon: {names[0]} ({url})")
+        try:
+            html = fetch_page(url)
+            paths = parse_individual_page(html)
+            if not paths:
+                errors.append(f"  No augment table: {names[0]}")
+                print(errors[-1])
+                continue
+            for name in names:
+                register_item(augments, name_to_id, name, paths, errors)
+        except Exception as e:
+            errors.append(f"  Error: {names[0]}: {e}")
             print(errors[-1])
         time.sleep(1)
 

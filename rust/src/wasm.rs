@@ -25,6 +25,7 @@ pub struct StatusResult {
     pub mnd: i32,
     pub chr: i32,
     pub def: i32,
+    pub mdef: i32,
 }
 
 fn str_to_race(s: &str) -> Option<Race> {
@@ -206,6 +207,7 @@ fn chara_to_status_result(chara: &Chara) -> StatusResult {
         mnd: chara.status(StatusKind::Mnd),
         chr: chara.status(StatusKind::Chr),
         def: calc_defense(vit, chara.main_lv, chara.bonus_stats.def),
+        mdef: crate::status::calc_magic_defense(chara.bonus_stats.magic_def_bonus),
     }
 }
 

@@ -1664,7 +1664,8 @@
                     hp: equip.hp, mp: equip.mp,
                     str_: equip.str, dex: equip.dex, vit: equip.vit,
                     agi: equip.agi, int: equip.int, mnd: equip.mnd, chr: equip.chr,
-                    def: equip.def
+                    def: equip.def,
+                    magic_def_bonus: equip.magic_def_bonus
                 };
                 const totalStats = calculate_status_from_profile(profile, jobKey, supportJob, bonusStats);
 
@@ -1717,7 +1718,7 @@
                 document.getElementById('equipCombatWsDamage').textContent = equip.weapon_skill_damage_pct ? `${equip.weapon_skill_damage_pct}%` : '-';
 
                 document.getElementById('equipDefenseDef').textContent = totalStats.def || '-';
-                document.getElementById('equipDefenseMdef').textContent = equip.magic_def_bonus || '-';
+                document.getElementById('equipDefenseMdef').textContent = totalStats.mdef || '-';
                 document.getElementById('equipDefenseEvasion').textContent = equip.evasion || '-';
                 document.getElementById('equipDefenseMeva').textContent = equip.magic_evasion || '-';
                 document.getElementById('equipDefenseDt').textContent = equip.damage_taken_pct ? `${equip.damage_taken_pct}%` : '-';

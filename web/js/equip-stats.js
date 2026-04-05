@@ -41,15 +41,15 @@ function extractAllStats(descriptionEn) {
 
     // === Basic 9 stats (flat) ===
     // Use negative lookahead (?!%) to avoid matching percentage patterns
-    set('hp', matchSigned('(?<![A-Za-z])HP\\s*([+-])\\s*(\\d+)(?!%)'));
-    set('mp', matchSigned('(?<![A-Za-z])MP\\s*([+-])\\s*(\\d+)(?!%)'));
-    set('str', matchSigned('(?<![A-Za-z])STR\\s*([+-])\\s*(\\d+)'));
-    set('dex', matchSigned('(?<![A-Za-z])DEX\\s*([+-])\\s*(\\d+)'));
-    set('vit', matchSigned('(?<![A-Za-z])VIT\\s*([+-])\\s*(\\d+)'));
-    set('agi', matchSigned('(?<![A-Za-z])AGI\\s*([+-])\\s*(\\d+)'));
-    set('int', matchSigned('(?<![A-Za-z])INT\\s*([+-])\\s*(\\d+)'));
-    set('mnd', matchSigned('(?<![A-Za-z])MND\\s*([+-])\\s*(\\d+)'));
-    set('chr', matchSigned('(?<![A-Za-z])CHR\\s*([+-])\\s*(\\d+)'));
+    set('hp', matchSigned('(?<![A-Za-z])HP\\s*([+-])\\s*(\\d+)(?!\\d*%)'));
+    set('mp', matchSigned('(?<![A-Za-z])MP\\s*([+-])\\s*(\\d+)(?!\\d*%)'));
+    set('str', matchSigned('(?<![A-Za-z])STR\\s*(?=[+-])([+-])\\s*(\\d+)(?!\\d*%)'));
+    set('dex', matchSigned('(?<![A-Za-z])DEX\\s*(?=[+-])([+-])\\s*(\\d+)(?!\\d*%)'));
+    set('vit', matchSigned('(?<![A-Za-z])VIT\\s*(?=[+-])([+-])\\s*(\\d+)(?!\\d*%)'));
+    set('agi', matchSigned('(?<![A-Za-z])AGI\\s*(?=[+-])([+-])\\s*(\\d+)(?!\\d*%)'));
+    set('int', matchSigned('(?<![A-Za-z])INT\\s*(?=[+-])([+-])\\s*(\\d+)(?!\\d*%)'));
+    set('mnd', matchSigned('(?<![A-Za-z])MND\\s*(?=[+-])([+-])\\s*(\\d+)(?!\\d*%)'));
+    set('chr', matchSigned('(?<![A-Za-z])CHR\\s*(?=[+-])([+-])\\s*(\\d+)(?!\\d*%)'));
 
     // === Basic stats (percentage) ===
     set('hp_pct', matchSigned('(?<![A-Za-z])HP\\s*([+-])\\s*(\\d+)%'));
@@ -85,6 +85,14 @@ function extractAllStats(descriptionEn) {
     // === Weapon stats (colon format) ===
     set('dmg', matchColon('DMG:[+]?(\\d+)'));
     set('delay', matchColon('Delay:[+]?(\\d+)'));
+
+    // === ALLBP: applies to all 7 base parameters (STR~CHR) ===
+    const allbp = matchSigned('ALL\\s*BP\\s*([+-])\\s*(\\d+)');
+    if (allbp !== 0) {
+        for (const key of ['str', 'dex', 'vit', 'agi', 'int', 'mnd', 'chr']) {
+            result[key] = (result[key] || 0) + allbp;
+        }
+    }
 
     return result;
 }

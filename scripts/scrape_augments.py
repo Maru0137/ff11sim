@@ -278,29 +278,11 @@ INDIVIDUAL_PAGES = [
     ("https://wiki.ffo.jp/html/34648.html", "ロリケートトルク+1"),
     ("https://wiki.ffo.jp/html/35114.html", "ヴィムトルク+1"),
     ("https://wiki.ffo.jp/html/34878.html", "ドミネンスピアス+1"),
-    # Job necklaces (ジョブ首 - デュナミス〜ダイバージェンス〜)
-    ("https://wiki.ffo.jp/html/37202.html", "戦士の数珠"),
-    ("https://wiki.ffo.jp/html/37203.html", "モンクの喉輪"),
-    ("https://wiki.ffo.jp/html/37207.html", "クレリクトルク"),
-    ("https://wiki.ffo.jp/html/37206.html", "ソーサラストール"),
-    ("https://wiki.ffo.jp/html/37204.html", "デュエルトルク"),
-    ("https://wiki.ffo.jp/html/37205.html", "アサシンゴルゲット"),
-    ("https://wiki.ffo.jp/html/37208.html", "騎士の数珠"),
-    ("https://wiki.ffo.jp/html/37209.html", "暗黒の数珠"),
-    ("https://wiki.ffo.jp/html/37210.html", "獣使いの首輪"),
-    ("https://wiki.ffo.jp/html/37211.html", "バードチャーム"),
-    ("https://wiki.ffo.jp/html/37212.html", "スカウトゴルゲット"),
-    ("https://wiki.ffo.jp/html/37213.html", "侍の喉輪"),
-    ("https://wiki.ffo.jp/html/37214.html", "忍者の喉輪"),
-    ("https://wiki.ffo.jp/html/37215.html", "竜騎士の首輪"),
-    ("https://wiki.ffo.jp/html/37216.html", "召喚士の首輪"),
-    ("https://wiki.ffo.jp/html/37217.html", "ミラージストール"),
-    ("https://wiki.ffo.jp/html/37218.html", "コモドアチャーム"),
-    ("https://wiki.ffo.jp/html/37219.html", "絡繰士の首輪"),
-    ("https://wiki.ffo.jp/html/37220.html", "エトワールゴルゲ"),
-    ("https://wiki.ffo.jp/html/37221.html", "アギュトストール"),
-    ("https://wiki.ffo.jp/html/37222.html", "バグアチャーム"),
-    ("https://wiki.ffo.jp/html/37223.html", "フサルクトルク"),
+    # Limbus accessories
+    ("https://wiki.ffo.jp/html/39709.html", "アスプロピアス"),
+    ("https://wiki.ffo.jp/html/39710.html", "アスプロマント"),
+    ("https://wiki.ffo.jp/html/39711.html", "メランリング"),
+    ("https://wiki.ffo.jp/html/39712.html", "メランマント"),
 ]
 
 # Master weapons: (url, [NQ, HQ1, HQ2]) — augment table is on NQ page, shared across tiers
@@ -327,6 +309,32 @@ MASTER_WEAPON_PAGES = [
     ("https://wiki.ffo.jp/html/37249.html", ["アギュトスタッフ", "ペダゴギスタッフ", "ムサ"]),
     ("https://wiki.ffo.jp/html/37246.html", ["バグアワンド", "シファンワンド", "ビマ"]),
     ("https://wiki.ffo.jp/html/37238.html", ["フサルククレイモア", "ペオードクレイモア", "モルゲライ"]),
+]
+
+# Job necklaces: (url, [NQ, +1, +2]) — augment shared across tiers
+JOB_NECKLACE_PAGES = [
+    ("https://wiki.ffo.jp/html/37202.html", ["戦士の数珠", "戦士の数珠+1", "戦士の数珠+2"]),
+    ("https://wiki.ffo.jp/html/37203.html", ["モンクの喉輪", "モンクの喉輪+1", "モンクの喉輪+2"]),
+    ("https://wiki.ffo.jp/html/37207.html", ["クレリクトルク", "クレリクトルク+1", "クレリクトルク+2"]),
+    ("https://wiki.ffo.jp/html/37206.html", ["ソーサラストール", "ソーサラストール+1", "ソーサラストール+2"]),
+    ("https://wiki.ffo.jp/html/37204.html", ["デュエルトルク", "デュエルトルク+1", "デュエルトルク+2"]),
+    ("https://wiki.ffo.jp/html/37205.html", ["アサシンゴルゲット", "アサシンゴルゲ+1", "アサシンゴルゲ+2"]),
+    ("https://wiki.ffo.jp/html/37208.html", ["騎士の数珠", "騎士の数珠+1", "騎士の数珠+2"]),
+    ("https://wiki.ffo.jp/html/37209.html", ["暗黒の数珠", "暗黒の数珠+1", "暗黒の数珠+2"]),
+    ("https://wiki.ffo.jp/html/37210.html", ["獣使いの首輪", "獣使いの首輪+1", "獣使いの首輪+2"]),
+    ("https://wiki.ffo.jp/html/37211.html", ["バードチャーム", "バードチャーム+1", "バードチャーム+2"]),
+    ("https://wiki.ffo.jp/html/37212.html", ["スカウトゴルゲット", "スカウトゴルゲ+1", "スカウトゴルゲ+2"]),
+    ("https://wiki.ffo.jp/html/37213.html", ["侍の喉輪", "侍の喉輪+1", "侍の喉輪+2"]),
+    ("https://wiki.ffo.jp/html/37214.html", ["忍者の喉輪", "忍者の喉輪+1", "忍者の喉輪+2"]),
+    ("https://wiki.ffo.jp/html/37215.html", ["竜騎士の首輪", "竜騎士の首輪+1", "竜騎士の首輪+2"]),
+    ("https://wiki.ffo.jp/html/37216.html", ["召喚士の首輪", "召喚士の首輪+1", "召喚士の首輪+2"]),
+    ("https://wiki.ffo.jp/html/37217.html", ["ミラージストール", "ミラージストール+1", "ミラージストール+2"]),
+    ("https://wiki.ffo.jp/html/37218.html", ["コモドアチャーム", "コモドアチャーム+1", "コモドアチャーム+2"]),
+    ("https://wiki.ffo.jp/html/37219.html", ["絡繰士の首輪", "絡繰士の首輪+1", "絡繰士の首輪+2"]),
+    ("https://wiki.ffo.jp/html/37220.html", ["エトワールゴルゲ", "エトワールゴルゲ+1", "エトワールゴルゲ+2"]),
+    ("https://wiki.ffo.jp/html/37221.html", ["アギュトストール", "アギュトストール+1", "アギュトストール+2"]),
+    ("https://wiki.ffo.jp/html/37222.html", ["バグアチャーム", "バグアチャーム+1", "バグアチャーム+2"]),
+    ("https://wiki.ffo.jp/html/37223.html", ["フサルクトルク", "フサルクトルク+1", "フサルクトルク+2"]),
 ]
 
 # ---------------------------------------------------------------------------
@@ -737,8 +745,8 @@ def main():
             print(errors[-1])
         time.sleep(1)
 
-    # --- Master weapons (NQ/HQ1/HQ2 share same augments) ---
-    for url, names in MASTER_WEAPON_PAGES:
+    # --- Master weapons & job necklaces (NQ/HQ1/HQ2 share same augments) ---
+    for url, names in MASTER_WEAPON_PAGES + JOB_NECKLACE_PAGES:
         print(f"Fetching master weapon: {names[0]} ({url})")
         try:
             html = fetch_page(url)

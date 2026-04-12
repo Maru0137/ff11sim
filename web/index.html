@@ -199,6 +199,58 @@
             font-size: 12px;
         }
 
+        .jp-section {
+            margin-top: 20px;
+            padding: 15px;
+            background: #0f0f23;
+            border-radius: 5px;
+        }
+
+        .jp-section-header {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            flex-wrap: wrap;
+            margin-bottom: 12px;
+        }
+
+        .jp-section-header h3 {
+            margin: 0;
+        }
+
+        .jp-section-header select {
+            padding: 5px 8px;
+            font-size: 13px;
+        }
+
+        .jp-total-display {
+            font-size: 13px;
+            color: #8ab4f8;
+            margin-left: auto;
+        }
+
+        .jp-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 10px;
+        }
+
+        .jp-item {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .jp-item label {
+            font-size: 12px;
+            margin-bottom: 3px;
+        }
+
+        .jp-item input {
+            width: 100%;
+            padding: 5px;
+            font-size: 12px;
+        }
+
         /* Character registration */
         .btn {
             padding: 8px 16px;
@@ -739,6 +791,15 @@
                     </div>
                 </div>
 
+                <div class="jp-section">
+                    <div class="jp-section-header">
+                        <h3>ジョブポイント (0-20)</h3>
+                        <select id="jpJobSelector"></select>
+                        <span class="jp-total-display">合計: <span id="jpTotalDisplay">0</span> / 2100</span>
+                    </div>
+                    <div class="jp-grid" id="jpCategoryGrid"></div>
+                </div>
+
                 <div class="btn-group">
                     <button class="btn btn-primary" id="btnSaveChar">保存</button>
                     <button class="btn btn-danger" id="btnCancelEdit">キャンセル</button>
@@ -993,6 +1054,123 @@
             'Hum': 'ヒューム', 'Elv': 'エルヴァーン', 'Tar': 'タルタル', 'Mit': 'ミスラ', 'Gal': 'ガルカ'
         };
 
+        // ジョブポイントのカテゴリ名（各ジョブ10カテゴリ）
+        // wiki.ffo.jp / bg-wiki.com を参照。表記は日本語 Wiki の項目名。
+        const JP_CATEGORIES = {
+            War: ['マイティストライク効果', 'ブレイブンラッシュ効果', 'バーサク効果', 'ディフェンダー効果', 'ウォークライ効果', 'アグレッサー効果', 'リタリエーション効果', 'リストレント効果', 'ブラッドレイジ効果', 'ダブルアタック効果'],
+            Mnk: ['百烈拳効果', '心眼効果', '回避効果', '集中効果', 'チャクラ効果', 'カウンタースタンス効果', '蹴撃の極意効果', 'パーフェクトカウンター効果', '気炎万丈の章効果', '蹴撃効果'],
+            Whm: ['女神の祝福効果', 'アサイラム効果', '聖印効果', '魔法命中率ボーナス', 'イレース効果', 'テンプラス効果', 'ディヴァインカレス時間', 'ディヴァインベール効果', 'ケアル詠唱時間', 'バ系効果'],
+            Blm: ['マナフォント効果', 'サブタルスペル効果', '精霊の印効果', 'マジックバーストダメージ', 'マナウォール効果', '魔法命中率ボーナス', '敵対心ダウス再使用時間', 'マナウェル効果', 'マジックバースト敵対心減少', '魔法ダメージボーナス'],
+            Rdm: ['連続魔効果', 'スタイミー効果', 'コンバート効果', '魔法命中率ボーナス', 'コンポージャー効果', '魔法攻撃力ボーナス', 'サボトゥール効果', '弱体魔法効果時間', 'クイックマジック発動率', '強化魔法効果時間'],
+            Thf: ['トレジャーハンター効果', 'ラルシニー効果', '不意打ち効果', '騙し討ち効果', 'スチール再使用時間', 'マグ効果', 'デスポイル効果', 'コンスピレーター効果', 'ブリー効果', 'トリプルアタック効果'],
+            Pld: ['インビンシブル効果', 'インタビーン効果', 'ホーリーサークル効果', '守護神効果', 'シールドバッシュ効果', 'カバー継続時間', 'ディヴァインエンブレム効果', 'セピルカー継続時間', 'パリセード効果', 'エンライト効果'],
+            Drk: ['ブラッドウェポン効果', 'ソウルエンスレイブ効果', 'アルケインサークル効果', 'ラストリゾート効果', 'ソウルイーター継続時間', '武器ぶち砕き効果', 'ネザーヴォイド効果', 'アルケインクレスト継続時間', 'スカーレットデリリアム継続時間', 'エンダーク効果'],
+            Bst: ['使い魔の術効果', '解き放ち効果', 'ペット命中率ボーナス', 'チャーム成功率', 'リワード効果', 'ペット攻撃間隔短縮', 'レディ効果', 'スパー効果', 'けしかけ効果', 'ペット敵対心'],
+            Brd: ['ソウルボイス効果', 'クラリオンコール効果', 'ミンネ効果', 'メヌエット効果', 'ピアニッシモ効果', '歌命中率ボーナス', 'テヌート効果', 'ララバイ継続時間', 'マルカート効果', 'レクイエム効果'],
+            Rng: ['イーグルアイ効果', 'オーバーキル効果', 'シャープショット効果', 'カモフラージュ効果', 'バラージ効果', 'シャドウバインド継続時間', 'ヴェロシティショット効果', 'ダブルショット効果', 'デコイショット効果', 'アンリミテッドショット効果'],
+            Sam: ['明鏡止水効果', '八重霞効果', '結界効果', '八双効果', '星眼効果', '青眼効果', '狐身一体効果', '葉隠継続時間', '心頭滅却効果', '弓箭の心得効果'],
+            Nin: ['微塵がくれ効果', '万遁効果', '不浄拝礼効果', 'ユガクレ効果', '未来拝効果', '陽忍効果', '陰忍効果', '月光華効果', 'サンジ効果', '鬼哭効果'],
+            Drg: ['コールワイバーン効果', 'スピリットリンク効果', 'エンシェントサークル効果', 'ジャンプ効果', 'ハイジャンプ効果', 'スーパージャンプ効果', 'スピリットジャンプ効果', 'ソウルジャンプ効果', 'ドラゴンブレス効果', 'ワイバーン効果'],
+            Smn: ['召喚魔法効果', 'マイティコール効果', '霊符効果', '召喚獣の絆効果', '召喚獣物理効果', '召喚獣魔法効果', 'ブラッドパクト再使用時間', '召喚獣再使用時間', 'ブラッドブルームド効果', 'アストラルコンジット効果'],
+            Blu: ['アジュール効果', '蒼天効果', '獣契効果', '青魔法スキル', '青魔法MP消費', '魔法攻撃力ボーナス', '同化数', '連携効果', '継続時間', '青魔法強化'],
+            Cor: ['ワイルドカード効果', 'ランダムディール効果', 'ファントムロール効果', 'クイックドロー効果', 'スネークアイ効果', 'フォールドリキャスト', 'バスト時間', 'アラウンド効果', 'トリプルショット効果', 'オーバードライブ効果'],
+            Pup: ['オーバードライブ効果', 'ヒートキャパシティ効果', 'マニューバ効果', 'マニューバ回復時間', 'タクティカルスイッチ効果', 'オートマトン物理', 'オートマトン魔法', 'オートマトンスキル', 'ペット回避', 'オイル効果'],
+            Dnc: ['トランス効果', 'グランドパドドゥ効果', 'ケミカルステップ効果', 'リバイバー効果', 'クロージャー効果', 'コンタダンス効果', 'サンバ効果', 'ワルツ回復量', 'ステップ効果', 'ワルツ再使用時間'],
+            Sch: ['タブララサ効果', 'カルデラ効果', '簡素清貧の章効果', '魔法命中率ボーナス', '震天動地の章効果', '陣効果', 'モドゥスヴェリタス効果', '鼓舞激励の策効果', '敏捷応変の策効果', '天候魔法'],
+            Geo: ['ルミナスセル効果', '神秘の風効果', 'インデ効果', 'エントラスト効果', 'ジオ効果', 'ブレイズオブガラクシー効果', '風水の極意効果', 'メイニュアル効果', 'カーディナルチャント効果', 'ボルスター効果'],
+            Run: ['エリュシオン効果', 'バトルトランス効果', 'ガンビット効果', 'ルーンエンチャント効果', 'バリアタスク効果', 'ヴァレション効果', 'ヴァリエンス効果', 'リベレーター効果', 'ワンフォオール効果', 'レイクストーム効果'],
+        };
+
+        const JP_MAX_TOTAL = 2100;
+        const JP_CATEGORY_COUNT = 10;
+        const JP_MAX_RANK = 20;
+
+        /// 現在編集中キャラクターの JP データ（ジョブキー → ranks 配列）
+        let currentEditingJobPoints = {};
+
+        // 三角数: ランク r まで振るために必要な JP は r*(r+1)/2
+        function jpCategoryCost(rank) {
+            return rank * (rank + 1) / 2;
+        }
+
+        function jpJobTotal(ranks) {
+            return ranks.reduce((s, r) => s + jpCategoryCost(r), 0);
+        }
+
+        // デフォルトの全振り（ランク 20 × 10 カテゴリ）
+        function jpDefaultRanks() {
+            return new Array(JP_CATEGORY_COUNT).fill(JP_MAX_RANK);
+        }
+
+        // キャラクターから JP データをロード（未定義の場合は全振りデフォルト）
+        function loadJobPointsFromCharacter(character) {
+            const result = {};
+            const storedCategories = character && character.job_points && character.job_points.categories || {};
+            JOBS.forEach(job => {
+                const stored = storedCategories[job.key];
+                if (stored && Array.isArray(stored.ranks) && stored.ranks.length === JP_CATEGORY_COUNT) {
+                    result[job.key] = stored.ranks.slice();
+                } else {
+                    result[job.key] = jpDefaultRanks();
+                }
+            });
+            return result;
+        }
+
+        // 現在選択中のジョブに対応するカテゴリ入力を再描画
+        function renderJpCategoryInputs() {
+            const jobKey = document.getElementById('jpJobSelector').value;
+            const grid = document.getElementById('jpCategoryGrid');
+            const names = JP_CATEGORIES[jobKey] || new Array(JP_CATEGORY_COUNT).fill('').map((_, i) => `カテゴリ${i + 1}`);
+            const ranks = currentEditingJobPoints[jobKey] || jpDefaultRanks();
+            grid.innerHTML = '';
+            for (let i = 0; i < JP_CATEGORY_COUNT; i++) {
+                const item = document.createElement('div');
+                item.className = 'jp-item';
+                item.innerHTML = `
+                    <label for="jp_cat_${i}">${names[i] || `カテゴリ${i + 1}`}</label>
+                    <input type="number" id="jp_cat_${i}" min="0" max="${JP_MAX_RANK}" value="${ranks[i]}" data-cat-index="${i}">
+                `;
+                grid.appendChild(item);
+            }
+            updateJpTotalDisplay();
+        }
+
+        function updateJpTotalDisplay() {
+            const jobKey = document.getElementById('jpJobSelector').value;
+            const ranks = currentEditingJobPoints[jobKey] || jpDefaultRanks();
+            document.getElementById('jpTotalDisplay').textContent = jpJobTotal(ranks);
+        }
+
+        // ジョブセレクタ初期化（1 回のみ）
+        function ensureJpJobSelectorInitialized() {
+            const sel = document.getElementById('jpJobSelector');
+            if (sel.options.length === 0) {
+                JOBS.forEach(job => {
+                    const opt = document.createElement('option');
+                    opt.value = job.key;
+                    opt.textContent = job.name;
+                    sel.appendChild(opt);
+                });
+                sel.addEventListener('change', renderJpCategoryInputs);
+                // カテゴリ入力の変更を委任でハンドル
+                document.getElementById('jpCategoryGrid').addEventListener('input', (e) => {
+                    if (e.target.matches('input[data-cat-index]')) {
+                        const idx = parseInt(e.target.dataset.catIndex, 10);
+                        let v = parseInt(e.target.value, 10);
+                        if (isNaN(v)) v = 0;
+                        v = Math.max(0, Math.min(JP_MAX_RANK, v));
+                        const jobKey = document.getElementById('jpJobSelector').value;
+                        if (!currentEditingJobPoints[jobKey]) {
+                            currentEditingJobPoints[jobKey] = jpDefaultRanks();
+                        }
+                        currentEditingJobPoints[jobKey][idx] = v;
+                        updateJpTotalDisplay();
+                    }
+                });
+            }
+        }
+
         const EQUIPMENT_SLOTS = [
             { key: 'main', label: 'メイン' },
             { key: 'sub', label: 'サブ' },
@@ -1103,6 +1281,7 @@
         function showEditForm(character) {
             const section = document.getElementById('charEditSection');
             section.classList.remove('hidden');
+            ensureJpJobSelectorInitialized();
 
             if (character) {
                 editingCharName = character.name;
@@ -1124,6 +1303,7 @@
                 document.getElementById('charMeritInt').value = mp.int || 0;
                 document.getElementById('charMeritMnd').value = mp.mnd || 0;
                 document.getElementById('charMeritChr').value = mp.chr || 0;
+                currentEditingJobPoints = loadJobPointsFromCharacter(character);
             } else {
                 editingCharName = null;
                 document.getElementById('charEditTitle').textContent = '新規キャラクター';
@@ -1136,7 +1316,10 @@
                 ['Hp', 'Mp', 'Str', 'Dex', 'Vit', 'Agi', 'Int', 'Mnd', 'Chr'].forEach(s => {
                     document.getElementById(`charMerit${s}`).value = 15;
                 });
+                currentEditingJobPoints = {};
+                JOBS.forEach(job => { currentEditingJobPoints[job.key] = jpDefaultRanks(); });
             }
+            renderJpCategoryInputs();
         }
 
         function hideEditForm() {
@@ -1171,19 +1354,27 @@
                 chr: parseInt(document.getElementById('charMeritChr').value) || 0,
             };
 
+            // JP: 全ジョブの振り分け状況を保存
+            const job_points_categories = {};
+            JOBS.forEach(job => {
+                const ranks = currentEditingJobPoints[job.key] || jpDefaultRanks();
+                job_points_categories[job.key] = { ranks: ranks.slice() };
+            });
+            const job_points = { categories: job_points_categories };
+
             const characters = loadCharacters();
 
             if (editingCharName) {
                 const idx = characters.findIndex(c => c.name === editingCharName);
                 if (idx >= 0) {
-                    characters[idx] = { name, race, job_levels, merit_points };
+                    characters[idx] = { name, race, job_levels, merit_points, job_points };
                 }
             } else {
                 if (characters.some(c => c.name === name)) {
                     alert(`キャラクター「${name}」は既に存在します。`);
                     return;
                 }
-                characters.push({ name, race, job_levels, merit_points });
+                characters.push({ name, race, job_levels, merit_points, job_points });
             }
 
             saveCharacters(characters);
@@ -1647,11 +1838,24 @@
             }
 
             try {
+                // JP データが未定義の場合は全振り（全 20）をデフォルトとして補完
+                const jpCategories = {};
+                const storedJp = (ch.job_points && ch.job_points.categories) || {};
+                JOBS.forEach(job => {
+                    const stored = storedJp[job.key];
+                    if (stored && Array.isArray(stored.ranks) && stored.ranks.length === JP_CATEGORY_COUNT) {
+                        jpCategories[job.key] = { ranks: stored.ranks.slice() };
+                    } else {
+                        jpCategories[job.key] = { ranks: jpDefaultRanks() };
+                    }
+                });
+
                 const profile = {
                     name: ch.name,
                     race: ch.race,
                     job_levels: ch.job_levels,
-                    merit_points: ch.merit_points
+                    merit_points: ch.merit_points,
+                    job_points: { categories: jpCategories }
                 };
 
                 const supportJob = currentEquipSupportJob || null;
@@ -1707,8 +1911,8 @@
                 document.getElementById('equipCombatRangedAttack').textContent = equip.ranged_attack || '-';
                 document.getElementById('equipCombatRangedAccuracy').textContent = equip.ranged_accuracy || '-';
                 document.getElementById('equipCombatMagicAttack').textContent = (equip.magic_attack || 0) + (totalStats.magic_attack_bonus || 0) || '-';
-                document.getElementById('equipCombatMagicAccuracy').textContent = equip.magic_accuracy || '-';
-                document.getElementById('equipCombatMagicEvasion').textContent = equip.magic_evasion || '-';
+                document.getElementById('equipCombatMagicAccuracy').textContent = (equip.magic_accuracy || 0) + (totalStats.magic_accuracy_bonus || 0) || '-';
+                document.getElementById('equipCombatMagicEvasion').textContent = (equip.magic_evasion || 0) + (totalStats.magic_evasion_bonus || 0) || '-';
                 document.getElementById('equipCombatMagicDamage').textContent = equip.magic_damage || '-';
                 document.getElementById('equipCombatHaste').textContent = equip.haste_pct ? `${equip.haste_pct}%` : '-';
                 document.getElementById('equipCombatStoreTp').textContent = equip.store_tp || '-';
@@ -1720,7 +1924,7 @@
                 document.getElementById('equipDefenseDef').textContent = totalStats.def || '-';
                 document.getElementById('equipDefenseMdef').textContent = totalStats.mdef || '-';
                 document.getElementById('equipDefenseEvasion').textContent = (equip.evasion || 0) + (totalStats.evasion_bonus || 0) || '-';
-                document.getElementById('equipDefenseMeva').textContent = equip.magic_evasion || '-';
+                document.getElementById('equipDefenseMeva').textContent = (equip.magic_evasion || 0) + (totalStats.magic_evasion_bonus || 0) || '-';
                 document.getElementById('equipDefenseDt').textContent = equip.damage_taken_pct ? `${equip.damage_taken_pct}%` : '-';
                 document.getElementById('equipDefensePdt').textContent = equip.physical_damage_taken_pct ? `${equip.physical_damage_taken_pct}%` : '-';
                 document.getElementById('equipDefenseMdt').textContent = equip.magic_damage_taken_pct ? `${equip.magic_damage_taken_pct}%` : '-';

@@ -1,6 +1,7 @@
 use std::option::Option;
 
 use crate::job::{job_trait_bonus, Job, JobTrait};
+use crate::job_points::JobPointCategories;
 use crate::race::Race;
 use crate::status::{calc_master_lv_bonus, calc_status, BonusStats, MeritPoints, StatusKind};
 
@@ -14,6 +15,8 @@ pub struct Chara {
     pub master_lv: i32,
     pub merit_points: MeritPoints,
     pub bonus_stats: BonusStats,
+    /// メインジョブのジョブポイントカテゴリ
+    pub job_points: JobPointCategories,
 }
 
 impl Chara {
@@ -92,6 +95,7 @@ pub struct CharaBuilder {
     master_lv: Option<i32>,
     merit_points: MeritPoints,
     bonus_stats: BonusStats,
+    job_points: JobPointCategories,
 }
 
 impl CharaBuilder {
@@ -133,6 +137,11 @@ impl CharaBuilder {
         self
     }
 
+    pub fn job_points(mut self, job_points: JobPointCategories) -> Self {
+        self.job_points = job_points;
+        self
+    }
+
     pub fn build(self) -> Result<Chara, &'static str> {
         Ok(Chara {
             race: self.race.ok_or("race is required")?,
@@ -143,6 +152,7 @@ impl CharaBuilder {
             master_lv: self.master_lv.ok_or("master_lv is required")?,
             merit_points: self.merit_points,
             bonus_stats: self.bonus_stats,
+            job_points: self.job_points,
         })
     }
 }

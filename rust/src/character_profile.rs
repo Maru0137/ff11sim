@@ -3,6 +3,7 @@ use serde::{Deserialize, Serialize};
 
 use crate::chara::Chara;
 use crate::job::Job;
+use crate::job_points::JobPoints;
 use crate::race::Race;
 use crate::status::MeritPoints;
 
@@ -13,13 +14,15 @@ pub struct JobLevel {
     pub master_lv: i32,
 }
 
-/// キャラクタープロファイル（名前・種族・全ジョブのレベル情報・メリットポイント）
+/// キャラクタープロファイル（名前・種族・全ジョブのレベル情報・メリットポイント・ジョブポイント）
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct CharacterProfile {
     pub name: String,
     pub race: Race,
     pub job_levels: EnumMap<Job, JobLevel>,
     pub merit_points: MeritPoints,
+    #[serde(default)]
+    pub job_points: JobPoints,
 }
 
 impl CharacterProfile {
@@ -29,6 +32,7 @@ impl CharacterProfile {
             race,
             job_levels: EnumMap::default(),
             merit_points: MeritPoints::default(),
+            job_points: JobPoints::default(),
         }
     }
 
@@ -56,7 +60,8 @@ impl CharacterProfile {
             .race(self.race)
             .main_job(main_job, main_jl.level)
             .master_lv(main_jl.master_lv)
-            .merit_points(self.merit_points);
+            .merit_points(self.merit_points)
+            .job_points(self.job_points.categories[main_job]);
 
         if let Some(sub) = support_job {
             let sub_jl = &self.job_levels[sub];

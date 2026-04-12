@@ -4,6 +4,7 @@ use wasm_bindgen::prelude::*;
 use crate::chara::Chara;
 use crate::character_profile::CharacterProfile;
 use crate::job::{Job, JobTrait};
+use crate::job_points::{calc_gift_bonuses, calc_jp_category_bonuses};
 use crate::race::Race;
 use crate::status::{BonusStats, MeritPoints, StatusKind};
 
@@ -31,6 +32,9 @@ pub struct StatusResult {
     pub evasion_bonus: i32,
     pub accuracy_bonus: i32,
     pub magic_attack_bonus: i32,
+    pub magic_accuracy_bonus: i32,
+    pub magic_evasion_bonus: i32,
+    pub total_jp_spent: i32,
 }
 
 fn str_to_race(s: &str) -> Option<Race> {
@@ -201,12 +205,26 @@ pub fn get_jobs() -> Vec<JsValue> {
 fn chara_to_status_result(chara: &Chara) -> StatusResult {
     use crate::status::{calc_defense, calc_magic_defense};
     let vit = chara.status(StatusKind::Vit);
-    let defense_bonus = chara.job_trait_total(JobTrait::DefenseBonus);
+    let defense_bonus_trait = chara.job_trait_total(JobTrait::DefenseBonus);
     let mdef_trait = chara.job_trait_total(JobTrait::MagicDefenseBonus);
-    let attack_bonus = chara.job_trait_total(JobTrait::AttackBonus);
-    let evasion_bonus = chara.job_trait_total(JobTrait::EvasionBonus);
-    let accuracy_bonus = chara.job_trait_total(JobTrait::AccuracyBonus);
-    let magic_attack_bonus = chara.job_trait_total(JobTrait::MagicAttackBonus);
+    let attack_bonus_trait = chara.job_trait_total(JobTrait::AttackBonus);
+    let evasion_bonus_trait = chara.job_trait_total(JobTrait::EvasionBonus);
+    let accuracy_bonus_trait = chara.job_trait_total(JobTrait::AccuracyBonus);
+    let magic_attack_bonus_trait = chara.job_trait_total(JobTrait::MagicAttackBonus);
+
+    // ジョブポイント / ギフトによる戦闘ステータスボーナス
+    let total_jp = chara.job_points.total_jp_spent();
+    let gift = calc_gift_bonuses(chara.main_job, total_jp);
+    let jp_cat = calc_jp_category_bonuses(chara.main_job, &chara.job_points);
+
+    // トレイト系ボーナスとギフト/JPカテゴリ効果を合算
+    let attack_bonus = attack_bonus_trait + gift.physical_attack + jp_cat.physical_attack;
+    let defense_bonus = defense_bonus_trait + gift.physical_defense + jp_cat.physical_defense;
+    let evasion_bonus = evasion_bonus_trait + gift.physical_evasion + jp_cat.physical_evasion;
+    let accuracy_bonus = accuracy_bonus_trait + gift.physical_accuracy + jp_cat.physical_accuracy;
+    let magic_attack_bonus = magic_attack_bonus_trait + gift.magic_attack + jp_cat.magic_attack;
+    let magic_accuracy_bonus = gift.magic_accuracy + jp_cat.magic_accuracy;
+    let magic_evasion_bonus = gift.magic_evasion + jp_cat.magic_evasion;
 
     StatusResult {
         hp: chara.status(StatusKind::Hp),
@@ -219,12 +237,18 @@ fn chara_to_status_result(chara: &Chara) -> StatusResult {
         mnd: chara.status(StatusKind::Mnd),
         chr: chara.status(StatusKind::Chr),
         def: calc_defense(vit, chara.main_lv, chara.bonus_stats.def) + defense_bonus,
-        mdef: calc_magic_defense(chara.bonus_stats.magic_def_bonus) + mdef_trait,
+        mdef: calc_magic_defense(chara.bonus_stats.magic_def_bonus)
+            + mdef_trait
+            + gift.magic_defense
+            + jp_cat.magic_defense,
         attack_bonus,
         defense_bonus,
         evasion_bonus,
         accuracy_bonus,
         magic_attack_bonus,
+        magic_accuracy_bonus,
+        magic_evasion_bonus,
+        total_jp_spent: total_jp,
     }
 }
 

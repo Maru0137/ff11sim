@@ -2148,6 +2148,8 @@
                     agi: equip.agi, int: equip.int, mnd: equip.mnd, chr: equip.chr,
                     def: equip.def,
                     magic_def_bonus: equip.magic_def_bonus,
+                    evasion: equip.evasion || 0,
+                    magic_attack: equip.magic_attack || 0,
                     main_weapon_skill_id: mainWeaponSkillId
                 };
                 const totalStats = calculate_status_from_profile(profile, jobKey, supportJob, bonusStats);
@@ -2183,13 +2185,22 @@
                 document.getElementById('equipTotalMnd').textContent = totalStats.mnd || 0;
                 document.getElementById('equipTotalChr').textContent = totalStats.chr || 0;
 
-                document.getElementById('equipCombatDef').textContent = equip.def || '-';
+                // totalStats.evasion/magic_attack は新フィールド。
+                // WASM キャッシュで未定義の場合は旧計算にフォールバック
+                const evasionDisplay = totalStats.evasion != null
+                    ? totalStats.evasion
+                    : ((equip.evasion || 0) + (totalStats.evasion_bonus || 0));
+                const magicAttackDisplay = totalStats.magic_attack != null
+                    ? totalStats.magic_attack
+                    : ((equip.magic_attack || 0) + (totalStats.magic_attack_bonus || 0));
+
+                document.getElementById('equipCombatDef').textContent = totalStats.def || '-';
                 document.getElementById('equipCombatAttack').textContent = (equip.attack || 0) + (totalStats.attack_bonus || 0) || '-';
                 document.getElementById('equipCombatAccuracy').textContent = (equip.accuracy || 0) + (totalStats.accuracy_bonus || 0) || '-';
-                document.getElementById('equipCombatEvasion').textContent = (equip.evasion || 0) + (totalStats.evasion_bonus || 0) || '-';
+                document.getElementById('equipCombatEvasion').textContent = evasionDisplay || '-';
                 document.getElementById('equipCombatRangedAttack').textContent = equip.ranged_attack || '-';
                 document.getElementById('equipCombatRangedAccuracy').textContent = equip.ranged_accuracy || '-';
-                document.getElementById('equipCombatMagicAttack').textContent = (equip.magic_attack || 0) + (totalStats.magic_attack_bonus || 0) || '-';
+                document.getElementById('equipCombatMagicAttack').textContent = magicAttackDisplay || '-';
                 document.getElementById('equipCombatMagicAccuracy').textContent = (equip.magic_accuracy || 0) + (totalStats.magic_accuracy_bonus || 0) || '-';
                 document.getElementById('equipCombatMagicEvasion').textContent = (equip.magic_evasion || 0) + (totalStats.magic_evasion_bonus || 0) || '-';
                 document.getElementById('equipCombatMagicDamage').textContent = equip.magic_damage || '-';
@@ -2202,7 +2213,7 @@
 
                 document.getElementById('equipDefenseDef').textContent = totalStats.def || '-';
                 document.getElementById('equipDefenseMdef').textContent = totalStats.mdef || '-';
-                document.getElementById('equipDefenseEvasion').textContent = (equip.evasion || 0) + (totalStats.evasion_bonus || 0) || '-';
+                document.getElementById('equipDefenseEvasion').textContent = evasionDisplay || '-';
                 document.getElementById('equipDefenseMeva').textContent = (equip.magic_evasion || 0) + (totalStats.magic_evasion_bonus || 0) || '-';
 
                 // 有効スキル値の表示（値が 0 のスキルは非表示）

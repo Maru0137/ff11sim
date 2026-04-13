@@ -2177,7 +2177,11 @@
                     ranged_accuracy: equip.ranged_accuracy || 0,
                     main_weapon_skill_id: mainWeaponSkillId,
                     sub_weapon_skill_id: subWeaponSkillId,
-                    ranged_weapon_skill_id: rangedWeaponSkillId
+                    ranged_weapon_skill_id: rangedWeaponSkillId,
+                    skill_bonus_main: equip.skill_bonus_main || {},
+                    skill_bonus_sub: equip.skill_bonus_sub || {},
+                    skill_bonus_ranged: equip.skill_bonus_ranged || {},
+                    skill_bonus_global: equip.skill_bonus_global || {}
                 };
                 const totalStats = calculate_status_from_profile(profile, jobKey, supportJob, bonusStats);
 
@@ -2450,6 +2454,26 @@
 
             console.log('[DEBUG] Processing slots:', slots);
             const statsArray = [];
+            // スキルボーナスをスロット別に集計:
+            // 武器スロット(main/sub/range)装備の「武器スキル」ボーナスはそのスロット専用。
+            // それ以外（非武器スロット装備すべて、武器スロット装備の非武器スキル）は全スロット共通。
+            const skillBonusBuckets = {
+                main: {}, sub: {}, ranged: {}, global: {}
+            };
+            const addSkillBonuses = (slotKey, bonuses) => {
+                if (!bonuses) return;
+                const targetSlot = slotKey === 'range' ? 'ranged' : slotKey;
+                const isWeaponSlot = (slotKey === 'main' || slotKey === 'sub' || slotKey === 'range');
+                for (const [k, v] of Object.entries(bonuses)) {
+                    if (!v) continue;
+                    if (isWeaponSlot && WEAPON_SKILL_KEYS.has(k)) {
+                        skillBonusBuckets[targetSlot][k] = (skillBonusBuckets[targetSlot][k] || 0) + v;
+                    } else {
+                        skillBonusBuckets.global[k] = (skillBonusBuckets.global[k] || 0) + v;
+                    }
+                }
+            };
+
             for (const slotKey of Object.keys(slots)) {
                 const slotData = slots[slotKey];
                 if (!slotData) continue;
@@ -2461,22 +2485,30 @@
                     const stats = extractAllStats(item.description_en);
                     console.log('[DEBUG] Extracted stats:', stats);
                     statsArray.push(stats);
+                    addSkillBonuses(slotKey, extractSkillBonuses(item.description_en));
                 }
 
                 const augText = getAugmentText(slotData);
                 if (augText) {
-                    const augStats = extractAllStats(convertAugmentJaToEn(augText));
+                    const augEn = convertAugmentJaToEn(augText);
+                    const augStats = extractAllStats(augEn);
                     statsArray.push(augStats);
+                    addSkillBonuses(slotKey, extractSkillBonuses(augEn));
                 }
 
                 if (slotData.custom_description) {
                     const customStats = extractAllStats(slotData.custom_description);
                     console.log('[DEBUG] Custom stats:', customStats);
                     statsArray.push(customStats);
+                    addSkillBonuses(slotKey, extractSkillBonuses(slotData.custom_description));
                 }
             }
 
             const result = sumStats(statsArray);
+            result.skill_bonus_main = skillBonusBuckets.main;
+            result.skill_bonus_sub = skillBonusBuckets.sub;
+            result.skill_bonus_ranged = skillBonusBuckets.ranged;
+            result.skill_bonus_global = skillBonusBuckets.global;
             console.log('[DEBUG] Total stats:', result);
             return result;
         }

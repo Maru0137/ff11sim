@@ -140,7 +140,7 @@ impl MeritPoints {
     }
 }
 
-#[derive(Debug, Clone, Copy, Default, serde::Serialize, serde::Deserialize)]
+#[derive(Debug, Clone, Default, serde::Serialize, serde::Deserialize)]
 pub struct BonusStats {
     #[serde(default)]
     pub hp: i32,
@@ -191,6 +191,18 @@ pub struct BonusStats {
     /// 装備レンジ武器のスキル種別 ID
     #[serde(default)]
     pub ranged_weapon_skill_id: Option<i32>,
+    /// メインスロット装備の武器スキルボーナス（メインスロットの武器スキル計算にのみ加算）
+    #[serde(default)]
+    pub skill_bonus_main: std::collections::BTreeMap<String, i32>,
+    /// サブスロット装備の武器スキルボーナス
+    #[serde(default)]
+    pub skill_bonus_sub: std::collections::BTreeMap<String, i32>,
+    /// レンジスロット装備の武器スキルボーナス
+    #[serde(default)]
+    pub skill_bonus_ranged: std::collections::BTreeMap<String, i32>,
+    /// 全スロット共通で加算されるスキルボーナス（非武器スロット装備、および武器スロット装備の非武器スキル）
+    #[serde(default)]
+    pub skill_bonus_global: std::collections::BTreeMap<String, i32>,
 }
 
 impl BonusStats {

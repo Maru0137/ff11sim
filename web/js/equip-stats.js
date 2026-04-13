@@ -109,6 +109,101 @@ function extractAllStats(descriptionEn) {
 }
 
 /**
+ * Extract skill bonuses (e.g., "Sword skill +10", "Healing magic skill +5")
+ * from an item's description_en field.
+ * @param {string} descriptionEn
+ * @returns {Object} skill_key -> value (only non-zero entries)
+ *
+ * Returned keys match WASM SkillKind serialization:
+ *   HandToHand, Dagger, Sword, GreatSword, Axe, GreatAxe, Scythe, Polearm,
+ *   Katana, GreatKatana, Club, Staff, Archery, Marksmanship, Throwing,
+ *   Guarding, Evasion, Shield, Parrying,
+ *   Divine, Healing, Enhancing, Enfeebling, Elemental, Dark, Summoning,
+ *   Ninjutsu, Singing, StringInstrument, WindInstrument, BlueMagic, Geomancy, Handbell
+ */
+function extractSkillBonuses(descriptionEn) {
+    if (!descriptionEn) return {};
+    let text = descriptionEn.replace(/\\n/g, '\n');
+
+    // Expand "A/B magic skill +X" into two entries:
+    // "A magic skill +X B magic skill +X".
+    // Applies when there's a trailing modifier (magic/instrument) or "skill".
+    text = text.replace(
+        /([A-Za-z][\w-]*(?:\/[A-Za-z][\w-]*)+)(\s+(?:magic|instrument))?(\s+skill)?\s*([+-]\s*\d+)/gi,
+        (m, names, mod, skillWord, val) => {
+            if (!mod && !skillWord) return m; // don't expand STR/VIT+10 style here
+            const modifier = mod || '';
+            const sw = skillWord || '';
+            return names
+                .split('/')
+                .map((n) => `${n.trim()}${modifier}${sw} ${val}`)
+                .join(' ');
+        }
+    );
+
+    const result = {};
+    const add = (key, value) => {
+        if (value) result[key] = (result[key] || 0) + value;
+    };
+    const matchAllRegex = (re, key) => {
+        for (const m of text.matchAll(re)) {
+            const sign = m[1] === '-' ? -1 : 1;
+            add(key, sign * parseInt(m[2], 10));
+        }
+    };
+
+    // Weapon skills — require "skill" keyword to avoid collisions with
+    // combat stats like "Evasion+5" or ambiguous patterns.
+    matchAllRegex(/(?<![A-Za-z])Hand-to-Hand\s+skill\s*([+-])\s*(\d+)/gi, 'HandToHand');
+    matchAllRegex(/(?<![A-Za-z])Dagger\s+skill\s*([+-])\s*(\d+)/gi, 'Dagger');
+    matchAllRegex(/(?<![A-Za-z])Great\s+Sword\s+skill\s*([+-])\s*(\d+)/gi, 'GreatSword');
+    matchAllRegex(/(?<!Great\s)(?<![A-Za-z])Sword\s+skill\s*([+-])\s*(\d+)/gi, 'Sword');
+    matchAllRegex(/(?<![A-Za-z])Great\s+Axe\s+skill\s*([+-])\s*(\d+)/gi, 'GreatAxe');
+    matchAllRegex(/(?<!Great\s)(?<![A-Za-z])Axe\s+skill\s*([+-])\s*(\d+)/gi, 'Axe');
+    matchAllRegex(/(?<![A-Za-z])Scythe\s+skill\s*([+-])\s*(\d+)/gi, 'Scythe');
+    matchAllRegex(/(?<![A-Za-z])Polearm\s+skill\s*([+-])\s*(\d+)/gi, 'Polearm');
+    matchAllRegex(/(?<![A-Za-z])Great\s+Katana\s+skill\s*([+-])\s*(\d+)/gi, 'GreatKatana');
+    matchAllRegex(/(?<!Great\s)(?<![A-Za-z])Katana\s+skill\s*([+-])\s*(\d+)/gi, 'Katana');
+    matchAllRegex(/(?<![A-Za-z])Club\s+skill\s*([+-])\s*(\d+)/gi, 'Club');
+    matchAllRegex(/(?<![A-Za-z])Staff\s+skill\s*([+-])\s*(\d+)/gi, 'Staff');
+    matchAllRegex(/(?<![A-Za-z])Archery\s+skill\s*([+-])\s*(\d+)/gi, 'Archery');
+    matchAllRegex(/(?<![A-Za-z])Marksmanship\s+skill\s*([+-])\s*(\d+)/gi, 'Marksmanship');
+    matchAllRegex(/(?<![A-Za-z])Throwing\s+skill\s*([+-])\s*(\d+)/gi, 'Throwing');
+
+    // Defensive skills — "skill" keyword required to avoid matching combat stats
+    matchAllRegex(/(?<![A-Za-z])Guarding\s+skill\s*([+-])\s*(\d+)/gi, 'Guarding');
+    matchAllRegex(/(?<![A-Za-z])Evasion\s+skill\s*([+-])\s*(\d+)/gi, 'Evasion');
+    matchAllRegex(/(?<![A-Za-z])Shield\s+skill\s*([+-])\s*(\d+)/gi, 'Shield');
+    matchAllRegex(/(?<![A-Za-z])Parrying\s+skill\s*([+-])\s*(\d+)/gi, 'Parrying');
+
+    // Magic skills — "skill" required for disambiguation, except Geomancy which
+    // is sometimes written as just "Geomancy +X" in FFXI item descriptions
+    matchAllRegex(/(?<![A-Za-z])Divine\s+magic\s+skill\s*([+-])\s*(\d+)/gi, 'Divine');
+    matchAllRegex(/(?<![A-Za-z])Healing\s+magic\s+skill\s*([+-])\s*(\d+)/gi, 'Healing');
+    matchAllRegex(/(?<![A-Za-z])Enhancing\s+magic\s+skill\s*([+-])\s*(\d+)/gi, 'Enhancing');
+    matchAllRegex(/(?<![A-Za-z])Enfeebling\s+magic\s+skill\s*([+-])\s*(\d+)/gi, 'Enfeebling');
+    matchAllRegex(/(?<![A-Za-z])Elemental\s+magic\s+skill\s*([+-])\s*(\d+)/gi, 'Elemental');
+    matchAllRegex(/(?<![A-Za-z])Dark\s+magic\s+skill\s*([+-])\s*(\d+)/gi, 'Dark');
+    matchAllRegex(/(?<![A-Za-z])Summoning\s+magic\s+skill\s*([+-])\s*(\d+)/gi, 'Summoning');
+    matchAllRegex(/(?<![A-Za-z])Ninjutsu\s+skill\s*([+-])\s*(\d+)/gi, 'Ninjutsu');
+    matchAllRegex(/(?<![A-Za-z])Singing\s+skill\s*([+-])\s*(\d+)/gi, 'Singing');
+    matchAllRegex(/(?<![A-Za-z])String\s+instrument\s+skill\s*([+-])\s*(\d+)/gi, 'StringInstrument');
+    matchAllRegex(/(?<![A-Za-z])Wind\s+instrument\s+skill\s*([+-])\s*(\d+)/gi, 'WindInstrument');
+    matchAllRegex(/(?<![A-Za-z])Blue\s+magic\s+skill\s*([+-])\s*(\d+)/gi, 'BlueMagic');
+    matchAllRegex(/(?<![A-Za-z])Geomancy(?:\s+skill)?\s*([+-])\s*(\d+)/gi, 'Geomancy');
+    matchAllRegex(/(?<![A-Za-z])Handbell(?:\s+skill)?\s*([+-])\s*(\d+)/gi, 'Handbell');
+
+    return result;
+}
+
+// 武器スキル(SkillKind)のキー一覧 — 15種
+const WEAPON_SKILL_KEYS = new Set([
+    'HandToHand', 'Dagger', 'Sword', 'GreatSword', 'Axe', 'GreatAxe',
+    'Scythe', 'Polearm', 'Katana', 'GreatKatana', 'Club', 'Staff',
+    'Archery', 'Marksmanship', 'Throwing',
+]);
+
+/**
  * Create an empty stats object with all keys set to 0.
  */
 function getEmptyStats() {
@@ -145,5 +240,5 @@ function sumStats(statsArray) {
 
 // Export for module usage
 if (typeof module !== 'undefined' && module.exports) {
-    module.exports = { extractAllStats, getEmptyStats, sumStats };
+    module.exports = { extractAllStats, extractSkillBonuses, getEmptyStats, sumStats, WEAPON_SKILL_KEYS };
 }

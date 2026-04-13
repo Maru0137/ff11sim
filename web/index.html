@@ -61,6 +61,50 @@
             display: block;
         }
 
+        /* Status sub-tabs (内タブ: 用途別ステータス表示) */
+        .status-subtabs {
+            display: flex;
+            gap: 2px;
+            margin-top: 12px;
+            flex-wrap: wrap;
+        }
+
+        .status-subtab-btn {
+            padding: 6px 12px;
+            background: #0f0f23;
+            color: #aaa;
+            border: 1px solid #444;
+            border-bottom: none;
+            border-radius: 6px 6px 0 0;
+            cursor: pointer;
+            font-size: 12px;
+            white-space: nowrap;
+        }
+
+        .status-subtab-btn.active {
+            background: #16213e;
+            color: #f0c040;
+            border-color: #f0c040;
+        }
+
+        .status-subtab-content {
+            display: none;
+            background: #16213e;
+            padding: 12px;
+            border: 1px solid #444;
+            border-radius: 0 8px 8px 8px;
+        }
+
+        .status-subtab-content.active {
+            display: block;
+        }
+
+        .status-subtab-content h5 {
+            margin: 8px 0 4px;
+            font-size: 12px;
+            color: #8ab4f8;
+        }
+
         /* Common */
         .container {
             display: grid;
@@ -979,115 +1023,180 @@
                     </tbody>
                 </table>
 
-                <table class="status-table">
-                    <thead>
-                        <tr>
-                            <th></th>
-                            <th>装備</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        <tr>
-                            <td>防</td>
-                            <td class="equip-val" id="equipDefenseDef">-</td>
-                        </tr>
-                        <tr>
-                            <td>魔防</td>
-                            <td class="equip-val" id="equipDefenseMdef">-</td>
-                        </tr>
-                        <tr>
-                            <td>回避</td>
-                            <td class="equip-val" id="equipDefenseEvasion">-</td>
-                        </tr>
-                        <tr>
-                            <td>魔回避</td>
-                            <td class="equip-val" id="equipDefenseMeva">-</td>
-                        </tr>
-                        <tr>
-                            <td>被ダメ</td>
-                            <td class="equip-val" id="equipDefenseDt">-</td>
-                        </tr>
-                        <tr>
-                            <td>被物理</td>
-                            <td class="equip-val" id="equipDefensePdt">-</td>
-                        </tr>
-                        <tr>
-                            <td>被魔法</td>
-                            <td class="equip-val" id="equipDefenseMdt">-</td>
-                        </tr>
-                    </tbody>
-                </table>
                 </div>
 
-                <div class="combat-stats-section">
-                    <h4>戦闘ステータス（装備）</h4>
+                <!-- 用途別ステータスサブタブ -->
+                <div class="status-subtabs">
+                    <button class="status-subtab-btn active" data-subtab="subtab-defense" type="button">待機/回避/防御</button>
+                    <button class="status-subtab-btn" data-subtab="subtab-melee-auto" type="button">オートアタック</button>
+                    <button class="status-subtab-btn" data-subtab="subtab-ranged-auto" type="button">遠隔攻撃</button>
+                    <button class="status-subtab-btn" data-subtab="subtab-melee-ws" type="button">近接物理WS</button>
+                    <button class="status-subtab-btn" data-subtab="subtab-ranged-ws" type="button">遠隔物理WS</button>
+                    <button class="status-subtab-btn" data-subtab="subtab-elemental-ws" type="button">属性WS</button>
+                    <button class="status-subtab-btn" data-subtab="subtab-magic" type="button">魔法</button>
+                </div>
+
+                <!-- 1. 待機/回避/防御 -->
+                <div id="subtab-defense" class="status-subtab-content active">
                     <table class="status-table">
-                        <thead>
-                            <tr>
-                                <th></th>
-                                <th>メイン</th>
-                                <th>サブ</th>
-                                <th>レンジ</th>
-                            </tr>
-                        </thead>
+                        <thead><tr><th>HP</th><th>MP</th><th>防御</th><th>魔法防御</th><th>回避</th><th>魔法回避</th></tr></thead>
+                        <tbody><tr>
+                            <td class="equip-val" id="statDefHp">-</td>
+                            <td class="equip-val" id="statDefMp">-</td>
+                            <td class="equip-val" id="statDefDef">-</td>
+                            <td class="equip-val" id="statDefMdef">-</td>
+                            <td class="equip-val" id="statDefEva">-</td>
+                            <td class="equip-val" id="statDefMeva">-</td>
+                        </tr></tbody>
+                    </table>
+                    <table class="status-table">
+                        <thead><tr><th>被ダメ</th><th>物理被ダメ</th><th>魔法被ダメ</th></tr></thead>
+                        <tbody><tr>
+                            <td class="equip-val" id="statDefDt">-</td>
+                            <td class="equip-val" id="statDefPdt">-</td>
+                            <td class="equip-val" id="statDefMdt">-</td>
+                        </tr></tbody>
+                    </table>
+                </div>
+
+                <!-- 2. オートアタック (近接) -->
+                <div id="subtab-melee-auto" class="status-subtab-content">
+                    <table class="status-table">
+                        <thead><tr><th></th><th>武器スキル</th><th>攻撃</th><th>命中</th></tr></thead>
                         <tbody>
                             <tr>
-                                <td>攻撃</td>
-                                <td class="equip-val" id="equipCombatAttackMain">-</td>
-                                <td class="equip-val" id="equipCombatAttackSub">-</td>
-                                <td class="equip-val" id="equipCombatAttackRanged">-</td>
+                                <td>メイン</td>
+                                <td class="equip-val" id="statAaMainSkill">-</td>
+                                <td class="equip-val" id="statAaMainAtk">-</td>
+                                <td class="equip-val" id="statAaMainAcc">-</td>
                             </tr>
                             <tr>
-                                <td>命中</td>
-                                <td class="equip-val" id="equipCombatAccuracyMain">-</td>
-                                <td class="equip-val" id="equipCombatAccuracySub">-</td>
-                                <td class="equip-val" id="equipCombatAccuracyRanged">-</td>
+                                <td>サブ</td>
+                                <td class="equip-val" id="statAaSubSkill">-</td>
+                                <td class="equip-val" id="statAaSubAtk">-</td>
+                                <td class="equip-val" id="statAaSubAcc">-</td>
                             </tr>
                         </tbody>
                     </table>
                     <table class="status-table">
-                        <thead>
-                            <tr>
-                                <th>防御</th>
-                                <th>回避</th>
-                                <th>魔攻</th>
-                                <th>魔命</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            <tr>
-                                <td class="equip-val" id="equipCombatDef">-</td>
-                                <td class="equip-val" id="equipCombatEvasion">-</td>
-                                <td class="equip-val" id="equipCombatMagicAttack">-</td>
-                                <td class="equip-val" id="equipCombatMagicAccuracy">-</td>
-                            </tr>
-                        </tbody>
+                        <thead><tr><th>ヘイスト</th><th>Store TP</th><th>DA</th><th>TA</th><th>クリ率</th></tr></thead>
+                        <tbody><tr>
+                            <td class="equip-val" id="statAaHaste">-</td>
+                            <td class="equip-val" id="statAaStp">-</td>
+                            <td class="equip-val" id="statAaDa">-</td>
+                            <td class="equip-val" id="statAaTa">-</td>
+                            <td class="equip-val" id="statAaCrit">-</td>
+                        </tr></tbody>
+                    </table>
+                </div>
+
+                <!-- 3. 遠隔攻撃 -->
+                <div id="subtab-ranged-auto" class="status-subtab-content">
+                    <table class="status-table">
+                        <thead><tr><th>武器スキル</th><th>飛攻</th><th>飛命</th></tr></thead>
+                        <tbody><tr>
+                            <td class="equip-val" id="statRaSkill">-</td>
+                            <td class="equip-val" id="statRaAtk">-</td>
+                            <td class="equip-val" id="statRaAcc">-</td>
+                        </tr></tbody>
                     </table>
                     <table class="status-table">
-                        <thead>
-                            <tr>
-                                <th>魔回避</th>
-                                <th>魔ダメ</th>
-                                <th>ヘイスト</th>
-                                <th>STP</th>
-                                <th>DA</th>
-                                <th>TA</th>
-                                <th>クリ</th>
-                                <th>WSダメ</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            <tr>
-                                <td class="equip-val" id="equipCombatMagicEvasion">-</td>
-                                <td class="equip-val" id="equipCombatMagicDamage">-</td>
-                                <td class="equip-val" id="equipCombatHaste">-</td>
-                                <td class="equip-val" id="equipCombatStoreTp">-</td>
-                                <td class="equip-val" id="equipCombatDoubleAttack">-</td>
-                                <td class="equip-val" id="equipCombatTripleAttack">-</td>
-                                <td class="equip-val" id="equipCombatCritRate">-</td>
-                                <td class="equip-val" id="equipCombatWsDamage">-</td>
-                            </tr>
-                        </tbody>
+                        <thead><tr><th>STR</th><th>AGI</th><th>Store TP</th></tr></thead>
+                        <tbody><tr>
+                            <td class="equip-val" id="statRaStr">-</td>
+                            <td class="equip-val" id="statRaAgi">-</td>
+                            <td class="equip-val" id="statRaStp">-</td>
+                        </tr></tbody>
+                    </table>
+                </div>
+
+                <!-- 4. 近接物理 WS -->
+                <div id="subtab-melee-ws" class="status-subtab-content">
+                    <table class="status-table">
+                        <thead><tr><th>武器スキル</th><th>攻撃</th><th>命中</th><th>WSダメ</th></tr></thead>
+                        <tbody><tr>
+                            <td class="equip-val" id="statMwsSkill">-</td>
+                            <td class="equip-val" id="statMwsAtk">-</td>
+                            <td class="equip-val" id="statMwsAcc">-</td>
+                            <td class="equip-val" id="statMwsWsdmg">-</td>
+                        </tr></tbody>
+                    </table>
+                    <table class="status-table">
+                        <thead><tr><th>クリ率</th><th>DA</th><th>TA</th><th>STR</th><th>DEX</th><th>VIT</th></tr></thead>
+                        <tbody><tr>
+                            <td class="equip-val" id="statMwsCrit">-</td>
+                            <td class="equip-val" id="statMwsDa">-</td>
+                            <td class="equip-val" id="statMwsTa">-</td>
+                            <td class="equip-val" id="statMwsStr">-</td>
+                            <td class="equip-val" id="statMwsDex">-</td>
+                            <td class="equip-val" id="statMwsVit">-</td>
+                        </tr></tbody>
+                    </table>
+                </div>
+
+                <!-- 5. 遠隔物理 WS -->
+                <div id="subtab-ranged-ws" class="status-subtab-content">
+                    <table class="status-table">
+                        <thead><tr><th>武器スキル</th><th>飛攻</th><th>飛命</th><th>WSダメ</th></tr></thead>
+                        <tbody><tr>
+                            <td class="equip-val" id="statRwsSkill">-</td>
+                            <td class="equip-val" id="statRwsAtk">-</td>
+                            <td class="equip-val" id="statRwsAcc">-</td>
+                            <td class="equip-val" id="statRwsWsdmg">-</td>
+                        </tr></tbody>
+                    </table>
+                    <table class="status-table">
+                        <thead><tr><th>STR</th><th>AGI</th><th>DEX</th></tr></thead>
+                        <tbody><tr>
+                            <td class="equip-val" id="statRwsStr">-</td>
+                            <td class="equip-val" id="statRwsAgi">-</td>
+                            <td class="equip-val" id="statRwsDex">-</td>
+                        </tr></tbody>
+                    </table>
+                </div>
+
+                <!-- 6. 属性 WS -->
+                <div id="subtab-elemental-ws" class="status-subtab-content">
+                    <table class="status-table">
+                        <thead><tr><th>武器スキル</th><th>魔攻</th><th>魔命</th><th>魔法ダメ</th><th>WSダメ</th></tr></thead>
+                        <tbody><tr>
+                            <td class="equip-val" id="statEwsSkill">-</td>
+                            <td class="equip-val" id="statEwsMatk">-</td>
+                            <td class="equip-val" id="statEwsMacc">-</td>
+                            <td class="equip-val" id="statEwsMdmg">-</td>
+                            <td class="equip-val" id="statEwsWsdmg">-</td>
+                        </tr></tbody>
+                    </table>
+                    <table class="status-table">
+                        <thead><tr><th>STR</th><th>DEX</th><th>INT</th><th>MND</th></tr></thead>
+                        <tbody><tr>
+                            <td class="equip-val" id="statEwsStr">-</td>
+                            <td class="equip-val" id="statEwsDex">-</td>
+                            <td class="equip-val" id="statEwsInt">-</td>
+                            <td class="equip-val" id="statEwsMnd">-</td>
+                        </tr></tbody>
+                    </table>
+                </div>
+
+                <!-- 7. 魔法 -->
+                <div id="subtab-magic" class="status-subtab-content">
+                    <table class="status-table">
+                        <thead><tr><th>魔攻</th><th>魔命</th><th>魔回避</th><th>魔法ダメ</th></tr></thead>
+                        <tbody><tr>
+                            <td class="equip-val" id="statMgMatk">-</td>
+                            <td class="equip-val" id="statMgMacc">-</td>
+                            <td class="equip-val" id="statMgMeva">-</td>
+                            <td class="equip-val" id="statMgMdmg">-</td>
+                        </tr></tbody>
+                    </table>
+                    <table class="status-table">
+                        <thead><tr><th>INT</th><th>MND</th><th>CHR</th><th>MP</th></tr></thead>
+                        <tbody><tr>
+                            <td class="equip-val" id="statMgInt">-</td>
+                            <td class="equip-val" id="statMgMnd">-</td>
+                            <td class="equip-val" id="statMgChr">-</td>
+                            <td class="equip-val" id="statMgMp">-</td>
+                        </tr></tbody>
                     </table>
                 </div>
 
@@ -1465,6 +1574,16 @@
                 document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
                 btn.classList.add('active');
                 document.getElementById(btn.dataset.tab).classList.add('active');
+            });
+        });
+
+        // --- Status sub-tab switching ---
+        document.querySelectorAll('.status-subtab-btn').forEach(btn => {
+            btn.addEventListener('click', () => {
+                document.querySelectorAll('.status-subtab-btn').forEach(b => b.classList.remove('active'));
+                document.querySelectorAll('.status-subtab-content').forEach(c => c.classList.remove('active'));
+                btn.classList.add('active');
+                document.getElementById(btn.dataset.subtab).classList.add('active');
             });
         });
 
@@ -2216,35 +2335,101 @@
                 document.getElementById('equipTotalMnd').textContent = totalStats.mnd || 0;
                 document.getElementById('equipTotalChr').textContent = totalStats.chr || 0;
 
-                const evasionDisplay = totalStats.evasion != null ? totalStats.evasion : null;
-                const magicAttackDisplay = totalStats.magic_attack != null ? totalStats.magic_attack : null;
-                const formatOptional = (v) => (v != null && v !== 0) ? v : (v === 0 ? 0 : '-');
+                // ステータス値表示用ヘルパー
+                const setText = (id, v) => {
+                    const el = document.getElementById(id);
+                    if (el) el.textContent = v;
+                };
+                const numOrDash = (v) => (v != null && v !== 0) ? v : '-';
+                const pctOrDash = (v) => v ? `${v}%` : '-';
 
-                document.getElementById('equipCombatDef').textContent = totalStats.def || '-';
-                document.getElementById('equipCombatEvasion').textContent = evasionDisplay != null ? evasionDisplay : '-';
-                document.getElementById('equipCombatMagicAttack').textContent = magicAttackDisplay != null ? magicAttackDisplay : '-';
+                // 武器スキル種別 → 日本語名 (ラベル用)
+                const SKILL_JA_MAP = Object.fromEntries(ALL_SKILL_KEYS);
+                const formatWeaponSkill = (kind, value) => {
+                    if (!kind || !value) return '-';
+                    return `${SKILL_JA_MAP[kind] || kind} (${value})`;
+                };
 
-                // 攻撃/命中: メイン/サブ/レンジ
-                document.getElementById('equipCombatAttackMain').textContent = totalStats.main_attack != null ? totalStats.main_attack : '-';
-                document.getElementById('equipCombatAccuracyMain').textContent = totalStats.main_accuracy != null ? totalStats.main_accuracy : '-';
-                document.getElementById('equipCombatAttackSub').textContent = totalStats.sub_attack != null ? totalStats.sub_attack : '-';
-                document.getElementById('equipCombatAccuracySub').textContent = totalStats.sub_accuracy != null ? totalStats.sub_accuracy : '-';
-                document.getElementById('equipCombatAttackRanged').textContent = totalStats.ranged_attack != null ? totalStats.ranged_attack : '-';
-                document.getElementById('equipCombatAccuracyRanged').textContent = totalStats.ranged_accuracy != null ? totalStats.ranged_accuracy : '-';
-                document.getElementById('equipCombatMagicAccuracy').textContent = (equip.magic_accuracy || 0) + (totalStats.magic_accuracy_bonus || 0) || '-';
-                document.getElementById('equipCombatMagicEvasion').textContent = (equip.magic_evasion || 0) + (totalStats.magic_evasion_bonus || 0) || '-';
-                document.getElementById('equipCombatMagicDamage').textContent = equip.magic_damage || '-';
-                document.getElementById('equipCombatHaste').textContent = equip.haste_pct ? `${equip.haste_pct}%` : '-';
-                document.getElementById('equipCombatStoreTp').textContent = equip.store_tp || '-';
-                document.getElementById('equipCombatDoubleAttack').textContent = equip.double_attack_pct ? `${equip.double_attack_pct}%` : '-';
-                document.getElementById('equipCombatTripleAttack').textContent = equip.triple_attack_pct ? `${equip.triple_attack_pct}%` : '-';
-                document.getElementById('equipCombatCritRate').textContent = equip.critical_hit_rate_pct ? `${equip.critical_hit_rate_pct}%` : '-';
-                document.getElementById('equipCombatWsDamage').textContent = equip.weapon_skill_damage_pct ? `${equip.weapon_skill_damage_pct}%` : '-';
+                const evasionTotal = totalStats.evasion != null ? totalStats.evasion : 0;
+                const magicAttackTotal = totalStats.magic_attack != null ? totalStats.magic_attack : 0;
+                const magicAccuracyTotal = (equip.magic_accuracy || 0) + (totalStats.magic_accuracy_bonus || 0);
+                const magicEvasionTotal = (equip.magic_evasion || 0) + (totalStats.magic_evasion_bonus || 0);
+                const magicDamageTotal = equip.magic_damage || 0;
+                const wsDamagePct = equip.weapon_skill_damage_pct || 0;
 
-                document.getElementById('equipDefenseDef').textContent = totalStats.def || '-';
-                document.getElementById('equipDefenseMdef').textContent = totalStats.mdef || '-';
-                document.getElementById('equipDefenseEvasion').textContent = evasionDisplay || '-';
-                document.getElementById('equipDefenseMeva').textContent = (equip.magic_evasion || 0) + (totalStats.magic_evasion_bonus || 0) || '-';
+                // ----- Tab 1: 待機/回避/防御 -----
+                setText('statDefHp', totalStats.hp || '-');
+                setText('statDefMp', totalStats.mp || '-');
+                setText('statDefDef', totalStats.def || '-');
+                setText('statDefMdef', totalStats.mdef || '-');
+                setText('statDefEva', numOrDash(evasionTotal));
+                setText('statDefMeva', numOrDash(magicEvasionTotal));
+                setText('statDefDt', pctOrDash(equip.damage_taken_pct));
+                setText('statDefPdt', pctOrDash(equip.physical_damage_taken_pct));
+                setText('statDefMdt', pctOrDash(equip.magic_damage_taken_pct));
+
+                // ----- Tab 2: オートアタック (近接) -----
+                setText('statAaMainSkill', formatWeaponSkill(totalStats.main_weapon_skill, totalStats.main_weapon_skill_value));
+                setText('statAaMainAtk', numOrDash(totalStats.main_attack));
+                setText('statAaMainAcc', numOrDash(totalStats.main_accuracy));
+                setText('statAaSubSkill', formatWeaponSkill(totalStats.sub_weapon_skill, totalStats.sub_weapon_skill_value));
+                setText('statAaSubAtk', totalStats.sub_attack != null ? totalStats.sub_attack : '-');
+                setText('statAaSubAcc', totalStats.sub_accuracy != null ? totalStats.sub_accuracy : '-');
+                setText('statAaHaste', pctOrDash(equip.haste_pct));
+                setText('statAaStp', numOrDash(equip.store_tp));
+                setText('statAaDa', pctOrDash(equip.double_attack_pct));
+                setText('statAaTa', pctOrDash(equip.triple_attack_pct));
+                setText('statAaCrit', pctOrDash(equip.critical_hit_rate_pct));
+
+                // ----- Tab 3: 遠隔攻撃 -----
+                setText('statRaSkill', formatWeaponSkill(totalStats.ranged_weapon_skill, totalStats.ranged_weapon_skill_value));
+                setText('statRaAtk', totalStats.ranged_attack != null ? totalStats.ranged_attack : '-');
+                setText('statRaAcc', totalStats.ranged_accuracy != null ? totalStats.ranged_accuracy : '-');
+                setText('statRaStr', totalStats.str_ || '-');
+                setText('statRaAgi', totalStats.agi || '-');
+                setText('statRaStp', numOrDash(equip.store_tp));
+
+                // ----- Tab 4: 近接物理 WS -----
+                setText('statMwsSkill', formatWeaponSkill(totalStats.main_weapon_skill, totalStats.main_weapon_skill_value));
+                setText('statMwsAtk', numOrDash(totalStats.main_attack));
+                setText('statMwsAcc', numOrDash(totalStats.main_accuracy));
+                setText('statMwsWsdmg', pctOrDash(wsDamagePct));
+                setText('statMwsCrit', pctOrDash(equip.critical_hit_rate_pct));
+                setText('statMwsDa', pctOrDash(equip.double_attack_pct));
+                setText('statMwsTa', pctOrDash(equip.triple_attack_pct));
+                setText('statMwsStr', totalStats.str_ || '-');
+                setText('statMwsDex', totalStats.dex || '-');
+                setText('statMwsVit', totalStats.vit || '-');
+
+                // ----- Tab 5: 遠隔物理 WS -----
+                setText('statRwsSkill', formatWeaponSkill(totalStats.ranged_weapon_skill, totalStats.ranged_weapon_skill_value));
+                setText('statRwsAtk', totalStats.ranged_attack != null ? totalStats.ranged_attack : '-');
+                setText('statRwsAcc', totalStats.ranged_accuracy != null ? totalStats.ranged_accuracy : '-');
+                setText('statRwsWsdmg', pctOrDash(wsDamagePct));
+                setText('statRwsStr', totalStats.str_ || '-');
+                setText('statRwsAgi', totalStats.agi || '-');
+                setText('statRwsDex', totalStats.dex || '-');
+
+                // ----- Tab 6: 属性 WS -----
+                setText('statEwsSkill', formatWeaponSkill(totalStats.main_weapon_skill, totalStats.main_weapon_skill_value));
+                setText('statEwsMatk', numOrDash(magicAttackTotal));
+                setText('statEwsMacc', numOrDash(magicAccuracyTotal));
+                setText('statEwsMdmg', numOrDash(magicDamageTotal));
+                setText('statEwsWsdmg', pctOrDash(wsDamagePct));
+                setText('statEwsStr', totalStats.str_ || '-');
+                setText('statEwsDex', totalStats.dex || '-');
+                setText('statEwsInt', totalStats.int || '-');
+                setText('statEwsMnd', totalStats.mnd || '-');
+
+                // ----- Tab 7: 魔法 -----
+                setText('statMgMatk', numOrDash(magicAttackTotal));
+                setText('statMgMacc', numOrDash(magicAccuracyTotal));
+                setText('statMgMeva', numOrDash(magicEvasionTotal));
+                setText('statMgMdmg', numOrDash(magicDamageTotal));
+                setText('statMgInt', totalStats.int || '-');
+                setText('statMgMnd', totalStats.mnd || '-');
+                setText('statMgChr', totalStats.chr || '-');
+                setText('statMgMp', totalStats.mp || '-');
 
                 // 有効スキル値の表示（値が 0 のスキルは非表示）
                 const skillsContainer = document.getElementById('equipEffectiveSkills');
@@ -2261,9 +2446,6 @@
                 if (skillsContainer.innerHTML === '') {
                     skillsContainer.innerHTML = '<div style="color:#666;">(表示できるスキルなし)</div>';
                 }
-                document.getElementById('equipDefenseDt').textContent = equip.damage_taken_pct ? `${equip.damage_taken_pct}%` : '-';
-                document.getElementById('equipDefensePdt').textContent = equip.physical_damage_taken_pct ? `${equip.physical_damage_taken_pct}%` : '-';
-                document.getElementById('equipDefenseMdt').textContent = equip.magic_damage_taken_pct ? `${equip.magic_damage_taken_pct}%` : '-';
             } catch (e) {
                 console.error('Error calculating equipment edit status:', e);
                 clearAllEquipStats();
@@ -2276,16 +2458,32 @@
                 document.getElementById(`equipEquip${stat}`).textContent = '-';
                 document.getElementById(`equipTotal${stat}`).textContent = '-';
             });
-            ['Def', 'Evasion',
-                'MagicAttack', 'MagicAccuracy', 'MagicEvasion', 'MagicDamage', 'Haste',
-                'StoreTp', 'DoubleAttack', 'TripleAttack', 'CritRate', 'WsDamage',
-                'AttackMain', 'AttackSub', 'AttackRanged',
-                'AccuracyMain', 'AccuracySub', 'AccuracyRanged'].forEach(stat => {
-                    const elem = document.getElementById(`equipCombat${stat}`);
-                    if (elem) elem.textContent = '-';
-                });
-            ['Def', 'Mdef', 'Evasion', 'Meva', 'Dt', 'Pdt', 'Mdt'].forEach(stat => {
-                const elem = document.getElementById(`equipDefense${stat}`);
+            // 7 サブタブ内の全表示要素をクリア
+            const tabIds = [
+                // Tab 1: 防御
+                'statDefHp', 'statDefMp', 'statDefDef', 'statDefMdef', 'statDefEva',
+                'statDefMeva', 'statDefDt', 'statDefPdt', 'statDefMdt',
+                // Tab 2: オートアタック
+                'statAaMainSkill', 'statAaMainAtk', 'statAaMainAcc',
+                'statAaSubSkill', 'statAaSubAtk', 'statAaSubAcc',
+                'statAaHaste', 'statAaStp', 'statAaDa', 'statAaTa', 'statAaCrit',
+                // Tab 3: 遠隔
+                'statRaSkill', 'statRaAtk', 'statRaAcc', 'statRaStr', 'statRaAgi', 'statRaStp',
+                // Tab 4: 近接 WS
+                'statMwsSkill', 'statMwsAtk', 'statMwsAcc', 'statMwsWsdmg',
+                'statMwsCrit', 'statMwsDa', 'statMwsTa', 'statMwsStr', 'statMwsDex', 'statMwsVit',
+                // Tab 5: 遠隔 WS
+                'statRwsSkill', 'statRwsAtk', 'statRwsAcc', 'statRwsWsdmg',
+                'statRwsStr', 'statRwsAgi', 'statRwsDex',
+                // Tab 6: 属性 WS
+                'statEwsSkill', 'statEwsMatk', 'statEwsMacc', 'statEwsMdmg', 'statEwsWsdmg',
+                'statEwsStr', 'statEwsDex', 'statEwsInt', 'statEwsMnd',
+                // Tab 7: 魔法
+                'statMgMatk', 'statMgMacc', 'statMgMeva', 'statMgMdmg',
+                'statMgInt', 'statMgMnd', 'statMgChr', 'statMgMp',
+            ];
+            tabIds.forEach(id => {
+                const elem = document.getElementById(id);
                 if (elem) elem.textContent = '-';
             });
             const skillsContainer = document.getElementById('equipEffectiveSkills');

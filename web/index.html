@@ -251,6 +251,61 @@
             font-size: 12px;
         }
 
+        .skill-section {
+            margin-top: 20px;
+            padding: 15px;
+            background: #0f0f23;
+            border-radius: 5px;
+        }
+
+        .skill-section-header {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin-bottom: 12px;
+            flex-wrap: wrap;
+        }
+
+        .skill-section-header h3 {
+            margin: 0;
+        }
+
+        .skill-group-title {
+            font-size: 13px;
+            color: #8ab4f8;
+            margin: 12px 0 6px;
+            font-weight: bold;
+        }
+
+        .skill-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 8px;
+        }
+
+        .skill-item {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .skill-item label {
+            font-size: 12px;
+            margin-bottom: 3px;
+            display: flex;
+            justify-content: space-between;
+        }
+
+        .skill-item .skill-cap {
+            color: #888;
+            font-size: 11px;
+        }
+
+        .skill-item input {
+            width: 100%;
+            padding: 5px;
+            font-size: 12px;
+        }
+
         /* Character registration */
         .btn {
             padding: 8px 16px;
@@ -800,6 +855,19 @@
                     <div class="jp-grid" id="jpCategoryGrid"></div>
                 </div>
 
+                <div class="skill-section">
+                    <div class="skill-section-header">
+                        <h3>スキル値</h3>
+                        <button class="btn btn-primary btn-sm" id="btnResetSkillsToDefault" type="button">全て最大値に戻す</button>
+                    </div>
+                    <div class="skill-group-title">武器スキル</div>
+                    <div class="skill-grid" id="skillGridWeapon"></div>
+                    <div class="skill-group-title">防御スキル</div>
+                    <div class="skill-grid" id="skillGridDefense"></div>
+                    <div class="skill-group-title">魔法スキル</div>
+                    <div class="skill-grid" id="skillGridMagic"></div>
+                </div>
+
                 <div class="btn-group">
                     <button class="btn btn-primary" id="btnSaveChar">保存</button>
                     <button class="btn btn-danger" id="btnCancelEdit">キャンセル</button>
@@ -1006,6 +1074,11 @@
                         </tbody>
                     </table>
                 </div>
+
+                <div class="combat-stats-section">
+                    <h4>有効スキル値（キャラクター値とこのジョブでのキャップの小さい方）</h4>
+                    <div id="equipEffectiveSkills" style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px; font-size: 12px;"></div>
+                </div>
             </div>
 
             <div class="btn-group">
@@ -1018,7 +1091,7 @@
     <script src="js/item-search.js"></script>
     <script src="js/equip-stats.js"></script>
     <script type="module">
-        import init, { calculate_status_from_profile } from './pkg/ff11sim.js';
+        import init, { calculate_status_from_profile, calculate_default_skills } from './pkg/ff11sim.js';
 
         let wasmReady = false;
         const itemSearch = new ItemSearch();
@@ -1140,6 +1213,121 @@
             const jobKey = document.getElementById('jpJobSelector').value;
             const ranks = currentEditingJobPoints[jobKey] || jpDefaultRanks();
             document.getElementById('jpTotalDisplay').textContent = jpJobTotal(ranks);
+        }
+
+        // ====================================================================
+        // スキル
+        // ====================================================================
+        // WASM の SkillKind と対応するキー順（Rust 側 SkillKind enum の宣言順）
+        const SKILL_KEYS_WEAPON = [
+            ['HandToHand', '格闘'],
+            ['Dagger', '短剣'],
+            ['Sword', '片手剣'],
+            ['GreatSword', '両手剣'],
+            ['Axe', '片手斧'],
+            ['GreatAxe', '両手斧'],
+            ['Scythe', '両手鎌'],
+            ['Polearm', '両手槍'],
+            ['Katana', '片手刀'],
+            ['GreatKatana', '両手刀'],
+            ['Club', '片手棍'],
+            ['Staff', '両手棍'],
+            ['Archery', '弓術'],
+            ['Marksmanship', '射撃'],
+            ['Throwing', '投てき'],
+        ];
+        const SKILL_KEYS_DEFENSE = [
+            ['Guarding', 'ガード'],
+            ['Evasion', '回避'],
+            ['Shield', '盾'],
+            ['Parrying', '受け流し'],
+        ];
+        const SKILL_KEYS_MAGIC = [
+            ['Divine', '神聖'],
+            ['Healing', '治癒'],
+            ['Enhancing', '強化'],
+            ['Enfeebling', '弱体'],
+            ['Elemental', '精霊'],
+            ['Dark', '暗黒'],
+            ['Summoning', '召喚'],
+            ['Ninjutsu', '忍術'],
+            ['Singing', '歌唱'],
+            ['StringInstrument', '弦楽器'],
+            ['WindInstrument', '管楽器'],
+            ['BlueMagic', '青魔法'],
+            ['Geomancy', '風水'],
+            ['Handbell', '風水鈴'],
+        ];
+        const ALL_SKILL_KEYS = [...SKILL_KEYS_WEAPON, ...SKILL_KEYS_DEFENSE, ...SKILL_KEYS_MAGIC];
+
+        let currentEditingSkills = {}; // skill_key -> value
+        let currentEditingSkillDefaults = {}; // skill_key -> default (最大キャップ)
+
+        function computeSkillDefaults(characterLike) {
+            // characterLike: { race, job_levels, merit_points } で十分
+            const basicProfile = {
+                name: characterLike.name || '_temp',
+                race: characterLike.race,
+                job_levels: characterLike.job_levels,
+                merit_points: characterLike.merit_points || {
+                    hp: 0, mp: 0, str_: 0, dex: 0, vit: 0, agi: 0, int: 0, mnd: 0, chr: 0,
+                }
+            };
+            return calculate_default_skills(basicProfile);
+        }
+
+        function renderSkillInputs() {
+            const groups = [
+                { gridId: 'skillGridWeapon', keys: SKILL_KEYS_WEAPON },
+                { gridId: 'skillGridDefense', keys: SKILL_KEYS_DEFENSE },
+                { gridId: 'skillGridMagic', keys: SKILL_KEYS_MAGIC },
+            ];
+            groups.forEach(({ gridId, keys }) => {
+                const grid = document.getElementById(gridId);
+                grid.innerHTML = '';
+                keys.forEach(([key, ja]) => {
+                    const cap = currentEditingSkillDefaults[key] || 0;
+                    const value = currentEditingSkills[key] != null ? currentEditingSkills[key] : cap;
+                    const item = document.createElement('div');
+                    item.className = 'skill-item';
+                    item.innerHTML = `
+                        <label for="skill_${key}">
+                            <span>${ja}</span>
+                            <span class="skill-cap">上限 ${cap}</span>
+                        </label>
+                        <input type="number" id="skill_${key}" min="0" value="${value}" data-skill-key="${key}">
+                    `;
+                    grid.appendChild(item);
+                });
+            });
+        }
+
+        function ensureSkillInputListenerInitialized() {
+            const btn = document.getElementById('btnResetSkillsToDefault');
+            if (!btn.dataset.bound) {
+                btn.dataset.bound = '1';
+                btn.addEventListener('click', () => {
+                    ALL_SKILL_KEYS.forEach(([k]) => {
+                        currentEditingSkills[k] = currentEditingSkillDefaults[k] || 0;
+                    });
+                    renderSkillInputs();
+                });
+            }
+            const containers = ['skillGridWeapon', 'skillGridDefense', 'skillGridMagic'];
+            containers.forEach(id => {
+                const el = document.getElementById(id);
+                if (!el.dataset.bound) {
+                    el.dataset.bound = '1';
+                    el.addEventListener('input', (e) => {
+                        if (e.target.matches('input[data-skill-key]')) {
+                            const k = e.target.dataset.skillKey;
+                            let v = parseInt(e.target.value, 10);
+                            if (isNaN(v) || v < 0) v = 0;
+                            currentEditingSkills[k] = v;
+                        }
+                    });
+                }
+            });
         }
 
         // ジョブセレクタ初期化（1 回のみ）
@@ -1282,6 +1470,7 @@
             const section = document.getElementById('charEditSection');
             section.classList.remove('hidden');
             ensureJpJobSelectorInitialized();
+            ensureSkillInputListenerInitialized();
 
             if (character) {
                 editingCharName = character.name;
@@ -1304,22 +1493,45 @@
                 document.getElementById('charMeritMnd').value = mp.mnd || 0;
                 document.getElementById('charMeritChr').value = mp.chr || 0;
                 currentEditingJobPoints = loadJobPointsFromCharacter(character);
+                // スキル: デフォルト（キャップ最大）を算出して、既存値があればマージ
+                currentEditingSkillDefaults = computeSkillDefaults(character);
+                currentEditingSkills = {};
+                const storedValues = (character.skills && character.skills.values) || null;
+                ALL_SKILL_KEYS.forEach(([k]) => {
+                    if (storedValues && storedValues[k] != null) {
+                        currentEditingSkills[k] = storedValues[k];
+                    } else {
+                        currentEditingSkills[k] = currentEditingSkillDefaults[k] || 0;
+                    }
+                });
             } else {
                 editingCharName = null;
                 document.getElementById('charEditTitle').textContent = '新規キャラクター';
                 document.getElementById('charName').value = '';
                 document.getElementById('charRace').value = 'Hum';
+                const defaultJobLevels = {};
                 JOBS.forEach(job => {
                     document.getElementById(`jl_${job.key}_lv`).value = 99;
                     document.getElementById(`jl_${job.key}_mlv`).value = 0;
+                    defaultJobLevels[job.key] = { level: 99, master_lv: 0 };
                 });
                 ['Hp', 'Mp', 'Str', 'Dex', 'Vit', 'Agi', 'Int', 'Mnd', 'Chr'].forEach(s => {
                     document.getElementById(`charMerit${s}`).value = 15;
                 });
                 currentEditingJobPoints = {};
                 JOBS.forEach(job => { currentEditingJobPoints[job.key] = jpDefaultRanks(); });
+                // 新規キャラ: 全ジョブ 99 の前提でデフォルトスキル値を算出
+                currentEditingSkillDefaults = computeSkillDefaults({
+                    race: 'Hum',
+                    job_levels: defaultJobLevels,
+                });
+                currentEditingSkills = {};
+                ALL_SKILL_KEYS.forEach(([k]) => {
+                    currentEditingSkills[k] = currentEditingSkillDefaults[k] || 0;
+                });
             }
             renderJpCategoryInputs();
+            renderSkillInputs();
         }
 
         function hideEditForm() {
@@ -1362,19 +1574,26 @@
             });
             const job_points = { categories: job_points_categories };
 
+            // スキル: 全33スキルの現在値を保存
+            const skill_values = {};
+            ALL_SKILL_KEYS.forEach(([k]) => {
+                skill_values[k] = currentEditingSkills[k] != null ? currentEditingSkills[k] : 0;
+            });
+            const skills = { values: skill_values };
+
             const characters = loadCharacters();
 
             if (editingCharName) {
                 const idx = characters.findIndex(c => c.name === editingCharName);
                 if (idx >= 0) {
-                    characters[idx] = { name, race, job_levels, merit_points, job_points };
+                    characters[idx] = { name, race, job_levels, merit_points, job_points, skills };
                 }
             } else {
                 if (characters.some(c => c.name === name)) {
                     alert(`キャラクター「${name}」は既に存在します。`);
                     return;
                 }
-                characters.push({ name, race, job_levels, merit_points, job_points });
+                characters.push({ name, race, job_levels, merit_points, job_points, skills });
             }
 
             saveCharacters(characters);
@@ -1611,6 +1830,7 @@
                 name_en: item.en,
                 name_ja: item.ja,
                 description_ja: item.description_ja || '',
+                skill: item.skill != null ? item.skill : null,
                 aug_path: null,
                 aug_rank: null,
             };
@@ -1711,6 +1931,14 @@
             if (equipSet) {
                 editingEquipSetName = equipSet.name;
                 currentEquipSlots = { ...equipSet.slots };
+                // 旧データは skill フィールドを持たないので item_id から補完
+                Object.keys(currentEquipSlots).forEach(k => {
+                    const d = currentEquipSlots[k];
+                    if (d && d.skill == null && d.item_id != null && itemSearch.items) {
+                        const item = itemSearch.items.find(it => it.id === d.item_id);
+                        if (item && item.skill != null) d.skill = item.skill;
+                    }
+                });
                 document.getElementById('equipSetName').value = equipSet.name;
                 deleteBtn.classList.remove('hidden');
 
@@ -1850,12 +2078,27 @@
                     }
                 });
 
+                // skills: 未定義時はデフォルト（全ジョブ最大）を WASM で計算
+                let charSkills;
+                if (ch.skills && ch.skills.values) {
+                    charSkills = ch.skills;
+                } else {
+                    const basicProfile = {
+                        name: ch.name, race: ch.race,
+                        job_levels: ch.job_levels,
+                        merit_points: ch.merit_points
+                    };
+                    const defaults = calculate_default_skills(basicProfile);
+                    charSkills = { values: defaults };
+                }
+
                 const profile = {
                     name: ch.name,
                     race: ch.race,
                     job_levels: ch.job_levels,
                     merit_points: ch.merit_points,
-                    job_points: { categories: jpCategories }
+                    job_points: { categories: jpCategories },
+                    skills: charSkills
                 };
 
                 const supportJob = currentEquipSupportJob || null;
@@ -1864,12 +2107,16 @@
                 const tempEquipSet = { name: '_temp', slots: currentEquipSlots };
                 const equip = calculateEquipSetBonuses(tempEquipSet);
 
+                const mainSlot = currentEquipSlots && currentEquipSlots.main;
+                const mainWeaponSkillId = mainSlot && mainSlot.skill != null ? mainSlot.skill : null;
+
                 const bonusStats = {
                     hp: equip.hp, mp: equip.mp,
                     str_: equip.str, dex: equip.dex, vit: equip.vit,
                     agi: equip.agi, int: equip.int, mnd: equip.mnd, chr: equip.chr,
                     def: equip.def,
-                    magic_def_bonus: equip.magic_def_bonus
+                    magic_def_bonus: equip.magic_def_bonus,
+                    main_weapon_skill_id: mainWeaponSkillId
                 };
                 const totalStats = calculate_status_from_profile(profile, jobKey, supportJob, bonusStats);
 
@@ -1925,6 +2172,22 @@
                 document.getElementById('equipDefenseMdef').textContent = totalStats.mdef || '-';
                 document.getElementById('equipDefenseEvasion').textContent = (equip.evasion || 0) + (totalStats.evasion_bonus || 0) || '-';
                 document.getElementById('equipDefenseMeva').textContent = (equip.magic_evasion || 0) + (totalStats.magic_evasion_bonus || 0) || '-';
+
+                // 有効スキル値の表示（値が 0 のスキルは非表示）
+                const skillsContainer = document.getElementById('equipEffectiveSkills');
+                skillsContainer.innerHTML = '';
+                const effSkills = totalStats.effective_skills || {};
+                ALL_SKILL_KEYS.forEach(([k, ja]) => {
+                    const v = effSkills[k] || 0;
+                    if (v <= 0) return;
+                    const badge = (k === totalStats.main_weapon_skill) ? ' <span style="color:#8ab4f8;">(主武器)</span>' : '';
+                    const div = document.createElement('div');
+                    div.innerHTML = `<span style="color:#888;">${ja}:</span> <strong>${v}</strong>${badge}`;
+                    skillsContainer.appendChild(div);
+                });
+                if (skillsContainer.innerHTML === '') {
+                    skillsContainer.innerHTML = '<div style="color:#666;">(表示できるスキルなし)</div>';
+                }
                 document.getElementById('equipDefenseDt').textContent = equip.damage_taken_pct ? `${equip.damage_taken_pct}%` : '-';
                 document.getElementById('equipDefensePdt').textContent = equip.physical_damage_taken_pct ? `${equip.physical_damage_taken_pct}%` : '-';
                 document.getElementById('equipDefenseMdt').textContent = equip.magic_damage_taken_pct ? `${equip.magic_damage_taken_pct}%` : '-';
@@ -1950,6 +2213,8 @@
                 const elem = document.getElementById(`equipDefense${stat}`);
                 if (elem) elem.textContent = '-';
             });
+            const skillsContainer = document.getElementById('equipEffectiveSkills');
+            if (skillsContainer) skillsContainer.innerHTML = '';
         }
 
         // Character selector change

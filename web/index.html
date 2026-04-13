@@ -1307,6 +1307,7 @@
             if (!btn.dataset.bound) {
                 btn.dataset.bound = '1';
                 btn.addEventListener('click', () => {
+                    recomputeSkillDefaultsFromForm();
                     ALL_SKILL_KEYS.forEach(([k]) => {
                         currentEditingSkills[k] = currentEditingSkillDefaults[k] || 0;
                     });
@@ -1328,6 +1329,37 @@
                     });
                 }
             });
+            // ジョブレベル/マスターレベルの変更時にスキル上限を再計算し、
+            // 旧デフォルトと同値のスキルは新デフォルトに追従させる
+            const jobLevelTable = document.getElementById('jobLevelTable');
+            if (jobLevelTable && !jobLevelTable.dataset.skillBound) {
+                jobLevelTable.dataset.skillBound = '1';
+                jobLevelTable.addEventListener('input', (e) => {
+                    if (e.target.matches('input[id^="jl_"]')) {
+                        const oldDefaults = { ...currentEditingSkillDefaults };
+                        recomputeSkillDefaultsFromForm();
+                        ALL_SKILL_KEYS.forEach(([k]) => {
+                            // ユーザー未カスタム（旧デフォルトと同値）のみ追従
+                            if (currentEditingSkills[k] === oldDefaults[k]) {
+                                currentEditingSkills[k] = currentEditingSkillDefaults[k] || 0;
+                            }
+                        });
+                        renderSkillInputs();
+                    }
+                });
+            }
+        }
+
+        // 編集フォームの現状ジョブレベル / ML から skill defaults を再計算
+        function recomputeSkillDefaultsFromForm() {
+            const job_levels = {};
+            JOBS.forEach(job => {
+                const lv = parseInt(document.getElementById(`jl_${job.key}_lv`).value) || 0;
+                const mlv = parseInt(document.getElementById(`jl_${job.key}_mlv`).value) || 0;
+                job_levels[job.key] = { level: lv, master_lv: mlv };
+            });
+            const race = document.getElementById('charRace').value;
+            currentEditingSkillDefaults = computeSkillDefaults({ race, job_levels });
         }
 
         // ジョブセレクタ初期化（1 回のみ）

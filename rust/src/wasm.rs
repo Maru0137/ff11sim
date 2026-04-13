@@ -1,4 +1,8 @@
+use std::collections::BTreeMap;
+
 use serde::{Deserialize, Serialize};
+use serde_wasm_bindgen::Serializer;
+use strum::VariantArray;
 use wasm_bindgen::prelude::*;
 
 use crate::chara::Chara;
@@ -6,7 +10,15 @@ use crate::character_profile::CharacterProfile;
 use crate::job::{Job, JobTrait};
 use crate::job_points::{calc_gift_bonuses, calc_jp_category_bonuses};
 use crate::race::Race;
+use crate::skills::{
+    default_skills, effective_skill, weapon_skill_from_item_id, SkillKind,
+};
 use crate::status::{BonusStats, MeritPoints, StatusKind};
+
+/// BTreeMap を JS Map ではなく plain object として出力するためのシリアライザ
+fn object_serializer() -> Serializer {
+    Serializer::new().serialize_maps_as_objects(true)
+}
 
 #[cfg(target_arch = "wasm32")]
 #[wasm_bindgen(start)]
@@ -35,6 +47,12 @@ pub struct StatusResult {
     pub magic_accuracy_bonus: i32,
     pub magic_evasion_bonus: i32,
     pub total_jp_spent: i32,
+    /// メインジョブ/サポートジョブで制限されたスキル有効値（キー: スキル名）
+    pub effective_skills: BTreeMap<String, i32>,
+    /// 装備メイン武器のスキル種別（取得できた場合のみ）
+    pub main_weapon_skill: Option<String>,
+    /// 装備メイン武器のスキル有効値（主武器スキルによる attack/accuracy への寄与分）
+    pub main_weapon_skill_value: i32,
 }
 
 fn str_to_race(s: &str) -> Option<Race> {
@@ -160,7 +178,9 @@ pub fn calculate_status(
         .map_err(|e| JsValue::from_str(e))?;
 
     let result = chara_to_status_result(&chara);
-    serde_wasm_bindgen::to_value(&result).map_err(|e| JsValue::from_str(&e.to_string()))
+    result
+        .serialize(&object_serializer())
+        .map_err(|e| JsValue::from_str(&e.to_string()))
 }
 
 #[wasm_bindgen]
@@ -202,6 +222,45 @@ pub fn get_jobs() -> Vec<JsValue> {
     ]
 }
 
+/// SkillKind を JSON キー用の文字列（Pascal ケース）に変換する。
+fn skill_kind_to_key(kind: SkillKind) -> &'static str {
+    match kind {
+        SkillKind::HandToHand => "HandToHand",
+        SkillKind::Dagger => "Dagger",
+        SkillKind::Sword => "Sword",
+        SkillKind::GreatSword => "GreatSword",
+        SkillKind::Axe => "Axe",
+        SkillKind::GreatAxe => "GreatAxe",
+        SkillKind::Scythe => "Scythe",
+        SkillKind::Polearm => "Polearm",
+        SkillKind::Katana => "Katana",
+        SkillKind::GreatKatana => "GreatKatana",
+        SkillKind::Club => "Club",
+        SkillKind::Staff => "Staff",
+        SkillKind::Archery => "Archery",
+        SkillKind::Marksmanship => "Marksmanship",
+        SkillKind::Throwing => "Throwing",
+        SkillKind::Guarding => "Guarding",
+        SkillKind::Evasion => "Evasion",
+        SkillKind::Shield => "Shield",
+        SkillKind::Parrying => "Parrying",
+        SkillKind::Divine => "Divine",
+        SkillKind::Healing => "Healing",
+        SkillKind::Enhancing => "Enhancing",
+        SkillKind::Enfeebling => "Enfeebling",
+        SkillKind::Elemental => "Elemental",
+        SkillKind::Dark => "Dark",
+        SkillKind::Summoning => "Summoning",
+        SkillKind::Ninjutsu => "Ninjutsu",
+        SkillKind::Singing => "Singing",
+        SkillKind::StringInstrument => "StringInstrument",
+        SkillKind::WindInstrument => "WindInstrument",
+        SkillKind::BlueMagic => "BlueMagic",
+        SkillKind::Geomancy => "Geomancy",
+        SkillKind::Handbell => "Handbell",
+    }
+}
+
 fn chara_to_status_result(chara: &Chara) -> StatusResult {
     use crate::status::{calc_defense, calc_magic_defense};
     let vit = chara.status(StatusKind::Vit);
@@ -217,11 +276,53 @@ fn chara_to_status_result(chara: &Chara) -> StatusResult {
     let gift = calc_gift_bonuses(chara.main_job, total_jp);
     let jp_cat = calc_jp_category_bonuses(chara.main_job, &chara.job_points);
 
+    // 各スキルの有効値（main/support のキャップで制限されたキャラクター値）
+    let mut effective_skills: BTreeMap<String, i32> = BTreeMap::new();
+    for skill in <SkillKind as VariantArray>::VARIANTS {
+        let v = effective_skill(
+            *skill,
+            chara.main_job,
+            chara.main_lv,
+            chara.master_lv,
+            chara.support_job,
+            chara.support_lv,
+            chara.skills.get(*skill),
+        );
+        effective_skills.insert(skill_kind_to_key(*skill).to_string(), v);
+    }
+
+    // メイン武器のスキル種別があれば、そのスキル値を attack/accuracy に加算する
+    let (main_weapon_skill, main_weapon_skill_value) = match chara
+        .bonus_stats
+        .main_weapon_skill_id
+        .and_then(weapon_skill_from_item_id)
+    {
+        Some(skill) => {
+            let v = effective_skill(
+                skill,
+                chara.main_job,
+                chara.main_lv,
+                chara.master_lv,
+                chara.support_job,
+                chara.support_lv,
+                chara.skills.get(skill),
+            );
+            (Some(skill_kind_to_key(skill).to_string()), v)
+        }
+        None => (None, 0),
+    };
+
     // トレイト系ボーナスとギフト/JPカテゴリ効果を合算
-    let attack_bonus = attack_bonus_trait + gift.physical_attack + jp_cat.physical_attack;
+    let attack_bonus = attack_bonus_trait
+        + gift.physical_attack
+        + jp_cat.physical_attack
+        + main_weapon_skill_value;
     let defense_bonus = defense_bonus_trait + gift.physical_defense + jp_cat.physical_defense;
     let evasion_bonus = evasion_bonus_trait + gift.physical_evasion + jp_cat.physical_evasion;
-    let accuracy_bonus = accuracy_bonus_trait + gift.physical_accuracy + jp_cat.physical_accuracy;
+    let accuracy_bonus = accuracy_bonus_trait
+        + gift.physical_accuracy
+        + jp_cat.physical_accuracy
+        + main_weapon_skill_value;
     let magic_attack_bonus = magic_attack_bonus_trait + gift.magic_attack + jp_cat.magic_attack;
     let magic_accuracy_bonus = gift.magic_accuracy + jp_cat.magic_accuracy;
     let magic_evasion_bonus = gift.magic_evasion + jp_cat.magic_evasion;
@@ -249,7 +350,28 @@ fn chara_to_status_result(chara: &Chara) -> StatusResult {
         magic_accuracy_bonus,
         magic_evasion_bonus,
         total_jp_spent: total_jp,
+        effective_skills,
+        main_weapon_skill,
+        main_weapon_skill_value,
     }
+}
+
+/// CharacterProfile からデフォルトスキル値（全ジョブのキャップの最大）を算出する WASM 関数。
+/// JS: calculate_default_skills(profile) → { HandToHand: 0, ..., Handbell: 0 }
+#[wasm_bindgen]
+pub fn calculate_default_skills(profile_js: JsValue) -> Result<JsValue, JsValue> {
+    let profile: CharacterProfile = serde_wasm_bindgen::from_value(profile_js)
+        .map_err(|e| JsValue::from_str(&format!("Invalid profile: {}", e)))?;
+    let skills = default_skills(&profile.job_levels);
+    let mut map: BTreeMap<String, i32> = BTreeMap::new();
+    for skill in <SkillKind as VariantArray>::VARIANTS {
+        map.insert(
+            skill_kind_to_key(*skill).to_string(),
+            skills.values[*skill],
+        );
+    }
+    map.serialize(&object_serializer())
+        .map_err(|e| JsValue::from_str(&e.to_string()))
 }
 
 /// CharacterProfile の JSON データからステータスを計算する。
@@ -289,5 +411,7 @@ pub fn calculate_status_from_profile(
     chara.bonus_stats = bonus_stats;
 
     let result = chara_to_status_result(&chara);
-    serde_wasm_bindgen::to_value(&result).map_err(|e| JsValue::from_str(&e.to_string()))
+    result
+        .serialize(&object_serializer())
+        .map_err(|e| JsValue::from_str(&e.to_string()))
 }

@@ -164,6 +164,9 @@ pub struct BonusStats {
     pub def: i32,
     #[serde(default)]
     pub magic_def_bonus: i32,
+    /// 装備メイン武器のスキル種別 ID（アイテム JSON の `skill` フィールド値、未装備時は None）
+    #[serde(default)]
+    pub main_weapon_skill_id: Option<i32>,
 }
 
 impl BonusStats {

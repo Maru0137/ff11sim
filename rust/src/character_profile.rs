@@ -5,6 +5,7 @@ use crate::chara::Chara;
 use crate::job::Job;
 use crate::job_points::JobPoints;
 use crate::race::Race;
+use crate::skills::CharacterSkills;
 use crate::status::MeritPoints;
 
 /// ジョブごとのレベル情報
@@ -14,7 +15,7 @@ pub struct JobLevel {
     pub master_lv: i32,
 }
 
-/// キャラクタープロファイル（名前・種族・全ジョブのレベル情報・メリットポイント・ジョブポイント）
+/// キャラクタープロファイル（名前・種族・全ジョブのレベル情報・メリットポイント・ジョブポイント・スキル）
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct CharacterProfile {
     pub name: String,
@@ -23,6 +24,8 @@ pub struct CharacterProfile {
     pub merit_points: MeritPoints,
     #[serde(default)]
     pub job_points: JobPoints,
+    #[serde(default)]
+    pub skills: CharacterSkills,
 }
 
 impl CharacterProfile {
@@ -33,6 +36,7 @@ impl CharacterProfile {
             job_levels: EnumMap::default(),
             merit_points: MeritPoints::default(),
             job_points: JobPoints::default(),
+            skills: CharacterSkills::default(),
         }
     }
 
@@ -61,7 +65,8 @@ impl CharacterProfile {
             .main_job(main_job, main_jl.level)
             .master_lv(main_jl.master_lv)
             .merit_points(self.merit_points)
-            .job_points(self.job_points.categories[main_job]);
+            .job_points(self.job_points.categories[main_job])
+            .skills(self.skills.clone());
 
         if let Some(sub) = support_job {
             let sub_jl = &self.job_levels[sub];

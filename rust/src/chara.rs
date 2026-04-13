@@ -3,6 +3,7 @@ use std::option::Option;
 use crate::job::{job_trait_bonus, Job, JobTrait};
 use crate::job_points::JobPointCategories;
 use crate::race::Race;
+use crate::skills::CharacterSkills;
 use crate::status::{calc_master_lv_bonus, calc_status, BonusStats, MeritPoints, StatusKind};
 
 #[derive(Debug, Clone)]
@@ -17,6 +18,8 @@ pub struct Chara {
     pub bonus_stats: BonusStats,
     /// メインジョブのジョブポイントカテゴリ
     pub job_points: JobPointCategories,
+    /// キャラクター共通のスキル値
+    pub skills: CharacterSkills,
 }
 
 impl Chara {
@@ -96,6 +99,7 @@ pub struct CharaBuilder {
     merit_points: MeritPoints,
     bonus_stats: BonusStats,
     job_points: JobPointCategories,
+    skills: CharacterSkills,
 }
 
 impl CharaBuilder {
@@ -142,6 +146,11 @@ impl CharaBuilder {
         self
     }
 
+    pub fn skills(mut self, skills: CharacterSkills) -> Self {
+        self.skills = skills;
+        self
+    }
+
     pub fn build(self) -> Result<Chara, &'static str> {
         Ok(Chara {
             race: self.race.ok_or("race is required")?,
@@ -153,6 +162,7 @@ impl CharaBuilder {
             merit_points: self.merit_points,
             bonus_stats: self.bonus_stats,
             job_points: self.job_points,
+            skills: self.skills,
         })
     }
 }

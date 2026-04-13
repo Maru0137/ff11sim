@@ -1024,12 +1024,32 @@
                     <table class="status-table">
                         <thead>
                             <tr>
+                                <th></th>
+                                <th>メイン</th>
+                                <th>サブ</th>
+                                <th>レンジ</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td>攻撃</td>
+                                <td class="equip-val" id="equipCombatAttackMain">-</td>
+                                <td class="equip-val" id="equipCombatAttackSub">-</td>
+                                <td class="equip-val" id="equipCombatAttackRanged">-</td>
+                            </tr>
+                            <tr>
+                                <td>命中</td>
+                                <td class="equip-val" id="equipCombatAccuracyMain">-</td>
+                                <td class="equip-val" id="equipCombatAccuracySub">-</td>
+                                <td class="equip-val" id="equipCombatAccuracyRanged">-</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                    <table class="status-table">
+                        <thead>
+                            <tr>
                                 <th>防御</th>
-                                <th>攻撃</th>
-                                <th>命中</th>
                                 <th>回避</th>
-                                <th>飛攻</th>
-                                <th>飛命</th>
                                 <th>魔攻</th>
                                 <th>魔命</th>
                             </tr>
@@ -1037,11 +1057,7 @@
                         <tbody>
                             <tr>
                                 <td class="equip-val" id="equipCombatDef">-</td>
-                                <td class="equip-val" id="equipCombatAttack">-</td>
-                                <td class="equip-val" id="equipCombatAccuracy">-</td>
                                 <td class="equip-val" id="equipCombatEvasion">-</td>
-                                <td class="equip-val" id="equipCombatRangedAttack">-</td>
-                                <td class="equip-val" id="equipCombatRangedAccuracy">-</td>
                                 <td class="equip-val" id="equipCombatMagicAttack">-</td>
                                 <td class="equip-val" id="equipCombatMagicAccuracy">-</td>
                             </tr>
@@ -2139,8 +2155,13 @@
                 const tempEquipSet = { name: '_temp', slots: currentEquipSlots };
                 const equip = calculateEquipSetBonuses(tempEquipSet);
 
-                const mainSlot = currentEquipSlots && currentEquipSlots.main;
-                const mainWeaponSkillId = mainSlot && mainSlot.skill != null ? mainSlot.skill : null;
+                const getSlotSkillId = (slotKey) => {
+                    const s = currentEquipSlots && currentEquipSlots[slotKey];
+                    return s && s.skill != null ? s.skill : null;
+                };
+                const mainWeaponSkillId = getSlotSkillId('main');
+                const subWeaponSkillId = getSlotSkillId('sub');
+                const rangedWeaponSkillId = getSlotSkillId('range');
 
                 const bonusStats = {
                     hp: equip.hp, mp: equip.mp,
@@ -2150,7 +2171,13 @@
                     magic_def_bonus: equip.magic_def_bonus,
                     evasion: equip.evasion || 0,
                     magic_attack: equip.magic_attack || 0,
-                    main_weapon_skill_id: mainWeaponSkillId
+                    attack: equip.attack || 0,
+                    accuracy: equip.accuracy || 0,
+                    ranged_attack: equip.ranged_attack || 0,
+                    ranged_accuracy: equip.ranged_accuracy || 0,
+                    main_weapon_skill_id: mainWeaponSkillId,
+                    sub_weapon_skill_id: subWeaponSkillId,
+                    ranged_weapon_skill_id: rangedWeaponSkillId
                 };
                 const totalStats = calculate_status_from_profile(profile, jobKey, supportJob, bonusStats);
 
@@ -2185,22 +2212,21 @@
                 document.getElementById('equipTotalMnd').textContent = totalStats.mnd || 0;
                 document.getElementById('equipTotalChr').textContent = totalStats.chr || 0;
 
-                // totalStats.evasion/magic_attack は新フィールド。
-                // WASM キャッシュで未定義の場合は旧計算にフォールバック
-                const evasionDisplay = totalStats.evasion != null
-                    ? totalStats.evasion
-                    : ((equip.evasion || 0) + (totalStats.evasion_bonus || 0));
-                const magicAttackDisplay = totalStats.magic_attack != null
-                    ? totalStats.magic_attack
-                    : ((equip.magic_attack || 0) + (totalStats.magic_attack_bonus || 0));
+                const evasionDisplay = totalStats.evasion != null ? totalStats.evasion : null;
+                const magicAttackDisplay = totalStats.magic_attack != null ? totalStats.magic_attack : null;
+                const formatOptional = (v) => (v != null && v !== 0) ? v : (v === 0 ? 0 : '-');
 
                 document.getElementById('equipCombatDef').textContent = totalStats.def || '-';
-                document.getElementById('equipCombatAttack').textContent = (equip.attack || 0) + (totalStats.attack_bonus || 0) || '-';
-                document.getElementById('equipCombatAccuracy').textContent = (equip.accuracy || 0) + (totalStats.accuracy_bonus || 0) || '-';
-                document.getElementById('equipCombatEvasion').textContent = evasionDisplay || '-';
-                document.getElementById('equipCombatRangedAttack').textContent = equip.ranged_attack || '-';
-                document.getElementById('equipCombatRangedAccuracy').textContent = equip.ranged_accuracy || '-';
-                document.getElementById('equipCombatMagicAttack').textContent = magicAttackDisplay || '-';
+                document.getElementById('equipCombatEvasion').textContent = evasionDisplay != null ? evasionDisplay : '-';
+                document.getElementById('equipCombatMagicAttack').textContent = magicAttackDisplay != null ? magicAttackDisplay : '-';
+
+                // 攻撃/命中: メイン/サブ/レンジ
+                document.getElementById('equipCombatAttackMain').textContent = totalStats.main_attack != null ? totalStats.main_attack : '-';
+                document.getElementById('equipCombatAccuracyMain').textContent = totalStats.main_accuracy != null ? totalStats.main_accuracy : '-';
+                document.getElementById('equipCombatAttackSub').textContent = totalStats.sub_attack != null ? totalStats.sub_attack : '-';
+                document.getElementById('equipCombatAccuracySub').textContent = totalStats.sub_accuracy != null ? totalStats.sub_accuracy : '-';
+                document.getElementById('equipCombatAttackRanged').textContent = totalStats.ranged_attack != null ? totalStats.ranged_attack : '-';
+                document.getElementById('equipCombatAccuracyRanged').textContent = totalStats.ranged_accuracy != null ? totalStats.ranged_accuracy : '-';
                 document.getElementById('equipCombatMagicAccuracy').textContent = (equip.magic_accuracy || 0) + (totalStats.magic_accuracy_bonus || 0) || '-';
                 document.getElementById('equipCombatMagicEvasion').textContent = (equip.magic_evasion || 0) + (totalStats.magic_evasion_bonus || 0) || '-';
                 document.getElementById('equipCombatMagicDamage').textContent = equip.magic_damage || '-';
@@ -2246,9 +2272,11 @@
                 document.getElementById(`equipEquip${stat}`).textContent = '-';
                 document.getElementById(`equipTotal${stat}`).textContent = '-';
             });
-            ['Def', 'Attack', 'Accuracy', 'Evasion', 'RangedAttack', 'RangedAccuracy',
+            ['Def', 'Evasion',
                 'MagicAttack', 'MagicAccuracy', 'MagicEvasion', 'MagicDamage', 'Haste',
-                'StoreTp', 'DoubleAttack', 'TripleAttack', 'CritRate', 'WsDamage'].forEach(stat => {
+                'StoreTp', 'DoubleAttack', 'TripleAttack', 'CritRate', 'WsDamage',
+                'AttackMain', 'AttackSub', 'AttackRanged',
+                'AccuracyMain', 'AccuracySub', 'AccuracyRanged'].forEach(stat => {
                     const elem = document.getElementById(`equipCombat${stat}`);
                     if (elem) elem.textContent = '-';
                 });

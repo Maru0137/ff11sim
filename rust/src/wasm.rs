@@ -45,6 +45,18 @@ pub struct StatusResult {
     pub evasion: i32,
     /// 魔法攻撃力総合値 (100 + equip + トレイト/ギフト/JPカテゴリ)
     pub magic_attack: i32,
+    /// メイン攻撃力総合値
+    pub main_attack: i32,
+    /// メイン命中総合値
+    pub main_accuracy: i32,
+    /// サブ攻撃力 (サブ武器装備時のみ、未装備は None)
+    pub sub_attack: Option<i32>,
+    /// サブ命中 (サブ武器装備時のみ、未装備は None)
+    pub sub_accuracy: Option<i32>,
+    /// 飛攻 (レンジ武器装備時のみ、未装備は None)
+    pub ranged_attack: Option<i32>,
+    /// 飛命 (レンジ武器装備時のみ、未装備は None)
+    pub ranged_accuracy: Option<i32>,
     pub attack_bonus: i32,
     pub defense_bonus: i32,
     pub evasion_bonus: i32,
@@ -57,8 +69,16 @@ pub struct StatusResult {
     pub effective_skills: BTreeMap<String, i32>,
     /// 装備メイン武器のスキル種別（取得できた場合のみ）
     pub main_weapon_skill: Option<String>,
-    /// 装備メイン武器のスキル有効値（主武器スキルによる attack/accuracy への寄与分）
+    /// 装備メイン武器のスキル有効値
     pub main_weapon_skill_value: i32,
+    /// 装備サブ武器のスキル種別
+    pub sub_weapon_skill: Option<String>,
+    /// 装備サブ武器のスキル有効値
+    pub sub_weapon_skill_value: Option<i32>,
+    /// 装備レンジ武器のスキル種別
+    pub ranged_weapon_skill: Option<String>,
+    /// 装備レンジ武器のスキル有効値
+    pub ranged_weapon_skill_value: Option<i32>,
 }
 
 fn str_to_race(s: &str) -> Option<Race> {
@@ -268,9 +288,14 @@ fn skill_kind_to_key(kind: SkillKind) -> &'static str {
 }
 
 fn chara_to_status_result(chara: &Chara) -> StatusResult {
-    use crate::status::{calc_defense, calc_evasion, calc_magic_attack, calc_magic_defense};
+    use crate::status::{
+        calc_accuracy, calc_defense, calc_evasion, calc_magic_attack, calc_magic_defense,
+        calc_main_attack, calc_ranged_accuracy, calc_ranged_attack, calc_sub_attack,
+    };
     let vit = chara.status(StatusKind::Vit);
     let agi = chara.status(StatusKind::Agi);
+    let str_val = chara.status(StatusKind::Str);
+    let dex = chara.status(StatusKind::Dex);
     let defense_bonus_trait = chara.job_trait_total(JobTrait::DefenseBonus);
     let mdef_trait = chara.job_trait_total(JobTrait::MagicDefenseBonus);
     let attack_bonus_trait = chara.job_trait_total(JobTrait::AttackBonus);
@@ -302,13 +327,9 @@ fn chara_to_status_result(chara: &Chara) -> StatusResult {
         .get(skill_kind_to_key(SkillKind::Evasion))
         .unwrap_or(&0);
 
-    // メイン武器のスキル種別があれば、そのスキル値を attack/accuracy に加算する
-    let (main_weapon_skill, main_weapon_skill_value) = match chara
-        .bonus_stats
-        .main_weapon_skill_id
-        .and_then(weapon_skill_from_item_id)
-    {
-        Some(skill) => {
+    // 指定スロットの武器スキル種別と有効値を取得するヘルパー
+    let resolve_weapon = |id: Option<i32>| -> Option<(SkillKind, i32)> {
+        id.and_then(weapon_skill_from_item_id).map(|skill| {
             let v = effective_skill(
                 skill,
                 chara.main_job,
@@ -318,22 +339,26 @@ fn chara_to_status_result(chara: &Chara) -> StatusResult {
                 chara.support_lv,
                 chara.skills.get(skill),
             );
-            (Some(skill_kind_to_key(skill).to_string()), v)
-        }
-        None => (None, 0),
+            (skill, v)
+        })
     };
 
-    // トレイト系ボーナスとギフト/JPカテゴリ効果を合算
-    let attack_bonus = attack_bonus_trait
-        + gift.physical_attack
-        + jp_cat.physical_attack
-        + main_weapon_skill_value;
+    let main_weapon = resolve_weapon(chara.bonus_stats.main_weapon_skill_id);
+    let sub_weapon = resolve_weapon(chara.bonus_stats.sub_weapon_skill_id);
+    let ranged_weapon = resolve_weapon(chara.bonus_stats.ranged_weapon_skill_id);
+
+    let main_weapon_skill = main_weapon.map(|(k, _)| skill_kind_to_key(k).to_string());
+    let main_weapon_skill_value = main_weapon.map(|(_, v)| v).unwrap_or(0);
+    let sub_weapon_skill = sub_weapon.map(|(k, _)| skill_kind_to_key(k).to_string());
+    let sub_weapon_skill_value = sub_weapon.map(|(_, v)| v);
+    let ranged_weapon_skill = ranged_weapon.map(|(k, _)| skill_kind_to_key(k).to_string());
+    let ranged_weapon_skill_value = ranged_weapon.map(|(_, v)| v);
+
+    // トレイト系ボーナスとギフト/JPカテゴリ効果を合算（武器スキルは含まない）
+    let attack_bonus = attack_bonus_trait + gift.physical_attack + jp_cat.physical_attack;
     let defense_bonus = defense_bonus_trait + gift.physical_defense + jp_cat.physical_defense;
     let evasion_bonus = evasion_bonus_trait + gift.physical_evasion + jp_cat.physical_evasion;
-    let accuracy_bonus = accuracy_bonus_trait
-        + gift.physical_accuracy
-        + jp_cat.physical_accuracy
-        + main_weapon_skill_value;
+    let accuracy_bonus = accuracy_bonus_trait + gift.physical_accuracy + jp_cat.physical_accuracy;
     let magic_attack_bonus = magic_attack_bonus_trait + gift.magic_attack + jp_cat.magic_attack;
     let magic_accuracy_bonus = gift.magic_accuracy + jp_cat.magic_accuracy;
     let magic_evasion_bonus = gift.magic_evasion + jp_cat.magic_evasion;
@@ -349,11 +374,61 @@ fn chara_to_status_result(chara: &Chara) -> StatusResult {
     let magic_attack_total =
         calc_magic_attack(chara.bonus_stats.magic_attack) + magic_attack_bonus;
 
+    // メイン攻撃/命中
+    // メイン武器未装備時は H2H 扱いで H2H スキル値を使う
+    let (main_skill_value, is_h2h) = if let Some((kind, v)) = main_weapon {
+        (v, kind == SkillKind::HandToHand)
+    } else {
+        // 武器なし = H2H
+        let h2h_v = effective_skill(
+            SkillKind::HandToHand,
+            chara.main_job,
+            chara.main_lv,
+            chara.master_lv,
+            chara.support_job,
+            chara.support_lv,
+            chara.skills.get(SkillKind::HandToHand),
+        );
+        (h2h_v, true)
+    };
+    let main_attack_total = calc_main_attack(
+        str_val,
+        main_skill_value,
+        is_h2h,
+        chara.bonus_stats.attack,
+    ) + attack_bonus;
+    let main_accuracy_total =
+        calc_accuracy(dex, main_skill_value, chara.bonus_stats.accuracy) + accuracy_bonus;
+
+    // サブ攻撃/命中 (サブ武器装備時のみ)
+    let (sub_attack_total, sub_accuracy_total) = match sub_weapon {
+        Some((_, skill_v)) => {
+            let atk =
+                calc_sub_attack(str_val, skill_v, chara.bonus_stats.attack) + attack_bonus;
+            let acc =
+                calc_accuracy(dex, skill_v, chara.bonus_stats.accuracy) + accuracy_bonus;
+            (Some(atk), Some(acc))
+        }
+        None => (None, None),
+    };
+
+    // 飛攻/飛命 (レンジ武器装備時のみ)
+    let (ranged_attack_total, ranged_accuracy_total) = match ranged_weapon {
+        Some((_, skill_v)) => {
+            let atk = calc_ranged_attack(str_val, skill_v, chara.bonus_stats.ranged_attack)
+                + attack_bonus;
+            let acc = calc_ranged_accuracy(agi, skill_v, chara.bonus_stats.ranged_accuracy)
+                + accuracy_bonus;
+            (Some(atk), Some(acc))
+        }
+        None => (None, None),
+    };
+
     StatusResult {
         hp: chara.status(StatusKind::Hp),
         mp: chara.status(StatusKind::Mp),
-        str_: chara.status(StatusKind::Str),
-        dex: chara.status(StatusKind::Dex),
+        str_: str_val,
+        dex,
         vit,
         agi,
         int: chara.status(StatusKind::Int),
@@ -363,6 +438,12 @@ fn chara_to_status_result(chara: &Chara) -> StatusResult {
         mdef: mdef_total,
         evasion: evasion_total,
         magic_attack: magic_attack_total,
+        main_attack: main_attack_total,
+        main_accuracy: main_accuracy_total,
+        sub_attack: sub_attack_total,
+        sub_accuracy: sub_accuracy_total,
+        ranged_attack: ranged_attack_total,
+        ranged_accuracy: ranged_accuracy_total,
         attack_bonus,
         defense_bonus,
         evasion_bonus,
@@ -374,6 +455,10 @@ fn chara_to_status_result(chara: &Chara) -> StatusResult {
         effective_skills,
         main_weapon_skill,
         main_weapon_skill_value,
+        sub_weapon_skill,
+        sub_weapon_skill_value,
+        ranged_weapon_skill,
+        ranged_weapon_skill_value,
     }
 }
 

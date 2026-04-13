@@ -37,8 +37,14 @@ pub struct StatusResult {
     pub int: i32,
     pub mnd: i32,
     pub chr: i32,
+    /// 防御力総合値 (int(VIT*1.5) + Lv + α + equip + トレイト/ギフト/JPカテゴリ)
     pub def: i32,
+    /// 魔法防御力総合値 (100 + equip + トレイト/ギフト/JPカテゴリ)
     pub mdef: i32,
+    /// 回避総合値 (int(AGI/2) + スキル区分値 + equip + トレイト/ギフト/JPカテゴリ)
+    pub evasion: i32,
+    /// 魔法攻撃力総合値 (100 + equip + トレイト/ギフト/JPカテゴリ)
+    pub magic_attack: i32,
     pub attack_bonus: i32,
     pub defense_bonus: i32,
     pub evasion_bonus: i32,
@@ -262,8 +268,9 @@ fn skill_kind_to_key(kind: SkillKind) -> &'static str {
 }
 
 fn chara_to_status_result(chara: &Chara) -> StatusResult {
-    use crate::status::{calc_defense, calc_magic_defense};
+    use crate::status::{calc_defense, calc_evasion, calc_magic_attack, calc_magic_defense};
     let vit = chara.status(StatusKind::Vit);
+    let agi = chara.status(StatusKind::Agi);
     let defense_bonus_trait = chara.job_trait_total(JobTrait::DefenseBonus);
     let mdef_trait = chara.job_trait_total(JobTrait::MagicDefenseBonus);
     let attack_bonus_trait = chara.job_trait_total(JobTrait::AttackBonus);
@@ -290,6 +297,10 @@ fn chara_to_status_result(chara: &Chara) -> StatusResult {
         );
         effective_skills.insert(skill_kind_to_key(*skill).to_string(), v);
     }
+    // 回避計算に使う回避スキル有効値
+    let eff_evasion_skill = *effective_skills
+        .get(skill_kind_to_key(SkillKind::Evasion))
+        .unwrap_or(&0);
 
     // メイン武器のスキル種別があれば、そのスキル値を attack/accuracy に加算する
     let (main_weapon_skill, main_weapon_skill_value) = match chara
@@ -327,21 +338,31 @@ fn chara_to_status_result(chara: &Chara) -> StatusResult {
     let magic_accuracy_bonus = gift.magic_accuracy + jp_cat.magic_accuracy;
     let magic_evasion_bonus = gift.magic_evasion + jp_cat.magic_evasion;
 
+    // 総合値の計算
+    let def_total = calc_defense(vit, chara.main_lv, chara.bonus_stats.def) + defense_bonus;
+    let mdef_total = calc_magic_defense(chara.bonus_stats.magic_def_bonus)
+        + mdef_trait
+        + gift.magic_defense
+        + jp_cat.magic_defense;
+    let evasion_total =
+        calc_evasion(agi, eff_evasion_skill, chara.bonus_stats.evasion) + evasion_bonus;
+    let magic_attack_total =
+        calc_magic_attack(chara.bonus_stats.magic_attack) + magic_attack_bonus;
+
     StatusResult {
         hp: chara.status(StatusKind::Hp),
         mp: chara.status(StatusKind::Mp),
         str_: chara.status(StatusKind::Str),
         dex: chara.status(StatusKind::Dex),
         vit,
-        agi: chara.status(StatusKind::Agi),
+        agi,
         int: chara.status(StatusKind::Int),
         mnd: chara.status(StatusKind::Mnd),
         chr: chara.status(StatusKind::Chr),
-        def: calc_defense(vit, chara.main_lv, chara.bonus_stats.def) + defense_bonus,
-        mdef: calc_magic_defense(chara.bonus_stats.magic_def_bonus)
-            + mdef_trait
-            + gift.magic_defense
-            + jp_cat.magic_defense,
+        def: def_total,
+        mdef: mdef_total,
+        evasion: evasion_total,
+        magic_attack: magic_attack_total,
         attack_bonus,
         defense_bonus,
         evasion_bonus,

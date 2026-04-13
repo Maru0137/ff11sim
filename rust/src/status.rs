@@ -170,9 +170,27 @@ pub struct BonusStats {
     /// 装備品の魔法攻撃力（Magic Atk.+X）合計
     #[serde(default)]
     pub magic_attack: i32,
+    /// 装備品の攻撃力合計
+    #[serde(default)]
+    pub attack: i32,
+    /// 装備品の命中合計
+    #[serde(default)]
+    pub accuracy: i32,
+    /// 装備品の飛攻合計
+    #[serde(default)]
+    pub ranged_attack: i32,
+    /// 装備品の飛命合計
+    #[serde(default)]
+    pub ranged_accuracy: i32,
     /// 装備メイン武器のスキル種別 ID（アイテム JSON の `skill` フィールド値、未装備時は None）
     #[serde(default)]
     pub main_weapon_skill_id: Option<i32>,
+    /// 装備サブ武器のスキル種別 ID
+    #[serde(default)]
+    pub sub_weapon_skill_id: Option<i32>,
+    /// 装備レンジ武器のスキル種別 ID
+    #[serde(default)]
+    pub ranged_weapon_skill_id: Option<i32>,
 }
 
 impl BonusStats {
@@ -285,6 +303,63 @@ pub fn calc_magic_attack(equip_matk: i32) -> i32 {
     100 + equip_matk
 }
 
+/// 命中における武器スキルによる寄与（wiki.ffo.jp/html/223.html）。
+/// スキル 1-200: +1 / スキル
+/// スキル 201-400: +0.9 / スキル
+/// スキル 401-600: +0.8 / スキル
+/// スキル 601-: +0.9 / スキル
+pub fn accuracy_skill_term(weapon_skill: i32) -> i32 {
+    if weapon_skill <= 0 {
+        0
+    } else if weapon_skill <= 200 {
+        weapon_skill
+    } else if weapon_skill <= 400 {
+        200 + ((weapon_skill - 200) as f32 * 0.9).floor() as i32
+    } else if weapon_skill <= 600 {
+        380 + ((weapon_skill - 400) as f32 * 0.8).floor() as i32
+    } else {
+        540 + ((weapon_skill - 600) as f32 * 0.9).floor() as i32
+    }
+}
+
+/// メイン武器の攻撃力を計算する（wiki.ffo.jp/html/1766.html）。
+/// 片手/両手: 攻撃 = STR + 武器スキル + 8 + equip_attack
+/// 格闘:      攻撃 = int(STR × 0.75) + 武器スキル + 8 + equip_attack
+pub fn calc_main_attack(str_val: i32, weapon_skill: i32, is_h2h: bool, equip_attack: i32) -> i32 {
+    let str_term = if is_h2h {
+        (str_val as f32 * 0.75).floor() as i32
+    } else {
+        str_val
+    };
+    str_term + weapon_skill + 8 + equip_attack
+}
+
+/// サブ武器の攻撃力を計算する（wiki.ffo.jp/html/1766.html）。
+/// サブ: 攻撃 = int(STR × 0.5) + 武器スキル + 8 + equip_attack
+pub fn calc_sub_attack(str_val: i32, weapon_skill: i32, equip_attack: i32) -> i32 {
+    (str_val as f32 * 0.5).floor() as i32 + weapon_skill + 8 + equip_attack
+}
+
+/// 遠隔武器の攻撃力（飛攻）を計算する。
+/// 飛攻 = STR + 武器スキル + 8 + equip_ranged_attack
+pub fn calc_ranged_attack(str_val: i32, weapon_skill: i32, equip_ranged_attack: i32) -> i32 {
+    str_val + weapon_skill + 8 + equip_ranged_attack
+}
+
+/// 命中値を計算する（wiki.ffo.jp/html/223.html）。
+/// 命中 = int(DEX × 0.75) + スキル補正 + equip_accuracy
+pub fn calc_accuracy(dex: i32, weapon_skill: i32, equip_accuracy: i32) -> i32 {
+    (dex as f32 * 0.75).floor() as i32 + accuracy_skill_term(weapon_skill) + equip_accuracy
+}
+
+/// 飛命を計算する。
+/// 飛命 = int(AGI × 0.5) + スキル補正 + equip_ranged_accuracy
+pub fn calc_ranged_accuracy(agi: i32, weapon_skill: i32, equip_ranged_accuracy: i32) -> i32 {
+    (agi as f32 * 0.5).floor() as i32
+        + accuracy_skill_term(weapon_skill)
+        + equip_ranged_accuracy
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -340,5 +415,61 @@ mod tests {
     fn test_calc_magic_attack() {
         assert_eq!(calc_magic_attack(0), 100);
         assert_eq!(calc_magic_attack(20), 120);
+    }
+
+    #[test]
+    fn test_accuracy_skill_term() {
+        assert_eq!(accuracy_skill_term(0), 0);
+        assert_eq!(accuracy_skill_term(200), 200);
+        // 201-400: 200 + floor((skill-200)*0.9)
+        assert_eq!(accuracy_skill_term(300), 290); // 200 + floor(90)
+        assert_eq!(accuracy_skill_term(400), 380);
+        // 401-600: 380 + floor((skill-400)*0.8)
+        assert_eq!(accuracy_skill_term(500), 460); // 380 + floor(80)
+        assert_eq!(accuracy_skill_term(600), 540);
+        // 601+: 540 + floor((skill-600)*0.9)
+        assert_eq!(accuracy_skill_term(700), 630); // 540 + floor(90)
+    }
+
+    #[test]
+    fn test_calc_main_attack_normal() {
+        // STR=100, skill=400, equip=50 → 100 + 400 + 8 + 50 = 558
+        assert_eq!(calc_main_attack(100, 400, false, 50), 558);
+    }
+
+    #[test]
+    fn test_calc_main_attack_h2h() {
+        // STR=100, skill=400, H2H: int(100*0.75) + 400 + 8 + 50 = 75 + 458 = 533
+        assert_eq!(calc_main_attack(100, 400, true, 50), 533);
+    }
+
+    #[test]
+    fn test_calc_sub_attack() {
+        // STR=100, skill=300, equip=30 → int(50) + 300 + 8 + 30 = 388
+        assert_eq!(calc_sub_attack(100, 300, 30), 388);
+    }
+
+    #[test]
+    fn test_calc_ranged_attack() {
+        // STR=100, skill=400, equip=30 → 100 + 400 + 8 + 30 = 538
+        assert_eq!(calc_ranged_attack(100, 400, 30), 538);
+    }
+
+    #[test]
+    fn test_calc_accuracy_low_skill() {
+        // DEX=100, skill=200, equip=0 → 75 + 200 + 0 = 275
+        assert_eq!(calc_accuracy(100, 200, 0), 275);
+    }
+
+    #[test]
+    fn test_calc_accuracy_high_skill() {
+        // DEX=100, skill=500, equip=20 → 75 + 460 + 20 = 555
+        assert_eq!(calc_accuracy(100, 500, 20), 555);
+    }
+
+    #[test]
+    fn test_calc_ranged_accuracy() {
+        // AGI=120, skill=400, equip=10 → 60 + 380 + 10 = 450
+        assert_eq!(calc_ranged_accuracy(120, 400, 10), 450);
     }
 }

@@ -11,7 +11,7 @@ use crate::job::{Job, JobTrait};
 use crate::job_points::{calc_gift_bonuses, calc_jp_category_bonuses};
 use crate::race::Race;
 use crate::skills::{
-    default_skills, effective_skill, weapon_skill_from_item_id, SkillKind,
+    default_skills, effective_skill, job_skill_rank, weapon_skill_from_item_id, SkillKind,
 };
 use crate::status::{BonusStats, MeritPoints, StatusKind};
 
@@ -308,8 +308,9 @@ fn chara_to_status_result(chara: &Chara) -> StatusResult {
     let gift = calc_gift_bonuses(chara.main_job, total_jp);
     let jp_cat = calc_jp_category_bonuses(chara.main_job, &chara.job_points);
 
-    // 各スキルの有効値（main/support のキャップで制限されたキャラクター値）
-    let mut effective_skills: BTreeMap<String, i32> = BTreeMap::new();
+    // 各スキルの「基本有効値」= min(char, cap)（装備ボーナスを含まない）
+    let mut base_effective: std::collections::HashMap<SkillKind, i32> =
+        std::collections::HashMap::new();
     for skill in <SkillKind as VariantArray>::VARIANTS {
         let v = effective_skill(
             *skill,
@@ -320,32 +321,83 @@ fn chara_to_status_result(chara: &Chara) -> StatusResult {
             chara.support_lv,
             chara.skills.get(*skill),
         );
+        base_effective.insert(*skill, v);
+    }
+
+    // 装備ボーナスを引いた上で effective_skills マップを組み立てる
+    // 非武器スロットのスキルボーナスは全スロット共通(global)として加算される
+    let get_bonus =
+        |map: &std::collections::BTreeMap<String, i32>, kind: SkillKind| -> i32 {
+            *map.get(skill_kind_to_key(kind)).unwrap_or(&0)
+        };
+    let global_bonus =
+        |kind: SkillKind| get_bonus(&chara.bonus_stats.skill_bonus_global, kind);
+    let main_slot_bonus =
+        |kind: SkillKind| get_bonus(&chara.bonus_stats.skill_bonus_main, kind);
+    let sub_slot_bonus = |kind: SkillKind| get_bonus(&chara.bonus_stats.skill_bonus_sub, kind);
+    let ranged_slot_bonus =
+        |kind: SkillKind| get_bonus(&chara.bonus_stats.skill_bonus_ranged, kind);
+
+    // 該当ジョブ構成で対象スキルを習得しているか（メイン/サポートどちらかにランクあり）
+    let job_has_skill = |kind: SkillKind| -> bool {
+        job_skill_rank(chara.main_job, kind).is_some()
+            || chara
+                .support_job
+                .map(|j| job_skill_rank(j, kind).is_some())
+                .unwrap_or(false)
+    };
+
+    // effective_skills（表示用）: base + global のみ。スロット固有ボーナスは含めない。
+    // ジョブ構成がスキルを持たない場合はボーナスも適用しない（未習得扱い）
+    let mut effective_skills: BTreeMap<String, i32> = BTreeMap::new();
+    for (skill, base) in base_effective.iter() {
+        let v = if job_has_skill(*skill) {
+            base + global_bonus(*skill)
+        } else {
+            0
+        };
         effective_skills.insert(skill_kind_to_key(*skill).to_string(), v);
     }
-    // 回避計算に使う回避スキル有効値
-    let eff_evasion_skill = *effective_skills
-        .get(skill_kind_to_key(SkillKind::Evasion))
-        .unwrap_or(&0);
 
-    // 指定スロットの武器スキル種別と有効値を取得するヘルパー
-    let resolve_weapon = |id: Option<i32>| -> Option<(SkillKind, i32)> {
+    // 回避は非武器スキル → 装備ボーナスは global のみ
+    let eff_evasion_skill = base_effective[&SkillKind::Evasion] + global_bonus(SkillKind::Evasion);
+
+    // 指定スロットの武器種別と有効値（スロット固有 + global を加算）を取得するヘルパー
+    // ジョブ構成がスキルを持たない場合はボーナスを適用せず、値は 0 となる
+    let resolve_weapon_main = |id: Option<i32>| -> Option<(SkillKind, i32)> {
         id.and_then(weapon_skill_from_item_id).map(|skill| {
-            let v = effective_skill(
-                skill,
-                chara.main_job,
-                chara.main_lv,
-                chara.master_lv,
-                chara.support_job,
-                chara.support_lv,
-                chara.skills.get(skill),
-            );
+            let v = if job_has_skill(skill) {
+                base_effective[&skill] + main_slot_bonus(skill) + global_bonus(skill)
+            } else {
+                0
+            };
+            (skill, v)
+        })
+    };
+    let resolve_weapon_sub = |id: Option<i32>| -> Option<(SkillKind, i32)> {
+        id.and_then(weapon_skill_from_item_id).map(|skill| {
+            let v = if job_has_skill(skill) {
+                base_effective[&skill] + sub_slot_bonus(skill) + global_bonus(skill)
+            } else {
+                0
+            };
+            (skill, v)
+        })
+    };
+    let resolve_weapon_ranged = |id: Option<i32>| -> Option<(SkillKind, i32)> {
+        id.and_then(weapon_skill_from_item_id).map(|skill| {
+            let v = if job_has_skill(skill) {
+                base_effective[&skill] + ranged_slot_bonus(skill) + global_bonus(skill)
+            } else {
+                0
+            };
             (skill, v)
         })
     };
 
-    let main_weapon = resolve_weapon(chara.bonus_stats.main_weapon_skill_id);
-    let sub_weapon = resolve_weapon(chara.bonus_stats.sub_weapon_skill_id);
-    let ranged_weapon = resolve_weapon(chara.bonus_stats.ranged_weapon_skill_id);
+    let main_weapon = resolve_weapon_main(chara.bonus_stats.main_weapon_skill_id);
+    let sub_weapon = resolve_weapon_sub(chara.bonus_stats.sub_weapon_skill_id);
+    let ranged_weapon = resolve_weapon_ranged(chara.bonus_stats.ranged_weapon_skill_id);
 
     let main_weapon_skill = main_weapon.map(|(k, _)| skill_kind_to_key(k).to_string());
     let main_weapon_skill_value = main_weapon.map(|(_, v)| v).unwrap_or(0);
@@ -379,16 +431,10 @@ fn chara_to_status_result(chara: &Chara) -> StatusResult {
     let (main_skill_value, is_h2h) = if let Some((kind, v)) = main_weapon {
         (v, kind == SkillKind::HandToHand)
     } else {
-        // 武器なし = H2H
-        let h2h_v = effective_skill(
-            SkillKind::HandToHand,
-            chara.main_job,
-            chara.main_lv,
-            chara.master_lv,
-            chara.support_job,
-            chara.support_lv,
-            chara.skills.get(SkillKind::HandToHand),
-        );
+        // 武器なし = H2H. スロット固有ボーナスはメインスロット扱い
+        let h2h_v = base_effective[&SkillKind::HandToHand]
+            + main_slot_bonus(SkillKind::HandToHand)
+            + global_bonus(SkillKind::HandToHand);
         (h2h_v, true)
     };
     let main_attack_total = calc_main_attack(

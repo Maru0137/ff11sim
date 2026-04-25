@@ -556,3 +556,163 @@ pub fn calculate_status_from_profile(
         .map_err(|e| JsValue::from_str(&e.to_string()))
 }
 
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::chara::Chara;
+    use crate::job::Job;
+    use crate::job_points::JobPointCategories;
+    use crate::race::Race;
+    use crate::skills::{CharacterSkills, SkillKind};
+    use crate::status::{BonusStats, MeritPoints};
+    use std::collections::BTreeMap;
+
+    /// Hum War99/Sam59 ML50 + ラフリア装備セットの攻撃力・命中テスト
+    /// サポート Lv は main_lv/2 + master_lv/5 = 99/2 + 50/5 = 49 + 10 = 59
+    ///
+    /// 装備:
+    ///   メイン: ラフリア (両手斧, STR+35, ACC+35, 両手斧スキル+277)
+    ///   サブ:   ウトゥグリップ (ATK+30, ACC+30)
+    ///   矢弾:  コイストボダーA30 (ATK+15, STR+10, DEX+10)
+    ///   頭:    サクパタヘルムA30 (STR+33, DEX+20, ATK+70, ACC+55)
+    ///   胴:    BIロリカ+3 (STR+43, DEX+39, ATK+74, ACC+64, 両手斧スキル+21)
+    ///   両手:  サクパタガントレA30 (STR+24, DEX+35, ATK+70, ACC+55)
+    ///   両脚:  AGクウィス+4 (STR+48, ATK+74, ACC+44)
+    ///   両足:  サクパタレギンスA30 (STR+29, DEX+20, ATK+70, ACC+55)
+    ///   首:    戦士の数珠+2A25 (ATK+25, ACC+25, オグメ: HP+100, STR+15, DEX+15, DA+7%)
+    ///   腰:    イオスケハベルト+1 (ACC+17)
+    ///   耳1:   アスプロピアスA30 (HP+100, ACC+15, ALL BP+10)
+    ///   耳2:   ボイイピアス+1 (オグメ: ACC+13)
+    ///   指1:   シーリチリング+1 (ACC+10)
+    ///   指2:   シーリチリング+1 (ACC+10)
+    ///   背:    シコルマント (オグメ: DEX+30, ACC+20, ATK+20)
+    ///
+    /// 装備以外のステータス内訳（現行実装の期待値）:
+    ///   ※ 通常ステータスは race+main_job+support_job を sum→floor 後に
+    ///      ML/メリット/ジョブ特性を加算する仕様
+    ///
+    ///   STR=161  内訳: メインジョブ(Hum 37.50 + War99 45.00) + サポートジョブ(Sam59 27.00/2=13.50)
+    ///                   = floor(96.00) + マスターレベル(50*1=50) + メリット(15*1=15)  [+ ジョブポイント=0, ギフト=0]
+    ///   DEX=156  内訳: floor(37.50 + 40.50 + 13.50) + 50 + 15
+    ///   VIT=153  内訳: floor(37.50 + 37.50 + 13.50) + 50 + 15
+    ///   AGI=154  内訳: floor(37.50 + 40.50 + 11.50) + 50 + 15
+    ///   INT=143  内訳: floor(37.50 + 31.00 + 10.00) + 50 + 15
+    ///   MND=143  内訳: floor(37.50 + 31.00 + 10.00) + 50 + 15
+    ///   CHR=148  内訳: floor(37.50 + 34.50 + 11.50) + 50 + 15
+    ///   HP=2095  内訳: floor(485 + 675 + 255) + ML(50*7=350) + メリット(15*10=150)
+    ///                   + ジョブ特性 MaxHpBoost(War90 rank4=180)
+    ///   MP=0     War はメインで MP グレードを持たない（実装上 0 を返す）
+    ///
+    ///   戦闘ボーナス（ジョブポイント＋ギフト＋ジョブ特性、装備分は別途加算）:
+    ///     物理攻撃 +105 = ジョブ特性 AttackBonus(War91 rank3=35) + ギフト(2100JP→70) + JPカテゴリ(0)
+    ///     物理命中  +36 = ジョブ特性(0) + ギフト(2100JP→36) + JPカテゴリ(0)
+    ///     ※ JP はカテゴリ全 max=2100JP 累計、War のカテゴリは攻撃/命中に直接寄与なし
+    ///
+    ///   メイン武器有効スキル(両手斧):
+    ///     キャップ = job_skill_cap(War99 ML50 GreatAxe A+)=474 + メリット(8rank*2=16) = 490
+    ///     キャラスキル値 490 を採用 → base 490
+    ///     + メインスロット(ラフリア +277) + 全スロット共通(BIロリカ+3 +21) = 788
+    ///
+    ///   最終期待値:
+    ///     メイン攻撃力 = STR + 武器スキル + 8 + 装備攻撃 + 戦闘ボーナス(攻撃)
+    ///                  = (161+247) + 788 + 8 + 448 + 105
+    ///                  = 408 + 788 + 8 + 448 + 105 = 1757
+    ///       ※ STR 247 = 装備合計（222 + アスプロ ALL BP+10 + 戦士の数珠オグメ STR+15）
+    ///
+    ///     メイン命中 = floor(DEX × 0.75) + accuracy_skill_term(skill) + 装備命中 + 戦闘ボーナス(命中)
+    ///                = floor((156+179) × 0.75) + accuracy_skill_term(788) + 448 + 36
+    ///                = floor(335 × 0.75=251.25) + 709 + 448 + 36
+    ///                = 251 + 709 + 448 + 36 = 1444
+    ///       ※ DEX 179 = 装備合計（154 + アスプロ ALL BP+10 + 戦士の数珠オグメ DEX+15）
+    ///       ※ accuracy_skill_term(788): skill>600 区分 → 540 + floor((788-600)×0.9=169.2) = 540 + 169 = 709
+    ///       ※ 装備命中 448 = 431 + アスプロ ACC+15 + ボイイ補正 +2
+    #[test]
+    fn test_war_laphria_equipset_attack_accuracy() {
+        // メリットポイント: ステータス全て 15、全スキル 8
+        let mut merit = MeritPoints {
+            hp: 15,
+            mp: 15,
+            str_: 15,
+            dex: 15,
+            vit: 15,
+            agi: 15,
+            int: 15,
+            mnd: 15,
+            chr: 15,
+            ..Default::default()
+        };
+        for &key in &[
+            "HandToHand", "Dagger", "Sword", "GreatSword", "Axe", "GreatAxe",
+            "Scythe", "Polearm", "Katana", "GreatKatana", "Club", "Staff",
+            "Archery", "Marksmanship", "Throwing", "Guarding", "Evasion",
+            "Shield", "Parrying",
+        ] {
+            merit.combat_skill_merits.insert(key.to_string(), 8);
+        }
+        for &key in &[
+            "Divine", "Healing", "Enhancing", "Enfeebling", "Elemental",
+            "Dark", "Summoning", "Ninjutsu", "Singing", "StringInstrument",
+            "WindInstrument", "BlueMagic", "Geomancy", "Handbell",
+        ] {
+            merit.magic_skill_merits.insert(key.to_string(), 8);
+        }
+
+        // スキル値: War99 ML50 両手斧 A+ cap = 474 + merit 16 = 490
+        let mut skills = CharacterSkills::default();
+        skills.set(SkillKind::GreatAxe, 490);
+
+        // ジョブポイント: 全カテゴリ 20 (2100 JP 消費)
+        let jp = JobPointCategories::all_maxed();
+
+        // 装備ボーナス
+        let mut skill_bonus_main: BTreeMap<String, i32> = BTreeMap::new();
+        skill_bonus_main.insert("GreatAxe".to_string(), 277); // ラフリア
+
+        let mut skill_bonus_global: BTreeMap<String, i32> = BTreeMap::new();
+        skill_bonus_global.insert("GreatAxe".to_string(), 21); // BIロリカ+3
+
+        // 装備ボーナス（アスプロピアスA30 ALL BP+10、戦士の数珠+2A25 オグメ STR/DEX+15 を反映）
+        let bonus = BonusStats {
+            hp: 200,       // アスプロ HP+100 + 数珠+2A25 オグメ HP+100
+            str_: 247,     // 装備 STR 合計 (222 + アスプロ +10 + 数珠オグメ +15)
+            dex: 179,      // 装備 DEX 合計 (154 + アスプロ +10 + 数珠オグメ +15)
+            vit: 10,       // アスプロ ALL BP +10
+            agi: 10,       // アスプロ ALL BP +10
+            int: 10,       // アスプロ ALL BP +10
+            mnd: 10,       // アスプロ ALL BP +10
+            chr: 10,       // アスプロ ALL BP +10
+            attack: 448,   // 装備 Attack 合計
+            accuracy: 448, // 装備 Accuracy 合計 (431 + アスプロ ACC+15 + ボイイ +2 補正)
+            main_weapon_skill_id: Some(6), // 両手斧 skill ID
+            skill_bonus_main,
+            skill_bonus_global,
+            ..BonusStats::default()
+        };
+
+        let chara = Chara::builder()
+            .race(Race::Hum)
+            .main_job(Job::War, 99)
+            .support_job(Job::Sam, 59)
+            .master_lv(50)
+            .merit_points(merit)
+            .job_points(jp)
+            .skills(skills)
+            .bonus_stats(bonus)
+            .build()
+            .expect("Failed to build Chara");
+
+        let result = chara_to_status_result(&chara);
+
+        assert_eq!(
+            result.main_attack, 1757,
+            "メイン攻撃力: got {} expected 1757",
+            result.main_attack
+        );
+        assert_eq!(
+            result.main_accuracy, 1444,
+            "メイン命中: got {} expected 1444",
+            result.main_accuracy
+        );
+    }
+
+}

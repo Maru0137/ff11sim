@@ -53,6 +53,88 @@ pub enum SkillKind {
     Handbell,
 }
 
+impl SkillKind {
+    /// スキルキー文字列（JS 側と共通のキー名）
+    pub fn key(self) -> &'static str {
+        match self {
+            SkillKind::HandToHand => "HandToHand",
+            SkillKind::Dagger => "Dagger",
+            SkillKind::Sword => "Sword",
+            SkillKind::GreatSword => "GreatSword",
+            SkillKind::Axe => "Axe",
+            SkillKind::GreatAxe => "GreatAxe",
+            SkillKind::Scythe => "Scythe",
+            SkillKind::Polearm => "Polearm",
+            SkillKind::Katana => "Katana",
+            SkillKind::GreatKatana => "GreatKatana",
+            SkillKind::Club => "Club",
+            SkillKind::Staff => "Staff",
+            SkillKind::Archery => "Archery",
+            SkillKind::Marksmanship => "Marksmanship",
+            SkillKind::Throwing => "Throwing",
+            SkillKind::Guarding => "Guarding",
+            SkillKind::Evasion => "Evasion",
+            SkillKind::Shield => "Shield",
+            SkillKind::Parrying => "Parrying",
+            SkillKind::Divine => "Divine",
+            SkillKind::Healing => "Healing",
+            SkillKind::Enhancing => "Enhancing",
+            SkillKind::Enfeebling => "Enfeebling",
+            SkillKind::Elemental => "Elemental",
+            SkillKind::Dark => "Dark",
+            SkillKind::Summoning => "Summoning",
+            SkillKind::Ninjutsu => "Ninjutsu",
+            SkillKind::Singing => "Singing",
+            SkillKind::StringInstrument => "StringInstrument",
+            SkillKind::WindInstrument => "WindInstrument",
+            SkillKind::BlueMagic => "BlueMagic",
+            SkillKind::Geomancy => "Geomancy",
+            SkillKind::Handbell => "Handbell",
+        }
+    }
+
+    /// 戦闘スキル（武器 15 + 防御 4）かどうか
+    pub fn is_combat(self) -> bool {
+        matches!(
+            self,
+            SkillKind::HandToHand
+                | SkillKind::Dagger
+                | SkillKind::Sword
+                | SkillKind::GreatSword
+                | SkillKind::Axe
+                | SkillKind::GreatAxe
+                | SkillKind::Scythe
+                | SkillKind::Polearm
+                | SkillKind::Katana
+                | SkillKind::GreatKatana
+                | SkillKind::Club
+                | SkillKind::Staff
+                | SkillKind::Archery
+                | SkillKind::Marksmanship
+                | SkillKind::Throwing
+                | SkillKind::Guarding
+                | SkillKind::Evasion
+                | SkillKind::Shield
+                | SkillKind::Parrying
+        )
+    }
+
+    /// 魔法スキルかどうか
+    pub fn is_magic(self) -> bool {
+        !self.is_combat()
+    }
+
+    /// メリットポイントによるスキルキャップボーナス (+2/rank)
+    pub fn merit_bonus(self, merit: &crate::status::MeritPoints, skill_key: &str) -> i32 {
+        let rank = if self.is_combat() {
+            merit.combat_skill_merits.get(skill_key).copied().unwrap_or(0)
+        } else {
+            merit.magic_skill_merits.get(skill_key).copied().unwrap_or(0)
+        };
+        rank * 2
+    }
+}
+
 /// スキルランク。A+ が最も高い。
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum SkillRank {
@@ -840,9 +922,13 @@ impl CharacterSkills {
     }
 }
 
-/// 全ジョブのレベル情報から、あるスキルのデフォルト値（キャップの最大）を計算する。
+/// 全ジョブのレベル情報から、あるスキルのデフォルト値（キャップの最大 + メリットボーナス）を計算する。
 /// レベルが 0 のジョブは無視する。
-pub fn default_skill_value(skill: SkillKind, job_levels: &EnumMap<Job, JobLevel>) -> i32 {
+pub fn default_skill_value(
+    skill: SkillKind,
+    job_levels: &EnumMap<Job, JobLevel>,
+    merit: &crate::status::MeritPoints,
+) -> i32 {
     let mut max = 0;
     for (job, jl) in job_levels.iter() {
         if jl.level == 0 {
@@ -853,14 +939,20 @@ pub fn default_skill_value(skill: SkillKind, job_levels: &EnumMap<Job, JobLevel>
             max = cap;
         }
     }
+    if max > 0 {
+        max += skill.merit_bonus(merit, skill.key());
+    }
     max
 }
 
 /// 全スキルについてのデフォルト値を算出する。
-pub fn default_skills(job_levels: &EnumMap<Job, JobLevel>) -> CharacterSkills {
+pub fn default_skills(
+    job_levels: &EnumMap<Job, JobLevel>,
+    merit: &crate::status::MeritPoints,
+) -> CharacterSkills {
     let mut skills = CharacterSkills::default();
     for skill in <SkillKind as VariantArray>::VARIANTS {
-        skills.values[*skill] = default_skill_value(*skill, job_levels);
+        skills.values[*skill] = default_skill_value(*skill, job_levels, merit);
     }
     skills
 }
@@ -871,7 +963,7 @@ pub fn default_skills(job_levels: &EnumMap<Job, JobLevel>) -> CharacterSkills {
 
 /// メイン/サポートジョブの組み合わせにおけるスキルの有効値を計算する。
 /// キャラクターのスキル値とジョブ経由のキャップの最大値のうち、低い方を返す。
-/// キャップはメインジョブ（+ ML）とサポートジョブ（support_lv で上限）のうち高い方。
+/// キャップはメインジョブ（+ ML）とサポートジョブ（support_lv で上限）のうち高い方 + メリットボーナス。
 pub fn effective_skill(
     skill: SkillKind,
     main_job: Job,
@@ -880,13 +972,17 @@ pub fn effective_skill(
     support_job: Option<Job>,
     support_lv: Option<i32>,
     char_value: i32,
+    merit: &crate::status::MeritPoints,
 ) -> i32 {
     let main_cap = job_skill_cap(main_job, skill, main_lv, master_lv);
     let sup_cap = match (support_job, support_lv) {
         (Some(sj), Some(sl)) => job_skill_cap(sj, skill, sl, 0),
         _ => 0,
     };
-    let max_cap = main_cap.max(sup_cap);
+    let mut max_cap = main_cap.max(sup_cap);
+    if max_cap > 0 {
+        max_cap += skill.merit_bonus(merit, skill.key());
+    }
     char_value.min(max_cap)
 }
 
@@ -968,6 +1064,7 @@ mod tests {
 
     #[test]
     fn test_effective_skill_capped_by_cap() {
+        let merit = crate::status::MeritPoints::default();
         // キャラクターがスキル値 500 を持っていても、War の両手斧 Lv99 ML0 の上限 424 で制限される
         let v = effective_skill(
             SkillKind::GreatAxe,
@@ -977,12 +1074,14 @@ mod tests {
             None,
             None,
             500,
+            &merit,
         );
         assert_eq!(v, 424);
     }
 
     #[test]
     fn test_effective_skill_capped_by_char_value() {
+        let merit = crate::status::MeritPoints::default();
         // キャラクターのスキル値 200 < cap 424 のとき、200 が使われる
         let v = effective_skill(
             SkillKind::GreatAxe,
@@ -992,12 +1091,14 @@ mod tests {
             None,
             None,
             200,
+            &merit,
         );
         assert_eq!(v, 200);
     }
 
     #[test]
     fn test_effective_skill_support_job_higher() {
+        let merit = crate::status::MeritPoints::default();
         // War/Nin@49: Nin は片手刀 A+ (@Lv49で cap ≈ 150ish), War は片手刀なし
         // よって Nin のキャップが使われる
         let v = effective_skill(
@@ -1008,6 +1109,7 @@ mod tests {
             Some(Job::Nin),
             Some(49),
             500,
+            &merit,
         );
         // Nin の片手刀 A+ @ Lv49, 線形補間で 1-50 の中
         // APlus: [6, 153, 276, 424] at [1, 50, 75, 99]
@@ -1017,6 +1119,7 @@ mod tests {
 
     #[test]
     fn test_effective_skill_no_main_rank() {
+        let merit = crate::status::MeritPoints::default();
         // War は魔法スキル持たないので 0
         let v = effective_skill(
             SkillKind::Healing,
@@ -1026,27 +1129,45 @@ mod tests {
             None,
             None,
             300,
+            &merit,
         );
         assert_eq!(v, 0);
     }
 
     #[test]
     fn test_default_skill_value_single_job() {
+        let merit = crate::status::MeritPoints::default();
         let mut jl: EnumMap<Job, JobLevel> = EnumMap::default();
         jl[Job::War] = JobLevel { level: 99, master_lv: 50 };
         // War の両手斧 A+ @ 99 ML50 = 474
-        assert_eq!(default_skill_value(SkillKind::GreatAxe, &jl), 474);
+        assert_eq!(default_skill_value(SkillKind::GreatAxe, &jl, &merit), 474);
         // War は魔法なし
-        assert_eq!(default_skill_value(SkillKind::Healing, &jl), 0);
+        assert_eq!(default_skill_value(SkillKind::Healing, &jl, &merit), 0);
     }
 
     #[test]
     fn test_default_skill_value_multiple_jobs() {
+        let merit = crate::status::MeritPoints::default();
         let mut jl: EnumMap<Job, JobLevel> = EnumMap::default();
         jl[Job::War] = JobLevel { level: 99, master_lv: 0 }; // GreatAxe A+ = 424
         jl[Job::Drk] = JobLevel { level: 50, master_lv: 0 }; // GreatAxe B- @ 50 = 126
         // War のほうが大きい
-        assert_eq!(default_skill_value(SkillKind::GreatAxe, &jl), 424);
+        assert_eq!(default_skill_value(SkillKind::GreatAxe, &jl, &merit), 424);
+    }
+
+    #[test]
+    fn test_default_skill_value_with_merit_bonus() {
+        let mut merit = crate::status::MeritPoints::default();
+        merit.combat_skill_merits.insert("GreatAxe".to_string(), 8); // +16
+        merit.magic_skill_merits.insert("Enfeebling".to_string(), 5); // +10
+        let mut jl: EnumMap<Job, JobLevel> = EnumMap::default();
+        jl[Job::War] = JobLevel { level: 99, master_lv: 0 };
+        // War の両手斧 A+ @ 99 = 424 + merit 16 = 440
+        assert_eq!(default_skill_value(SkillKind::GreatAxe, &jl, &merit), 440);
+        // War は魔法なし → 0（メリットボーナスも加算されない）
+        assert_eq!(default_skill_value(SkillKind::Healing, &jl, &merit), 0);
+        // メリット未設定の戦闘スキルはボーナスなし（War の片手剣 B @ 99 = 398）
+        assert_eq!(default_skill_value(SkillKind::Sword, &jl, &merit), 398);
     }
 
     #[test]

@@ -140,6 +140,20 @@ pub struct MeritPointsInput {
     pub mnd: i32,
     #[serde(default)]
     pub chr: i32,
+    #[serde(default)]
+    pub combat_skill_merits: std::collections::BTreeMap<String, i32>,
+    #[serde(default)]
+    pub magic_skill_merits: std::collections::BTreeMap<String, i32>,
+    #[serde(default)]
+    pub enmity_plus: i32,
+    #[serde(default)]
+    pub enmity_minus: i32,
+    #[serde(default)]
+    pub critical_hit_rate: i32,
+    #[serde(default)]
+    pub enemy_critical_hit_rate: i32,
+    #[serde(default)]
+    pub spell_interruption_rate: i32,
 }
 
 impl From<MeritPointsInput> for MeritPoints {
@@ -154,6 +168,13 @@ impl From<MeritPointsInput> for MeritPoints {
             int: input.int,
             mnd: input.mnd,
             chr: input.chr,
+            combat_skill_merits: input.combat_skill_merits,
+            magic_skill_merits: input.magic_skill_merits,
+            enmity_plus: input.enmity_plus,
+            enmity_minus: input.enmity_minus,
+            critical_hit_rate: input.critical_hit_rate,
+            enemy_critical_hit_rate: input.enemy_critical_hit_rate,
+            spell_interruption_rate: input.spell_interruption_rate,
         }
     }
 }
@@ -250,41 +271,7 @@ pub fn get_jobs() -> Vec<JsValue> {
 
 /// SkillKind を JSON キー用の文字列（Pascal ケース）に変換する。
 fn skill_kind_to_key(kind: SkillKind) -> &'static str {
-    match kind {
-        SkillKind::HandToHand => "HandToHand",
-        SkillKind::Dagger => "Dagger",
-        SkillKind::Sword => "Sword",
-        SkillKind::GreatSword => "GreatSword",
-        SkillKind::Axe => "Axe",
-        SkillKind::GreatAxe => "GreatAxe",
-        SkillKind::Scythe => "Scythe",
-        SkillKind::Polearm => "Polearm",
-        SkillKind::Katana => "Katana",
-        SkillKind::GreatKatana => "GreatKatana",
-        SkillKind::Club => "Club",
-        SkillKind::Staff => "Staff",
-        SkillKind::Archery => "Archery",
-        SkillKind::Marksmanship => "Marksmanship",
-        SkillKind::Throwing => "Throwing",
-        SkillKind::Guarding => "Guarding",
-        SkillKind::Evasion => "Evasion",
-        SkillKind::Shield => "Shield",
-        SkillKind::Parrying => "Parrying",
-        SkillKind::Divine => "Divine",
-        SkillKind::Healing => "Healing",
-        SkillKind::Enhancing => "Enhancing",
-        SkillKind::Enfeebling => "Enfeebling",
-        SkillKind::Elemental => "Elemental",
-        SkillKind::Dark => "Dark",
-        SkillKind::Summoning => "Summoning",
-        SkillKind::Ninjutsu => "Ninjutsu",
-        SkillKind::Singing => "Singing",
-        SkillKind::StringInstrument => "StringInstrument",
-        SkillKind::WindInstrument => "WindInstrument",
-        SkillKind::BlueMagic => "BlueMagic",
-        SkillKind::Geomancy => "Geomancy",
-        SkillKind::Handbell => "Handbell",
-    }
+    kind.key()
 }
 
 fn chara_to_status_result(chara: &Chara) -> StatusResult {
@@ -320,6 +307,7 @@ fn chara_to_status_result(chara: &Chara) -> StatusResult {
             chara.support_job,
             chara.support_lv,
             chara.skills.get(*skill),
+            &chara.merit_points,
         );
         base_effective.insert(*skill, v);
     }
@@ -514,7 +502,7 @@ fn chara_to_status_result(chara: &Chara) -> StatusResult {
 pub fn calculate_default_skills(profile_js: JsValue) -> Result<JsValue, JsValue> {
     let profile: CharacterProfile = serde_wasm_bindgen::from_value(profile_js)
         .map_err(|e| JsValue::from_str(&format!("Invalid profile: {}", e)))?;
-    let skills = default_skills(&profile.job_levels);
+    let skills = default_skills(&profile.job_levels, &profile.merit_points);
     let mut map: BTreeMap<String, i32> = BTreeMap::new();
     for skill in <SkillKind as VariantArray>::VARIANTS {
         map.insert(
@@ -567,3 +555,4 @@ pub fn calculate_status_from_profile(
         .serialize(&object_serializer())
         .map_err(|e| JsValue::from_str(&e.to_string()))
 }
+

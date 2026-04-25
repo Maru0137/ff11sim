@@ -105,7 +105,7 @@ const MERIT_POINT_BONUS: [i32; StatusKind::COUNT] = [
     1,  // CHR
 ];
 
-#[derive(Debug, Clone, Copy, Default, serde::Serialize, serde::Deserialize)]
+#[derive(Debug, Clone, Default, serde::Serialize, serde::Deserialize)]
 pub struct MeritPoints {
     pub hp: i32,
     pub mp: i32,
@@ -116,6 +116,27 @@ pub struct MeritPoints {
     pub int: i32,
     pub mnd: i32,
     pub chr: i32,
+    /// 戦闘スキルメリット (キー: スキル名, 値: 0-8, +2/rank)
+    #[serde(default)]
+    pub combat_skill_merits: std::collections::BTreeMap<String, i32>,
+    /// 魔法スキルメリット (キー: スキル名, 値: 0-8, +2/rank)
+    #[serde(default)]
+    pub magic_skill_merits: std::collections::BTreeMap<String, i32>,
+    /// 敵対心+ (0-5, +1/rank)
+    #[serde(default)]
+    pub enmity_plus: i32,
+    /// 敵対心- (0-5, -1/rank)
+    #[serde(default)]
+    pub enmity_minus: i32,
+    /// クリティカルヒット率 (0-5, +1%/rank)
+    #[serde(default)]
+    pub critical_hit_rate: i32,
+    /// 被クリティカルヒット率 (0-5, -1%/rank)
+    #[serde(default)]
+    pub enemy_critical_hit_rate: i32,
+    /// 詠唱中断率 (0-5, -2%/rank)
+    #[serde(default)]
+    pub spell_interruption_rate: i32,
 }
 
 impl MeritPoints {

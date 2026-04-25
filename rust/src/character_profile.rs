@@ -64,7 +64,7 @@ impl CharacterProfile {
             .race(self.race)
             .main_job(main_job, main_jl.level)
             .master_lv(main_jl.master_lv)
-            .merit_points(self.merit_points)
+            .merit_points(self.merit_points.clone())
             .job_points(self.job_points.categories[main_job])
             .skills(self.skills.clone());
 
@@ -273,6 +273,7 @@ mod tests {
             int: 0,
             mnd: 0,
             chr: 0,
+            ..Default::default()
         };
 
         let chara = profile.to_chara(Job::War, None).unwrap();

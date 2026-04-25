@@ -890,6 +890,42 @@
                     </div>
                 </div>
 
+                <div class="merit-section">
+                    <h3>メリットポイント (スキル)</h3>
+                    <div class="skill-group-title">武器スキル (0-8)</div>
+                    <div class="merit-grid" id="meritSkillGridWeapon"></div>
+                    <div class="skill-group-title">防御スキル (0-8)</div>
+                    <div class="merit-grid" id="meritSkillGridDefense"></div>
+                    <div class="skill-group-title">魔法スキル (0-8)</div>
+                    <div class="merit-grid" id="meritSkillGridMagic"></div>
+                </div>
+
+                <div class="merit-section">
+                    <h3>メリットポイント (その他)</h3>
+                    <div class="merit-grid">
+                        <div class="merit-item">
+                            <label for="charMeritEnmityPlus">敵対心+</label>
+                            <input type="number" id="charMeritEnmityPlus" min="0" max="5" value="0">
+                        </div>
+                        <div class="merit-item">
+                            <label for="charMeritEnmityMinus">敵対心-</label>
+                            <input type="number" id="charMeritEnmityMinus" min="0" max="5" value="0">
+                        </div>
+                        <div class="merit-item">
+                            <label for="charMeritCriticalHitRate">クリティカルヒット率</label>
+                            <input type="number" id="charMeritCriticalHitRate" min="0" max="5" value="0">
+                        </div>
+                        <div class="merit-item">
+                            <label for="charMeritEnemyCriticalHitRate">被クリティカルヒット率</label>
+                            <input type="number" id="charMeritEnemyCriticalHitRate" min="0" max="5" value="0">
+                        </div>
+                        <div class="merit-item">
+                            <label for="charMeritSpellInterruptionRate">詠唱中断率</label>
+                            <input type="number" id="charMeritSpellInterruptionRate" min="0" max="5" value="0">
+                        </div>
+                    </div>
+                </div>
+
                 <div class="jp-section">
                     <div class="jp-section-header">
                         <h3>ジョブポイント (0-20)</h3>
@@ -1384,9 +1420,12 @@
             ['Handbell', '風水鈴'],
         ];
         const ALL_SKILL_KEYS = [...SKILL_KEYS_WEAPON, ...SKILL_KEYS_DEFENSE, ...SKILL_KEYS_MAGIC];
+        const COMBAT_SKILL_KEYS = [...SKILL_KEYS_WEAPON, ...SKILL_KEYS_DEFENSE];
+        const MAGIC_SKILL_KEYS = SKILL_KEYS_MAGIC;
 
         let currentEditingSkills = {}; // skill_key -> value
         let currentEditingSkillDefaults = {}; // skill_key -> default (最大キャップ)
+        let currentEditingMeritSkills = {}; // skill_key -> merit rank (0-8)
 
         function computeSkillDefaults(characterLike) {
             // characterLike: { race, job_levels, merit_points } で十分
@@ -1399,6 +1438,28 @@
                 }
             };
             return calculate_default_skills(basicProfile);
+        }
+
+        function renderMeritSkillInputs() {
+            const groups = [
+                { gridId: 'meritSkillGridWeapon', keys: SKILL_KEYS_WEAPON },
+                { gridId: 'meritSkillGridDefense', keys: SKILL_KEYS_DEFENSE },
+                { gridId: 'meritSkillGridMagic', keys: MAGIC_SKILL_KEYS },
+            ];
+            groups.forEach(({ gridId, keys }) => {
+                const grid = document.getElementById(gridId);
+                grid.innerHTML = '';
+                keys.forEach(([key, ja]) => {
+                    const value = currentEditingMeritSkills[key] != null ? currentEditingMeritSkills[key] : 8;
+                    const item = document.createElement('div');
+                    item.className = 'merit-item';
+                    item.innerHTML = `
+                        <label for="meritSkill_${key}">${ja}</label>
+                        <input type="number" id="meritSkill_${key}" min="0" max="8" value="${value}" data-merit-skill-key="${key}">
+                    `;
+                    grid.appendChild(item);
+                });
+            });
         }
 
         function renderSkillInputs() {
@@ -1473,9 +1534,58 @@
                     }
                 });
             }
+            // スキルメリット変更時にスキル上限を再計算
+            ['meritSkillGridWeapon', 'meritSkillGridDefense', 'meritSkillGridMagic'].forEach(id => {
+                const el = document.getElementById(id);
+                if (el && !el.dataset.skillBound) {
+                    el.dataset.skillBound = '1';
+                    el.addEventListener('input', (e) => {
+                        if (e.target.matches('input[data-merit-skill-key]')) {
+                            const k = e.target.dataset.meritSkillKey;
+                            let v = parseInt(e.target.value, 10);
+                            if (isNaN(v) || v < 0) v = 0;
+                            if (v > 8) v = 8;
+                            currentEditingMeritSkills[k] = v;
+                            const oldDefaults = { ...currentEditingSkillDefaults };
+                            recomputeSkillDefaultsFromForm();
+                            ALL_SKILL_KEYS.forEach(([sk]) => {
+                                if (currentEditingSkills[sk] === oldDefaults[sk]) {
+                                    currentEditingSkills[sk] = currentEditingSkillDefaults[sk] || 0;
+                                }
+                            });
+                            renderSkillInputs();
+                        }
+                    });
+                }
+            });
         }
 
         // 編集フォームの現状ジョブレベル / ML から skill defaults を再計算
+        function readMeritPointsFromForm() {
+            const combat_skill_merits = {};
+            COMBAT_SKILL_KEYS.forEach(([k]) => { combat_skill_merits[k] = currentEditingMeritSkills[k] || 0; });
+            const magic_skill_merits = {};
+            MAGIC_SKILL_KEYS.forEach(([k]) => { magic_skill_merits[k] = currentEditingMeritSkills[k] || 0; });
+            return {
+                hp: parseInt(document.getElementById('charMeritHp').value) || 0,
+                mp: parseInt(document.getElementById('charMeritMp').value) || 0,
+                str_: parseInt(document.getElementById('charMeritStr').value) || 0,
+                dex: parseInt(document.getElementById('charMeritDex').value) || 0,
+                vit: parseInt(document.getElementById('charMeritVit').value) || 0,
+                agi: parseInt(document.getElementById('charMeritAgi').value) || 0,
+                int: parseInt(document.getElementById('charMeritInt').value) || 0,
+                mnd: parseInt(document.getElementById('charMeritMnd').value) || 0,
+                chr: parseInt(document.getElementById('charMeritChr').value) || 0,
+                combat_skill_merits,
+                magic_skill_merits,
+                enmity_plus: parseInt(document.getElementById('charMeritEnmityPlus').value) || 0,
+                enmity_minus: parseInt(document.getElementById('charMeritEnmityMinus').value) || 0,
+                critical_hit_rate: parseInt(document.getElementById('charMeritCriticalHitRate').value) || 0,
+                enemy_critical_hit_rate: parseInt(document.getElementById('charMeritEnemyCriticalHitRate').value) || 0,
+                spell_interruption_rate: parseInt(document.getElementById('charMeritSpellInterruptionRate').value) || 0,
+            };
+        }
+
         function recomputeSkillDefaultsFromForm() {
             const job_levels = {};
             JOBS.forEach(job => {
@@ -1484,7 +1594,8 @@
                 job_levels[job.key] = { level: lv, master_lv: mlv };
             });
             const race = document.getElementById('charRace').value;
-            currentEditingSkillDefaults = computeSkillDefaults({ race, job_levels });
+            const merit_points = readMeritPointsFromForm();
+            currentEditingSkillDefaults = computeSkillDefaults({ race, job_levels, merit_points });
         }
 
         // ジョブセレクタ初期化（1 回のみ）
@@ -1659,6 +1770,17 @@
                 document.getElementById('charMeritInt').value = mp.int || 0;
                 document.getElementById('charMeritMnd').value = mp.mnd || 0;
                 document.getElementById('charMeritChr').value = mp.chr || 0;
+                // スキルメリット: 既存値を読み込み、未設定は 8
+                const csm = mp.combat_skill_merits || {};
+                const msm = mp.magic_skill_merits || {};
+                currentEditingMeritSkills = {};
+                COMBAT_SKILL_KEYS.forEach(([k]) => { currentEditingMeritSkills[k] = csm[k] != null ? csm[k] : 8; });
+                MAGIC_SKILL_KEYS.forEach(([k]) => { currentEditingMeritSkills[k] = msm[k] != null ? msm[k] : 8; });
+                document.getElementById('charMeritEnmityPlus').value = mp.enmity_plus || 0;
+                document.getElementById('charMeritEnmityMinus').value = mp.enmity_minus || 0;
+                document.getElementById('charMeritCriticalHitRate').value = mp.critical_hit_rate || 0;
+                document.getElementById('charMeritEnemyCriticalHitRate').value = mp.enemy_critical_hit_rate || 0;
+                document.getElementById('charMeritSpellInterruptionRate').value = mp.spell_interruption_rate || 0;
                 currentEditingJobPoints = loadJobPointsFromCharacter(character);
                 // スキル: デフォルト（キャップ最大）を算出して、既存値があればマージ
                 currentEditingSkillDefaults = computeSkillDefaults(character);
@@ -1685,6 +1807,13 @@
                 ['Hp', 'Mp', 'Str', 'Dex', 'Vit', 'Agi', 'Int', 'Mnd', 'Chr'].forEach(s => {
                     document.getElementById(`charMerit${s}`).value = 15;
                 });
+                currentEditingMeritSkills = {};
+                ALL_SKILL_KEYS.forEach(([k]) => { currentEditingMeritSkills[k] = 8; });
+                document.getElementById('charMeritEnmityPlus').value = 0;
+                document.getElementById('charMeritEnmityMinus').value = 0;
+                document.getElementById('charMeritCriticalHitRate').value = 0;
+                document.getElementById('charMeritEnemyCriticalHitRate').value = 0;
+                document.getElementById('charMeritSpellInterruptionRate').value = 0;
                 currentEditingJobPoints = {};
                 JOBS.forEach(job => { currentEditingJobPoints[job.key] = jpDefaultRanks(); });
                 // 新規キャラ: 全ジョブ 99 の前提でデフォルトスキル値を算出
@@ -1697,6 +1826,7 @@
                     currentEditingSkills[k] = currentEditingSkillDefaults[k] || 0;
                 });
             }
+            renderMeritSkillInputs();
             renderJpCategoryInputs();
             renderSkillInputs();
         }
@@ -1721,6 +1851,10 @@
                 job_levels[job.key] = { level: lv, master_lv: mlv };
             });
 
+            const combat_skill_merits = {};
+            COMBAT_SKILL_KEYS.forEach(([k]) => { combat_skill_merits[k] = currentEditingMeritSkills[k] || 0; });
+            const magic_skill_merits = {};
+            MAGIC_SKILL_KEYS.forEach(([k]) => { magic_skill_merits[k] = currentEditingMeritSkills[k] || 0; });
             const merit_points = {
                 hp: parseInt(document.getElementById('charMeritHp').value) || 0,
                 mp: parseInt(document.getElementById('charMeritMp').value) || 0,
@@ -1731,6 +1865,13 @@
                 int: parseInt(document.getElementById('charMeritInt').value) || 0,
                 mnd: parseInt(document.getElementById('charMeritMnd').value) || 0,
                 chr: parseInt(document.getElementById('charMeritChr').value) || 0,
+                combat_skill_merits,
+                magic_skill_merits,
+                enmity_plus: parseInt(document.getElementById('charMeritEnmityPlus').value) || 0,
+                enmity_minus: parseInt(document.getElementById('charMeritEnmityMinus').value) || 0,
+                critical_hit_rate: parseInt(document.getElementById('charMeritCriticalHitRate').value) || 0,
+                enemy_critical_hit_rate: parseInt(document.getElementById('charMeritEnemyCriticalHitRate').value) || 0,
+                spell_interruption_rate: parseInt(document.getElementById('charMeritSpellInterruptionRate').value) || 0,
             };
 
             // JP: 全ジョブの振り分け状況を保存

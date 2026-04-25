@@ -2836,10 +2836,11 @@
                 }
 
                 if (slotData.custom_description) {
-                    const customStats = extractAllStats(slotData.custom_description);
+                    const customEn = convertAugmentJaToEn(slotData.custom_description);
+                    const customStats = extractAllStats(customEn);
                     console.log('[DEBUG] Custom stats:', customStats);
                     statsArray.push(customStats);
-                    addSkillBonuses(slotKey, extractSkillBonuses(slotData.custom_description));
+                    addSkillBonuses(slotKey, extractSkillBonuses(customEn));
                 }
             }
 

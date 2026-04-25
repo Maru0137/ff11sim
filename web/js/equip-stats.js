@@ -15,6 +15,9 @@ function extractAllStats(descriptionEn) {
     // Normalize literal \n to actual newlines
     let text = descriptionEn.replace(/\\n/g, '\n');
 
+    // Strip "Pet: ..." segments (apply only to summoned pets, not the wearer)
+    text = text.replace(/Pet:[^\n]*/g, '');
+
     // Expand slash-separated stats: "STR/VIT+10" → "STR+10 VIT+10"
     text = text.replace(/([A-Z]{2,3}(?:\/[A-Z]{2,3})+)\s*([+-]\s*\d+%?)/g, (_, stats, val) => {
         return stats.split('/').map(s => s + val).join(' ');

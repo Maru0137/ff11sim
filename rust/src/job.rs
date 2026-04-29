@@ -100,6 +100,7 @@ pub enum JobTrait {
     EvasionBonus,
     AccuracyBonus,
     MagicAttackBonus,
+    StoreTp,
 }
 
 // Cumulative bonus values per rank for each trait.
@@ -113,6 +114,8 @@ const MAX_MP_BOOST: &[i32] = &[10, 20, 40, 60, 80, 100];
 const EVASION_BONUS: &[i32] = &[10, 22, 35, 48, 60, 72];
 const ACCURACY_BONUS: &[i32] = &[10, 22, 35, 48, 60, 72];
 const MAGIC_ATTACK_BONUS: &[i32] = &[20, 24, 28, 32, 36, 40];
+// Store TP I-V: SAM Lv10/30/50/70/90, cumulative +10/+15/+20/+25/+30
+const STORE_TP: &[i32] = &[10, 15, 20, 25, 30];
 
 fn trait_cumulative(trait_kind: JobTrait) -> &'static [i32] {
     match trait_kind {
@@ -125,6 +128,7 @@ fn trait_cumulative(trait_kind: JobTrait) -> &'static [i32] {
         JobTrait::EvasionBonus => EVASION_BONUS,
         JobTrait::AccuracyBonus => ACCURACY_BONUS,
         JobTrait::MagicAttackBonus => MAGIC_ATTACK_BONUS,
+        JobTrait::StoreTp => STORE_TP,
     }
 }
 
@@ -176,6 +180,9 @@ fn trait_levels(job: Job, trait_kind: JobTrait) -> &'static [i32] {
         // Magic Attack Bonus: BLM(10,30,50,70,81,91), RDM(20,40,86)
         (JobTrait::MagicAttackBonus, Job::Blm) => &[10, 30, 50, 70, 81, 91],
         (JobTrait::MagicAttackBonus, Job::Rdm) => &[20, 40, 86],
+
+        // Store TP I-V: SAM only (Lv10, 30, 50, 70, 90)
+        (JobTrait::StoreTp, Job::Sam) => &[10, 30, 50, 70, 90],
 
         _ => &[],
     }

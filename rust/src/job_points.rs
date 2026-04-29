@@ -19,6 +19,7 @@ pub enum GiftStatKind {
     MagicDefense,
     MagicAccuracy,
     MagicEvasion,
+    StoreTp,
     /// Skill bonuses, capacity points, automaton bonuses など、
     /// 現状のステータス計算には反映しないギフトの placeholder
     None,
@@ -83,6 +84,7 @@ pub struct GiftBonuses {
     pub magic_defense: i32,
     pub magic_accuracy: i32,
     pub magic_evasion: i32,
+    pub store_tp: i32,
 }
 
 impl GiftBonuses {
@@ -96,6 +98,7 @@ impl GiftBonuses {
             GiftStatKind::MagicDefense => self.magic_defense += value,
             GiftStatKind::MagicAccuracy => self.magic_accuracy += value,
             GiftStatKind::MagicEvasion => self.magic_evasion += value,
+            GiftStatKind::StoreTp => self.store_tp += value,
             GiftStatKind::None => {}
         }
     }

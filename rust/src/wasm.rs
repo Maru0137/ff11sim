@@ -64,6 +64,8 @@ pub struct StatusResult {
     pub magic_attack_bonus: i32,
     pub magic_accuracy_bonus: i32,
     pub magic_evasion_bonus: i32,
+    /// Store TP 総合値 (装備 + ジョブ特性 + メリット + ギフト + JPカテゴリ)
+    pub store_tp: i32,
     pub total_jp_spent: i32,
     /// メインジョブ/サポートジョブで制限されたスキル有効値（キー: スキル名）
     pub effective_skills: BTreeMap<String, i32>,
@@ -154,6 +156,8 @@ pub struct MeritPointsInput {
     pub enemy_critical_hit_rate: i32,
     #[serde(default)]
     pub spell_interruption_rate: i32,
+    #[serde(default)]
+    pub store_tp: i32,
 }
 
 impl From<MeritPointsInput> for MeritPoints {
@@ -175,6 +179,7 @@ impl From<MeritPointsInput> for MeritPoints {
             critical_hit_rate: input.critical_hit_rate,
             enemy_critical_hit_rate: input.enemy_critical_hit_rate,
             spell_interruption_rate: input.spell_interruption_rate,
+            store_tp: input.store_tp,
         }
     }
 }
@@ -289,11 +294,19 @@ fn chara_to_status_result(chara: &Chara) -> StatusResult {
     let evasion_bonus_trait = chara.job_trait_total(JobTrait::EvasionBonus);
     let accuracy_bonus_trait = chara.job_trait_total(JobTrait::AccuracyBonus);
     let magic_attack_bonus_trait = chara.job_trait_total(JobTrait::MagicAttackBonus);
+    let store_tp_trait = chara.job_trait_total(JobTrait::StoreTp);
 
     // ジョブポイント / ギフトによる戦闘ステータスボーナス
     let total_jp = chara.job_points.total_jp_spent();
     let gift = calc_gift_bonuses(chara.main_job, total_jp);
     let jp_cat = calc_jp_category_bonuses(chara.main_job, &chara.job_points);
+
+    // Store TP メリット (SAM 専用、+1/rank、最大 5)
+    let store_tp_merit = if chara.main_job == Job::Sam {
+        chara.merit_points.store_tp
+    } else {
+        0
+    };
 
     // 各スキルの「基本有効値」= min(char, cap)（装備ボーナスを含まない）
     let mut base_effective: std::collections::HashMap<SkillKind, i32> =
@@ -402,6 +415,11 @@ fn chara_to_status_result(chara: &Chara) -> StatusResult {
     let magic_attack_bonus = magic_attack_bonus_trait + gift.magic_attack + jp_cat.magic_attack;
     let magic_accuracy_bonus = gift.magic_accuracy + jp_cat.magic_accuracy;
     let magic_evasion_bonus = gift.magic_evasion + jp_cat.magic_evasion;
+    let store_tp_total = chara.bonus_stats.store_tp
+        + store_tp_trait
+        + store_tp_merit
+        + gift.store_tp
+        + jp_cat.store_tp;
 
     // 総合値の計算
     let def_total = calc_defense(vit, chara.main_lv, chara.bonus_stats.def) + defense_bonus;
@@ -485,6 +503,7 @@ fn chara_to_status_result(chara: &Chara) -> StatusResult {
         magic_attack_bonus,
         magic_accuracy_bonus,
         magic_evasion_bonus,
+        store_tp: store_tp_total,
         total_jp_spent: total_jp,
         effective_skills,
         main_weapon_skill,
@@ -849,4 +868,89 @@ mod tests {
         );
     }
 
+    /// SAM Lv99 + Store TP メリット 5 + 装備 Store TP+30 のケース。
+    /// ジョブ特性 Store TP V (Lv90)=+30, メリット +5, 装備 +30 → 合計 +65
+    #[test]
+    fn test_sam_store_tp_total() {
+        let mut merit = MeritPoints::default();
+        merit.store_tp = 5;
+        let bonus = BonusStats {
+            store_tp: 30,
+            ..BonusStats::default()
+        };
+        let chara = Chara::builder()
+            .race(Race::Hum)
+            .main_job(Job::Sam, 99)
+            .master_lv(0)
+            .merit_points(merit)
+            .bonus_stats(bonus)
+            .build()
+            .expect("Failed to build Chara");
+        let result = chara_to_status_result(&chara);
+        assert_eq!(
+            result.store_tp, 65,
+            "SAM99 Store TP 合計: got {} expected 65 (装備30 + 特性30 + メリット5)",
+            result.store_tp
+        );
+    }
+
+    /// SAM 以外 (WAR99) ではメリット store_tp が無効。
+    /// 装備 +20 のみ反映され、トレイト/メリットは 0。
+    #[test]
+    fn test_war_store_tp_no_trait() {
+        let mut merit = MeritPoints::default();
+        merit.store_tp = 5; // WAR には適用されない
+        let bonus = BonusStats {
+            store_tp: 20,
+            ..BonusStats::default()
+        };
+        let chara = Chara::builder()
+            .race(Race::Hum)
+            .main_job(Job::War, 99)
+            .master_lv(0)
+            .merit_points(merit)
+            .bonus_stats(bonus)
+            .build()
+            .expect("Failed to build Chara");
+        let result = chara_to_status_result(&chara);
+        assert_eq!(result.store_tp, 20);
+    }
+
+    /// SAM サポートでもジョブ特性は反映される (max(main, sup))
+    #[test]
+    fn test_war_with_sam_sub_store_tp_trait() {
+        // WAR99/SAM49 → SAM の Store TP I (Lv10), II (Lv30) 適用 = rank 2 → +15
+        let chara = Chara::builder()
+            .race(Race::Hum)
+            .main_job(Job::War, 99)
+            .support_job(Job::Sam, 49)
+            .master_lv(0)
+            .build()
+            .expect("Failed to build Chara");
+        let result = chara_to_status_result(&chara);
+        assert_eq!(
+            result.store_tp, 15,
+            "WAR99/SAM49 サポート Store TP rank2: got {} expected 15",
+            result.store_tp
+        );
+    }
+
+    /// WAR99 ML50 + SAM59 サポート（ML50 でのサポート上限 = 99/2+50/5 = 59）。
+    /// SAM Store TP は Lv10/30/50 の 3 段階解放 → rank 3 = +20
+    #[test]
+    fn test_war_ml50_with_sam59_store_tp_trait() {
+        let chara = Chara::builder()
+            .race(Race::Hum)
+            .main_job(Job::War, 99)
+            .support_job(Job::Sam, 59)
+            .master_lv(50)
+            .build()
+            .expect("Failed to build Chara");
+        let result = chara_to_status_result(&chara);
+        assert_eq!(
+            result.store_tp, 20,
+            "WAR99 ML50/SAM59 サポート Store TP rank3: got {} expected 20",
+            result.store_tp
+        );
+    }
 }

@@ -715,4 +715,138 @@ mod tests {
         );
     }
 
+    /// Hum War99/Sam59 ML50 + 近接物理 WS 装備セット (ラフリア両手斧構成) の
+    /// メイン攻撃力・命中テスト
+    ///
+    /// 装備:
+    ///   メイン: ラフリア+3相当 (両手斧, STR+35 VIT+35 ACC+35 MAcc+35 両手斧+277 受け流し+277)
+    ///   サブ:   ウトゥグリップ (HP+70 ATK+30 ACC+30)
+    ///   矢弾:  ノブキエリ (ATK+23 WSダメ+6%)
+    ///   頭:    AGマスク+4 (HP+68 STR+40 DEX+28 VIT+40 AGI+28 INT+31 MND+28 CHR+28
+    ///                    ACC+42 ATK+93 MAcc+42 受け流し+22 WSダメ+12% etc.)
+    ///   首:    戦士の数珠+2A25 (ATK+25 ACC+25 / オグメ A25: HP+100 STR+15 DEX+15 DA+7%)
+    ///   耳1:   胡蝶のイヤリング (カスタム: 魔攻+4 TPボーナス+250)
+    ///   耳2:   スラッドピアス (STR+10 VIT+10 WSダメ+3%)
+    ///   胴:    ニャメメイル B30 (大量ステ+ペット系 / オグメ B30: ATK+35 RAtk+35 STR/VIT+10 etc.)
+    ///   両手:  ニャメガントレ B30 (オグメ B30: ATK+35 RAtk+35 VIT+15 etc.)
+    ///   指1:   コーネリアリング (WS命中+20 WSダメ+10%)
+    ///   指2:   王将の指輪 (HP+50 STR+10 DEX+10 VIT+10 AGI+10 ATK+20 RAtk+20)
+    ///   背:    シコルマント (カスタム: STR+30 ACC+20 ATK+20 WSダメ+10% 被物理-10%)
+    ///   腰:    セールフィベルト+1 A15 (ヘイスト+9% TA+2% / オグメ A15: STR+15 DA+5%)
+    ///   両脚:  BIクウィス+3 (HP+80 STR+53 VIT+40 AGI+30 INT+38 MND+27 CHR+25
+    ///                       ACC+63 ATK+73 MAcc+63 フェンサー+3 物理ダメ上限+10% TPボ+100 etc.)
+    ///   両足:  ニャメソルレット B30 (オグメ B30: ATK+35 RAtk+35 ACC+13 RAcc+13 etc.)
+    ///
+    /// 装備合計（Web パーサー検証済み、Pet: セクション除外、Unity Ranking 最大値、
+    ///   Weapon Skill Accuracy 除外後）:
+    ///   STR=293 DEX=145 VIT=258 AGI=159 INT=164 MND=158 CHR=150 HP=663 MP=205
+    ///   ATK=494 ACC=348 RAtk=215 RAcc=133 MAtk=94 MAcc=260
+    ///   skill_bonus_main: GreatAxe+277  / skill_bonus_global: Parrying+299
+    ///   ※ ATK 494 = ベース 479 + Unity Ranking 攻+15 (max)
+    ///   ※ ACC 348 はメイン命中用（Cornelia の WS命中+10 はメイン命中に含めない）
+    ///
+    /// 最終期待値（メイン攻撃/命中、装備以外の内訳は test_war_laphria を参照）:
+    ///   メイン武器有効スキル(両手斧):
+    ///     キャップ = job_skill_cap(War99 ML50 GreatAxe A+)=474 + メリット(8rank*2=16) = 490
+    ///     キャラスキル値 490 採用 → base 490 + メインスロット(ラフリア +277) = 767
+    ///
+    ///   メイン攻撃力 = STR + 武器スキル + 8 + 装備攻撃 + 戦闘ボーナス(攻撃)
+    ///                = (161+293) + 767 + 8 + 494 + 105
+    ///                = 454 + 767 + 8 + 494 + 105 = 1828
+    ///
+    ///   メイン命中 = floor(DEX × 0.75) + accuracy_skill_term(skill) + 装備命中 + 戦闘ボーナス(命中)
+    ///              = floor((156+145) × 0.75) + accuracy_skill_term(767) + 348 + 36
+    ///              = floor(301 × 0.75=225.75) + (540 + floor((767-600)×0.9=150.3)) + 348 + 36
+    ///              = 225 + 690 + 348 + 36 = 1299
+    #[test]
+    fn test_war_ws_set_attack_accuracy() {
+        // メリットポイント: ステータス全て 15、全スキル 8
+        let mut merit = MeritPoints {
+            hp: 15,
+            mp: 15,
+            str_: 15,
+            dex: 15,
+            vit: 15,
+            agi: 15,
+            int: 15,
+            mnd: 15,
+            chr: 15,
+            ..Default::default()
+        };
+        for &key in &[
+            "HandToHand", "Dagger", "Sword", "GreatSword", "Axe", "GreatAxe",
+            "Scythe", "Polearm", "Katana", "GreatKatana", "Club", "Staff",
+            "Archery", "Marksmanship", "Throwing", "Guarding", "Evasion",
+            "Shield", "Parrying",
+        ] {
+            merit.combat_skill_merits.insert(key.to_string(), 8);
+        }
+        for &key in &[
+            "Divine", "Healing", "Enhancing", "Enfeebling", "Elemental",
+            "Dark", "Summoning", "Ninjutsu", "Singing", "StringInstrument",
+            "WindInstrument", "BlueMagic", "Geomancy", "Handbell",
+        ] {
+            merit.magic_skill_merits.insert(key.to_string(), 8);
+        }
+
+        // スキル値: War99 ML50 両手斧 A+ cap = 474 + merit 16 = 490
+        let mut skills = CharacterSkills::default();
+        skills.set(SkillKind::GreatAxe, 490);
+
+        let jp = JobPointCategories::all_maxed();
+
+        // 装備スキルボーナス（main: ラフリア両手斧+277、global: Parrying+299）
+        let mut skill_bonus_main: BTreeMap<String, i32> = BTreeMap::new();
+        skill_bonus_main.insert("GreatAxe".to_string(), 277);
+
+        let mut skill_bonus_global: BTreeMap<String, i32> = BTreeMap::new();
+        skill_bonus_global.insert("Parrying".to_string(), 299);
+
+        let bonus = BonusStats {
+            hp: 663,
+            mp: 205,
+            str_: 293,
+            dex: 145,
+            vit: 258,
+            agi: 159,
+            int: 164,
+            mnd: 158,
+            chr: 150,
+            attack: 494,
+            accuracy: 348,
+            ranged_attack: 215,
+            ranged_accuracy: 133,
+            magic_attack: 94,
+            main_weapon_skill_id: Some(6), // 両手斧 skill ID
+            skill_bonus_main,
+            skill_bonus_global,
+            ..BonusStats::default()
+        };
+
+        let chara = Chara::builder()
+            .race(Race::Hum)
+            .main_job(Job::War, 99)
+            .support_job(Job::Sam, 59)
+            .master_lv(50)
+            .merit_points(merit)
+            .job_points(jp)
+            .skills(skills)
+            .bonus_stats(bonus)
+            .build()
+            .expect("Failed to build Chara");
+
+        let result = chara_to_status_result(&chara);
+
+        assert_eq!(
+            result.main_attack, 1828,
+            "メイン攻撃力: got {} expected 1828",
+            result.main_attack
+        );
+        assert_eq!(
+            result.main_accuracy, 1299,
+            "メイン命中: got {} expected 1299",
+            result.main_accuracy
+        );
+    }
+
 }

@@ -137,6 +137,9 @@ pub struct MeritPoints {
     /// 詠唱中断率 (0-5, -2%/rank)
     #[serde(default)]
     pub spell_interruption_rate: i32,
+    /// Store TP メリット (SAM 専用, 0-5, +1/rank)
+    #[serde(default)]
+    pub store_tp: i32,
 }
 
 impl MeritPoints {
@@ -203,6 +206,9 @@ pub struct BonusStats {
     /// 装備品の飛命合計
     #[serde(default)]
     pub ranged_accuracy: i32,
+    /// 装備品の Store TP 合計
+    #[serde(default)]
+    pub store_tp: i32,
     /// 装備メイン武器のスキル種別 ID（アイテム JSON の `skill` フィールド値、未装備時は None）
     #[serde(default)]
     pub main_weapon_skill_id: Option<i32>,

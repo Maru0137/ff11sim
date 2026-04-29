@@ -15,8 +15,15 @@ function extractAllStats(descriptionEn) {
     // Normalize literal \n to actual newlines
     let text = descriptionEn.replace(/\\n/g, '\n');
 
+    // Unity Ranking ボーナスは最大値を採用してプレフィックスを外す
+    // e.g. "Unity Ranking: Attack+10～15" → " Attack+15"
+    text = text.replace(
+        /Unity\s+Ranking:\s*([A-Za-z][\w\s]*?)\s*[+-]\s*\d+\s*[～~]\s*(\d+)/g,
+        ' $1+$2'
+    );
+
     // Strip "Pet: ..." segments (apply only to summoned pets, not the wearer).
-    // Continue until the next ":"-prefixed section starts.
+    // Continue until the next ":"-prefixed section or end of string.
     text = text.replace(/Pet:[^:]*/g, '');
 
     // Expand slash-separated stats: "STR/VIT+10" → "STR+10 VIT+10"
@@ -77,7 +84,7 @@ function extractAllStats(descriptionEn) {
 
     // Plain Attack/Accuracy/Evasion — use negative lookbehind to exclude Ranged/Magic variants
     set('attack', matchSigned('(?<!Ranged )(?<![A-Za-z])Attack\\s*([+-])\\s*(\\d+)(?!%)'));
-    set('accuracy', matchSigned('(?<!Ranged )(?<!Magic )(?<![A-Za-z])Accuracy\\s*([+-])\\s*(\\d+)'));
+    set('accuracy', matchSigned('(?<!Ranged )(?<!Magic )(?<![Ss]kill )(?<![A-Za-z])Accuracy\\s*([+-])\\s*(\\d+)'));
     set('evasion', matchSigned('(?<!Magic )(?<![A-Za-z])Evasion\\s*([+-])\\s*(\\d+)'));
 
     // Attack percentage (e.g. "Attack+3%")

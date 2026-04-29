@@ -93,10 +93,18 @@ function extractAllStats(descriptionEn) {
     // === Rate / special stats ===
     set('haste_pct', matchSigned('Haste\\s*([+-])\\s*(\\d+)%'));
     set('store_tp', matchSigned('"?Store TP"?\\s*([+-])\\s*(\\d+)'));
+    // Double/Triple Attack damage は Double/Triple Attack より先に判定（部分一致回避）
+    set('double_attack_damage_pct', matchSigned('Double Attack damage\\s*([+-])\\s*(\\d+)%?'));
     set('double_attack_pct', matchSigned('"Double Attack"\\s*([+-])\\s*(\\d+)%'));
+    set('triple_attack_damage_pct', matchSigned('Triple Attack damage\\s*([+-])\\s*(\\d+)%?'));
     set('triple_attack_pct', matchSigned('"Triple Attack"\\s*([+-])\\s*(\\d+)%'));
+    set('quad_attack_pct', matchSigned('"Quadruple Attack"\\s*([+-])\\s*(\\d+)%'));
+    set('critical_hit_damage_pct', matchSigned('Critical hit damage\\s*([+-])\\s*(\\d+)%'));
     set('critical_hit_rate_pct', matchSigned('Critical hit rate\\s*([+-])\\s*(\\d+)%'));
     set('weapon_skill_damage_pct', matchSigned('Weapon skill damage\\s*([+-])\\s*(\\d+)%'));
+    // モクシャII を先に判定（モクシャの部分一致回避）
+    set('subtle_blow_2', matchSigned('"Subtle Blow II"\\s*([+-])\\s*(\\d+)'));
+    set('subtle_blow', matchSigned('"Subtle Blow"\\s*([+-])\\s*(\\d+)'));
 
     // === Damage taken stats ===
     set('damage_taken_pct', matchSigned('(?<!Physical )(?<!Magic )Damage taken\\s*([+-])\\s*(\\d+)%'));
@@ -226,8 +234,11 @@ function getEmptyStats() {
         ranged_attack: 0, ranged_accuracy: 0,
         magic_attack: 0, magic_accuracy: 0, magic_evasion: 0, magic_damage: 0,
         haste_pct: 0, store_tp: 0,
-        double_attack_pct: 0, triple_attack_pct: 0,
-        critical_hit_rate_pct: 0, weapon_skill_damage_pct: 0,
+        double_attack_pct: 0, triple_attack_pct: 0, quad_attack_pct: 0,
+        double_attack_damage_pct: 0, triple_attack_damage_pct: 0,
+        critical_hit_rate_pct: 0, critical_hit_damage_pct: 0,
+        weapon_skill_damage_pct: 0,
+        subtle_blow: 0, subtle_blow_2: 0,
         damage_taken_pct: 0, physical_damage_taken_pct: 0, magic_damage_taken_pct: 0,
         magic_def_bonus: 0,
         dmg: 0, delay: 0,

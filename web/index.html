@@ -923,6 +923,10 @@
                             <label for="charMeritSpellInterruptionRate">詠唱中断率</label>
                             <input type="number" id="charMeritSpellInterruptionRate" min="0" max="5" value="0">
                         </div>
+                        <div class="merit-item">
+                            <label for="charMeritStoreTp">ストアTP (SAM)</label>
+                            <input type="number" id="charMeritStoreTp" min="0" max="5" value="0">
+                        </div>
                     </div>
                 </div>
 
@@ -1059,6 +1063,67 @@
                     </tbody>
                 </table>
 
+                <table class="status-table">
+                    <thead>
+                        <tr>
+                            <th></th>
+                            <th>素</th>
+                            <th>装備</th>
+                            <th>合計</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td>ヘイスト</td>
+                            <td class="base-val">-</td>
+                            <td class="equip-val" id="equipEquipHaste">-</td>
+                            <td class="total-val" id="equipTotalHaste">-</td>
+                        </tr>
+                        <tr>
+                            <td>防御力</td>
+                            <td class="base-val" id="equipBaseDef">-</td>
+                            <td class="equip-val" id="equipEquipDef">-</td>
+                            <td class="total-val" id="equipTotalDef">-</td>
+                        </tr>
+                        <tr>
+                            <td>回避</td>
+                            <td class="base-val" id="equipBaseEva">-</td>
+                            <td class="equip-val" id="equipEquipEva">-</td>
+                            <td class="total-val" id="equipTotalEva">-</td>
+                        </tr>
+                        <tr>
+                            <td>魔防</td>
+                            <td class="base-val" id="equipBaseMdef">-</td>
+                            <td class="equip-val" id="equipEquipMdef">-</td>
+                            <td class="total-val" id="equipTotalMdef">-</td>
+                        </tr>
+                        <tr>
+                            <td>魔回避</td>
+                            <td class="base-val" id="equipBaseMeva">-</td>
+                            <td class="equip-val" id="equipEquipMeva">-</td>
+                            <td class="total-val" id="equipTotalMeva">-</td>
+                        </tr>
+                        <tr>
+                            <td>被ダメージ</td>
+                            <td class="base-val">-</td>
+                            <td class="equip-val" id="equipEquipDt">-</td>
+                            <td class="total-val" id="equipTotalDt">-</td>
+                        </tr>
+                        <tr>
+                            <td>被物理ダメージ</td>
+                            <td class="base-val">-</td>
+                            <td class="equip-val" id="equipEquipPdt">-</td>
+                            <td class="total-val" id="equipTotalPdt">-</td>
+                        </tr>
+                        <tr>
+                            <td>被魔法ダメージ</td>
+                            <td class="base-val">-</td>
+                            <td class="equip-val" id="equipEquipMdt">-</td>
+                            <td class="total-val" id="equipTotalMdt">-</td>
+                        </tr>
+                    </tbody>
+                </table>
+
                 </div>
 
                 <!-- 用途別ステータスサブタブ -->
@@ -1115,13 +1180,24 @@
                         </tbody>
                     </table>
                     <table class="status-table">
-                        <thead><tr><th>ヘイスト</th><th>Store TP</th><th>DA</th><th>TA</th><th>クリ率</th></tr></thead>
+                        <thead><tr><th>ヘイスト</th><th>Store TP</th><th>DA</th><th>TA</th><th>QA</th><th>クリ率</th></tr></thead>
                         <tbody><tr>
                             <td class="equip-val" id="statAaHaste">-</td>
                             <td class="equip-val" id="statAaStp">-</td>
                             <td class="equip-val" id="statAaDa">-</td>
                             <td class="equip-val" id="statAaTa">-</td>
+                            <td class="equip-val" id="statAaQa">-</td>
                             <td class="equip-val" id="statAaCrit">-</td>
+                        </tr></tbody>
+                    </table>
+                    <table class="status-table">
+                        <thead><tr><th>DAダメ</th><th>TAダメ</th><th>クリダメ</th><th>モクシャ</th><th>モクシャII</th></tr></thead>
+                        <tbody><tr>
+                            <td class="equip-val" id="statAaDaDmg">-</td>
+                            <td class="equip-val" id="statAaTaDmg">-</td>
+                            <td class="equip-val" id="statAaCritDmg">-</td>
+                            <td class="equip-val" id="statAaSb">-</td>
+                            <td class="equip-val" id="statAaSb2">-</td>
                         </tr></tbody>
                     </table>
                 </div>
@@ -1583,6 +1659,7 @@
                 critical_hit_rate: parseInt(document.getElementById('charMeritCriticalHitRate').value) || 0,
                 enemy_critical_hit_rate: parseInt(document.getElementById('charMeritEnemyCriticalHitRate').value) || 0,
                 spell_interruption_rate: parseInt(document.getElementById('charMeritSpellInterruptionRate').value) || 0,
+                store_tp: parseInt(document.getElementById('charMeritStoreTp').value) || 0,
             };
         }
 
@@ -1781,6 +1858,7 @@
                 document.getElementById('charMeritCriticalHitRate').value = mp.critical_hit_rate || 0;
                 document.getElementById('charMeritEnemyCriticalHitRate').value = mp.enemy_critical_hit_rate || 0;
                 document.getElementById('charMeritSpellInterruptionRate').value = mp.spell_interruption_rate || 0;
+                document.getElementById('charMeritStoreTp').value = mp.store_tp || 0;
                 currentEditingJobPoints = loadJobPointsFromCharacter(character);
                 // スキル: デフォルト（キャップ最大）を算出して、既存値があればマージ
                 currentEditingSkillDefaults = computeSkillDefaults(character);
@@ -1814,6 +1892,7 @@
                 document.getElementById('charMeritCriticalHitRate').value = 0;
                 document.getElementById('charMeritEnemyCriticalHitRate').value = 0;
                 document.getElementById('charMeritSpellInterruptionRate').value = 0;
+                document.getElementById('charMeritStoreTp').value = 0;
                 currentEditingJobPoints = {};
                 JOBS.forEach(job => { currentEditingJobPoints[job.key] = jpDefaultRanks(); });
                 // 新規キャラ: 全ジョブ 99 の前提でデフォルトスキル値を算出
@@ -1872,6 +1951,7 @@
                 critical_hit_rate: parseInt(document.getElementById('charMeritCriticalHitRate').value) || 0,
                 enemy_critical_hit_rate: parseInt(document.getElementById('charMeritEnemyCriticalHitRate').value) || 0,
                 spell_interruption_rate: parseInt(document.getElementById('charMeritSpellInterruptionRate').value) || 0,
+                store_tp: parseInt(document.getElementById('charMeritStoreTp').value) || 0,
             };
 
             // JP: 全ジョブの振り分け状況を保存
@@ -2435,6 +2515,7 @@
                     accuracy: equip.accuracy || 0,
                     ranged_attack: equip.ranged_attack || 0,
                     ranged_accuracy: equip.ranged_accuracy || 0,
+                    store_tp: equip.store_tp || 0,
                     main_weapon_skill_id: mainWeaponSkillId,
                     sub_weapon_skill_id: subWeaponSkillId,
                     ranged_weapon_skill_id: rangedWeaponSkillId,
@@ -2475,6 +2556,38 @@
                 document.getElementById('equipTotalInt').textContent = totalStats.int || 0;
                 document.getElementById('equipTotalMnd').textContent = totalStats.mnd || 0;
                 document.getElementById('equipTotalChr').textContent = totalStats.chr || 0;
+
+                // 防御系ステータス（素 = 合計 - 装備）
+                const fmtPct = (v) => (v != null && v !== 0) ? `${v}%` : '-';
+                const defEquip = equip.def || 0;
+                const defTotal = totalStats.def || 0;
+                const evaEquip = equip.evasion || 0;
+                const evaTotal = totalStats.evasion || 0;
+                const mdefEquip = equip.magic_def_bonus || 0;
+                const mdefTotal = totalStats.mdef || 0;
+                const mevaEquip = equip.magic_evasion || 0;
+                const mevaBonus = totalStats.magic_evasion_bonus || 0;
+                const mevaTotal = mevaEquip + mevaBonus;
+                document.getElementById('equipBaseDef').textContent = defTotal - defEquip;
+                document.getElementById('equipEquipDef').textContent = defEquip;
+                document.getElementById('equipTotalDef').textContent = defTotal;
+                document.getElementById('equipBaseEva').textContent = evaTotal - evaEquip;
+                document.getElementById('equipEquipEva').textContent = evaEquip;
+                document.getElementById('equipTotalEva').textContent = evaTotal;
+                document.getElementById('equipBaseMdef').textContent = mdefTotal - mdefEquip;
+                document.getElementById('equipEquipMdef').textContent = mdefEquip;
+                document.getElementById('equipTotalMdef').textContent = mdefTotal;
+                document.getElementById('equipBaseMeva').textContent = mevaBonus;
+                document.getElementById('equipEquipMeva').textContent = mevaEquip;
+                document.getElementById('equipTotalMeva').textContent = mevaTotal;
+                document.getElementById('equipEquipHaste').textContent = fmtPct(equip.haste_pct);
+                document.getElementById('equipTotalHaste').textContent = fmtPct(equip.haste_pct);
+                document.getElementById('equipEquipDt').textContent = fmtPct(equip.damage_taken_pct);
+                document.getElementById('equipTotalDt').textContent = fmtPct(equip.damage_taken_pct);
+                document.getElementById('equipEquipPdt').textContent = fmtPct(equip.physical_damage_taken_pct);
+                document.getElementById('equipTotalPdt').textContent = fmtPct(equip.physical_damage_taken_pct);
+                document.getElementById('equipEquipMdt').textContent = fmtPct(equip.magic_damage_taken_pct);
+                document.getElementById('equipTotalMdt').textContent = fmtPct(equip.magic_damage_taken_pct);
 
                 // ステータス値表示用ヘルパー
                 const setText = (id, v) => {
@@ -2517,10 +2630,16 @@
                 setText('statAaSubAtk', totalStats.sub_attack != null ? totalStats.sub_attack : '-');
                 setText('statAaSubAcc', totalStats.sub_accuracy != null ? totalStats.sub_accuracy : '-');
                 setText('statAaHaste', pctOrDash(equip.haste_pct));
-                setText('statAaStp', numOrDash(equip.store_tp));
+                setText('statAaStp', numOrDash(totalStats.store_tp));
                 setText('statAaDa', pctOrDash(equip.double_attack_pct));
                 setText('statAaTa', pctOrDash(equip.triple_attack_pct));
+                setText('statAaQa', pctOrDash(equip.quad_attack_pct));
                 setText('statAaCrit', pctOrDash(equip.critical_hit_rate_pct));
+                setText('statAaDaDmg', pctOrDash(equip.double_attack_damage_pct));
+                setText('statAaTaDmg', pctOrDash(equip.triple_attack_damage_pct));
+                setText('statAaCritDmg', pctOrDash(equip.critical_hit_damage_pct));
+                setText('statAaSb', numOrDash(equip.subtle_blow));
+                setText('statAaSb2', numOrDash(equip.subtle_blow_2));
 
                 // ----- Tab 3: 遠隔攻撃 -----
                 setText('statRaSkill', formatWeaponSkill(totalStats.ranged_weapon_skill, totalStats.ranged_weapon_skill_value));
@@ -2528,7 +2647,7 @@
                 setText('statRaAcc', totalStats.ranged_accuracy != null ? totalStats.ranged_accuracy : '-');
                 setText('statRaStr', totalStats.str_ || '-');
                 setText('statRaAgi', totalStats.agi || '-');
-                setText('statRaStp', numOrDash(equip.store_tp));
+                setText('statRaStp', numOrDash(totalStats.store_tp));
 
                 // ----- Tab 4: 近接物理 WS -----
                 setText('statMwsSkill', formatWeaponSkill(totalStats.main_weapon_skill, totalStats.main_weapon_skill_value));
@@ -2599,6 +2718,15 @@
                 document.getElementById(`equipEquip${stat}`).textContent = '-';
                 document.getElementById(`equipTotal${stat}`).textContent = '-';
             });
+            ['Def', 'Eva', 'Mdef', 'Meva'].forEach(stat => {
+                document.getElementById(`equipBase${stat}`).textContent = '-';
+                document.getElementById(`equipEquip${stat}`).textContent = '-';
+                document.getElementById(`equipTotal${stat}`).textContent = '-';
+            });
+            ['Haste', 'Dt', 'Pdt', 'Mdt'].forEach(stat => {
+                document.getElementById(`equipEquip${stat}`).textContent = '-';
+                document.getElementById(`equipTotal${stat}`).textContent = '-';
+            });
             // 7 サブタブ内の全表示要素をクリア
             const tabIds = [
                 // Tab 1: 防御
@@ -2607,7 +2735,8 @@
                 // Tab 2: オートアタック
                 'statAaMainSkill', 'statAaMainAtk', 'statAaMainAcc',
                 'statAaSubSkill', 'statAaSubAtk', 'statAaSubAcc',
-                'statAaHaste', 'statAaStp', 'statAaDa', 'statAaTa', 'statAaCrit',
+                'statAaHaste', 'statAaStp', 'statAaDa', 'statAaTa', 'statAaQa', 'statAaCrit',
+                'statAaDaDmg', 'statAaTaDmg', 'statAaCritDmg', 'statAaSb', 'statAaSb2',
                 // Tab 3: 遠隔
                 'statRaSkill', 'statRaAtk', 'statRaAcc', 'statRaStr', 'statRaAgi', 'statRaStp',
                 // Tab 4: 近接 WS
@@ -2693,9 +2822,15 @@
             ['物理ダメージ上限', 'Physical damage limit'],
             ['被物理ダメージ', 'Physical damage taken'],
             ['被魔法ダメージ', 'Magic damage taken'],
+            ['クリティカルヒットダメージ', 'Critical hit damage'],
             ['クリティカルヒット率', 'Critical hit rate'],
+            ['トリプルアタックダメージ', 'Triple Attack damage'],
             ['トリプルアタック', '"Triple Attack"'],
+            ['ダブルアタックダメージ', 'Double Attack damage'],
             ['ダブルアタック', '"Double Attack"'],
+            ['クワッドアタック', '"Quadruple Attack"'],
+            ['モクシャII', '"Subtle Blow II"'],
+            ['モクシャ', '"Subtle Blow"'],
             ['魔法ダメージ', 'Magic Damage'],
             ['被ダメージ', 'Damage taken'],
             ['ストアTP', '"Store TP"'],

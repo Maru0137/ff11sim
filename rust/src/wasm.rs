@@ -493,12 +493,17 @@ fn chara_to_status_result(chara: &Chara) -> StatusResult {
     };
 
     // 飛攻/飛命 (レンジ武器装備時のみ)
+    // 遠隔系ボーナス: 物理ボーナス（特性/ギフト/JPカテゴリ）+ 遠隔専用ボーナス（COR JP「遠隔命中アップ」「適正距離の遠隔攻撃力アップ」）
+    let ranged_attack_extra = gift.ranged_attack + jp_cat.ranged_attack;
+    let ranged_accuracy_extra = gift.ranged_accuracy + jp_cat.ranged_accuracy;
     let (ranged_attack_total, ranged_accuracy_total) = match ranged_weapon {
         Some((_, skill_v)) => {
             let atk = calc_ranged_attack(str_val, skill_v, chara.bonus_stats.ranged_attack)
-                + attack_bonus;
+                + attack_bonus
+                + ranged_attack_extra;
             let acc = calc_ranged_accuracy(agi, skill_v, chara.bonus_stats.ranged_accuracy)
-                + accuracy_bonus;
+                + accuracy_bonus
+                + ranged_accuracy_extra;
             (Some(atk), Some(acc))
         }
         None => (None, None),
@@ -1123,5 +1128,172 @@ mod tests {
             .expect("Failed to build Chara");
         let result = chara_to_status_result(&chara);
         assert_eq!(result.double_attack_pct, 7);
+    }
+
+    /// Hum COR99/NIN59 ML50 + 遠隔WS構成装備セットの飛攻/飛命テスト
+    ///
+    /// 装備:
+    ///   メイン:  ロスタムB25  (短剣, 短剣+269 受流+269 魔命スキル+255 命中+50 飛命+50
+    ///                          魔命+50 HP+150 魔ダメ+217)
+    ///   サブ:    クスタウィ+1A15  (短剣, 短剣+242 受流+242 魔命スキル+188
+    ///                              飛攻+16 飛命+25 回避+22  / オグメA15: 飛攻+20 飛命+40 魔命+40)
+    ///   遠隔:   フォーマルハウトA15  (射撃, 射撃+269 魔命+40 魔ダメ+155 ストアTP+10 TPボーナス+500
+    ///                                  / オグメA15 Default rank15: Ｄ+9 ラストスタンド:ダメ+10% 飛命+30 魔命+30)
+    ///   矢弾:   クロノブレット  (飛攻+20 飛命+20)
+    ///   頭:     ニャメヘルムB30  (基本ステ+ヘイスト+6%、オグメB30: 飛攻+35 飛命+10 攻+35 命中+10
+    ///                              ダブルアタック+5% WSダメ+11%)
+    ///   首:     フォシャゴルゲット (WSダメ+10%)
+    ///   耳1:    アスプロピアスA30 (HP+100 ヘイスト+5% / オグメA30: 飛命+15 魔命+15 ALL BP+10 ストアTP+5)
+    ///   耳2:    胡蝶のイヤリング (カスタム: 魔攻+4 TPボーナス+250 → 魔攻+4 のみ反映)
+    ///   胴:     イケンガベストA30 (基本ステ+飛攻+40 飛命+40 ストアTP+11 / オグメA30: 飛攻+30 飛命+15 魔命+15)
+    ///   両手:  CSガントリー+3 (基本ステ+飛命+62 飛攻+62 ヘイスト+5% クリ+8% WSダメ+12%)
+    ///   指1:    コーネリアリング (WS命中+20 WSダメ+10% → flat ACC/RACC には未反映、WSダメ+10%のみ反映)
+    ///   指2:    王将の指輪 (HP+50 STR+10 DEX+10 VIT+10 AGI+10 攻+20 飛攻+20)
+    ///   背:     カムラスマント (カスタム: AGI+30 飛命+20 飛攻+20 WSダメ+10% 被物理-10%)
+    ///   腰:     フォシャベルト (WSダメ+10%)
+    ///   両脚:  ニャメフランチャB30 (基本ステ+ヘイスト+5% / オグメB30: 飛攻+35 攻+35 STR+15 DA+6% WSダメ+12%)
+    ///   両足:  ニャメソルレットB30 (基本ステ+ヘイスト+3% / オグメB30: 飛攻+35 飛命+13 攻+35 命中+13 DA+5% WSダメ+11%)
+    ///
+    /// 装備合計（JS パーサーで集計、コーネリアの WS命中+20 はメイン/飛命に反映されない）:
+    ///   bonus_stats.ranged_attack = 423   (CSガントリー+3 飛攻+62 含む / 省略形 Rng. Atk. を集計対象化)
+    ///   bonus_stats.ranged_accuracy = 460 (フォーマルハウトA15 飛命+30、CSガントリー+3 飛命+62 含む)
+    ///   bonus_stats.magic_accuracy = 412  (フォーマルハウトA15 魔命+30、CSガントリー+3 魔命+62 含む)
+    ///   bonus_stats.accuracy = 270        (CSガントリー+3 命中+62 含む)
+    ///   bonus_stats.str_ = 188, dex = 163, vit = 164, agi = 218, int = 154, mnd = 163, chr = 148
+    ///   skill_bonus_main = { Dagger: 269 }
+    ///   skill_bonus_sub  = { Dagger: 242 }
+    ///   skill_bonus_ranged = { Marksmanship: 269 }
+    ///   skill_bonus_global = { Parrying: 511 }
+    ///
+    /// 内訳（メリットあり: ステータス全 +15、戦闘/魔法スキルメリット 8、JP全カテゴリmax 2100JP）:
+    ///   STR=338 = floor(Hum(D) 37.5 + COR99(E) 34.5 + NIN59/2(C) 13.5)=85 + ML50(50) + Merit(15) + 装備(188)
+    ///   AGI=378 = floor(Hum(D) 37.5 + COR99(B) 49.5 + NIN59/2(B) 15.5)=102 + ML50(50) + Merit(15) + 装備(218)
+    ///                ※ 既存のCOR99 grade テーブル: STR=E, AGI=B / NIN STR=C, AGI=B
+    ///   ranged_skill_value = COR99 ML50 Marksmanship(B) cap(448) + メリット(8*2=16) + 装備(269) = 733
+    ///   attack_bonus  = trait(0, COR/NINに無し) + gift(2100JP→COR slot1=+36) + jp_cat(物理攻撃力 0) = 36
+    ///   accuracy_bonus = trait(0) + gift(2100JP→COR slot3=+36) + jp_cat(0) = 36
+    ///   ranged_accuracy_extra (COR JP idx 7「遠隔命中アップ」+1/rank × 20) = 20
+    ///   ※ COR JP idx 9「適正距離の遠隔攻撃力アップ」は条件付き（適正距離）のためステータスには加算しない
+    ///   ranged_attack  = STR + skill + 8 + equip_ranged_attack + attack_bonus
+    ///                  = 338 + 733 + 8 + 423 + 36 = 1538
+    ///   ranged_accuracy = floor(AGI * 0.75) + ranged_accuracy_skill_term(skill) + equip_ranged_accuracy
+    ///                     + accuracy_bonus + ranged_accuracy_extra
+    ///                   = floor(378*0.75)=283 + (200 + floor((733-200)*0.9)=200+479=679) + 460 + 36 + 20
+    ///                   = 283 + 679 + 460 + 36 + 20 = 1478
+    ///
+    /// 期待値の枠組み（実装値を観測してから埋める）:
+    ///   ・ranged_attack_total = STR + Marksmanship_skill_value + 8 + equip_ranged_attack + attack_bonus
+    ///   ・ranged_accuracy_total = floor(AGI*0.75) + accuracy_skill_term(skill) + equip_ranged_accuracy + accuracy_bonus
+    ///   ・attack_bonus = (COR/NINの物理攻撃トレイト 0) + ギフト(0JP→0) + JPカテゴリ(0)
+    ///   ・accuracy_bonus = (COR/NINの命中トレイト 0) + ギフト(0JP→0) + JPカテゴリ(0)
+    #[test]
+    fn test_cor_ranged_ws_attack_accuracy() {
+        use crate::character_profile::JobLevel;
+        use crate::skills::default_skills;
+        use enum_map::EnumMap;
+
+        // メリット: ステータス全て 15、戦闘/魔法スキルメリット 8（既存テストと同条件）
+        let mut merit = MeritPoints {
+            hp: 15, mp: 15,
+            str_: 15, dex: 15, vit: 15, agi: 15, int: 15, mnd: 15, chr: 15,
+            ..Default::default()
+        };
+        for &key in &[
+            "HandToHand", "Dagger", "Sword", "GreatSword", "Axe", "GreatAxe",
+            "Scythe", "Polearm", "Katana", "GreatKatana", "Club", "Staff",
+            "Archery", "Marksmanship", "Throwing", "Guarding", "Evasion",
+            "Shield", "Parrying",
+        ] {
+            merit.combat_skill_merits.insert(key.to_string(), 8);
+        }
+        for &key in &[
+            "Divine", "Healing", "Enhancing", "Enfeebling", "Elemental",
+            "Dark", "Summoning", "Ninjutsu", "Singing", "StringInstrument",
+            "WindInstrument", "BlueMagic", "Geomancy", "Handbell",
+        ] {
+            merit.magic_skill_merits.insert(key.to_string(), 8);
+        }
+
+        // ジョブポイント全カテゴリ最大 (累計 2100 JP) → ギフト全段解放
+        let jp = crate::job_points::JobPointCategories::all_maxed();
+
+        // 全ジョブ最大の cap でスキルをデフォルト化（シミュレータと同じ挙動）
+        let mut job_levels: EnumMap<Job, JobLevel> = EnumMap::default();
+        job_levels[Job::Cor] = JobLevel { level: 99, master_lv: 50 };
+        job_levels[Job::Nin] = JobLevel { level: 59, master_lv: 0 };
+        let skills = default_skills(&job_levels, &merit);
+
+        let mut skill_bonus_main: BTreeMap<String, i32> = BTreeMap::new();
+        skill_bonus_main.insert("Dagger".to_string(), 269); // ロスタム
+
+        let mut skill_bonus_sub: BTreeMap<String, i32> = BTreeMap::new();
+        skill_bonus_sub.insert("Dagger".to_string(), 242); // クスタウィ+1
+
+        let mut skill_bonus_ranged: BTreeMap<String, i32> = BTreeMap::new();
+        skill_bonus_ranged.insert("Marksmanship".to_string(), 269); // フォーマルハウト
+
+        let mut skill_bonus_global: BTreeMap<String, i32> = BTreeMap::new();
+        skill_bonus_global.insert("Parrying".to_string(), 511); // ロスタム+クスタウィ受流合算
+
+        let bonus = BonusStats {
+            hp: 704,
+            mp: 162,
+            str_: 188,
+            dex: 163,
+            vit: 164,
+            agi: 218,
+            int: 154,
+            mnd: 163,
+            chr: 148,
+            attack: 215,
+            accuracy: 270,
+            evasion: 482,
+            ranged_attack: 423,
+            ranged_accuracy: 460,
+            magic_attack: 94,
+            magic_def_bonus: 31,
+            store_tp: 26,
+            double_attack_pct: 16,
+            main_weapon_skill_id: Some(2),    // ロスタム = 短剣
+            sub_weapon_skill_id: Some(2),     // クスタウィ+1 = 短剣
+            ranged_weapon_skill_id: Some(26), // フォーマルハウト = 射撃
+            skill_bonus_main,
+            skill_bonus_sub,
+            skill_bonus_ranged,
+            skill_bonus_global,
+            ..BonusStats::default()
+        };
+
+        let chara = Chara::builder()
+            .race(Race::Hum)
+            .main_job(Job::Cor, 99)
+            .support_job(Job::Nin, 59)
+            .master_lv(50)
+            .merit_points(merit)
+            .job_points(jp)
+            .skills(skills)
+            .bonus_stats(bonus)
+            .build()
+            .expect("Failed to build Chara");
+
+        let result = chara_to_status_result(&chara);
+
+        // 期待値が異なる場合、上記内訳のどこが食い違うかをチェックして原因を切り分けたい:
+        //   ・基本ステ (STR/AGI) の値が違う？
+        //   ・有効武器スキル値が違う？（COR99 ML50 cap が違う？合算ロジックの誤り？）
+        //   ・遠隔命中の AGI 係数 (現行 0.5)、または skill_term 区分が違う？
+        //   ・JP/メリット/ジョブポイントが反映されるべき？
+        assert_eq!(result.str_, 338, "STR mismatch");
+        assert_eq!(result.dex, 321, "DEX mismatch");
+        assert_eq!(result.vit, 314, "VIT mismatch");
+        assert_eq!(result.agi, 378, "AGI mismatch");
+        assert_eq!(result.int, 308, "INT mismatch");
+        assert_eq!(result.mnd, 306, "MND mismatch");
+        assert_eq!(result.chr, 293, "CHR mismatch");
+        assert_eq!(result.ranged_weapon_skill_value, Some(733), "ranged skill value mismatch");
+        assert_eq!(result.attack_bonus, 36, "attack_bonus mismatch (gift COR slot1)");
+        assert_eq!(result.accuracy_bonus, 36, "accuracy_bonus mismatch (gift COR slot3)");
+        assert_eq!(result.ranged_attack, Some(1538), "ranged_attack mismatch");
+        assert_eq!(result.ranged_accuracy, Some(1478), "ranged_accuracy mismatch (incl COR JP idx7 +20)");
     }
 }

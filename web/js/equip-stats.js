@@ -26,6 +26,23 @@ function extractAllStats(descriptionEn) {
     // Continue until the next ":"-prefixed section or end of string.
     text = text.replace(/Pet:[^:]*/g, '');
 
+    // 省略表記を正式名称に展開（AF3+3 などで使われる "Rng. Atk." 形式に対応）。
+    // 順序が重要: 複合形を単純形より先に展開する。
+    // "Mag. Atk. Bonus" → "Magic Atk. Bonus" (既存 regex が拾える形を保持)
+    text = text.replace(/Mag\. ?Atk\. Bonus/g, 'Magic Atk. Bonus');
+    text = text.replace(/M\. ?Def\. ?B\./g, 'Magic Def. Bonus');
+    // 複合: "Rng. Acc." / "Rng. Atk." / "Mag. Acc." / "Mag. Eva." / "Mag. Dmg." / "Mag. Def."
+    text = text.replace(/Rng\. ?Acc\./g, 'Ranged Accuracy');
+    text = text.replace(/Rng\. ?Atk\./g, 'Ranged Attack');
+    text = text.replace(/Mag\. ?Acc\./g, 'Magic Accuracy');
+    text = text.replace(/Mag\. ?Eva\./g, 'Magic Evasion');
+    text = text.replace(/Mag\. ?Dmg\./g, 'Magic Damage');
+    text = text.replace(/Mag\. ?Def\./g, 'Magic Defense');
+    // 単純: "Acc.+N" / "Atk.+N" / "Eva.+N" — 直前が単語/ドットでなく数値が続く場合のみ
+    text = text.replace(/(?<![A-Za-z.])Acc\.(?=\s*[+-]?\s*\d)/g, 'Accuracy');
+    text = text.replace(/(?<![A-Za-z.])Atk\.(?=\s*[+-]?\s*\d)/g, 'Attack');
+    text = text.replace(/(?<![A-Za-z.])Eva\.(?=\s*[+-]?\s*\d)/g, 'Evasion');
+
     // Expand slash-separated stats: "STR/VIT+10" → "STR+10 VIT+10"
     text = text.replace(/([A-Z]{2,3}(?:\/[A-Z]{2,3})+)\s*([+-]\s*\d+%?)/g, (_, stats, val) => {
         return stats.split('/').map(s => s + val).join(' ');

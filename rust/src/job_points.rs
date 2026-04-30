@@ -20,6 +20,10 @@ pub enum GiftStatKind {
     MagicAccuracy,
     MagicEvasion,
     StoreTp,
+    /// 遠隔攻撃力（飛攻）。物理攻撃力には加算されない
+    RangedAttack,
+    /// 遠隔命中（飛命）。物理命中には加算されない
+    RangedAccuracy,
     /// Skill bonuses, capacity points, automaton bonuses など、
     /// 現状のステータス計算には反映しないギフトの placeholder
     None,
@@ -85,6 +89,9 @@ pub struct GiftBonuses {
     pub magic_accuracy: i32,
     pub magic_evasion: i32,
     pub store_tp: i32,
+    /// 遠隔系専用（メイン攻撃には加算しない）
+    pub ranged_attack: i32,
+    pub ranged_accuracy: i32,
 }
 
 impl GiftBonuses {
@@ -99,6 +106,8 @@ impl GiftBonuses {
             GiftStatKind::MagicAccuracy => self.magic_accuracy += value,
             GiftStatKind::MagicEvasion => self.magic_evasion += value,
             GiftStatKind::StoreTp => self.store_tp += value,
+            GiftStatKind::RangedAttack => self.ranged_attack += value,
+            GiftStatKind::RangedAccuracy => self.ranged_accuracy += value,
             GiftStatKind::None => {}
         }
     }
@@ -350,6 +359,15 @@ fn jp_category_effects(job: Job) -> &'static [JpCategoryEffect] {
         Job::War => &[JpCategoryEffect {
             category_index: 9,
             stat: PhysicalAttack,
+            per_rank: 1,
+        }],
+        // Cor:
+        //   category 7 「遠隔命中アップ」: 飛命 +1/rank
+        //   category 9 「適正距離の遠隔攻撃力アップ」: 飛攻 +2/rank は条件付き（適正距離）のため
+        //   ステータス表示には反映しない
+        Job::Cor => &[JpCategoryEffect {
+            category_index: 7,
+            stat: RangedAccuracy,
             per_rank: 1,
         }],
         // Whm: category 3 は Magic Accuracy Bonus (+1 MACC/rank)

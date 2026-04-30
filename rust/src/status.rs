@@ -408,11 +408,25 @@ pub fn calc_accuracy(dex: i32, weapon_skill: i32, equip_accuracy: i32) -> i32 {
     (dex as f32 * 0.75).floor() as i32 + accuracy_skill_term(weapon_skill) + equip_accuracy
 }
 
-/// 飛命を計算する。
-/// 飛命 = int(AGI × 0.5) + スキル補正 + equip_ranged_accuracy
+/// 飛命のスキル寄与（wiki.ffo.jp/html/2395.html）。
+/// 近接命中とは異なり 200 でしか曲折しない。
+/// スキル 1-200: +1 / スキル
+/// スキル 201-: +0.9 / スキル
+pub fn ranged_accuracy_skill_term(weapon_skill: i32) -> i32 {
+    if weapon_skill <= 0 {
+        0
+    } else if weapon_skill <= 200 {
+        weapon_skill
+    } else {
+        200 + ((weapon_skill - 200) as f32 * 0.9).floor() as i32
+    }
+}
+
+/// 飛命を計算する（wiki.ffo.jp/html/2395.html）。
+/// 飛命 = int(AGI × 0.75) + 飛命スキル補正 + equip_ranged_accuracy
 pub fn calc_ranged_accuracy(agi: i32, weapon_skill: i32, equip_ranged_accuracy: i32) -> i32 {
-    (agi as f32 * 0.5).floor() as i32
-        + accuracy_skill_term(weapon_skill)
+    (agi as f32 * 0.75).floor() as i32
+        + ranged_accuracy_skill_term(weapon_skill)
         + equip_ranged_accuracy
 }
 
@@ -525,7 +539,25 @@ mod tests {
 
     #[test]
     fn test_calc_ranged_accuracy() {
-        // AGI=120, skill=400, equip=10 → 60 + 380 + 10 = 450
-        assert_eq!(calc_ranged_accuracy(120, 400, 10), 450);
+        // AGI=120, skill=400, equip=10
+        //   AGI項: floor(120 × 0.75) = 90
+        //   スキル項: 200 + floor((400-200) × 0.9) = 200 + 180 = 380
+        //   合計: 90 + 380 + 10 = 480
+        assert_eq!(calc_ranged_accuracy(120, 400, 10), 480);
+    }
+
+    #[test]
+    fn test_ranged_accuracy_skill_term() {
+        // 1-200 区間: skill そのまま
+        assert_eq!(ranged_accuracy_skill_term(0), 0);
+        assert_eq!(ranged_accuracy_skill_term(100), 100);
+        assert_eq!(ranged_accuracy_skill_term(200), 200);
+        // 201- 区間: 200 + (skill - 200) * 0.9
+        assert_eq!(ranged_accuracy_skill_term(300), 200 + 90); // 290
+        assert_eq!(ranged_accuracy_skill_term(733), 200 + 479); // 679
+        // 近接 accuracy_skill_term と異なり、400 / 600 で曲折しない
+        assert_eq!(ranged_accuracy_skill_term(400), 200 + 180); // 380 (近接と同値)
+        assert_eq!(ranged_accuracy_skill_term(600), 200 + 360); // 560 (近接 540 と差が出る)
+        assert_eq!(ranged_accuracy_skill_term(800), 200 + 540); // 740
     }
 }

@@ -140,6 +140,20 @@ pub struct MeritPoints {
     /// Store TP メリット (SAM 専用, 0-5, +1/rank)
     #[serde(default)]
     pub store_tp: i32,
+    /// ジョブ別メリットポイント (Group 1 + Group 2、各 8 カテゴリ × 0-5 rank)。
+    /// 現状ステータス計算には未反映（カテゴリ名・効果は別途扱い）。
+    /// キー: ジョブ短縮名（"War", "Sam", ...）
+    #[serde(default)]
+    pub job_merits: std::collections::BTreeMap<String, JobMerits>,
+}
+
+/// 単一ジョブのメリットポイント（Group 1 / Group 2、各 8 カテゴリ）
+#[derive(Debug, Clone, Default, serde::Serialize, serde::Deserialize)]
+pub struct JobMerits {
+    #[serde(default)]
+    pub group1: [i32; 8],
+    #[serde(default)]
+    pub group2: [i32; 8],
 }
 
 impl MeritPoints {
@@ -209,6 +223,9 @@ pub struct BonusStats {
     /// 装備品の Store TP 合計
     #[serde(default)]
     pub store_tp: i32,
+    /// 装備品のダブルアタック発動率合計 (%)
+    #[serde(default)]
+    pub double_attack_pct: i32,
     /// 装備メイン武器のスキル種別 ID（アイテム JSON の `skill` フィールド値、未装備時は None）
     #[serde(default)]
     pub main_weapon_skill_id: Option<i32>,

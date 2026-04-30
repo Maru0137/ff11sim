@@ -923,11 +923,18 @@
                             <label for="charMeritSpellInterruptionRate">詠唱中断率</label>
                             <input type="number" id="charMeritSpellInterruptionRate" min="0" max="5" value="0">
                         </div>
-                        <div class="merit-item">
-                            <label for="charMeritStoreTp">ストアTP (SAM)</label>
-                            <input type="number" id="charMeritStoreTp" min="0" max="5" value="0">
-                        </div>
                     </div>
+                </div>
+
+                <div class="jp-section">
+                    <div class="jp-section-header">
+                        <h3>ジョブ別メリットポイント (各項目0-5)</h3>
+                        <select id="jobMeritJobSelector"></select>
+                    </div>
+                    <div class="skill-group-title">グループ1 <span style="color:#888;font-size:12px;">(<span id="jobMeritGroup1Total">0</span> / 10)</span></div>
+                    <div class="jp-grid" id="jobMeritGroup1Grid"></div>
+                    <div class="skill-group-title">グループ2 <span style="color:#888;font-size:12px;">(<span id="jobMeritGroup2Total">0</span> / 10)</span></div>
+                    <div class="jp-grid" id="jobMeritGroup2Grid"></div>
                 </div>
 
                 <div class="jp-section">
@@ -1180,24 +1187,23 @@
                         </tbody>
                     </table>
                     <table class="status-table">
-                        <thead><tr><th>ヘイスト</th><th>Store TP</th><th>DA</th><th>TA</th><th>QA</th><th>クリ率</th></tr></thead>
+                        <thead><tr><th>ストアTP</th><th>モクシャ</th><th>モクシャII</th><th>DA</th><th>TA</th></tr></thead>
                         <tbody><tr>
-                            <td class="equip-val" id="statAaHaste">-</td>
                             <td class="equip-val" id="statAaStp">-</td>
+                            <td class="equip-val" id="statAaSb">-</td>
+                            <td class="equip-val" id="statAaSb2">-</td>
                             <td class="equip-val" id="statAaDa">-</td>
                             <td class="equip-val" id="statAaTa">-</td>
-                            <td class="equip-val" id="statAaQa">-</td>
-                            <td class="equip-val" id="statAaCrit">-</td>
                         </tr></tbody>
                     </table>
                     <table class="status-table">
-                        <thead><tr><th>DAダメ</th><th>TAダメ</th><th>クリダメ</th><th>モクシャ</th><th>モクシャII</th></tr></thead>
+                        <thead><tr><th>QA</th><th>DAダメージ</th><th>TAダメージ</th><th>クリティカル率</th><th>クリティカルダメージ</th></tr></thead>
                         <tbody><tr>
+                            <td class="equip-val" id="statAaQa">-</td>
                             <td class="equip-val" id="statAaDaDmg">-</td>
                             <td class="equip-val" id="statAaTaDmg">-</td>
+                            <td class="equip-val" id="statAaCrit">-</td>
                             <td class="equip-val" id="statAaCritDmg">-</td>
-                            <td class="equip-val" id="statAaSb">-</td>
-                            <td class="equip-val" id="statAaSb2">-</td>
                         </tr></tbody>
                     </table>
                 </div>
@@ -1394,6 +1400,146 @@
         const JP_MAX_TOTAL = 2100;
         const JP_CATEGORY_COUNT = 10;
         const JP_MAX_RANK = 20;
+
+        // ジョブ別メリットポイントのカテゴリ名 (Group 1 / Group 2、固定 8 枠でパディング)
+        // 値は wiki.ffo.jp を参照。"カテゴリ N" は wiki に項目がない枠（描画しない）
+        const JOB_MERIT_GROUP_SIZE = 8;
+        const JOB_MERIT_MAX_RANK = 5;
+        const JOB_MERIT_GROUP_MAX_TOTAL = 10;
+        const JOB_MERIT_CATEGORIES = {
+            War: { group1: ['バーサク使用間隔','ディフェンダー使用間隔','ウォークライ使用間隔','アグレッサー使用間隔','ダブルアタック確率','カテゴリ 6','カテゴリ 7','カテゴリ 8'], group2: ['ウォリアーチャージ','トマホーク','サベッジリ','アグレシブエイム','カテゴリ 5','カテゴリ 6','カテゴリ 7','カテゴリ 8'] },
+            Mnk: { group1: ['集中使用間隔','回避使用間隔','チャクラ使用間隔','カウンター確率','蹴撃確率','カテゴリ 6','カテゴリ 7','カテゴリ 8'], group2: ['マントラ','無想無念','練気','発剄','カテゴリ 5','カテゴリ 6','カテゴリ 7','カテゴリ 8'] },
+            Whm: { group1: ['女神の印使用間隔','ケアル詠唱時間','属性耐性魔法効果','バニシュ効果','リジェネ効果','カテゴリ 6','カテゴリ 7','カテゴリ 8'], group2: ['マーター','デヴォーション','ソウルオブソラス','ソウルオブミゼリ','カテゴリ 5','カテゴリ 6','カテゴリ 7','カテゴリ 8'] },
+            Blm: { group1: ['精霊の印使用間隔','火属性魔法攻撃力','氷属性魔法攻撃力','風属性魔法攻撃力','土属性魔法攻撃力','雷属性魔法攻撃力','水属性魔法攻撃力','カテゴリ 8'], group2: ['古代魔法の魔法攻撃力','古代魔法のMBダメージ','精霊魔法の魔法命中率','精霊魔法のステータスダウン効果時間','精霊魔法のステータスダウン効果','アスピル吸収量','カテゴリ 7','カテゴリ 8'] },
+            Rdm: { group1: ['コンバート使用間隔','火属性魔法命中率','氷属性魔法命中率','風属性魔法命中率','土属性魔法命中率','雷属性魔法命中率','水属性魔法命中率','カテゴリ 8'], group2: ['弱体魔法の効果時間','魔法命中率','強化魔法の効果時間','レジストハック確率','魔法剣ダメージ','命中率','カテゴリ 7','カテゴリ 8'] },
+            Thf: { group1: ['とんずら使用間隔','かくれる使用間隔','不意打ち使用間隔','だまし討ち使用間隔','トリプルアタック確率','カテゴリ 6','カテゴリ 7','カテゴリ 8'], group2: ['アサシンチャージ','フェイント','オーラスティール','アンブッシュ','カテゴリ 5','カテゴリ 6','カテゴリ 7','カテゴリ 8'] },
+            Pld: { group1: ['シールドバッシュ使用間隔','ホーリーサークル使用間隔','センチネル使用間隔','かばう効果時間','ランパート使用間隔','カテゴリ 6','カテゴリ 7','カテゴリ 8'], group2: ['フィールティ','シバルリー','アイアンウィル','ガーディアン','カテゴリ 5','カテゴリ 6','カテゴリ 7','カテゴリ 8'] },
+            Drk: { group1: ['暗黒使用間隔','アルケインサークル使用間隔','ラストリゾート使用間隔','ラストリゾート効果','ウェポンバッシュ使用間隔','カテゴリ 6','カテゴリ 7','カテゴリ 8'], group2: ['ダークシール','ディアボリクアイ','ミューテッドソウル','デスペレートブロー効果','カテゴリ 5','カテゴリ 6','カテゴリ 7','カテゴリ 8'] },
+            Bst: { group1: ['キラー確率','いたわる使用間隔','よびだす使用間隔','ほんきだせ使用間隔','なだめる使用間隔','カテゴリ 6','カテゴリ 7','カテゴリ 8'], group2: ['フェラルハウル','K.インスティンクト','ビーストアフニティ','ビーストヒーラー','カテゴリ 5','カテゴリ 6','カテゴリ 7','カテゴリ 8'] },
+            Brd: { group1: ['ララバイ使用間隔','フィナーレ使用間隔','ミンネ効果','メヌエット効果','マドリガル効果','カテゴリ 6','カテゴリ 7','カテゴリ 8'], group2: ['ナイチンゲール','トルバドゥール','コンアニマ','コンブリオ','カテゴリ 5','カテゴリ 6','カテゴリ 7','カテゴリ 8'] },
+            Rng: { group1: ['スカベンジ効果','カモフラージュ使用間隔','狙い撃ち使用間隔','エンドレスショット使用間隔','ラピッドショット確率','カテゴリ 6','カテゴリ 7','カテゴリ 8'], group2: ['ステルスショット','フラッシーショット','スナップショット','リサイクル確率','カテゴリ 5','カテゴリ 6','カテゴリ 7','カテゴリ 8'] },
+            Sam: { group1: ['心眼使用間隔','護摩の守護円使用間隔','ストアTP効果','黙想使用間隔','残心確率','カテゴリ 6','カテゴリ 7','カテゴリ 8'], group2: ['士気昂揚','峰打ち','意気衝天','正正堂堂','カテゴリ 5','カテゴリ 6','カテゴリ 7','カテゴリ 8'] },
+            Nin: { group1: ['モクシャ効果','火遁の術効果','氷遁の術効果','風遁の術効果','土遁の術効果','雷遁の術効果','水遁の術効果','カテゴリ 8'], group2: ['散華','忍具の知識','陽忍効果アップ','陰忍効果アップ','忍術の魔法命中率','忍術の魔法攻撃力','カテゴリ 7','カテゴリ 8'] },
+            Drg: { group1: ['エンシェントサークル使用間隔','ジャンプ使用間隔','ハイジャンプ使用間隔','スーパージャンプ使用間隔','スピリットリンク使用間隔','カテゴリ 6','カテゴリ 7','カテゴリ 8'], group2: ['ディープブリージング','アンゴン','エンパシー','ストレイフ','カテゴリ 5','カテゴリ 6','カテゴリ 7','カテゴリ 8'] },
+            Smn: { group1: ['召喚獣物理命中率','召喚獣物理攻撃力','召喚獣魔法命中率','召喚獣魔法攻撃力','召喚魔法詠唱時間','カテゴリ 6','カテゴリ 7','カテゴリ 8'], group2: ['メテオストライク','ヘヴンリーストライク','ウインドブレード','ジオクラッシュ','サンダーストーム','グランドフォール','カテゴリ 7','カテゴリ 8'] },
+            Blu: { group1: ['ブルーチェーン使用間隔','ブルーバースト使用間隔','モンスター相関関係','物理系青魔法攻撃力','魔法系青魔法命中率','カテゴリ 6','カテゴリ 7','カテゴリ 8'], group2: ['コンバージェンス','ディフュージョン','エンチェーンメント','アシミレーション','カテゴリ 5','カテゴリ 6','カテゴリ 7','カテゴリ 8'] },
+            Cor: { group1: ['ファントムロール使用間隔','クイックドロー使用間隔','クイックドロー命中率','ランダムディール使用間隔','Bust時間短縮','カテゴリ 6','カテゴリ 7','カテゴリ 8'], group2: ['スネークアイ','フォールド','ウィニングストリーク','ローデッドデッキ','カテゴリ 5','カテゴリ 6','カテゴリ 7','カテゴリ 8'] },
+            Pup: { group1: ['オートマトンスキル','フラッシング使用間隔','リペアー効果','アクティベート使用間隔','リペアー使用間隔','カテゴリ 6','カテゴリ 7','カテゴリ 8'], group2: ['黒衣チェンジ','腹話術','微調整','最適化','カテゴリ 5','カテゴリ 6','カテゴリ 7','カテゴリ 8'] },
+            Dnc: { group1: ['ステップ命中率','ヘイストサンバ効果','R.フラリッシュ効果','B.フラリッシュ効果','カテゴリ 5','カテゴリ 6','カテゴリ 7','カテゴリ 8'], group2: ['剣の舞い','扇の舞い','ノーフットライズ','Ｃ・ポジション','カテゴリ 5','カテゴリ 6','カテゴリ 7','カテゴリ 8'] },
+            Sch: { group1: ['グリモア使用間隔','以逸待労の計効果時間','計略魔法命中率・魔法攻撃力','机上演習上限','カテゴリ 5','カテゴリ 6','カテゴリ 7','カテゴリ 8'], group2: ['不惜身命の章','一心精進の章','天衣無縫の章','無憂無風の章','大悟徹底','陣頭指揮','カテゴリ 7','カテゴリ 8'] },
+            Geo: { group1: ['フルサークル効果','サークルエンリッチ使用間隔','ライフサイクル使用間隔','グローリーブレイズ使用間隔','デマテリアライズ使用間隔','カテゴリ 6','カテゴリ 7','カテゴリ 8'], group2: ['メンドハレイション','レイディアルアルカナ','キュアリカント','プライムジール','カテゴリ 5','カテゴリ 6','カテゴリ 7','カテゴリ 8'] },
+            Run: { group1: ['エンチャントルーン効果','ヴァレション効果','ランジ効果','フルーグ効果','ガンビット再使用時間短縮','カテゴリ 6','カテゴリ 7','カテゴリ 8'], group2: ['バットゥタ','レイク','インスパイア','スライトソード','カテゴリ 5','カテゴリ 6','カテゴリ 7','カテゴリ 8'] },
+        };
+        const JOB_MERIT_PLACEHOLDER_RE = /^カテゴリ\s*\d+$/;
+        function jobMeritCategoryName(jobKey, group, idx) {
+            const job = JOB_MERIT_CATEGORIES[jobKey];
+            const name = job && job[group] && job[group][idx];
+            if (name) return name;
+            return `カテゴリ ${idx + 1}`;
+        }
+        function isJobMeritPlaceholder(jobKey, group, idx) {
+            const name = jobMeritCategoryName(jobKey, group, idx);
+            return JOB_MERIT_PLACEHOLDER_RE.test(name);
+        }
+        // SAM の Group 1 で「ストアTP」相当の項目のインデックス（カテゴリ名から動的解決）
+        function samStoreTpIndex() {
+            const g1 = JOB_MERIT_CATEGORIES.Sam.group1;
+            return g1.findIndex(name => name && name.startsWith('ストアTP'));
+        }
+        function jobMeritDefaultRanks() {
+            return new Array(JOB_MERIT_GROUP_SIZE).fill(0);
+        }
+
+        /// 現在編集中キャラクターのジョブ別メリット
+        let currentEditingJobMerits = {};
+
+        function loadJobMeritsFromCharacter(character) {
+            const result = {};
+            const stored = (character && character.merit_points && character.merit_points.job_merits) || {};
+            JOBS.forEach(job => {
+                const s = stored[job.key];
+                result[job.key] = {
+                    group1: (s && Array.isArray(s.group1) && s.group1.length === JOB_MERIT_GROUP_SIZE) ? s.group1.slice() : jobMeritDefaultRanks(),
+                    group2: (s && Array.isArray(s.group2) && s.group2.length === JOB_MERIT_GROUP_SIZE) ? s.group2.slice() : jobMeritDefaultRanks(),
+                };
+            });
+            return result;
+        }
+
+        function jobMeritGroupTotal(jobKey, group) {
+            const data = currentEditingJobMerits[jobKey];
+            if (!data || !data[group]) return 0;
+            return data[group].reduce((s, v) => s + (v || 0), 0);
+        }
+        function updateJobMeritGroupTotalDisplay() {
+            const jobKey = document.getElementById('jobMeritJobSelector').value;
+            for (const group of ['group1', 'group2']) {
+                const id = group === 'group1' ? 'jobMeritGroup1Total' : 'jobMeritGroup2Total';
+                document.getElementById(id).textContent = jobMeritGroupTotal(jobKey, group);
+            }
+        }
+        function renderJobMeritInputs() {
+            const jobKey = document.getElementById('jobMeritJobSelector').value;
+            const data = currentEditingJobMerits[jobKey] || { group1: jobMeritDefaultRanks(), group2: jobMeritDefaultRanks() };
+            for (const group of ['group1', 'group2']) {
+                const grid = document.getElementById(group === 'group1' ? 'jobMeritGroup1Grid' : 'jobMeritGroup2Grid');
+                grid.innerHTML = '';
+                for (let i = 0; i < JOB_MERIT_GROUP_SIZE; i++) {
+                    if (isJobMeritPlaceholder(jobKey, group, i)) continue;
+                    const item = document.createElement('div');
+                    item.className = 'jp-item';
+                    item.innerHTML = `
+                        <label for="jm_${group}_${i}">${jobMeritCategoryName(jobKey, group, i)}</label>
+                        <input type="number" id="jm_${group}_${i}" min="0" max="${JOB_MERIT_MAX_RANK}" value="${data[group][i]}" data-merit-group="${group}" data-merit-index="${i}">
+                    `;
+                    grid.appendChild(item);
+                }
+                if (grid.innerHTML === '') {
+                    grid.innerHTML = '<div style="color:#666;font-size:12px;">(項目なし)</div>';
+                }
+            }
+            updateJobMeritGroupTotalDisplay();
+        }
+
+        function ensureJobMeritSelectorInitialized() {
+            const sel = document.getElementById('jobMeritJobSelector');
+            if (sel.options.length === 0) {
+                JOBS.forEach(job => {
+                    const opt = document.createElement('option');
+                    opt.value = job.key;
+                    opt.textContent = job.name;
+                    sel.appendChild(opt);
+                });
+                sel.addEventListener('change', renderJobMeritInputs);
+                ['jobMeritGroup1Grid', 'jobMeritGroup2Grid'].forEach(gridId => {
+                    document.getElementById(gridId).addEventListener('input', (e) => {
+                        if (!e.target.matches('input[data-merit-group]')) return;
+                        const group = e.target.dataset.meritGroup;
+                        const idx = parseInt(e.target.dataset.meritIndex, 10);
+                        let v = parseInt(e.target.value, 10);
+                        if (isNaN(v)) v = 0;
+                        v = Math.max(0, Math.min(JOB_MERIT_MAX_RANK, v));
+                        const jobKey = document.getElementById('jobMeritJobSelector').value;
+                        if (!currentEditingJobMerits[jobKey]) {
+                            currentEditingJobMerits[jobKey] = {
+                                group1: jobMeritDefaultRanks(),
+                                group2: jobMeritDefaultRanks(),
+                            };
+                        }
+                        // グループ合計が JOB_MERIT_GROUP_MAX_TOTAL を超えないようにクランプ
+                        const ranks = currentEditingJobMerits[jobKey][group];
+                        const otherSum = ranks.reduce((s, r, i) => s + (i === idx ? 0 : (r || 0)), 0);
+                        const allowed = Math.max(0, JOB_MERIT_GROUP_MAX_TOTAL - otherSum);
+                        if (v > allowed) v = allowed;
+                        ranks[idx] = v;
+                        if (parseInt(e.target.value, 10) !== v) {
+                            e.target.value = v;
+                        }
+                        updateJobMeritGroupTotalDisplay();
+                    });
+                });
+            }
+        }
 
         /// 現在編集中キャラクターの JP データ（ジョブキー → ranks 配列）
         let currentEditingJobPoints = {};
@@ -1642,6 +1788,11 @@
             COMBAT_SKILL_KEYS.forEach(([k]) => { combat_skill_merits[k] = currentEditingMeritSkills[k] || 0; });
             const magic_skill_merits = {};
             MAGIC_SKILL_KEYS.forEach(([k]) => { magic_skill_merits[k] = currentEditingMeritSkills[k] || 0; });
+            const job_merits = {};
+            JOBS.forEach(job => {
+                const m = currentEditingJobMerits[job.key] || { group1: jobMeritDefaultRanks(), group2: jobMeritDefaultRanks() };
+                job_merits[job.key] = { group1: m.group1.slice(), group2: m.group2.slice() };
+            });
             return {
                 hp: parseInt(document.getElementById('charMeritHp').value) || 0,
                 mp: parseInt(document.getElementById('charMeritMp').value) || 0,
@@ -1659,7 +1810,8 @@
                 critical_hit_rate: parseInt(document.getElementById('charMeritCriticalHitRate').value) || 0,
                 enemy_critical_hit_rate: parseInt(document.getElementById('charMeritEnemyCriticalHitRate').value) || 0,
                 spell_interruption_rate: parseInt(document.getElementById('charMeritSpellInterruptionRate').value) || 0,
-                store_tp: parseInt(document.getElementById('charMeritStoreTp').value) || 0,
+                store_tp: (job_merits.Sam && job_merits.Sam.group1[samStoreTpIndex()]) || 0,
+                job_merits,
             };
         }
 
@@ -1825,6 +1977,7 @@
             const section = document.getElementById('charEditSection');
             section.classList.remove('hidden');
             ensureJpJobSelectorInitialized();
+            ensureJobMeritSelectorInitialized();
             ensureSkillInputListenerInitialized();
 
             if (character) {
@@ -1858,7 +2011,14 @@
                 document.getElementById('charMeritCriticalHitRate').value = mp.critical_hit_rate || 0;
                 document.getElementById('charMeritEnemyCriticalHitRate').value = mp.enemy_critical_hit_rate || 0;
                 document.getElementById('charMeritSpellInterruptionRate').value = mp.spell_interruption_rate || 0;
-                document.getElementById('charMeritStoreTp').value = mp.store_tp || 0;
+                currentEditingJobMerits = loadJobMeritsFromCharacter(character);
+                // 旧フォーマットからの移行: merit_points.store_tp を SAM G1 ストアTP に backfill
+                if (mp.store_tp && currentEditingJobMerits.Sam) {
+                    const idx = samStoreTpIndex();
+                    if (idx >= 0 && !currentEditingJobMerits.Sam.group1[idx]) {
+                        currentEditingJobMerits.Sam.group1[idx] = mp.store_tp;
+                    }
+                }
                 currentEditingJobPoints = loadJobPointsFromCharacter(character);
                 // スキル: デフォルト（キャップ最大）を算出して、既存値があればマージ
                 currentEditingSkillDefaults = computeSkillDefaults(character);
@@ -1892,7 +2052,8 @@
                 document.getElementById('charMeritCriticalHitRate').value = 0;
                 document.getElementById('charMeritEnemyCriticalHitRate').value = 0;
                 document.getElementById('charMeritSpellInterruptionRate').value = 0;
-                document.getElementById('charMeritStoreTp').value = 0;
+                currentEditingJobMerits = {};
+                JOBS.forEach(job => { currentEditingJobMerits[job.key] = { group1: jobMeritDefaultRanks(), group2: jobMeritDefaultRanks() }; });
                 currentEditingJobPoints = {};
                 JOBS.forEach(job => { currentEditingJobPoints[job.key] = jpDefaultRanks(); });
                 // 新規キャラ: 全ジョブ 99 の前提でデフォルトスキル値を算出
@@ -1906,6 +2067,7 @@
                 });
             }
             renderMeritSkillInputs();
+            renderJobMeritInputs();
             renderJpCategoryInputs();
             renderSkillInputs();
         }
@@ -1930,29 +2092,7 @@
                 job_levels[job.key] = { level: lv, master_lv: mlv };
             });
 
-            const combat_skill_merits = {};
-            COMBAT_SKILL_KEYS.forEach(([k]) => { combat_skill_merits[k] = currentEditingMeritSkills[k] || 0; });
-            const magic_skill_merits = {};
-            MAGIC_SKILL_KEYS.forEach(([k]) => { magic_skill_merits[k] = currentEditingMeritSkills[k] || 0; });
-            const merit_points = {
-                hp: parseInt(document.getElementById('charMeritHp').value) || 0,
-                mp: parseInt(document.getElementById('charMeritMp').value) || 0,
-                str_: parseInt(document.getElementById('charMeritStr').value) || 0,
-                dex: parseInt(document.getElementById('charMeritDex').value) || 0,
-                vit: parseInt(document.getElementById('charMeritVit').value) || 0,
-                agi: parseInt(document.getElementById('charMeritAgi').value) || 0,
-                int: parseInt(document.getElementById('charMeritInt').value) || 0,
-                mnd: parseInt(document.getElementById('charMeritMnd').value) || 0,
-                chr: parseInt(document.getElementById('charMeritChr').value) || 0,
-                combat_skill_merits,
-                magic_skill_merits,
-                enmity_plus: parseInt(document.getElementById('charMeritEnmityPlus').value) || 0,
-                enmity_minus: parseInt(document.getElementById('charMeritEnmityMinus').value) || 0,
-                critical_hit_rate: parseInt(document.getElementById('charMeritCriticalHitRate').value) || 0,
-                enemy_critical_hit_rate: parseInt(document.getElementById('charMeritEnemyCriticalHitRate').value) || 0,
-                spell_interruption_rate: parseInt(document.getElementById('charMeritSpellInterruptionRate').value) || 0,
-                store_tp: parseInt(document.getElementById('charMeritStoreTp').value) || 0,
-            };
+            const merit_points = readMeritPointsFromForm();
 
             // JP: 全ジョブの振り分け状況を保存
             const job_points_categories = {};
@@ -2516,6 +2656,7 @@
                     ranged_attack: equip.ranged_attack || 0,
                     ranged_accuracy: equip.ranged_accuracy || 0,
                     store_tp: equip.store_tp || 0,
+                    double_attack_pct: equip.double_attack_pct || 0,
                     main_weapon_skill_id: mainWeaponSkillId,
                     sub_weapon_skill_id: subWeaponSkillId,
                     ranged_weapon_skill_id: rangedWeaponSkillId,
@@ -2629,9 +2770,8 @@
                 setText('statAaSubSkill', formatWeaponSkill(totalStats.sub_weapon_skill, totalStats.sub_weapon_skill_value));
                 setText('statAaSubAtk', totalStats.sub_attack != null ? totalStats.sub_attack : '-');
                 setText('statAaSubAcc', totalStats.sub_accuracy != null ? totalStats.sub_accuracy : '-');
-                setText('statAaHaste', pctOrDash(equip.haste_pct));
                 setText('statAaStp', numOrDash(totalStats.store_tp));
-                setText('statAaDa', pctOrDash(equip.double_attack_pct));
+                setText('statAaDa', pctOrDash(totalStats.double_attack_pct));
                 setText('statAaTa', pctOrDash(equip.triple_attack_pct));
                 setText('statAaQa', pctOrDash(equip.quad_attack_pct));
                 setText('statAaCrit', pctOrDash(equip.critical_hit_rate_pct));
@@ -2655,7 +2795,7 @@
                 setText('statMwsAcc', numOrDash(totalStats.main_accuracy));
                 setText('statMwsWsdmg', pctOrDash(wsDamagePct));
                 setText('statMwsCrit', pctOrDash(equip.critical_hit_rate_pct));
-                setText('statMwsDa', pctOrDash(equip.double_attack_pct));
+                setText('statMwsDa', pctOrDash(totalStats.double_attack_pct));
                 setText('statMwsTa', pctOrDash(equip.triple_attack_pct));
                 setText('statMwsStr', totalStats.str_ || '-');
                 setText('statMwsDex', totalStats.dex || '-');
@@ -2735,7 +2875,7 @@
                 // Tab 2: オートアタック
                 'statAaMainSkill', 'statAaMainAtk', 'statAaMainAcc',
                 'statAaSubSkill', 'statAaSubAtk', 'statAaSubAcc',
-                'statAaHaste', 'statAaStp', 'statAaDa', 'statAaTa', 'statAaQa', 'statAaCrit',
+                'statAaStp', 'statAaDa', 'statAaTa', 'statAaQa', 'statAaCrit',
                 'statAaDaDmg', 'statAaTaDmg', 'statAaCritDmg', 'statAaSb', 'statAaSb2',
                 // Tab 3: 遠隔
                 'statRaSkill', 'statRaAtk', 'statRaAcc', 'statRaStr', 'statRaAgi', 'statRaStp',

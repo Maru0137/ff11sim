@@ -346,6 +346,12 @@ struct JpCategoryEffect {
 /// 各ジョブの JP カテゴリによる直接ステータス効果
 fn jp_category_effects(job: Job) -> &'static [JpCategoryEffect] {
     match job {
+        // War: category 9 は「ダブルアタック効果」(物理攻撃力 +1/rank)
+        Job::War => &[JpCategoryEffect {
+            category_index: 9,
+            stat: PhysicalAttack,
+            per_rank: 1,
+        }],
         // Whm: category 3 は Magic Accuracy Bonus (+1 MACC/rank)
         Job::Whm => &[JpCategoryEffect {
             category_index: 3,
@@ -373,6 +379,22 @@ fn jp_category_effects(job: Job) -> &'static [JpCategoryEffect] {
         ],
         _ => &[],
     }
+}
+
+/// 戦士の「ダブルアタック確率アップ」ギフトによる発動率 (%) を計算する。
+/// 累計 JP の閾値で +2 / +2 / +3 / +3 (累計 +10%)。
+/// 閾値: 125 / 450 / 1050 / 1900 JP
+pub fn calc_war_da_gift_bonus(total_jp: i32) -> i32 {
+    const THRESHOLDS: [(i32, i32); 4] = [(125, 2), (450, 2), (1050, 3), (1900, 3)];
+    let mut bonus = 0;
+    for &(req, val) in &THRESHOLDS {
+        if total_jp >= req {
+            bonus += val;
+        } else {
+            break;
+        }
+    }
+    bonus
 }
 
 /// 累計 JP 量から得られるギフトのボーナス合計を計算する。
@@ -518,10 +540,25 @@ mod tests {
 
     #[test]
     fn test_jp_category_bonuses_war() {
-        // War は直接ステータス効果のあるカテゴリを持たない
+        // War のカテゴリ idx 9「ダブルアタック効果」は物理攻撃力 +1/rank。
+        // 全カテゴリ rank=20 で +20 物理攻撃力のみ反映される。
         let cats = JobPointCategories::all_maxed();
         let bonuses = calc_jp_category_bonuses(Job::War, &cats);
-        assert_eq!(bonuses, GiftBonuses::default());
+        assert_eq!(bonuses.physical_attack, 20);
+        assert_eq!(bonuses.physical_defense, 0);
+        assert_eq!(bonuses.physical_accuracy, 0);
+    }
+
+    #[test]
+    fn test_war_da_gift_bonus() {
+        // 戦士のダブルアタック確率アップギフト累計
+        assert_eq!(calc_war_da_gift_bonus(0), 0);
+        assert_eq!(calc_war_da_gift_bonus(124), 0);
+        assert_eq!(calc_war_da_gift_bonus(125), 2);
+        assert_eq!(calc_war_da_gift_bonus(450), 4);
+        assert_eq!(calc_war_da_gift_bonus(1050), 7);
+        assert_eq!(calc_war_da_gift_bonus(1900), 10);
+        assert_eq!(calc_war_da_gift_bonus(2100), 10);
     }
 
     #[test]

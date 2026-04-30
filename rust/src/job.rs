@@ -101,6 +101,7 @@ pub enum JobTrait {
     AccuracyBonus,
     MagicAttackBonus,
     StoreTp,
+    DoubleAttack,
 }
 
 // Cumulative bonus values per rank for each trait.
@@ -116,6 +117,9 @@ const ACCURACY_BONUS: &[i32] = &[10, 22, 35, 48, 60, 72];
 const MAGIC_ATTACK_BONUS: &[i32] = &[20, 24, 28, 32, 36, 40];
 // Store TP I-V: SAM Lv10/30/50/70/90, cumulative +10/+15/+20/+25/+30
 const STORE_TP: &[i32] = &[10, 15, 20, 25, 30];
+// Double Attack: WAR Lv25/50/75/85/99, cumulative +10/+12/+14/+16/+18 (%)
+// （2015年5月14日 VU で習得タイミングが大幅に増加）
+const DOUBLE_ATTACK: &[i32] = &[10, 12, 14, 16, 18];
 
 fn trait_cumulative(trait_kind: JobTrait) -> &'static [i32] {
     match trait_kind {
@@ -129,6 +133,7 @@ fn trait_cumulative(trait_kind: JobTrait) -> &'static [i32] {
         JobTrait::AccuracyBonus => ACCURACY_BONUS,
         JobTrait::MagicAttackBonus => MAGIC_ATTACK_BONUS,
         JobTrait::StoreTp => STORE_TP,
+        JobTrait::DoubleAttack => DOUBLE_ATTACK,
     }
 }
 
@@ -183,6 +188,9 @@ fn trait_levels(job: Job, trait_kind: JobTrait) -> &'static [i32] {
 
         // Store TP I-V: SAM only (Lv10, 30, 50, 70, 90)
         (JobTrait::StoreTp, Job::Sam) => &[10, 30, 50, 70, 90],
+
+        // Double Attack: WAR (Lv25, 50, 75, 85, 99)
+        (JobTrait::DoubleAttack, Job::War) => &[25, 50, 75, 85, 99],
 
         _ => &[],
     }

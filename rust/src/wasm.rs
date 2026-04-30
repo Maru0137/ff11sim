@@ -8,7 +8,7 @@ use wasm_bindgen::prelude::*;
 use crate::chara::Chara;
 use crate::character_profile::CharacterProfile;
 use crate::job::{Job, JobTrait};
-use crate::job_points::{calc_gift_bonuses, calc_jp_category_bonuses};
+use crate::job_points::{calc_gift_bonuses, calc_jp_category_bonuses, calc_war_da_gift_bonus};
 use crate::race::Race;
 use crate::skills::{
     default_skills, effective_skill, job_skill_rank, weapon_skill_from_item_id, SkillKind,
@@ -66,6 +66,8 @@ pub struct StatusResult {
     pub magic_evasion_bonus: i32,
     /// Store TP 総合値 (装備 + ジョブ特性 + メリット + ギフト + JPカテゴリ)
     pub store_tp: i32,
+    /// ダブルアタック発動率総合値 (%) (装備 + ジョブ特性 + メリット + JPカテゴリ)
+    pub double_attack_pct: i32,
     pub total_jp_spent: i32,
     /// メインジョブ/サポートジョブで制限されたスキル有効値（キー: スキル名）
     pub effective_skills: BTreeMap<String, i32>,
@@ -158,6 +160,8 @@ pub struct MeritPointsInput {
     pub spell_interruption_rate: i32,
     #[serde(default)]
     pub store_tp: i32,
+    #[serde(default)]
+    pub job_merits: std::collections::BTreeMap<String, crate::status::JobMerits>,
 }
 
 impl From<MeritPointsInput> for MeritPoints {
@@ -180,6 +184,7 @@ impl From<MeritPointsInput> for MeritPoints {
             enemy_critical_hit_rate: input.enemy_critical_hit_rate,
             spell_interruption_rate: input.spell_interruption_rate,
             store_tp: input.store_tp,
+            job_merits: input.job_merits,
         }
     }
 }
@@ -295,6 +300,7 @@ fn chara_to_status_result(chara: &Chara) -> StatusResult {
     let accuracy_bonus_trait = chara.job_trait_total(JobTrait::AccuracyBonus);
     let magic_attack_bonus_trait = chara.job_trait_total(JobTrait::MagicAttackBonus);
     let store_tp_trait = chara.job_trait_total(JobTrait::StoreTp);
+    let double_attack_trait = chara.job_trait_total(JobTrait::DoubleAttack);
 
     // ジョブポイント / ギフトによる戦闘ステータスボーナス
     let total_jp = chara.job_points.total_jp_spent();
@@ -306,6 +312,24 @@ fn chara_to_status_result(chara: &Chara) -> StatusResult {
         chara.merit_points.store_tp
     } else {
         0
+    };
+
+    // ダブルアタック発動率の WAR 専用ボーナス
+    //   メリット: グループ1 idx 4「ダブルアタック確率」+1%/rank, 最大 5
+    //   ギフト:  「ダブルアタック確率アップ」125/450/1050/1900 JP で +2/+2/+3/+3 (累計 +10%)
+    //   ※ JP カテゴリ idx 9「ダブルアタック効果」は実体は物理攻撃力 +1/rank なので
+    //      DA 率には加算せず、physical_attack に gift/jp_cat 経由で反映される。
+    let (double_attack_merit, double_attack_gift) = if chara.main_job == Job::War {
+        let merit = chara
+            .merit_points
+            .job_merits
+            .get("War")
+            .map(|m| m.group1[4])
+            .unwrap_or(0);
+        let gift_bonus = calc_war_da_gift_bonus(total_jp);
+        (merit, gift_bonus)
+    } else {
+        (0, 0)
     };
 
     // 各スキルの「基本有効値」= min(char, cap)（装備ボーナスを含まない）
@@ -420,6 +444,10 @@ fn chara_to_status_result(chara: &Chara) -> StatusResult {
         + store_tp_merit
         + gift.store_tp
         + jp_cat.store_tp;
+    let double_attack_pct_total = chara.bonus_stats.double_attack_pct
+        + double_attack_trait
+        + double_attack_merit
+        + double_attack_gift;
 
     // 総合値の計算
     let def_total = calc_defense(vit, chara.main_lv, chara.bonus_stats.def) + defense_bonus;
@@ -504,6 +532,7 @@ fn chara_to_status_result(chara: &Chara) -> StatusResult {
         magic_accuracy_bonus,
         magic_evasion_bonus,
         store_tp: store_tp_total,
+        double_attack_pct: double_attack_pct_total,
         total_jp_spent: total_jp,
         effective_skills,
         main_weapon_skill,
@@ -623,9 +652,9 @@ mod tests {
     ///   MP=0     War はメインで MP グレードを持たない（実装上 0 を返す）
     ///
     ///   戦闘ボーナス（ジョブポイント＋ギフト＋ジョブ特性、装備分は別途加算）:
-    ///     物理攻撃 +105 = ジョブ特性 AttackBonus(War91 rank3=35) + ギフト(2100JP→70) + JPカテゴリ(0)
+    ///     物理攻撃 +125 = ジョブ特性 AttackBonus(War91 rank3=35) + ギフト(2100JP→70) + JPカテゴリ idx9(+1×20=20)
     ///     物理命中  +36 = ジョブ特性(0) + ギフト(2100JP→36) + JPカテゴリ(0)
-    ///     ※ JP はカテゴリ全 max=2100JP 累計、War のカテゴリは攻撃/命中に直接寄与なし
+    ///     ※ JP はカテゴリ全 max=2100JP 累計、War カテゴリ idx9「ダブルアタック効果」は物理攻撃力 +1/rank
     ///
     ///   メイン武器有効スキル(両手斧):
     ///     キャップ = job_skill_cap(War99 ML50 GreatAxe A+)=474 + メリット(8rank*2=16) = 490
@@ -634,8 +663,8 @@ mod tests {
     ///
     ///   最終期待値:
     ///     メイン攻撃力 = STR + 武器スキル + 8 + 装備攻撃 + 戦闘ボーナス(攻撃)
-    ///                  = (161+247) + 788 + 8 + 448 + 105
-    ///                  = 408 + 788 + 8 + 448 + 105 = 1757
+    ///                  = (161+247) + 788 + 8 + 448 + 125
+    ///                  = 408 + 788 + 8 + 448 + 125 = 1777
     ///       ※ STR 247 = 装備合計（222 + アスプロ ALL BP+10 + 戦士の数珠オグメ STR+15）
     ///
     ///     メイン命中 = floor(DEX × 0.75) + accuracy_skill_term(skill) + 装備命中 + 戦闘ボーナス(命中)
@@ -723,8 +752,8 @@ mod tests {
         let result = chara_to_status_result(&chara);
 
         assert_eq!(
-            result.main_attack, 1757,
-            "メイン攻撃力: got {} expected 1757",
+            result.main_attack, 1777,
+            "メイン攻撃力: got {} expected 1777",
             result.main_attack
         );
         assert_eq!(
@@ -770,8 +799,9 @@ mod tests {
     ///     キャラスキル値 490 採用 → base 490 + メインスロット(ラフリア +277) = 767
     ///
     ///   メイン攻撃力 = STR + 武器スキル + 8 + 装備攻撃 + 戦闘ボーナス(攻撃)
-    ///                = (161+293) + 767 + 8 + 494 + 105
-    ///                = 454 + 767 + 8 + 494 + 105 = 1828
+    ///                = (161+293) + 767 + 8 + 494 + 125
+    ///                = 454 + 767 + 8 + 494 + 125 = 1848
+    ///       ※ 戦闘ボーナス +125 = 特性35 + ギフト70 + JPカテゴリ idx9(20)
     ///
     ///   メイン命中 = floor(DEX × 0.75) + accuracy_skill_term(skill) + 装備命中 + 戦闘ボーナス(命中)
     ///              = floor((156+145) × 0.75) + accuracy_skill_term(767) + 348 + 36
@@ -857,8 +887,8 @@ mod tests {
         let result = chara_to_status_result(&chara);
 
         assert_eq!(
-            result.main_attack, 1828,
-            "メイン攻撃力: got {} expected 1828",
+            result.main_attack, 1848,
+            "メイン攻撃力: got {} expected 1848",
             result.main_attack
         );
         assert_eq!(
@@ -952,5 +982,146 @@ mod tests {
             "WAR99 ML50/SAM59 サポート Store TP rank3: got {} expected 20",
             result.store_tp
         );
+    }
+
+    // ---- ダブルアタック ----
+
+    /// WAR Lv24 はまだ DA 特性を習得していない。装備分のみ反映。
+    #[test]
+    fn test_war_double_attack_below_lv25() {
+        let bonus = BonusStats {
+            double_attack_pct: 5,
+            ..BonusStats::default()
+        };
+        let chara = Chara::builder()
+            .race(Race::Hum)
+            .main_job(Job::War, 24)
+            .master_lv(0)
+            .bonus_stats(bonus)
+            .build()
+            .expect("Failed to build Chara");
+        let result = chara_to_status_result(&chara);
+        assert_eq!(result.double_attack_pct, 5);
+    }
+
+    /// WAR Lv25 で DA1 (+10%) 習得。装備分との合計を確認。
+    #[test]
+    fn test_war_double_attack_lv25() {
+        let bonus = BonusStats {
+            double_attack_pct: 5,
+            ..BonusStats::default()
+        };
+        let chara = Chara::builder()
+            .race(Race::Hum)
+            .main_job(Job::War, 25)
+            .master_lv(0)
+            .bonus_stats(bonus)
+            .build()
+            .expect("Failed to build Chara");
+        let result = chara_to_status_result(&chara);
+        assert_eq!(
+            result.double_attack_pct, 15,
+            "WAR25 DA: got {} expected 15 (装備5 + 特性10)",
+            result.double_attack_pct
+        );
+    }
+
+    /// WAR Lv99 + 装備 + メリット 5 + 全カテゴリ JP=20（累計 2100JP → DAギフト 4 段全解放 = +10%）
+    /// 装備10 + 特性18 + メリット5 + ギフト10 = 43%
+    #[test]
+    fn test_war_double_attack_full() {
+        let mut merit = MeritPoints::default();
+        let mut war_merits = crate::status::JobMerits::default();
+        war_merits.group1[4] = 5; // ダブルアタック確率
+        merit.job_merits.insert("War".to_string(), war_merits);
+
+        let jp = crate::job_points::JobPointCategories::all_maxed(); // 2100 JP
+
+        let bonus = BonusStats {
+            double_attack_pct: 10,
+            ..BonusStats::default()
+        };
+        let chara = Chara::builder()
+            .race(Race::Hum)
+            .main_job(Job::War, 99)
+            .master_lv(0)
+            .merit_points(merit)
+            .job_points(jp)
+            .bonus_stats(bonus)
+            .build()
+            .expect("Failed to build Chara");
+        let result = chara_to_status_result(&chara);
+        assert_eq!(
+            result.double_attack_pct, 43,
+            "WAR99 DA full: got {} expected 43 (装備10 + 特性18 + メリット5 + ギフト10)",
+            result.double_attack_pct
+        );
+    }
+
+    /// WAR DA ギフトの閾値テスト
+    /// 124JP→0%, 125JP→2%, 449JP→2%, 450JP→4%, 1049JP→4%, 1050JP→7%, 1899JP→7%, 1900JP→10%
+    #[test]
+    fn test_war_da_gift_thresholds() {
+        use crate::job_points::calc_war_da_gift_bonus;
+        assert_eq!(calc_war_da_gift_bonus(0), 0);
+        assert_eq!(calc_war_da_gift_bonus(124), 0);
+        assert_eq!(calc_war_da_gift_bonus(125), 2);
+        assert_eq!(calc_war_da_gift_bonus(449), 2);
+        assert_eq!(calc_war_da_gift_bonus(450), 4);
+        assert_eq!(calc_war_da_gift_bonus(1049), 4);
+        assert_eq!(calc_war_da_gift_bonus(1050), 7);
+        assert_eq!(calc_war_da_gift_bonus(1899), 7);
+        assert_eq!(calc_war_da_gift_bonus(1900), 10);
+        assert_eq!(calc_war_da_gift_bonus(2100), 10);
+    }
+
+    /// WAR JP idx 9「ダブルアタック効果」は物理攻撃力 +1/rank として加算される (DA 率には加算されない)。
+    /// 全カテゴリ JP=20 で +20 物理攻撃。
+    #[test]
+    fn test_war_da_jp_category_is_attack_bonus() {
+        let jp = crate::job_points::JobPointCategories::all_maxed(); // ranks[9] = 20
+        let chara = Chara::builder()
+            .race(Race::Hum)
+            .main_job(Job::War, 99)
+            .master_lv(0)
+            .job_points(jp)
+            .build()
+            .expect("Failed to build Chara");
+        let result = chara_to_status_result(&chara);
+        // attack_bonus = trait(rank3=35) + gift(2100JP→70) + JP idx9(20) = 125
+        assert_eq!(
+            result.attack_bonus, 125,
+            "WAR99 attack_bonus with full JP: got {} expected 125 (trait35 + gift70 + JPidx9 20)",
+            result.attack_bonus
+        );
+        // DA 率は装備0 + 特性18 + メリット0 + ギフト10 = 28%
+        assert_eq!(result.double_attack_pct, 28);
+    }
+
+    /// WAR 以外（SAM99）ではメリット・特性・ギフト DA% ともに 0。
+    #[test]
+    fn test_sam_double_attack_no_trait() {
+        let mut merit = MeritPoints::default();
+        let mut war_merits = crate::status::JobMerits::default();
+        war_merits.group1[4] = 5;
+        merit.job_merits.insert("War".to_string(), war_merits);
+
+        let jp = crate::job_points::JobPointCategories::all_maxed();
+
+        let bonus = BonusStats {
+            double_attack_pct: 7,
+            ..BonusStats::default()
+        };
+        let chara = Chara::builder()
+            .race(Race::Hum)
+            .main_job(Job::Sam, 99)
+            .master_lv(0)
+            .merit_points(merit)
+            .job_points(jp)
+            .bonus_stats(bonus)
+            .build()
+            .expect("Failed to build Chara");
+        let result = chara_to_status_result(&chara);
+        assert_eq!(result.double_attack_pct, 7);
     }
 }

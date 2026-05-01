@@ -122,7 +122,13 @@ function extractAllStats(descriptionEn) {
     set('quad_attack_pct', matchSigned('"Quadruple Attack"\\s*([+-])\\s*(\\d+)%'));
     set('critical_hit_damage_pct', matchSigned('Critical hit damage\\s*([+-])\\s*(\\d+)%'));
     set('critical_hit_rate_pct', matchSigned('Critical hit rate\\s*([+-])\\s*(\\d+)%'));
-    set('weapon_skill_damage_pct', matchSigned('Weapon skill damage\\s*([+-])\\s*(\\d+)%'));
+    // 属性ゴルゲット/ベルト (フォシャ含む) や Rune Algol の WSダメは "Latent effect:" 以下にあり、
+    // 同連携属性 WS 等の発動条件付きのため常時加算しない。"Latent effect:" 以降を除外して判定する。
+    {
+        const nonLatent = text.replace(/Latent effect:[\s\S]*/i, '');
+        const m = nonLatent.match(/Weapon skill damage\s*([+-])\s*(\d+)%/i);
+        set('weapon_skill_damage_pct', m ? (m[1] === '-' ? -1 : 1) * parseInt(m[2], 10) : 0);
+    }
     // モクシャII を先に判定（モクシャの部分一致回避）
     set('subtle_blow_2', matchSigned('"Subtle Blow II"\\s*([+-])\\s*(\\d+)'));
     set('subtle_blow', matchSigned('"Subtle Blow"\\s*([+-])\\s*(\\d+)'));

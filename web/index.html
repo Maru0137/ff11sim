@@ -1231,23 +1231,33 @@
                 <!-- 4. 近接物理 WS -->
                 <div id="subtab-melee-ws" class="status-subtab-content">
                     <table class="status-table">
-                        <thead><tr><th>武器スキル</th><th>攻撃</th><th>命中</th><th>WSダメ</th></tr></thead>
+                        <thead><tr><th>武器スキル</th><th>攻撃</th><th>命中</th></tr></thead>
                         <tbody><tr>
                             <td class="equip-val" id="statMwsSkill">-</td>
                             <td class="equip-val" id="statMwsAtk">-</td>
                             <td class="equip-val" id="statMwsAcc">-</td>
-                            <td class="equip-val" id="statMwsWsdmg">-</td>
                         </tr></tbody>
                     </table>
                     <table class="status-table">
-                        <thead><tr><th>クリ率</th><th>DA</th><th>TA</th><th>STR</th><th>DEX</th><th>VIT</th></tr></thead>
+                        <thead><tr><th>ストアTP</th><th>モクシャ</th><th>モクシャII</th><th>DA</th><th>TA</th><th>QA</th></tr></thead>
                         <tbody><tr>
-                            <td class="equip-val" id="statMwsCrit">-</td>
+                            <td class="equip-val" id="statMwsStp">-</td>
+                            <td class="equip-val" id="statMwsSb">-</td>
+                            <td class="equip-val" id="statMwsSb2">-</td>
                             <td class="equip-val" id="statMwsDa">-</td>
                             <td class="equip-val" id="statMwsTa">-</td>
-                            <td class="equip-val" id="statMwsStr">-</td>
-                            <td class="equip-val" id="statMwsDex">-</td>
-                            <td class="equip-val" id="statMwsVit">-</td>
+                            <td class="equip-val" id="statMwsQa">-</td>
+                        </tr></tbody>
+                    </table>
+                    <table class="status-table">
+                        <thead><tr><th>クリ率</th><th>クリダメ</th><th>WSダメ</th><th>TPボーナス</th><th>連携ボーナス</th><th>物理ダメ上限</th></tr></thead>
+                        <tbody><tr>
+                            <td class="equip-val" id="statMwsCrit">-</td>
+                            <td class="equip-val" id="statMwsCritDmg">-</td>
+                            <td class="equip-val" id="statMwsWsdmg">-</td>
+                            <td class="equip-val" id="statMwsTpb">-</td>
+                            <td class="equip-val" id="statMwsScb">-</td>
+                            <td class="equip-val" id="statMwsPdl">-</td>
                         </tr></tbody>
                     </table>
                 </div>
@@ -1255,20 +1265,31 @@
                 <!-- 5. 遠隔物理 WS -->
                 <div id="subtab-ranged-ws" class="status-subtab-content">
                     <table class="status-table">
-                        <thead><tr><th>武器スキル</th><th>飛攻</th><th>飛命</th><th>WSダメ</th></tr></thead>
+                        <thead><tr><th>武器スキル</th><th>飛攻</th><th>飛命</th></tr></thead>
                         <tbody><tr>
                             <td class="equip-val" id="statRwsSkill">-</td>
                             <td class="equip-val" id="statRwsAtk">-</td>
                             <td class="equip-val" id="statRwsAcc">-</td>
-                            <td class="equip-val" id="statRwsWsdmg">-</td>
                         </tr></tbody>
                     </table>
                     <table class="status-table">
-                        <thead><tr><th>STR</th><th>AGI</th><th>DEX</th></tr></thead>
+                        <thead><tr><th>ストアTP</th><th>モクシャ</th><th>モクシャII</th><th>クリ率</th><th>クリダメ</th></tr></thead>
                         <tbody><tr>
-                            <td class="equip-val" id="statRwsStr">-</td>
-                            <td class="equip-val" id="statRwsAgi">-</td>
-                            <td class="equip-val" id="statRwsDex">-</td>
+                            <td class="equip-val" id="statRwsStp">-</td>
+                            <td class="equip-val" id="statRwsSb">-</td>
+                            <td class="equip-val" id="statRwsSb2">-</td>
+                            <td class="equip-val" id="statRwsCrit">-</td>
+                            <td class="equip-val" id="statRwsCritDmg">-</td>
+                        </tr></tbody>
+                    </table>
+                    <table class="status-table">
+                        <thead><tr><th>WSダメ</th><th>TPボーナス</th><th>連携ボーナス</th><th>物理ダメ上限</th><th>トゥルーショット</th></tr></thead>
+                        <tbody><tr>
+                            <td class="equip-val" id="statRwsWsdmg">-</td>
+                            <td class="equip-val" id="statRwsTpb">-</td>
+                            <td class="equip-val" id="statRwsScb">-</td>
+                            <td class="equip-val" id="statRwsPdl">-</td>
+                            <td class="equip-val" id="statRwsTs">-</td>
                         </tr></tbody>
                     </table>
                 </div>
@@ -1276,22 +1297,43 @@
                 <!-- 6. 属性 WS -->
                 <div id="subtab-elemental-ws" class="status-subtab-content">
                     <table class="status-table">
-                        <thead><tr><th>武器スキル</th><th>魔攻</th><th>魔命</th><th>魔法ダメ</th><th>WSダメ</th></tr></thead>
+                        <thead><tr><th></th><th>武器スキル</th><th>魔命スキル</th></tr></thead>
+                        <tbody>
+                            <tr>
+                                <td>メイン</td>
+                                <td class="equip-val" id="statEwsMainSkill">-</td>
+                                <td class="equip-val" id="statEwsMainMaccSkill">-</td>
+                            </tr>
+                            <tr>
+                                <td>サブ</td>
+                                <td class="equip-val" id="statEwsSubSkill">-</td>
+                                <td class="equip-val">-</td>
+                            </tr>
+                            <tr>
+                                <td>レンジ</td>
+                                <td class="equip-val" id="statEwsRangedSkill">-</td>
+                                <td class="equip-val">-</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                    <table class="status-table">
+                        <thead><tr><th>ストアTP</th><th>モクシャ</th><th>モクシャII</th><th>魔攻</th><th>魔法ダメ</th></tr></thead>
                         <tbody><tr>
-                            <td class="equip-val" id="statEwsSkill">-</td>
+                            <td class="equip-val" id="statEwsStp">-</td>
+                            <td class="equip-val" id="statEwsSb">-</td>
+                            <td class="equip-val" id="statEwsSb2">-</td>
                             <td class="equip-val" id="statEwsMatk">-</td>
-                            <td class="equip-val" id="statEwsMacc">-</td>
                             <td class="equip-val" id="statEwsMdmg">-</td>
-                            <td class="equip-val" id="statEwsWsdmg">-</td>
                         </tr></tbody>
                     </table>
                     <table class="status-table">
-                        <thead><tr><th>STR</th><th>DEX</th><th>INT</th><th>MND</th></tr></thead>
+                        <thead><tr><th>アフィニティ</th><th>魔クリII</th><th>WSダメ</th><th>TPボーナス</th><th>連携ボーナス</th></tr></thead>
                         <tbody><tr>
-                            <td class="equip-val" id="statEwsStr">-</td>
-                            <td class="equip-val" id="statEwsDex">-</td>
-                            <td class="equip-val" id="statEwsInt">-</td>
-                            <td class="equip-val" id="statEwsMnd">-</td>
+                            <td class="equip-val" id="statEwsAff">-</td>
+                            <td class="equip-val" id="statEwsMcrit2">-</td>
+                            <td class="equip-val" id="statEwsWsdmg">-</td>
+                            <td class="equip-val" id="statEwsTpb">-</td>
+                            <td class="equip-val" id="statEwsScb">-</td>
                         </tr></tbody>
                     </table>
                 </div>
@@ -2793,33 +2835,50 @@
                 setText('statMwsSkill', formatWeaponSkill(totalStats.main_weapon_skill, totalStats.main_weapon_skill_value));
                 setText('statMwsAtk', numOrDash(totalStats.main_attack));
                 setText('statMwsAcc', numOrDash(totalStats.main_accuracy));
-                setText('statMwsWsdmg', pctOrDash(wsDamagePct));
-                setText('statMwsCrit', pctOrDash(equip.critical_hit_rate_pct));
+                setText('statMwsStp', numOrDash(totalStats.store_tp));
+                setText('statMwsSb', numOrDash(equip.subtle_blow));
+                setText('statMwsSb2', numOrDash(equip.subtle_blow_2));
                 setText('statMwsDa', pctOrDash(totalStats.double_attack_pct));
                 setText('statMwsTa', pctOrDash(equip.triple_attack_pct));
-                setText('statMwsStr', totalStats.str_ || '-');
-                setText('statMwsDex', totalStats.dex || '-');
-                setText('statMwsVit', totalStats.vit || '-');
+                setText('statMwsQa', pctOrDash(equip.quad_attack_pct));
+                setText('statMwsCrit', pctOrDash(equip.critical_hit_rate_pct));
+                setText('statMwsCritDmg', pctOrDash(equip.critical_hit_damage_pct));
+                setText('statMwsWsdmg', pctOrDash(wsDamagePct));
+                setText('statMwsTpb', numOrDash(equip.tp_bonus));
+                setText('statMwsScb', numOrDash(equip.skillchain_bonus));
+                setText('statMwsPdl', pctOrDash(equip.physical_damage_limit_pct));
 
                 // ----- Tab 5: 遠隔物理 WS -----
                 setText('statRwsSkill', formatWeaponSkill(totalStats.ranged_weapon_skill, totalStats.ranged_weapon_skill_value));
                 setText('statRwsAtk', totalStats.ranged_attack != null ? totalStats.ranged_attack : '-');
                 setText('statRwsAcc', totalStats.ranged_accuracy != null ? totalStats.ranged_accuracy : '-');
+                setText('statRwsStp', numOrDash(totalStats.store_tp));
+                setText('statRwsSb', numOrDash(equip.subtle_blow));
+                setText('statRwsSb2', numOrDash(equip.subtle_blow_2));
+                setText('statRwsCrit', pctOrDash(equip.critical_hit_rate_pct));
+                setText('statRwsCritDmg', pctOrDash(equip.critical_hit_damage_pct));
                 setText('statRwsWsdmg', pctOrDash(wsDamagePct));
-                setText('statRwsStr', totalStats.str_ || '-');
-                setText('statRwsAgi', totalStats.agi || '-');
-                setText('statRwsDex', totalStats.dex || '-');
+                setText('statRwsTpb', numOrDash(equip.tp_bonus));
+                setText('statRwsScb', numOrDash(equip.skillchain_bonus));
+                setText('statRwsPdl', pctOrDash(equip.physical_damage_limit_pct));
+                setText('statRwsTs', numOrDash(equip.true_shot));
 
                 // ----- Tab 6: 属性 WS -----
-                setText('statEwsSkill', formatWeaponSkill(totalStats.main_weapon_skill, totalStats.main_weapon_skill_value));
+                // 魔命スキルはメイン武器スロットの装備分のみ表示 (サブ/レンジは UI 上ダッシュ固定)。
+                setText('statEwsMainSkill', formatWeaponSkill(totalStats.main_weapon_skill, totalStats.main_weapon_skill_value));
+                setText('statEwsMainMaccSkill', numOrDash(equip.slot_stats?.main?.magic_accuracy_skill || 0));
+                setText('statEwsSubSkill', formatWeaponSkill(totalStats.sub_weapon_skill, totalStats.sub_weapon_skill_value));
+                setText('statEwsRangedSkill', formatWeaponSkill(totalStats.ranged_weapon_skill, totalStats.ranged_weapon_skill_value));
+                setText('statEwsStp', numOrDash(totalStats.store_tp));
+                setText('statEwsSb', numOrDash(equip.subtle_blow));
+                setText('statEwsSb2', numOrDash(equip.subtle_blow_2));
                 setText('statEwsMatk', numOrDash(magicAttackTotal));
-                setText('statEwsMacc', numOrDash(magicAccuracyTotal));
                 setText('statEwsMdmg', numOrDash(magicDamageTotal));
+                setText('statEwsAff', numOrDash(equip.magic_affinity));
+                setText('statEwsMcrit2', pctOrDash(equip.magic_critical_hit_2_pct));
                 setText('statEwsWsdmg', pctOrDash(wsDamagePct));
-                setText('statEwsStr', totalStats.str_ || '-');
-                setText('statEwsDex', totalStats.dex || '-');
-                setText('statEwsInt', totalStats.int || '-');
-                setText('statEwsMnd', totalStats.mnd || '-');
+                setText('statEwsTpb', numOrDash(equip.tp_bonus));
+                setText('statEwsScb', numOrDash(equip.skillchain_bonus));
 
                 // ----- Tab 7: 魔法 -----
                 setText('statMgMatk', numOrDash(magicAttackTotal));
@@ -2880,14 +2939,18 @@
                 // Tab 3: 遠隔
                 'statRaSkill', 'statRaAtk', 'statRaAcc', 'statRaStr', 'statRaAgi', 'statRaStp',
                 // Tab 4: 近接 WS
-                'statMwsSkill', 'statMwsAtk', 'statMwsAcc', 'statMwsWsdmg',
-                'statMwsCrit', 'statMwsDa', 'statMwsTa', 'statMwsStr', 'statMwsDex', 'statMwsVit',
+                'statMwsSkill', 'statMwsAtk', 'statMwsAcc',
+                'statMwsStp', 'statMwsSb', 'statMwsSb2', 'statMwsDa', 'statMwsTa', 'statMwsQa',
+                'statMwsCrit', 'statMwsCritDmg', 'statMwsWsdmg', 'statMwsTpb', 'statMwsScb', 'statMwsPdl',
                 // Tab 5: 遠隔 WS
-                'statRwsSkill', 'statRwsAtk', 'statRwsAcc', 'statRwsWsdmg',
-                'statRwsStr', 'statRwsAgi', 'statRwsDex',
+                'statRwsSkill', 'statRwsAtk', 'statRwsAcc',
+                'statRwsStp', 'statRwsSb', 'statRwsSb2', 'statRwsCrit', 'statRwsCritDmg',
+                'statRwsWsdmg', 'statRwsTpb', 'statRwsScb', 'statRwsPdl', 'statRwsTs',
                 // Tab 6: 属性 WS
-                'statEwsSkill', 'statEwsMatk', 'statEwsMacc', 'statEwsMdmg', 'statEwsWsdmg',
-                'statEwsStr', 'statEwsDex', 'statEwsInt', 'statEwsMnd',
+                'statEwsMainSkill', 'statEwsMainMaccSkill',
+                'statEwsSubSkill', 'statEwsRangedSkill',
+                'statEwsStp', 'statEwsSb', 'statEwsSb2', 'statEwsMatk', 'statEwsMdmg',
+                'statEwsAff', 'statEwsMcrit2', 'statEwsWsdmg', 'statEwsTpb', 'statEwsScb',
                 // Tab 7: 魔法
                 'statMgMatk', 'statMgMacc', 'statMgMeva', 'statMgMdmg',
                 'statMgInt', 'statMgMnd', 'statMgChr', 'statMgMp',
@@ -2959,6 +3022,8 @@
             // Longer patterns first to avoid partial matches
             ['ウェポンスキルのダメージ', 'Weapon skill damage'],
             ['マジックバーストダメージ', 'Magic burst damage'],
+            ['魔法クリティカルヒットII', 'Magic Crit. Hit Rate II'],
+            ['魔法クリティカルヒット率', 'Magic Critical hit rate'],
             ['物理ダメージ上限', 'Physical damage limit'],
             ['被物理ダメージ', 'Physical damage taken'],
             ['被魔法ダメージ', 'Magic damage taken'],
@@ -2974,6 +3039,10 @@
             ['魔法ダメージ', 'Magic Damage'],
             ['被ダメージ', 'Damage taken'],
             ['ストアTP', '"Store TP"'],
+            ['TPボーナス', '"TP Bonus"'],
+            ['連携ボーナス', '"Skillchain Bonus"'],
+            ['トゥルーショット', '"True Shot"'],
+            ['アフィニティ', 'Affinity'],
             ['ヘイスト', 'Haste'],
             ['魔回避', 'Magic Evasion'],
             ['飛攻', 'Ranged Attack'],
@@ -3068,6 +3137,10 @@
 
             console.log('[DEBUG] Processing slots:', slots);
             const statsArray = [];
+            // 武器スロット (main/sub/range) ごとの装備合計を別途保持。
+            // 一部の装備ステ (例: 魔命スキル) は装備中スロットに依存して扱いが変わるため、
+            // UI で「メイン枠のみ表示」のような出し分けに使う。
+            const slotStatsBuckets = { main: [], sub: [], ranged: [] };
             // スキルボーナスをスロット別に集計:
             // 武器スロット(main/sub/range)装備の「武器スキル」ボーナスはそのスロット専用。
             // それ以外（非武器スロット装備すべて、武器スロット装備の非武器スキル）は全スロット共通。
@@ -3095,10 +3168,14 @@
                 const item = itemSearch.items.find(i => i.id === slotData.item_id);
                 console.log('[DEBUG] Slot:', slotKey, 'Item:', item?.en, 'Has description_en:', !!item?.description_en);
 
+                const targetWeaponBucket = slotKey === 'range' ? 'ranged' : slotKey;
+                const isWeaponSlot = (slotKey === 'main' || slotKey === 'sub' || slotKey === 'range');
+
                 if (item && item.description_en) {
                     const stats = extractAllStats(item.description_en);
                     console.log('[DEBUG] Extracted stats:', stats);
                     statsArray.push(stats);
+                    if (isWeaponSlot) slotStatsBuckets[targetWeaponBucket].push(stats);
                     addSkillBonuses(slotKey, extractSkillBonuses(item.description_en));
                 }
 
@@ -3107,6 +3184,7 @@
                     const augEn = convertAugmentJaToEn(augText);
                     const augStats = extractAllStats(augEn);
                     statsArray.push(augStats);
+                    if (isWeaponSlot) slotStatsBuckets[targetWeaponBucket].push(augStats);
                     addSkillBonuses(slotKey, extractSkillBonuses(augEn));
                 }
 
@@ -3115,6 +3193,7 @@
                     const customStats = extractAllStats(customEn);
                     console.log('[DEBUG] Custom stats:', customStats);
                     statsArray.push(customStats);
+                    if (isWeaponSlot) slotStatsBuckets[targetWeaponBucket].push(customStats);
                     addSkillBonuses(slotKey, extractSkillBonuses(customEn));
                 }
             }
@@ -3124,6 +3203,12 @@
             result.skill_bonus_sub = skillBonusBuckets.sub;
             result.skill_bonus_ranged = skillBonusBuckets.ranged;
             result.skill_bonus_global = skillBonusBuckets.global;
+            // 武器スロット別装備合計 (魔命スキルなどスロット依存表示用)
+            result.slot_stats = {
+                main: sumStats(slotStatsBuckets.main),
+                sub: sumStats(slotStatsBuckets.sub),
+                ranged: sumStats(slotStatsBuckets.ranged),
+            };
             console.log('[DEBUG] Total stats:', result);
             return result;
         }

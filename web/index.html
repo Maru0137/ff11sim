@@ -1142,6 +1142,7 @@
                     <button class="status-subtab-btn" data-subtab="subtab-ranged-ws" type="button">遠隔物理WS</button>
                     <button class="status-subtab-btn" data-subtab="subtab-elemental-ws" type="button">属性WS</button>
                     <button class="status-subtab-btn" data-subtab="subtab-melee-elemental-ws" type="button">近接属性物理WS</button>
+                    <button class="status-subtab-btn" data-subtab="subtab-ranged-elemental-ws" type="button">遠隔属性物理WS</button>
                     <button class="status-subtab-btn" data-subtab="subtab-magic" type="button">魔法</button>
                 </div>
 
@@ -1383,7 +1384,51 @@
                     </table>
                 </div>
 
-                <!-- 8. 魔法 -->
+                <!-- 8. 遠隔属性物理 WS -->
+                <div id="subtab-ranged-elemental-ws" class="status-subtab-content">
+                    <table class="status-table">
+                        <thead><tr><th>武器スキル</th><th>飛攻</th><th>飛命</th><th>魔命スキル</th><th>魔命合計</th></tr></thead>
+                        <tbody><tr>
+                            <td class="equip-val" id="statRewsSkill">-</td>
+                            <td class="equip-val" id="statRewsAtk">-</td>
+                            <td class="equip-val" id="statRewsAcc">-</td>
+                            <td class="equip-val" id="statRewsMaccSkill">-</td>
+                            <td class="equip-val" id="statRewsMaccTotal">-</td>
+                        </tr></tbody>
+                    </table>
+                    <table class="status-table">
+                        <thead><tr><th>魔攻</th><th>魔命</th><th>魔法ダメ</th><th>アフィニティ</th><th>魔クリII</th></tr></thead>
+                        <tbody><tr>
+                            <td class="equip-val" id="statRewsMatk">-</td>
+                            <td class="equip-val" id="statRewsMacc">-</td>
+                            <td class="equip-val" id="statRewsMdmg">-</td>
+                            <td class="equip-val" id="statRewsAff">-</td>
+                            <td class="equip-val" id="statRewsMcrit2">-</td>
+                        </tr></tbody>
+                    </table>
+                    <table class="status-table">
+                        <thead><tr><th>ストアTP</th><th>モクシャ</th><th>モクシャII</th><th>クリ率</th><th>クリダメ</th></tr></thead>
+                        <tbody><tr>
+                            <td class="equip-val" id="statRewsStp">-</td>
+                            <td class="equip-val" id="statRewsSb">-</td>
+                            <td class="equip-val" id="statRewsSb2">-</td>
+                            <td class="equip-val" id="statRewsCrit">-</td>
+                            <td class="equip-val" id="statRewsCritDmg">-</td>
+                        </tr></tbody>
+                    </table>
+                    <table class="status-table">
+                        <thead><tr><th>WSダメ</th><th>TPボーナス</th><th>連携ボーナス</th><th>物理ダメ上限</th><th>トゥルーショット</th></tr></thead>
+                        <tbody><tr>
+                            <td class="equip-val" id="statRewsWsdmg">-</td>
+                            <td class="equip-val" id="statRewsTpb">-</td>
+                            <td class="equip-val" id="statRewsScb">-</td>
+                            <td class="equip-val" id="statRewsPdl">-</td>
+                            <td class="equip-val" id="statRewsTs">-</td>
+                        </tr></tbody>
+                    </table>
+                </div>
+
+                <!-- 9. 魔法 -->
                 <div id="subtab-magic" class="status-subtab-content">
                     <table class="status-table">
                         <thead><tr><th>魔攻</th><th>魔命</th><th>魔回避</th><th>魔法ダメ</th></tr></thead>
@@ -2957,7 +3002,31 @@
                 setText('statMewsScb', numOrDash(equip.skillchain_bonus));
                 setText('statMewsPdl', pctOrDash(equip.physical_damage_limit_pct));
 
-                // ----- Tab 8: 魔法 -----
+                // ----- Tab 8: 遠隔属性物理 WS -----
+                // レンジ枠基準: 武器スキルはレンジ、攻撃/命中は飛攻/飛命。
+                // 魔命合計は レンジ武器スキル値 + メイン魔命スキル + 魔命総合 の合算。
+                setText('statRewsSkill', formatWeaponSkill(totalStats.ranged_weapon_skill, totalStats.ranged_weapon_skill_value));
+                setText('statRewsAtk', numOrDash(totalStats.ranged_attack));
+                setText('statRewsAcc', numOrDash(totalStats.ranged_accuracy));
+                setText('statRewsMaccSkill', numOrDash(mainMaccSkill));
+                setText('statRewsMaccTotal', numOrDash(rangedSkillValue + mainMaccSkill + magicAccuracyTotal));
+                setText('statRewsMatk', numOrDash(magicAttackTotal));
+                setText('statRewsMacc', numOrDash(magicAccuracyTotal));
+                setText('statRewsMdmg', numOrDash(magicDamageTotal));
+                setText('statRewsAff', numOrDash(equip.magic_affinity));
+                setText('statRewsMcrit2', pctOrDash(equip.magic_critical_hit_2_pct));
+                setText('statRewsStp', numOrDash(totalStats.store_tp));
+                setText('statRewsSb', numOrDash(equip.subtle_blow));
+                setText('statRewsSb2', numOrDash(equip.subtle_blow_2));
+                setText('statRewsCrit', pctOrDash(equip.critical_hit_rate_pct));
+                setText('statRewsCritDmg', pctOrDash(equip.critical_hit_damage_pct));
+                setText('statRewsWsdmg', pctOrDash(wsDamagePct));
+                setText('statRewsTpb', numOrDash(equip.tp_bonus));
+                setText('statRewsScb', numOrDash(equip.skillchain_bonus));
+                setText('statRewsPdl', pctOrDash(equip.physical_damage_limit_pct));
+                setText('statRewsTs', numOrDash(equip.true_shot));
+
+                // ----- Tab 9: 魔法 -----
                 setText('statMgMatk', numOrDash(magicAttackTotal));
                 setText('statMgMacc', numOrDash(magicAccuracyTotal));
                 setText('statMgMeva', numOrDash(magicEvasionTotal));
@@ -3033,7 +3102,12 @@
                 'statMewsMatk', 'statMewsMacc', 'statMewsMdmg', 'statMewsAff', 'statMewsMcrit2',
                 'statMewsStp', 'statMewsSb', 'statMewsSb2', 'statMewsDa', 'statMewsTa', 'statMewsQa',
                 'statMewsCrit', 'statMewsCritDmg', 'statMewsWsdmg', 'statMewsTpb', 'statMewsScb', 'statMewsPdl',
-                // Tab 8: 魔法
+                // Tab 8: 遠隔属性物理 WS
+                'statRewsSkill', 'statRewsAtk', 'statRewsAcc', 'statRewsMaccSkill', 'statRewsMaccTotal',
+                'statRewsMatk', 'statRewsMacc', 'statRewsMdmg', 'statRewsAff', 'statRewsMcrit2',
+                'statRewsStp', 'statRewsSb', 'statRewsSb2', 'statRewsCrit', 'statRewsCritDmg',
+                'statRewsWsdmg', 'statRewsTpb', 'statRewsScb', 'statRewsPdl', 'statRewsTs',
+                // Tab 9: 魔法
                 'statMgMatk', 'statMgMacc', 'statMgMeva', 'statMgMdmg',
                 'statMgInt', 'statMgMnd', 'statMgChr', 'statMgMp',
             ];

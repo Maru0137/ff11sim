@@ -1297,17 +1297,19 @@
                 <!-- 6. 属性 WS -->
                 <div id="subtab-elemental-ws" class="status-subtab-content">
                     <table class="status-table">
-                        <thead><tr><th></th><th>武器スキル</th><th>魔命スキル</th></tr></thead>
+                        <thead><tr><th></th><th>武器スキル</th><th>魔命スキル</th><th>魔命合計</th></tr></thead>
                         <tbody>
                             <tr>
                                 <td>メイン</td>
                                 <td class="equip-val" id="statEwsMainSkill">-</td>
                                 <td class="equip-val" id="statEwsMainMaccSkill">-</td>
+                                <td class="equip-val" id="statEwsMainMaccTotal">-</td>
                             </tr>
                             <tr>
                                 <td>レンジ</td>
                                 <td class="equip-val" id="statEwsRangedSkill">-</td>
                                 <td class="equip-val">-</td>
+                                <td class="equip-val" id="statEwsRangedMaccTotal">-</td>
                             </tr>
                         </tbody>
                     </table>
@@ -2861,9 +2863,15 @@
 
                 // ----- Tab 6: 属性 WS -----
                 // 魔命スキルはメイン武器スロットの装備分のみ表示 (サブ/レンジは UI 上ダッシュ固定)。
+                // 魔命合計 = 各行の武器スキル値 + メインの魔命スキル + 魔命総合 (装備 + ボーナス)。
+                const mainMaccSkill = equip.slot_stats?.main?.magic_accuracy_skill || 0;
+                const mainSkillValue = totalStats.main_weapon_skill_value || 0;
+                const rangedSkillValue = totalStats.ranged_weapon_skill_value || 0;
                 setText('statEwsMainSkill', formatWeaponSkill(totalStats.main_weapon_skill, totalStats.main_weapon_skill_value));
-                setText('statEwsMainMaccSkill', numOrDash(equip.slot_stats?.main?.magic_accuracy_skill || 0));
+                setText('statEwsMainMaccSkill', numOrDash(mainMaccSkill));
+                setText('statEwsMainMaccTotal', numOrDash(mainSkillValue + mainMaccSkill + magicAccuracyTotal));
                 setText('statEwsRangedSkill', formatWeaponSkill(totalStats.ranged_weapon_skill, totalStats.ranged_weapon_skill_value));
+                setText('statEwsRangedMaccTotal', numOrDash(rangedSkillValue + mainMaccSkill + magicAccuracyTotal));
                 setText('statEwsMatk', numOrDash(magicAttackTotal));
                 setText('statEwsMacc', numOrDash(magicAccuracyTotal));
                 setText('statEwsStp', numOrDash(totalStats.store_tp));
@@ -2943,8 +2951,8 @@
                 'statRwsStp', 'statRwsSb', 'statRwsSb2', 'statRwsCrit', 'statRwsCritDmg',
                 'statRwsWsdmg', 'statRwsTpb', 'statRwsScb', 'statRwsPdl', 'statRwsTs',
                 // Tab 6: 属性 WS
-                'statEwsMainSkill', 'statEwsMainMaccSkill',
-                'statEwsRangedSkill',
+                'statEwsMainSkill', 'statEwsMainMaccSkill', 'statEwsMainMaccTotal',
+                'statEwsRangedSkill', 'statEwsRangedMaccTotal',
                 'statEwsMatk', 'statEwsMacc', 'statEwsStp', 'statEwsSb', 'statEwsSb2', 'statEwsMdmg',
                 'statEwsAff', 'statEwsMcrit2', 'statEwsWsdmg', 'statEwsTpb', 'statEwsScb',
                 // Tab 7: 魔法

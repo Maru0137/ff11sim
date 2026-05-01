@@ -94,8 +94,12 @@ function extractAllStats(descriptionEn) {
     // === Combat stats (specific before general to avoid false matches) ===
     set('ranged_attack', matchSigned('Ranged Attack\\s*([+-])\\s*(\\d+)(?!%)'));
     set('ranged_accuracy', matchSigned('Ranged Accuracy\\s*([+-])\\s*(\\d+)'));
-    set('magic_attack', matchSigned('"Magic Atk\\.? Bonus"\\s*([+-])\\s*(\\d+)'));
+    // 属性別 Magic Atk. Bonus (例: "Dark Elemental \"Magic Atk. Bonus\"+28") は通常の魔攻に積まれない。
+    // 直前に "Elemental " (Dark/Light/Fire/Ice/Wind/Earth/Lightning/Water) を伴うものを除外する。
+    set('magic_attack', matchSigned('(?<!Elemental )"Magic Atk\\.? Bonus"\\s*([+-])\\s*(\\d+)'));
     set('magic_accuracy', matchSigned('Magic Accuracy\\s*([+-])\\s*(\\d+)'));
+    // 魔命スキル: 装備の "Magic Accuracy skill +X" は通常の魔命と別枠。
+    set('magic_accuracy_skill', matchSigned('Magic Accuracy skill\\s*([+-])\\s*(\\d+)'));
     set('magic_evasion', matchSigned('Magic Evasion\\s*([+-])\\s*(\\d+)'));
     set('magic_damage', matchSigned('Magic [Dd]amage\\s*([+-])\\s*(\\d+)'));
 
@@ -122,6 +126,21 @@ function extractAllStats(descriptionEn) {
     // モクシャII を先に判定（モクシャの部分一致回避）
     set('subtle_blow_2', matchSigned('"Subtle Blow II"\\s*([+-])\\s*(\\d+)'));
     set('subtle_blow', matchSigned('"Subtle Blow"\\s*([+-])\\s*(\\d+)'));
+
+    // TPボーナス: "TP Bonus +X" / "\"TP Bonus\" +X"。
+    // 直前が "Avatar:"/"Wyvern:"/"Automaton:"/"All Jumps " 等の修飾語の場合はペット/特定アビ専用なので除外。
+    set('tp_bonus', matchSigned('(?<!Avatar:\\s)(?<!Wyvern:\\s)(?<!Automaton:\\s)(?<!All Jumps )"?TP Bonus"?\\s*([+-])\\s*(\\d+)'));
+    // 連携ボーナス: "Skillchain bonus +X" / "\"Skillchain Bonus\" +X"
+    set('skillchain_bonus', matchSigned('"?Skillchain [Bb]onus"?\\s*([+-])\\s*(\\d+)'));
+    // 物理ダメージ上限: "Physical damage limit+X%"
+    set('physical_damage_limit_pct', matchSigned('Physical damage limit\\s*([+-])\\s*(\\d+)%'));
+    // トゥルーショット: "True Shot"+X (RNG専用、適正距離における命中・ダメージ補正)
+    set('true_shot', matchSigned('"True Shot"\\s*([+-])\\s*(\\d+)'));
+    // 魔法クリティカルヒットII: "Magic Crit. Hit Rate II +X%" / "Magic critical hit rate II +X%"
+    set('magic_critical_hit_2_pct', matchSigned('Magic [Cc]rit(?:ical|\\.) [Hh]it [Rr]ate II\\s*([+-])\\s*(\\d+)%'));
+    // アフィニティ (魔法属性アフィニティ): エンゲージウェポンや一部装備で見られる "Affinity+X" 形式
+    // 現状 items.json では装備記述に出現しないため、将来の装備追加に備えた parser のみ用意。
+    set('magic_affinity', matchSigned('(?<![A-Za-z])Affinity\\s*([+-])\\s*(\\d+)'));
 
     // === Damage taken stats ===
     set('damage_taken_pct', matchSigned('(?<!Physical )(?<!Magic )Damage taken\\s*([+-])\\s*(\\d+)%'));
@@ -249,13 +268,16 @@ function getEmptyStats() {
         def: 0, attack: 0, accuracy: 0, evasion: 0,
         attack_pct: 0,
         ranged_attack: 0, ranged_accuracy: 0,
-        magic_attack: 0, magic_accuracy: 0, magic_evasion: 0, magic_damage: 0,
+        magic_attack: 0, magic_accuracy: 0, magic_accuracy_skill: 0, magic_evasion: 0, magic_damage: 0,
         haste_pct: 0, store_tp: 0,
         double_attack_pct: 0, triple_attack_pct: 0, quad_attack_pct: 0,
         double_attack_damage_pct: 0, triple_attack_damage_pct: 0,
         critical_hit_rate_pct: 0, critical_hit_damage_pct: 0,
         weapon_skill_damage_pct: 0,
         subtle_blow: 0, subtle_blow_2: 0,
+        tp_bonus: 0, skillchain_bonus: 0, physical_damage_limit_pct: 0,
+        true_shot: 0,
+        magic_critical_hit_2_pct: 0, magic_affinity: 0,
         damage_taken_pct: 0, physical_damage_taken_pct: 0, magic_damage_taken_pct: 0,
         magic_def_bonus: 0,
         dmg: 0, delay: 0,

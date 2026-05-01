@@ -113,231 +113,228 @@ impl GiftBonuses {
     }
 }
 
-/// ギフト 1 スロット分の定義（ステータス種別 + 4 ティアの効果量）
+/// ギフト 1 スロット分の定義（ステータス種別 + 4 ティア）。
+/// 各ティアは `(累計 JP 閾値, 効果値)` の組で、閾値は単調増加する。
+/// 同一ステータスでもジョブごとに閾値が異なる場合があるため、スロット側に閾値を埋め込む。
 #[derive(Debug, Clone, Copy)]
 struct GiftSlotDef {
     stat: GiftStatKind,
-    values: [i32; 4],
+    tiers: [(i32, i32); 4],
 }
 
-const fn slot(stat: GiftStatKind, values: [i32; 4]) -> GiftSlotDef {
-    GiftSlotDef { stat, values }
+const fn slot(stat: GiftStatKind, tiers: [(i32, i32); 4]) -> GiftSlotDef {
+    GiftSlotDef { stat, tiers }
 }
-
-/// ギフトスロットの閾値（全ジョブ共通）。
-/// 6 スロット × 4 ティアで、各スロットの 4 ティアの必要 JP は固定。
-const GIFT_THRESHOLDS: [[i32; 4]; 6] = [
-    [5, 180, 605, 1280],
-    [10, 210, 660, 1360],
-    [20, 245, 720, 1445],
-    [30, 280, 780, 1530],
-    [45, 320, 845, 1620],
-    [60, 360, 910, 1710],
-];
 
 use GiftStatKind::*;
 
 /// 22 ジョブ分のギフト（ステータス系）スロット定義。
 /// Job enum の順序に従う: War, Mnk, Whm, Blm, Rdm, Thf, Pld, Drk, Bst, Brd, Rng, Sam,
 ///                       Nin, Drg, Smn, Blu, Cor, Pup, Dnc, Sch, Geo, Run
-const JOB_GIFTS: [[GiftSlotDef; 6]; 22] = [
+/// スロット数はジョブごとに異なる（最大 7）。
+const JOB_GIFTS: [&'static [GiftSlotDef]; 22] = [
     // War
-    [
-        slot(PhysicalDefense, [10, 15, 20, 25]),
-        slot(PhysicalAttack, [10, 15, 20, 25]),
-        slot(PhysicalEvasion, [5, 8, 10, 13]),
-        slot(PhysicalAccuracy, [5, 8, 10, 13]),
-        slot(MagicEvasion, [5, 8, 10, 13]),
-        slot(MagicAccuracy, [5, 8, 10, 13]),
+    &[
+        slot(PhysicalDefense, [(5, 10), (180, 15), (605, 20), (1280, 25)]),
+        slot(PhysicalAttack, [(10, 10), (210, 15), (660, 20), (1360, 25)]),
+        slot(PhysicalEvasion, [(20, 5), (245, 8), (720, 10), (1445, 13)]),
+        slot(PhysicalAccuracy, [(30, 5), (280, 8), (780, 10), (1530, 13)]),
+        slot(MagicEvasion, [(45, 5), (320, 8), (845, 10), (1620, 13)]),
+        slot(MagicAccuracy, [(60, 5), (360, 8), (910, 10), (1710, 13)]),
     ],
     // Mnk
-    [
-        slot(PhysicalDefense, [5, 8, 10, 13]),
-        slot(PhysicalAttack, [8, 12, 16, 20]),
-        slot(PhysicalEvasion, [6, 9, 12, 15]),
-        slot(PhysicalAccuracy, [6, 9, 11, 15]),
-        slot(MagicEvasion, [5, 8, 10, 13]),
-        slot(MagicAccuracy, [5, 8, 10, 13]),
+    &[
+        slot(PhysicalDefense, [(5, 5), (180, 8), (605, 10), (1280, 13)]),
+        slot(PhysicalAttack, [(10, 8), (210, 12), (660, 16), (1360, 20)]),
+        slot(PhysicalEvasion, [(20, 6), (245, 9), (720, 12), (1445, 15)]),
+        slot(PhysicalAccuracy, [(30, 6), (280, 9), (780, 11), (1530, 15)]),
+        slot(MagicEvasion, [(45, 5), (320, 8), (845, 10), (1620, 13)]),
+        slot(MagicAccuracy, [(60, 5), (360, 8), (910, 10), (1710, 13)]),
     ],
     // Whm
-    [
-        slot(MagicDefense, [7, 11, 14, 18]),
-        slot(MagicAttack, [3, 5, 6, 8]),
-        slot(MagicEvasion, [7, 11, 14, 18]),
-        slot(MagicAccuracy, [7, 11, 14, 18]),
-        slot(PhysicalAccuracy, [2, 3, 4, 5]),
-        slot(None, [0, 0, 0, 0]),
+    &[
+        slot(MagicDefense, [(5, 7), (180, 11), (605, 14), (1280, 18)]),
+        slot(MagicAttack, [(10, 3), (210, 5), (660, 6), (1360, 8)]),
+        slot(MagicEvasion, [(20, 7), (245, 11), (720, 14), (1445, 18)]),
+        slot(MagicAccuracy, [(30, 7), (280, 11), (780, 14), (1530, 18)]),
+        slot(PhysicalAccuracy, [(45, 2), (320, 3), (845, 4), (1620, 5)]),
+        slot(None, [(60, 0), (360, 0), (910, 0), (1710, 0)]),
     ],
     // Blm
-    [
-        slot(MagicDefense, [2, 3, 4, 5]),
-        slot(MagicAttack, [7, 11, 14, 18]),
-        slot(MagicEvasion, [6, 9, 12, 15]),
-        slot(MagicAccuracy, [6, 9, 12, 15]),
-        slot(None, [0, 0, 0, 0]),
-        slot(None, [0, 0, 0, 0]),
+    &[
+        slot(MagicDefense, [(5, 2), (180, 3), (605, 4), (1280, 5)]),
+        slot(MagicAttack, [(10, 7), (210, 11), (660, 14), (1360, 18)]),
+        slot(MagicEvasion, [(20, 6), (245, 9), (720, 12), (1445, 15)]),
+        slot(MagicAccuracy, [(30, 6), (280, 9), (780, 12), (1530, 15)]),
+        slot(None, [(45, 0), (320, 0), (845, 0), (1620, 0)]),
+        slot(None, [(60, 0), (360, 0), (910, 0), (1710, 0)]),
     ],
     // Rdm
-    [
-        slot(MagicDefense, [4, 6, 8, 10]),
-        slot(MagicAttack, [4, 6, 8, 10]),
-        slot(MagicEvasion, [8, 12, 16, 20]),
-        slot(MagicAccuracy, [10, 15, 20, 25]),
-        slot(PhysicalAccuracy, [3, 5, 6, 8]),
-        slot(None, [0, 0, 0, 0]),
+    &[
+        slot(MagicDefense, [(5, 4), (180, 6), (605, 8), (1280, 10)]),
+        slot(MagicAttack, [(10, 4), (210, 6), (660, 8), (1360, 10)]),
+        slot(MagicEvasion, [(20, 8), (245, 12), (720, 16), (1445, 20)]),
+        slot(MagicAccuracy, [(30, 10), (280, 15), (780, 20), (1530, 25)]),
+        slot(PhysicalAccuracy, [(45, 3), (320, 5), (845, 6), (1620, 8)]),
+        slot(None, [(60, 0), (360, 0), (910, 0), (1710, 0)]),
     ],
     // Thf
-    [
-        slot(PhysicalDefense, [4, 6, 8, 10]),
-        slot(PhysicalAttack, [7, 11, 14, 18]),
-        slot(PhysicalEvasion, [10, 15, 20, 25]),
-        slot(PhysicalAccuracy, [5, 8, 10, 13]),
-        slot(MagicEvasion, [5, 8, 10, 13]),
-        slot(MagicAccuracy, [5, 8, 10, 13]),
+    &[
+        slot(PhysicalDefense, [(5, 4), (180, 6), (605, 8), (1280, 10)]),
+        slot(PhysicalAttack, [(10, 7), (210, 11), (660, 14), (1360, 18)]),
+        slot(PhysicalEvasion, [(20, 10), (245, 15), (720, 20), (1445, 25)]),
+        slot(PhysicalAccuracy, [(30, 5), (280, 8), (780, 10), (1530, 13)]),
+        slot(MagicEvasion, [(45, 5), (320, 8), (845, 10), (1620, 13)]),
+        slot(MagicAccuracy, [(60, 5), (360, 8), (910, 10), (1710, 13)]),
     ],
     // Pld
-    [
-        slot(PhysicalDefense, [15, 23, 30, 38]),
-        slot(PhysicalAttack, [4, 6, 8, 10]),
-        slot(PhysicalEvasion, [3, 5, 6, 8]),
-        slot(PhysicalAccuracy, [4, 6, 8, 10]),
-        slot(MagicEvasion, [6, 9, 12, 15]),
-        slot(MagicAccuracy, [6, 9, 12, 15]),
+    &[
+        slot(PhysicalDefense, [(5, 15), (180, 23), (605, 30), (1280, 38)]),
+        slot(PhysicalAttack, [(10, 4), (210, 6), (660, 8), (1360, 10)]),
+        slot(PhysicalEvasion, [(20, 3), (245, 5), (720, 6), (1445, 8)]),
+        slot(PhysicalAccuracy, [(30, 4), (280, 6), (780, 8), (1530, 10)]),
+        slot(MagicEvasion, [(45, 6), (320, 9), (845, 12), (1620, 15)]),
+        slot(MagicAccuracy, [(60, 6), (360, 9), (910, 12), (1710, 15)]),
     ],
     // Drk
-    [
-        slot(PhysicalDefense, [4, 6, 8, 10]),
-        slot(PhysicalAttack, [15, 23, 30, 38]),
-        slot(PhysicalEvasion, [3, 5, 6, 8]),
-        slot(PhysicalAccuracy, [3, 5, 6, 8]),
-        slot(MagicEvasion, [6, 9, 12, 15]),
-        slot(MagicAccuracy, [6, 9, 12, 15]),
+    &[
+        slot(PhysicalDefense, [(5, 4), (180, 6), (605, 8), (1280, 10)]),
+        slot(PhysicalAttack, [(10, 15), (210, 23), (660, 30), (1360, 38)]),
+        slot(PhysicalEvasion, [(20, 3), (245, 5), (720, 6), (1445, 8)]),
+        slot(PhysicalAccuracy, [(30, 3), (280, 5), (780, 6), (1530, 8)]),
+        slot(MagicEvasion, [(45, 6), (320, 9), (845, 12), (1620, 15)]),
+        slot(MagicAccuracy, [(60, 6), (360, 9), (910, 12), (1710, 15)]),
     ],
     // Bst
-    [
-        slot(PhysicalDefense, [10, 15, 20, 25]),
-        slot(PhysicalAttack, [10, 15, 20, 25]),
-        slot(PhysicalEvasion, [5, 8, 10, 13]),
-        slot(PhysicalAccuracy, [5, 8, 10, 13]),
-        slot(MagicEvasion, [5, 8, 10, 13]),
-        slot(MagicAccuracy, [5, 8, 10, 13]),
+    &[
+        slot(PhysicalDefense, [(5, 10), (180, 15), (605, 20), (1280, 25)]),
+        slot(PhysicalAttack, [(10, 10), (210, 15), (660, 20), (1360, 25)]),
+        slot(PhysicalEvasion, [(20, 5), (245, 8), (720, 10), (1445, 13)]),
+        slot(PhysicalAccuracy, [(30, 5), (280, 8), (780, 10), (1530, 13)]),
+        slot(MagicEvasion, [(45, 5), (320, 8), (845, 10), (1620, 13)]),
+        slot(MagicAccuracy, [(60, 5), (360, 8), (910, 10), (1710, 13)]),
     ],
     // Brd (値は wiki から取得できなかった部分があり保守的な値)
-    [
-        slot(PhysicalDefense, [5, 8, 10, 13]),
-        slot(PhysicalEvasion, [5, 8, 10, 13]),
-        slot(PhysicalAccuracy, [5, 8, 10, 13]),
-        slot(MagicDefense, [5, 8, 10, 13]),
-        slot(MagicEvasion, [5, 8, 10, 13]),
-        slot(MagicAccuracy, [5, 8, 10, 13]),
+    &[
+        slot(PhysicalDefense, [(5, 5), (180, 8), (605, 10), (1280, 13)]),
+        slot(PhysicalEvasion, [(10, 5), (210, 8), (660, 10), (1360, 13)]),
+        slot(PhysicalAccuracy, [(20, 5), (245, 8), (720, 10), (1445, 13)]),
+        slot(MagicDefense, [(30, 5), (280, 8), (780, 10), (1530, 13)]),
+        slot(MagicEvasion, [(45, 5), (320, 8), (845, 10), (1620, 13)]),
+        slot(MagicAccuracy, [(60, 5), (360, 8), (910, 10), (1710, 13)]),
     ],
     // Rng
-    [
-        slot(PhysicalDefense, [3, 5, 8, 8]),
-        slot(PhysicalAttack, [10, 15, 20, 25]),
-        slot(PhysicalEvasion, [2, 3, 4, 5]),
-        slot(PhysicalAccuracy, [10, 15, 20, 25]),
-        slot(MagicEvasion, [5, 8, 10, 13]),
-        slot(MagicAccuracy, [5, 8, 10, 13]),
+    &[
+        slot(PhysicalDefense, [(5, 3), (180, 5), (605, 8), (1280, 8)]),
+        slot(PhysicalAttack, [(10, 10), (210, 15), (660, 20), (1360, 25)]),
+        slot(PhysicalEvasion, [(20, 2), (245, 3), (720, 4), (1445, 5)]),
+        slot(PhysicalAccuracy, [(30, 10), (280, 15), (780, 20), (1530, 25)]),
+        slot(MagicEvasion, [(45, 5), (320, 8), (845, 10), (1620, 13)]),
+        slot(MagicAccuracy, [(60, 5), (360, 8), (910, 10), (1710, 13)]),
     ],
     // Sam
-    [
-        slot(PhysicalDefense, [10, 15, 20, 25]),
-        slot(PhysicalAttack, [10, 15, 20, 25]),
-        slot(PhysicalEvasion, [5, 8, 10, 13]),
-        slot(PhysicalAccuracy, [5, 8, 10, 13]),
-        slot(MagicEvasion, [5, 8, 10, 13]),
-        slot(MagicAccuracy, [5, 8, 10, 13]),
+    &[
+        slot(PhysicalDefense, [(5, 10), (180, 15), (605, 20), (1280, 25)]),
+        slot(PhysicalAttack, [(10, 10), (210, 15), (660, 20), (1360, 25)]),
+        slot(PhysicalEvasion, [(20, 5), (245, 8), (720, 10), (1445, 13)]),
+        slot(PhysicalAccuracy, [(30, 5), (280, 8), (780, 10), (1530, 13)]),
+        slot(MagicEvasion, [(45, 5), (320, 8), (845, 10), (1620, 13)]),
+        slot(MagicAccuracy, [(60, 5), (360, 8), (910, 10), (1710, 13)]),
     ],
-    // Nin
-    [
-        slot(PhysicalDefense, [8, 12, 16, 20]),
-        slot(None, [0, 0, 0, 0]), // Capacity Point Bonus
-        slot(PhysicalAttack, [10, 15, 20, 25]),
-        slot(PhysicalEvasion, [9, 14, 18, 23]),
-        slot(PhysicalAccuracy, [8, 12, 16, 20]),
-        slot(MagicAttack, [4, 6, 8, 10]),
+    // Nin (魔法命中アップ: wikiwiki.jp/ffxi 忍者欄、80/405/980/1805 JP で +7/+11/+14/+18)
+    &[
+        slot(PhysicalDefense, [(5, 8), (180, 12), (605, 16), (1280, 20)]),
+        slot(None, [(10, 0), (210, 0), (660, 0), (1360, 0)]), // Capacity Point Bonus
+        slot(PhysicalAttack, [(20, 10), (245, 15), (720, 20), (1445, 25)]),
+        slot(PhysicalEvasion, [(30, 9), (280, 14), (780, 18), (1530, 23)]),
+        slot(PhysicalAccuracy, [(45, 8), (320, 12), (845, 16), (1620, 20)]),
+        slot(MagicAttack, [(60, 4), (360, 6), (910, 8), (1710, 10)]),
+        slot(MagicAccuracy, [(80, 7), (405, 11), (980, 14), (1805, 18)]),
     ],
     // Drg
-    [
-        slot(PhysicalDefense, [10, 15, 20, 25]),
-        slot(PhysicalAttack, [10, 15, 20, 25]),
-        slot(PhysicalEvasion, [5, 8, 10, 13]),
-        slot(PhysicalAccuracy, [9, 14, 18, 23]),
-        slot(MagicEvasion, [5, 8, 10, 13]),
-        slot(MagicAccuracy, [5, 8, 10, 13]),
+    &[
+        slot(PhysicalDefense, [(5, 10), (180, 15), (605, 20), (1280, 25)]),
+        slot(PhysicalAttack, [(10, 10), (210, 15), (660, 20), (1360, 25)]),
+        slot(PhysicalEvasion, [(20, 5), (245, 8), (720, 10), (1445, 13)]),
+        slot(PhysicalAccuracy, [(30, 9), (280, 14), (780, 18), (1530, 23)]),
+        slot(MagicEvasion, [(45, 5), (320, 8), (845, 10), (1620, 13)]),
+        slot(MagicAccuracy, [(60, 5), (360, 8), (910, 10), (1710, 13)]),
     ],
     // Smn
-    [
-        slot(MagicDefense, [3, 5, 6, 8]),
-        slot(MagicEvasion, [3, 5, 6, 8]),
-        slot(PhysicalDefense, [3, 5, 6, 8]),
-        slot(PhysicalEvasion, [3, 5, 6, 8]),
-        slot(None, [0, 0, 0, 0]), // Avatar/Spirit Attack & Defense
-        slot(None, [0, 0, 0, 0]), // Avatar/Spirit Accuracy & Evasion
+    &[
+        slot(MagicDefense, [(5, 3), (180, 5), (605, 6), (1280, 8)]),
+        slot(MagicEvasion, [(10, 3), (210, 5), (660, 6), (1360, 8)]),
+        slot(PhysicalDefense, [(20, 3), (245, 5), (720, 6), (1445, 8)]),
+        slot(PhysicalEvasion, [(30, 3), (280, 5), (780, 6), (1530, 8)]),
+        slot(None, [(45, 0), (320, 0), (845, 0), (1620, 0)]), // Avatar/Spirit Attack & Defense
+        slot(None, [(60, 0), (360, 0), (910, 0), (1710, 0)]), // Avatar/Spirit Accuracy & Evasion
     ],
     // Blu (wiki のデータが不完全、保守的なデフォルト)
-    [
-        slot(PhysicalDefense, [10, 15, 20, 25]),
-        slot(None, [0, 0, 0, 0]),
-        slot(PhysicalAttack, [10, 15, 20, 25]),
-        slot(PhysicalEvasion, [5, 8, 10, 13]),
-        slot(None, [0, 0, 0, 0]),
-        slot(PhysicalAccuracy, [5, 8, 10, 13]),
+    // 魔法命中アップは本来 125/450/1050/1900 JP の閾値で +5/+8/+10/+13 (累計 +36)
+    &[
+        slot(PhysicalDefense, [(5, 10), (180, 15), (605, 20), (1280, 25)]),
+        slot(None, [(10, 0), (210, 0), (660, 0), (1360, 0)]),
+        slot(PhysicalAttack, [(20, 10), (245, 15), (720, 20), (1445, 25)]),
+        slot(PhysicalEvasion, [(30, 5), (280, 8), (780, 10), (1530, 13)]),
+        slot(None, [(45, 0), (320, 0), (845, 0), (1620, 0)]),
+        slot(PhysicalAccuracy, [(60, 5), (360, 8), (910, 10), (1710, 13)]),
+        slot(MagicAccuracy, [(125, 5), (450, 8), (1050, 10), (1900, 13)]),
     ],
-    // Cor
-    [
-        slot(PhysicalDefense, [3, 5, 6, 8]),
-        slot(PhysicalAttack, [5, 8, 10, 13]),
-        slot(PhysicalEvasion, [3, 5, 6, 8]),
-        slot(PhysicalAccuracy, [5, 8, 10, 13]),
-        slot(MagicAttack, [2, 3, 4, 5]),
-        slot(MagicEvasion, [5, 8, 10, 13]),
+    // Cor (ギフトデータは wikiwiki.jp/ffxi コルセア欄を参照、累計 1805JP まで列挙されている範囲)
+    &[
+        slot(PhysicalDefense, [(5, 3), (180, 5), (605, 6), (1280, 8)]),
+        slot(PhysicalAttack, [(10, 5), (210, 8), (660, 10), (1360, 13)]),
+        slot(PhysicalEvasion, [(20, 3), (245, 5), (720, 6), (1445, 8)]),
+        slot(PhysicalAccuracy, [(30, 5), (280, 8), (780, 10), (1530, 13)]),
+        slot(MagicAttack, [(45, 2), (320, 3), (845, 4), (1620, 5)]),
+        slot(MagicEvasion, [(60, 5), (360, 8), (910, 10), (1710, 13)]),
+        slot(MagicAccuracy, [(80, 5), (405, 8), (980, 10), (1805, 13)]),
     ],
     // Pup
-    [
-        slot(PhysicalAttack, [6, 9, 12, 15]),
-        slot(PhysicalEvasion, [8, 12, 16, 20]),
-        slot(PhysicalAccuracy, [7, 11, 14, 18]),
-        slot(MagicEvasion, [5, 8, 10, 13]),
-        slot(MagicAccuracy, [5, 8, 10, 13]),
-        slot(None, [0, 0, 0, 0]), // Automaton Physical Attack/Defense
+    &[
+        slot(PhysicalAttack, [(5, 6), (180, 9), (605, 12), (1280, 15)]),
+        slot(PhysicalEvasion, [(10, 8), (210, 12), (660, 16), (1360, 20)]),
+        slot(PhysicalAccuracy, [(20, 7), (245, 11), (720, 14), (1445, 18)]),
+        slot(MagicEvasion, [(30, 5), (280, 8), (780, 10), (1530, 13)]),
+        slot(MagicAccuracy, [(45, 5), (320, 8), (845, 10), (1620, 13)]),
+        slot(None, [(60, 0), (360, 0), (910, 0), (1710, 0)]), // Automaton Physical Attack/Defense
     ],
     // Dnc
-    [
-        slot(PhysicalDefense, [6, 9, 12, 15]),
-        slot(PhysicalAttack, [6, 9, 12, 15]),
-        slot(PhysicalEvasion, [9, 14, 18, 23]),
-        slot(PhysicalAccuracy, [9, 14, 18, 23]),
-        slot(MagicEvasion, [5, 8, 10, 13]),
-        slot(MagicAccuracy, [5, 8, 10, 13]),
+    &[
+        slot(PhysicalDefense, [(5, 6), (180, 9), (605, 12), (1280, 15)]),
+        slot(PhysicalAttack, [(10, 6), (210, 9), (660, 12), (1360, 15)]),
+        slot(PhysicalEvasion, [(20, 9), (245, 14), (720, 18), (1445, 23)]),
+        slot(PhysicalAccuracy, [(30, 9), (280, 14), (780, 18), (1530, 23)]),
+        slot(MagicEvasion, [(45, 5), (320, 8), (845, 10), (1620, 13)]),
+        slot(MagicAccuracy, [(60, 5), (360, 8), (910, 10), (1710, 13)]),
     ],
     // Sch (wiki のデータが不完全、保守的なデフォルト)
-    [
-        slot(MagicDefense, [3, 5, 6, 8]),
-        slot(MagicAttack, [5, 8, 10, 13]),
-        slot(MagicEvasion, [6, 9, 12, 15]),
-        slot(MagicAccuracy, [6, 9, 12, 15]),
-        slot(None, [0, 0, 0, 0]),
-        slot(None, [0, 0, 0, 0]),
+    &[
+        slot(MagicDefense, [(5, 3), (180, 5), (605, 6), (1280, 8)]),
+        slot(MagicAttack, [(10, 5), (210, 8), (660, 10), (1360, 13)]),
+        slot(MagicEvasion, [(20, 6), (245, 9), (720, 12), (1445, 15)]),
+        slot(MagicAccuracy, [(30, 6), (280, 9), (780, 12), (1530, 15)]),
+        slot(None, [(45, 0), (320, 0), (845, 0), (1620, 0)]),
+        slot(None, [(60, 0), (360, 0), (910, 0), (1710, 0)]),
     ],
     // Geo
-    [
-        slot(MagicDefense, [4, 6, 8, 10]),
-        slot(MagicAttack, [6, 9, 12, 15]),
-        slot(MagicEvasion, [7, 11, 14, 18]),
-        slot(MagicAccuracy, [7, 11, 14, 18]),
-        slot(None, [0, 0, 0, 0]),
-        slot(None, [0, 0, 0, 0]),
+    &[
+        slot(MagicDefense, [(5, 4), (180, 6), (605, 8), (1280, 10)]),
+        slot(MagicAttack, [(10, 6), (210, 9), (660, 12), (1360, 15)]),
+        slot(MagicEvasion, [(20, 7), (245, 11), (720, 14), (1445, 18)]),
+        slot(MagicAccuracy, [(30, 7), (280, 11), (780, 14), (1530, 18)]),
+        slot(None, [(45, 0), (320, 0), (845, 0), (1620, 0)]),
+        slot(None, [(60, 0), (360, 0), (910, 0), (1710, 0)]),
     ],
-    // Run
-    [
-        slot(PhysicalDefense, [5, 8, 10, 13]),
-        slot(PhysicalAttack, [7, 11, 14, 18]),
-        slot(PhysicalEvasion, [8, 12, 16, 20]),
-        slot(PhysicalAccuracy, [8, 12, 16, 20]),
-        slot(MagicDefense, [8, 12, 16, 20]),
-        slot(MagicEvasion, [10, 15, 20, 25]),
+    // Run (魔法命中アップ: wikiwiki.jp/ffxi 魔導剣士欄、80/405/980/1805 JP で +5/+8/+10/+13)
+    &[
+        slot(PhysicalDefense, [(5, 5), (180, 8), (605, 10), (1280, 13)]),
+        slot(PhysicalAttack, [(10, 7), (210, 11), (660, 14), (1360, 18)]),
+        slot(PhysicalEvasion, [(20, 8), (245, 12), (720, 16), (1445, 20)]),
+        slot(PhysicalAccuracy, [(30, 8), (280, 12), (780, 16), (1530, 20)]),
+        slot(MagicDefense, [(45, 8), (320, 12), (845, 16), (1620, 20)]),
+        slot(MagicEvasion, [(60, 10), (360, 15), (910, 20), (1710, 25)]),
+        slot(MagicAccuracy, [(80, 5), (405, 8), (980, 10), (1805, 13)]),
     ],
 ];
 
@@ -419,13 +416,12 @@ pub fn calc_war_da_gift_bonus(total_jp: i32) -> i32 {
 /// ギフトは各ティアのボーナスが累積加算される（例: 7 → 11 → 14 → 18 と解放されると 7+11+14+18=50）。
 pub fn calc_gift_bonuses(job: Job, total_jp: i32) -> GiftBonuses {
     let mut bonuses = GiftBonuses::default();
-    let job_gifts = &JOB_GIFTS[job as usize];
-    for (slot_idx, slot_def) in job_gifts.iter().enumerate() {
-        let thresholds = &GIFT_THRESHOLDS[slot_idx];
+    let job_gifts = JOB_GIFTS[job as usize];
+    for slot_def in job_gifts {
         let mut slot_total = 0;
-        for (tier_idx, &threshold) in thresholds.iter().enumerate() {
+        for &(threshold, value) in &slot_def.tiers {
             if total_jp >= threshold {
-                slot_total += slot_def.values[tier_idx];
+                slot_total += value;
             } else {
                 break;
             }

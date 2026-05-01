@@ -1213,8 +1213,9 @@
                 <!-- 3. 遠隔攻撃 -->
                 <div id="subtab-ranged-auto" class="status-subtab-content">
                     <table class="status-table">
-                        <thead><tr><th>武器スキル</th><th>飛攻</th><th>飛命</th></tr></thead>
+                        <thead><tr><th></th><th>武器スキル</th><th>飛攻</th><th>飛命</th></tr></thead>
                         <tbody><tr>
+                            <td>レンジ</td>
                             <td class="equip-val" id="statRaSkill">-</td>
                             <td class="equip-val" id="statRaAtk">-</td>
                             <td class="equip-val" id="statRaAcc">-</td>
@@ -1233,12 +1234,21 @@
                 <!-- 4. 近接物理 WS -->
                 <div id="subtab-melee-ws" class="status-subtab-content">
                     <table class="status-table">
-                        <thead><tr><th>武器スキル</th><th>攻撃</th><th>命中</th></tr></thead>
-                        <tbody><tr>
-                            <td class="equip-val" id="statMwsSkill">-</td>
-                            <td class="equip-val" id="statMwsAtk">-</td>
-                            <td class="equip-val" id="statMwsAcc">-</td>
-                        </tr></tbody>
+                        <thead><tr><th></th><th>武器スキル</th><th>攻撃</th><th>命中</th></tr></thead>
+                        <tbody>
+                            <tr>
+                                <td>メイン</td>
+                                <td class="equip-val" id="statMwsSkill">-</td>
+                                <td class="equip-val" id="statMwsAtk">-</td>
+                                <td class="equip-val" id="statMwsAcc">-</td>
+                            </tr>
+                            <tr>
+                                <td>サブ</td>
+                                <td class="equip-val" id="statMwsSubSkill">-</td>
+                                <td class="equip-val" id="statMwsSubAtk">-</td>
+                                <td class="equip-val" id="statMwsSubAcc">-</td>
+                            </tr>
+                        </tbody>
                     </table>
                     <table class="status-table">
                         <thead><tr><th>ストアTP</th><th>モクシャ</th><th>モクシャII</th><th>DA</th><th>TA</th><th>QA</th></tr></thead>
@@ -1267,8 +1277,9 @@
                 <!-- 5. 遠隔物理 WS -->
                 <div id="subtab-ranged-ws" class="status-subtab-content">
                     <table class="status-table">
-                        <thead><tr><th>武器スキル</th><th>飛攻</th><th>飛命</th></tr></thead>
+                        <thead><tr><th></th><th>武器スキル</th><th>飛攻</th><th>飛命</th></tr></thead>
                         <tbody><tr>
+                            <td>レンジ</td>
                             <td class="equip-val" id="statRwsSkill">-</td>
                             <td class="equip-val" id="statRwsAtk">-</td>
                             <td class="equip-val" id="statRwsAcc">-</td>
@@ -1341,24 +1352,25 @@
                 <!-- 7. 近接属性物理 WS -->
                 <div id="subtab-melee-elemental-ws" class="status-subtab-content">
                     <table class="status-table">
-                        <thead><tr><th>武器スキル</th><th>攻撃</th><th>命中</th><th>魔命スキル</th><th>魔命合計</th></tr></thead>
-                        <tbody><tr>
-                            <td class="equip-val" id="statMewsSkill">-</td>
-                            <td class="equip-val" id="statMewsAtk">-</td>
-                            <td class="equip-val" id="statMewsAcc">-</td>
-                            <td class="equip-val" id="statMewsMaccSkill">-</td>
-                            <td class="equip-val" id="statMewsMaccTotal">-</td>
-                        </tr></tbody>
-                    </table>
-                    <table class="status-table">
-                        <thead><tr><th>魔攻</th><th>魔命</th><th>魔法ダメ</th><th>アフィニティ</th><th>魔クリII</th></tr></thead>
-                        <tbody><tr>
-                            <td class="equip-val" id="statMewsMatk">-</td>
-                            <td class="equip-val" id="statMewsMacc">-</td>
-                            <td class="equip-val" id="statMewsMdmg">-</td>
-                            <td class="equip-val" id="statMewsAff">-</td>
-                            <td class="equip-val" id="statMewsMcrit2">-</td>
-                        </tr></tbody>
+                        <thead><tr><th></th><th>武器スキル</th><th>魔命スキル</th><th>攻撃</th><th>命中</th><th>魔命合計</th></tr></thead>
+                        <tbody>
+                            <tr>
+                                <td>メイン</td>
+                                <td class="equip-val" id="statMewsSkill">-</td>
+                                <td class="equip-val" id="statMewsMaccSkill">-</td>
+                                <td class="equip-val" id="statMewsAtk">-</td>
+                                <td class="equip-val" id="statMewsAcc">-</td>
+                                <td class="equip-val" id="statMewsMaccTotal">-</td>
+                            </tr>
+                            <tr>
+                                <td>サブ</td>
+                                <td class="equip-val" id="statMewsSubSkill">-</td>
+                                <td class="equip-val" id="statMewsSubMaccSkill">-</td>
+                                <td class="equip-val" id="statMewsSubAtk">-</td>
+                                <td class="equip-val" id="statMewsSubAcc">-</td>
+                                <td class="equip-val" id="statMewsSubMaccTotal">-</td>
+                            </tr>
+                        </tbody>
                     </table>
                     <table class="status-table">
                         <thead><tr><th>ストアTP</th><th>モクシャ</th><th>モクシャII</th><th>DA</th><th>TA</th><th>QA</th></tr></thead>
@@ -1382,28 +1394,29 @@
                             <td class="equip-val" id="statMewsPdl">-</td>
                         </tr></tbody>
                     </table>
+                    <table class="status-table">
+                        <thead><tr><th>魔攻</th><th>魔命</th><th>魔法ダメ</th><th>アフィニティ</th><th>魔クリII</th></tr></thead>
+                        <tbody><tr>
+                            <td class="equip-val" id="statMewsMatk">-</td>
+                            <td class="equip-val" id="statMewsMacc">-</td>
+                            <td class="equip-val" id="statMewsMdmg">-</td>
+                            <td class="equip-val" id="statMewsAff">-</td>
+                            <td class="equip-val" id="statMewsMcrit2">-</td>
+                        </tr></tbody>
+                    </table>
                 </div>
 
                 <!-- 8. 遠隔属性物理 WS -->
                 <div id="subtab-ranged-elemental-ws" class="status-subtab-content">
                     <table class="status-table">
-                        <thead><tr><th>武器スキル</th><th>飛攻</th><th>飛命</th><th>魔命スキル</th><th>魔命合計</th></tr></thead>
+                        <thead><tr><th></th><th>武器スキル</th><th>魔命スキル</th><th>飛攻</th><th>飛命</th><th>魔命合計</th></tr></thead>
                         <tbody><tr>
+                            <td>レンジ</td>
                             <td class="equip-val" id="statRewsSkill">-</td>
+                            <td class="equip-val" id="statRewsMaccSkill">-</td>
                             <td class="equip-val" id="statRewsAtk">-</td>
                             <td class="equip-val" id="statRewsAcc">-</td>
-                            <td class="equip-val" id="statRewsMaccSkill">-</td>
                             <td class="equip-val" id="statRewsMaccTotal">-</td>
-                        </tr></tbody>
-                    </table>
-                    <table class="status-table">
-                        <thead><tr><th>魔攻</th><th>魔命</th><th>魔法ダメ</th><th>アフィニティ</th><th>魔クリII</th></tr></thead>
-                        <tbody><tr>
-                            <td class="equip-val" id="statRewsMatk">-</td>
-                            <td class="equip-val" id="statRewsMacc">-</td>
-                            <td class="equip-val" id="statRewsMdmg">-</td>
-                            <td class="equip-val" id="statRewsAff">-</td>
-                            <td class="equip-val" id="statRewsMcrit2">-</td>
                         </tr></tbody>
                     </table>
                     <table class="status-table">
@@ -1424,6 +1437,16 @@
                             <td class="equip-val" id="statRewsScb">-</td>
                             <td class="equip-val" id="statRewsPdl">-</td>
                             <td class="equip-val" id="statRewsTs">-</td>
+                        </tr></tbody>
+                    </table>
+                    <table class="status-table">
+                        <thead><tr><th>魔攻</th><th>魔命</th><th>魔法ダメ</th><th>アフィニティ</th><th>魔クリII</th></tr></thead>
+                        <tbody><tr>
+                            <td class="equip-val" id="statRewsMatk">-</td>
+                            <td class="equip-val" id="statRewsMacc">-</td>
+                            <td class="equip-val" id="statRewsMdmg">-</td>
+                            <td class="equip-val" id="statRewsAff">-</td>
+                            <td class="equip-val" id="statRewsMcrit2">-</td>
                         </tr></tbody>
                     </table>
                 </div>
@@ -2925,6 +2948,9 @@
                 setText('statMwsSkill', formatWeaponSkill(totalStats.main_weapon_skill, totalStats.main_weapon_skill_value));
                 setText('statMwsAtk', numOrDash(totalStats.main_attack));
                 setText('statMwsAcc', numOrDash(totalStats.main_accuracy));
+                setText('statMwsSubSkill', formatWeaponSkill(totalStats.sub_weapon_skill, totalStats.sub_weapon_skill_value));
+                setText('statMwsSubAtk', totalStats.sub_attack != null ? totalStats.sub_attack : '-');
+                setText('statMwsSubAcc', totalStats.sub_accuracy != null ? totalStats.sub_accuracy : '-');
                 setText('statMwsStp', numOrDash(totalStats.store_tp));
                 setText('statMwsSb', numOrDash(equip.subtle_blow));
                 setText('statMwsSb2', numOrDash(equip.subtle_blow_2));
@@ -2978,12 +3004,19 @@
 
                 // ----- Tab 7: 近接属性物理 WS -----
                 // 物理 WS 系の攻撃/命中/DA 等と、属性 WS の魔攻/魔命/魔法ダメ等を併記。
-                // 魔命合計はメイン武器スキル + メイン魔命スキル + 魔命総合の合算。
+                // 魔命合計は各行の武器スキル値 + その枠の魔命スキル + 魔命総合の合算。
+                const subMaccSkill = equip.slot_stats?.sub?.magic_accuracy_skill || 0;
+                const subSkillValue = totalStats.sub_weapon_skill_value || 0;
                 setText('statMewsSkill', formatWeaponSkill(totalStats.main_weapon_skill, totalStats.main_weapon_skill_value));
                 setText('statMewsAtk', numOrDash(totalStats.main_attack));
                 setText('statMewsAcc', numOrDash(totalStats.main_accuracy));
                 setText('statMewsMaccSkill', numOrDash(mainMaccSkill));
                 setText('statMewsMaccTotal', numOrDash(mainSkillValue + mainMaccSkill + magicAccuracyTotal));
+                setText('statMewsSubSkill', formatWeaponSkill(totalStats.sub_weapon_skill, totalStats.sub_weapon_skill_value));
+                setText('statMewsSubAtk', totalStats.sub_attack != null ? totalStats.sub_attack : '-');
+                setText('statMewsSubAcc', totalStats.sub_accuracy != null ? totalStats.sub_accuracy : '-');
+                setText('statMewsSubMaccSkill', numOrDash(subMaccSkill));
+                setText('statMewsSubMaccTotal', numOrDash(subSkillValue + subMaccSkill + magicAccuracyTotal));
                 setText('statMewsMatk', numOrDash(magicAttackTotal));
                 setText('statMewsMacc', numOrDash(magicAccuracyTotal));
                 setText('statMewsMdmg', numOrDash(magicDamageTotal));
@@ -3086,6 +3119,7 @@
                 'statRaSkill', 'statRaAtk', 'statRaAcc', 'statRaStr', 'statRaAgi', 'statRaStp',
                 // Tab 4: 近接 WS
                 'statMwsSkill', 'statMwsAtk', 'statMwsAcc',
+                'statMwsSubSkill', 'statMwsSubAtk', 'statMwsSubAcc',
                 'statMwsStp', 'statMwsSb', 'statMwsSb2', 'statMwsDa', 'statMwsTa', 'statMwsQa',
                 'statMwsCrit', 'statMwsCritDmg', 'statMwsWsdmg', 'statMwsTpb', 'statMwsScb', 'statMwsPdl',
                 // Tab 5: 遠隔 WS
@@ -3099,6 +3133,7 @@
                 'statEwsAff', 'statEwsMcrit2', 'statEwsWsdmg', 'statEwsTpb', 'statEwsScb',
                 // Tab 7: 近接属性物理 WS
                 'statMewsSkill', 'statMewsAtk', 'statMewsAcc', 'statMewsMaccSkill', 'statMewsMaccTotal',
+                'statMewsSubSkill', 'statMewsSubAtk', 'statMewsSubAcc', 'statMewsSubMaccSkill', 'statMewsSubMaccTotal',
                 'statMewsMatk', 'statMewsMacc', 'statMewsMdmg', 'statMewsAff', 'statMewsMcrit2',
                 'statMewsStp', 'statMewsSb', 'statMewsSb2', 'statMewsDa', 'statMewsTa', 'statMewsQa',
                 'statMewsCrit', 'statMewsCritDmg', 'statMewsWsdmg', 'statMewsTpb', 'statMewsScb', 'statMewsPdl',

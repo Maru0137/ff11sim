@@ -67,6 +67,16 @@ function extractAllStats(descriptionEn) {
         return parseInt(m[1], 10);
     }
 
+    // Helper: match a value where the sign is optional (e.g. "Snapshot"5 = +5)
+    // Default sign is "+" when omitted.
+    function matchOptionalSign(pattern) {
+        const re = new RegExp(pattern, 'i');
+        const m = text.match(re);
+        if (!m) return 0;
+        const sign = m[1] === '-' ? -1 : 1;
+        return sign * parseInt(m[2], 10);
+    }
+
     // Helper: set value only if non-zero
     function set(key, value) {
         if (value !== 0) result[key] = value;
@@ -153,6 +163,56 @@ function extractAllStats(descriptionEn) {
     set('physical_damage_taken_pct', matchSigned('Physical damage taken\\s*([+-])\\s*(\\d+)%'));
     set('magic_damage_taken_pct', matchSigned('Magic damage taken\\s*([+-])\\s*(\\d+)%'));
     set('magic_def_bonus', matchSigned('"Magic Def\\.? Bonus"\\s*([+-])\\s*(\\d+)'));
+
+    // === HP/MP 自動回復・自動 TP ===
+    set('regen', matchSigned('"?Regen"?\\s*([+-])\\s*(\\d+)'));
+    set('refresh', matchSigned('"?Refresh"?\\s*([+-])\\s*(\\d+)'));
+    set('regain', matchSigned('"?Regain"?\\s*([+-])\\s*(\\d+)'));
+
+    // === 詠唱・ジョブアビ短縮系 ===
+    // 表記揺れ:
+    //   - Fast Cast / Quick Magic は基本 "+N%" だが "+N" (% なし) のケースもあり
+    //   - Snapshot / Rapid Shot は "+N" 表記が主流 (% なし)、稀に符号も無い ("Snapshot"5)
+    // → 符号と % を両方任意にする
+    set('fast_cast_pct', matchOptionalSign('"?Fast Cast"?\\s*([+-]?)\\s*(\\d+)%?'));
+    set('quick_magic_pct', matchOptionalSign('"?Quick Magic"?\\s*([+-]?)\\s*(\\d+)%?'));
+    set('snapshot_pct', matchOptionalSign('"?Snapshot"?\\s*([+-]?)\\s*(\\d+)%?'));
+    set('rapid_shot_pct', matchOptionalSign('"?Rapid Shot"?\\s*([+-]?)\\s*(\\d+)%?'));
+
+    // === 属性レジスト (Fire/Ice/Wind/Earth/Lightning/Water/Light/Dark) ===
+    // 注意: items.json には "Fire Resistance +N" 形式の装備は現状存在しない。
+    // augments / custom_description で記述された場合のために regex は残す。
+    for (const elem of ['Fire', 'Ice', 'Wind', 'Earth', 'Lightning', 'Water', 'Light', 'Dark']) {
+        set(`resist_${elem.toLowerCase()}`, matchSigned(
+            `(?:${elem} Resistance|Resist ${elem})\\s*([+-])\\s*(\\d+)`
+        ));
+    }
+
+    // === 状態異常レジスト ===
+    // 表記揺れ: "Resist Sleep+5" / "Terror resistance +30" / "Status ailment resistance +N"
+    const statusResistMap = [
+        ['sleep', 'Sleep'],
+        ['paralysis', 'Paralysis'],
+        ['bind', 'Bind'],
+        ['silence', 'Silence'],
+        ['gravity', 'Gravity'],
+        ['slow', 'Slow'],
+        ['petrification', 'Petrification'],
+        ['stun', 'Stun'],
+        ['poison', 'Poison'],
+        ['charm', 'Charm'],
+        ['blind', 'Blind'],
+        ['curse', 'Curse'],
+        ['virus', 'Virus'],
+        ['amnesia', 'Amnesia'],
+        ['terror', 'Terror'],
+        ['death', 'Death'],
+    ];
+    for (const [key, en] of statusResistMap) {
+        set(`resist_${key}`, matchSigned(
+            `(?:Resist ${en}|${en} [Rr]esistance)\\s*([+-])\\s*(\\d+)`
+        ));
+    }
 
     // === Weapon stats (colon format) ===
     set('dmg', matchColon('DMG:[+]?(\\d+)'));
@@ -287,6 +347,15 @@ function getEmptyStats() {
         damage_taken_pct: 0, physical_damage_taken_pct: 0, magic_damage_taken_pct: 0,
         magic_def_bonus: 0,
         dmg: 0, delay: 0,
+        // 待機/回避/防御 タブ表示用
+        regen: 0, refresh: 0, regain: 0,
+        fast_cast_pct: 0, quick_magic_pct: 0, snapshot_pct: 0, rapid_shot_pct: 0,
+        resist_fire: 0, resist_ice: 0, resist_wind: 0, resist_earth: 0,
+        resist_lightning: 0, resist_water: 0, resist_light: 0, resist_dark: 0,
+        resist_sleep: 0, resist_paralysis: 0, resist_bind: 0, resist_silence: 0,
+        resist_gravity: 0, resist_slow: 0, resist_petrification: 0, resist_stun: 0,
+        resist_poison: 0, resist_charm: 0, resist_blind: 0, resist_curse: 0,
+        resist_virus: 0, resist_amnesia: 0, resist_terror: 0, resist_death: 0,
     };
 }
 

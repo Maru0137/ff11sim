@@ -1195,22 +1195,64 @@
                 <!-- 1. 待機/回避/防御 -->
                 <div id="subtab-defense" class="status-subtab-content active">
                     <table class="status-table">
-                        <thead><tr><th>HP</th><th>MP</th><th>防御</th><th>魔法防御</th><th>回避</th><th>魔法回避</th></tr></thead>
+                        <thead><tr><th>リジェネ</th><th>リフレシュ</th><th>リゲイン</th></tr></thead>
                         <tbody><tr>
-                            <td class="equip-val" id="statDefHp">-</td>
-                            <td class="equip-val" id="statDefMp">-</td>
-                            <td class="equip-val" id="statDefDef">-</td>
-                            <td class="equip-val" id="statDefMdef">-</td>
-                            <td class="equip-val" id="statDefEva">-</td>
-                            <td class="equip-val" id="statDefMeva">-</td>
+                            <td class="equip-val" id="statDefRegen">-</td>
+                            <td class="equip-val" id="statDefRefresh">-</td>
+                            <td class="equip-val" id="statDefRegain">-</td>
                         </tr></tbody>
                     </table>
                     <table class="status-table">
-                        <thead><tr><th>被ダメ</th><th>物理被ダメ</th><th>魔法被ダメ</th></tr></thead>
+                        <thead><tr><th>ファストキャスト</th><th>クイックマジック</th><th>スナップショット</th><th>ラピッドショット</th></tr></thead>
                         <tbody><tr>
-                            <td class="equip-val" id="statDefDt">-</td>
-                            <td class="equip-val" id="statDefPdt">-</td>
-                            <td class="equip-val" id="statDefMdt">-</td>
+                            <td class="equip-val" id="statDefFastCast">-</td>
+                            <td class="equip-val" id="statDefQuickMagic">-</td>
+                            <td class="equip-val" id="statDefSnapshot">-</td>
+                            <td class="equip-val" id="statDefRapidShot">-</td>
+                        </tr></tbody>
+                    </table>
+                    <table class="status-table">
+                        <thead><tr><th colspan="8">属性レジスト</th></tr><tr><th>火</th><th>氷</th><th>風</th><th>土</th><th>雷</th><th>水</th><th>光</th><th>闇</th></tr></thead>
+                        <tbody><tr>
+                            <td class="equip-val" id="statDefResFire">-</td>
+                            <td class="equip-val" id="statDefResIce">-</td>
+                            <td class="equip-val" id="statDefResWind">-</td>
+                            <td class="equip-val" id="statDefResEarth">-</td>
+                            <td class="equip-val" id="statDefResLightning">-</td>
+                            <td class="equip-val" id="statDefResWater">-</td>
+                            <td class="equip-val" id="statDefResLight">-</td>
+                            <td class="equip-val" id="statDefResDark">-</td>
+                        </tr></tbody>
+                    </table>
+                    <table class="status-table">
+                        <thead>
+                            <tr><th colspan="8">状態異常レジスト</th></tr>
+                            <tr><th>睡眠</th><th>麻痺</th><th>バインド</th><th>沈黙</th><th>ヘヴィ</th><th>スロウ</th><th>石化</th><th>スタン</th></tr>
+                        </thead>
+                        <tbody><tr>
+                            <td class="equip-val" id="statDefResSleep">-</td>
+                            <td class="equip-val" id="statDefResParalysis">-</td>
+                            <td class="equip-val" id="statDefResBind">-</td>
+                            <td class="equip-val" id="statDefResSilence">-</td>
+                            <td class="equip-val" id="statDefResGravity">-</td>
+                            <td class="equip-val" id="statDefResSlow">-</td>
+                            <td class="equip-val" id="statDefResPetrification">-</td>
+                            <td class="equip-val" id="statDefResStun">-</td>
+                        </tr></tbody>
+                    </table>
+                    <table class="status-table">
+                        <thead>
+                            <tr><th>毒</th><th>魅了</th><th>暗闇</th><th>呪い</th><th>病気</th><th>アムネジア</th><th>テラー</th><th>デス</th></tr>
+                        </thead>
+                        <tbody><tr>
+                            <td class="equip-val" id="statDefResPoison">-</td>
+                            <td class="equip-val" id="statDefResCharm">-</td>
+                            <td class="equip-val" id="statDefResBlind">-</td>
+                            <td class="equip-val" id="statDefResCurse">-</td>
+                            <td class="equip-val" id="statDefResVirus">-</td>
+                            <td class="equip-val" id="statDefResAmnesia">-</td>
+                            <td class="equip-val" id="statDefResTerror">-</td>
+                            <td class="equip-val" id="statDefResDeath">-</td>
                         </tr></tbody>
                     </table>
                 </div>

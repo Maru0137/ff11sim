@@ -42,6 +42,10 @@ export async function updateEquipEditStatus(deps) {
         calculate_status_from_profile,
         calculate_default_skills,
         calculateEquipSetBonuses,
+        // 共有閲覧モード用: 通常は loadCharacters() で charName を引くが、
+        // 共有装備セットを開いた閲覧者は元のキャラクターを所有していないため、
+        // 呼び出し側が直接 character オブジェクトを渡せるようにする。
+        characterOverride,
     } = deps;
 
     if (!wasmReady || !itemsLoaded) {
@@ -53,8 +57,13 @@ export async function updateEquipEditStatus(deps) {
         return;
     }
 
-    const characters = await loadCharacters();
-    const ch = characters.find(c => c.name === charName);
+    let ch;
+    if (characterOverride) {
+        ch = characterOverride;
+    } else {
+        const characters = await loadCharacters();
+        ch = characters.find(c => c.name === charName);
+    }
     if (!ch) {
         clearAllEquipStats();
         return;

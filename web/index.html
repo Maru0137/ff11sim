@@ -811,6 +811,17 @@
             border-color: #f0c040;
         }
 
+        .equipset-tab.dragging {
+            opacity: 0.4;
+            cursor: grabbing;
+        }
+
+        .equipset-tab.drag-over {
+            border-color: #f0c040;
+            background: #1a1a3e;
+            box-shadow: -2px 0 0 #f0c040;
+        }
+
         @media (max-width: 600px) {
             .container {
                 grid-template-columns: 1fr;
@@ -1026,8 +1037,6 @@
                 <label for="equipSetName">名前</label>
                 <input type="text" id="equipSetName" placeholder="装備セット名">
             </div>
-
-            <div id="equipSlotsContainer" class="equip-slot-grid"></div>
 
             <div id="equipStatusSection" class="status-section">
                 <h3>ステータス</h3>
@@ -1507,9 +1516,12 @@
                     <div id="equipEffectiveSkills" style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px; font-size: 12px;"></div>
                 </div>
             </div>
+            <div id="equipSlotsContainer" class="equip-slot-grid"></div>
+
 
             <div class="btn-group">
                 <button class="btn btn-primary" id="btnSaveEquipSet">保存</button>
+                <button class="btn" id="btnCopyEquipSet">複製</button>
                 <button class="btn btn-danger" id="btnDeleteEquipSet">削除</button>
             </div>
         </div>
@@ -2398,8 +2410,34 @@
                 tab.className = 'equipset-tab';
                 tab.textContent = es.name;
                 tab.dataset.equipsetName = es.name;
+                tab.draggable = true;
                 tab.addEventListener('click', () => {
                     selectEquipSetTab(es.name);
+                });
+                tab.addEventListener('dragstart', (e) => {
+                    e.dataTransfer.effectAllowed = 'move';
+                    e.dataTransfer.setData('text/plain', es.name);
+                    tab.classList.add('dragging');
+                });
+                tab.addEventListener('dragend', () => {
+                    tab.classList.remove('dragging');
+                });
+                tab.addEventListener('dragover', (e) => {
+                    e.preventDefault();
+                    e.dataTransfer.dropEffect = 'move';
+                    tab.classList.add('drag-over');
+                });
+                tab.addEventListener('dragleave', () => {
+                    tab.classList.remove('drag-over');
+                });
+                tab.addEventListener('drop', async (e) => {
+                    e.preventDefault();
+                    tab.classList.remove('drag-over');
+                    const fromName = e.dataTransfer.getData('text/plain');
+                    const toName = es.name;
+                    if (fromName && fromName !== toName) {
+                        await reorderEquipSetTabs(fromName, toName);
+                    }
                 });
                 tabBar.appendChild(tab);
             });
@@ -2551,6 +2589,55 @@
             await selectEquipSetTab(name);
         }
 
+        async function reorderEquipSetTabs(fromName, toName) {
+            // 現在の (character, job) 内で fromName を toName の位置に移動。
+            // 他の (character, job) のセットには触れずに save。
+            const allSets = await loadEquipSets();
+            const inScope = (s) => s.character === currentEquipChar && s.job === currentEquipJob;
+            const tabs = allSets.filter(inScope);
+            const others = allSets.filter((s) => !inScope(s));
+
+            const fromIdx = tabs.findIndex((s) => s.name === fromName);
+            const toIdx = tabs.findIndex((s) => s.name === toName);
+            if (fromIdx < 0 || toIdx < 0) return;
+
+            const [moved] = tabs.splice(fromIdx, 1);
+            tabs.splice(toIdx, 0, moved);
+
+            // 順序統合 (other は元の位置を維持できないので末尾に集める。
+            //  Local 側は順序を厳密維持しないため許容、Supabase 側は (char, job) 単位で position 管理)
+            await saveEquipSets([...others, ...tabs]);
+            await renderEquipSetTabs();
+            await selectEquipSetTab(moved.name);
+        }
+
+        async function copyEquipSet() {
+            if (!currentEquipChar || !currentEquipJob) return;
+            // 編集中のセット名をベースに、未使用の名前を生成
+            const baseName = editingEquipSetName || document.getElementById('equipSetName').value.trim();
+            if (!baseName) {
+                alert('複製元の装備セットがありません。');
+                return;
+            }
+            const sets = await loadEquipSets();
+            const inScope = sets.filter(s => s.character === currentEquipChar && s.job === currentEquipJob);
+            const usedNames = new Set(inScope.map(s => s.name));
+            let newName = `${baseName} のコピー`;
+            let i = 2;
+            while (usedNames.has(newName)) {
+                newName = `${baseName} のコピー ${i++}`;
+            }
+            sets.push({
+                name: newName,
+                job: currentEquipJob,
+                character: currentEquipChar,
+                slots: { ...currentEquipSlots },
+            });
+            await saveEquipSets(sets);
+            await renderEquipSetTabs();
+            await selectEquipSetTab(newName);
+        }
+
         async function deleteEquipSet() {
             if (!editingEquipSetName) return;
             if (!confirm(`装備セット「${editingEquipSetName}」を削除しますか？`)) return;
@@ -2631,6 +2718,7 @@
         }
 
         document.getElementById('btnSaveEquipSet').addEventListener('click', saveEquipSet);
+        document.getElementById('btnCopyEquipSet').addEventListener('click', copyEquipSet);
         document.getElementById('btnDeleteEquipSet').addEventListener('click', deleteEquipSet);
 
         // === Augment helper functions ===

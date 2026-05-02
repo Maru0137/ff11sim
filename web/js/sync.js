@@ -70,17 +70,27 @@ async function syncLocalToSupabase(user) {
     }
 
     // 衝突しない equipsets を insert
+    // position は (character, job) 内で「Supabase 既存件数からの続き」を割り当て
+    const supaPositionByGroup = new Map();
+    for (const r of existingSets ?? []) {
+        const k = `${r.character_name ?? ''}|${r.job ?? ''}`;
+        supaPositionByGroup.set(k, (supaPositionByGroup.get(k) ?? 0) + 1);
+    }
     const setsToUpload = localSets.filter(
         (s) => !supaSetKeys.has(`${s.character ?? ''}|${s.job ?? ''}|${s.name}`),
     );
     if (setsToUpload.length > 0) {
         const rows = setsToUpload.map((s) => {
             const { name, character, job, ...rest } = s;
+            const k = `${character ?? ''}|${job ?? ''}`;
+            const pos = supaPositionByGroup.get(k) ?? 0;
+            supaPositionByGroup.set(k, pos + 1);
             return {
                 user_id: user.id,
                 name,
                 character_name: character ?? '',
                 job: job ?? '',
+                position: pos,
                 data: rest,
             };
         });

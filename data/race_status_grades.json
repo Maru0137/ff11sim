@@ -1,0 +1,10 @@
+{
+  "version": 1,
+  "data": {
+    "Hum": { "Hp": "D", "Mp": "D", "Str": "D", "Dex": "D", "Vit": "D", "Agi": "D", "Int": "D", "Mnd": "D", "Chr": "D" },
+    "Elv": { "Hp": "C", "Mp": "E", "Str": "B", "Dex": "E", "Vit": "C", "Agi": "F", "Int": "F", "Mnd": "B", "Chr": "D" },
+    "Tar": { "Hp": "G", "Mp": "A", "Str": "F", "Dex": "D", "Vit": "E", "Agi": "C", "Int": "A", "Mnd": "E", "Chr": "D" },
+    "Mit": { "Hp": "D", "Mp": "D", "Str": "E", "Dex": "A", "Vit": "E", "Agi": "B", "Int": "D", "Mnd": "E", "Chr": "F" },
+    "Gal": { "Hp": "A", "Mp": "G", "Str": "C", "Dex": "D", "Vit": "A", "Agi": "E", "Int": "E", "Mnd": "D", "Chr": "F" }
+  }
+}

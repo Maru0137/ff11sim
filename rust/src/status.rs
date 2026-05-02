@@ -1,8 +1,12 @@
 use core::panic;
 
+use enum_map::Enum;
+use serde::{Deserialize, Serialize};
 pub use strum::{EnumCount, EnumIter, VariantArray};
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, EnumCount, EnumIter, VariantArray)]
+use crate::data_loader::GRADE_COEFFICIENTS;
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, EnumCount, EnumIter, VariantArray, Enum, Serialize, Deserialize)]
 pub enum Grade {
     A,
     B,
@@ -13,7 +17,7 @@ pub enum Grade {
     G,
 }
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, EnumCount, EnumIter, VariantArray)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, EnumCount, EnumIter, VariantArray, Enum, Serialize, Deserialize)]
 pub enum BpKind {
     Str,
     Dex,
@@ -24,7 +28,7 @@ pub enum BpKind {
     Chr,
 }
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, EnumCount, EnumIter, VariantArray)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, EnumCount, EnumIter, VariantArray, Enum, Serialize, Deserialize)]
 pub enum StatusKind {
     Hp,
     Mp,
@@ -50,28 +54,6 @@ pub struct Status {
     pub mnd: i32,
     pub chr: i32,
 }
-
-const GRADE_COEF_HPMP: [[f32; 5]; Grade::COUNT] = [
-    // Base, 60, 75, 99, 30+
-    [19.0, 9.0, 3.0, 3.0, 1.0],
-    [17.0, 8.0, 3.0, 3.0, 1.0],
-    [16.0, 7.0, 3.0, 3.0, 1.0],
-    [14.0, 6.0, 3.0, 3.0, 0.0],
-    [13.0, 5.0, 2.0, 2.0, 0.0],
-    [11.0, 4.0, 2.0, 2.0, 0.0],
-    [10.0, 3.0, 2.0, 2.0, 0.0],
-];
-
-const GRADE_COEF_BP: [[f32; 4]; Grade::COUNT] = [
-    // Base, 60, 75, 99
-    [5.0, 0.5, 0.11, 0.39],
-    [4.0, 0.45, 0.21, 0.39],
-    [4.0, 0.4, 0.29, 0.39],
-    [3.0, 0.35, 0.34, 0.39],
-    [3.0, 0.3, 0.34, 0.39],
-    [2.0, 0.25, 0.39, 0.39],
-    [2.0, 0.2, 0.42, 0.39],
-];
 
 // Master Level bonus per level for each stat
 // HP: +7, MP: +2 (only if job has MP), BP stats: +1
@@ -268,8 +250,8 @@ impl BonusStats {
 impl Grade {
     pub fn base(&self, kind: StatusKind) -> f32 {
         match kind {
-            StatusKind::Hp | StatusKind::Mp => GRADE_COEF_HPMP[*self as usize][0],
-            _ => GRADE_COEF_BP[*self as usize][0],
+            StatusKind::Hp | StatusKind::Mp => GRADE_COEFFICIENTS.hpmp[*self][0],
+            _ => GRADE_COEFFICIENTS.bp[*self][0],
         }
     }
 
@@ -282,14 +264,14 @@ impl Grade {
         };
 
         match kind {
-            StatusKind::Hp | StatusKind::Mp => GRADE_COEF_HPMP[*self as usize][idx],
-            _ => GRADE_COEF_BP[*self as usize][idx],
+            StatusKind::Hp | StatusKind::Mp => GRADE_COEFFICIENTS.hpmp[*self][idx],
+            _ => GRADE_COEFFICIENTS.bp[*self][idx],
         }
     }
 
     pub fn coef_30plus(&self, kind: StatusKind) -> f32 {
         match kind {
-            StatusKind::Hp | StatusKind::Mp => GRADE_COEF_HPMP[*self as usize][4],
+            StatusKind::Hp | StatusKind::Mp => GRADE_COEFFICIENTS.hpmp[*self][4],
             _ => panic!("coef_30plus is not applicable for BP"),
         }
     }

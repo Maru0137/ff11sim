@@ -35,7 +35,7 @@ function setText(id, v) {
  * @param {Function} deps.calculate_default_skills       WASM
  * @param {Function} deps.calculateEquipSetBonuses       装備合計計算 (index.html で定義)
  */
-export function updateEquipEditStatus(deps) {
+export async function updateEquipEditStatus(deps) {
     const {
         wasmReady, itemsLoaded,
         charName, jobKey, supportJob, currentEquipSlots,
@@ -53,7 +53,7 @@ export function updateEquipEditStatus(deps) {
         return;
     }
 
-    const characters = loadCharacters();
+    const characters = await loadCharacters();
     const ch = characters.find(c => c.name === charName);
     if (!ch) {
         clearAllEquipStats();

@@ -56,6 +56,16 @@ jobs:
             --descriptions temp_resources/item_descriptions.lua \
             --output web/data/items.json
 
+      - name: Generate Supabase config
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_ANON_KEY: ${{ secrets.SUPABASE_ANON_KEY }}
+        run: |
+          cat > web/js/config.js <<EOF
+          export const SUPABASE_URL = '${SUPABASE_URL}';
+          export const SUPABASE_ANON_KEY = '${SUPABASE_ANON_KEY}';
+          EOF
+
       - name: Setup Pages
         uses: actions/configure-pages@v4
 

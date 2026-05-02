@@ -65,6 +65,45 @@ wasm-pack build --target web --out-dir ../web/pkg
 
 ビルド成功後、`web/pkg/`ディレクトリにWASMファイルが生成されます。
 
+## Supabase 連携 (ユーザー登録 + クラウド保存)
+
+ログインすると、キャラクターと装備セットを Supabase (Postgres) に保存できる。
+未ログイン時は今まで通り localStorage で動作するため、Supabase セットアップは
+任意機能。ローカル開発時に認証機能を試したい場合のみ以下を行う。
+
+### 1. Supabase プロジェクト準備 (Web UI)
+
+1. https://supabase.com/dashboard で新規プロジェクト作成
+2. Google Cloud Console で OAuth 2.0 Client ID を作成
+3. Supabase の Authentication → Providers → Google に Client ID/Secret を登録
+4. Authentication → URL Configuration で Redirect URL を追加:
+   - `http://localhost:8000/**` (開発)
+   - `http://localhost:8888/**` (開発)
+   - `https://maru0137.github.io/ff11sim/**` (本番)
+5. SQL Editor で `supabase/schema.sql` を貼り付けて実行
+6. Project Settings → API から `URL` と `anon` key を取得
+
+### 2. ローカル設定ファイル
+
+```bash
+cp web/js/config.example.js web/js/config.js
+# config.js を編集して SUPABASE_URL / SUPABASE_ANON_KEY に実値を設定
+```
+
+`web/js/config.js` は `.gitignore` 済み (commit されない)。
+
+### 3. 本番 (GitHub Pages) へのデプロイ
+
+GitHub の Repository Settings → Secrets and variables → Actions に登録:
+- `SUPABASE_URL`
+- `SUPABASE_ANON_KEY`
+
+CI (`.github/workflows/deploy.yml`) が deploy 時に `web/js/config.js` を生成する。
+
+> anon key は公開して問題ない (Supabase RLS でユーザー間データが分離される)。
+> 万一漏洩しても他ユーザーのデータには触れない。ただし key ローテーション時の
+> 履歴汚染を避けるため、リポジトリには直接 commit しない運用とする。
+
 ## ディレクトリ構成
 
 ```

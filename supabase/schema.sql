@@ -37,6 +37,7 @@ create table public.equipsets (
   name text not null,
   character_name text,
   job text,
+  position int not null default 0,
   data jsonb not null,
   created_at timestamptz default now(),
   updated_at timestamptz default now(),

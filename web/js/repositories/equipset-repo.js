@@ -29,8 +29,11 @@ class SupabaseEquipSetRepo {
         if (!user) return [];
         const { data, error } = await supabase
             .from('equipsets')
-            .select('name, character_name, job, data')
-            .eq('user_id', user.id);
+            .select('name, character_name, job, position, data')
+            .eq('user_id', user.id)
+            .order('character_name')
+            .order('job')
+            .order('position');
         if (error) {
             console.error('SupabaseEquipSetRepo.list failed:', error);
             return [];
@@ -67,14 +70,19 @@ class SupabaseEquipSetRepo {
             }
         }
 
-        // upsert
+        // upsert: 同じ (character, job) 内のインデックスを position として保存
+        const positionByGroup = new Map();
         const rows = sets.map((s) => {
             const { name, character, job, ...rest } = s;
+            const groupKey = `${character ?? ''}|${job ?? ''}`;
+            const pos = positionByGroup.get(groupKey) ?? 0;
+            positionByGroup.set(groupKey, pos + 1);
             return {
                 user_id: user.id,
                 name,
                 character_name: character ?? '',
                 job: job ?? '',
+                position: pos,
                 data: rest,
             };
         });

@@ -8,6 +8,31 @@
         * {
             box-sizing: border-box;
         }
+        .page-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 16px;
+        }
+        .auth-ui {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 0.9em;
+        }
+        .auth-ui .auth-user { color: #aaa; }
+        .auth-ui .auth-btn {
+            background: #16213e;
+            color: #eee;
+            border: 1px solid #444;
+            padding: 6px 12px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 0.9em;
+        }
+        .auth-ui .auth-btn:hover { background: #1f2a4a; }
+        .auth-ui .auth-btn-google { background: #4285f4; border-color: #4285f4; }
+        .auth-ui .auth-btn-google:hover { background: #357ae8; }
         body {
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
             background: #1a1a2e;
@@ -270,7 +295,10 @@
             <a href="search.html">装備検索</a>
         </nav>
 
-        <h1>FFXI 装備検索</h1>
+        <header class="page-header">
+            <h1>FFXI 装備検索</h1>
+            <div id="auth-ui" class="auth-ui"></div>
+        </header>
 
         <div class="search-section">
             <div class="search-row">
@@ -365,6 +393,11 @@
     </div>
 
     <script src="js/item-search.js"></script>
+    <script type="module">
+        import { mountAuthUI } from './js/auth-ui.js';
+        import './js/sync.js';
+        mountAuthUI(document.getElementById('auth-ui'));
+    </script>
     <script>
         const itemSearch = new ItemSearch();
         let currentOffset = 0;

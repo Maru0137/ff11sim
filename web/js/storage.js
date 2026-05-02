@@ -1,32 +1,25 @@
-// localStorage アクセスの薄いラッパ。
-// キー定数は constants.js に集約。
+// Storage facade. 認証状態に応じて Local / Supabase repo に処理を委譲する。
+// 既存呼び出し側との互換のため関数名は維持するが、async API になっている点に注意
+// (呼び出し箇所は await 必須)。
+//
+// 過去: localStorage を直接読み書きする同期関数。
+// 現在: getCharacterRepo() / getEquipSetRepo() を経由 (constants 由来のキー名は repo 側で参照)。
 
-import { STORAGE_KEY, EQUIP_STORAGE_KEY } from './constants.js';
+import { getCharacterRepo } from './repositories/character-repo.js';
+import { getEquipSetRepo } from './repositories/equipset-repo.js';
 
-export function loadCharacters() {
-    try {
-        const data = localStorage.getItem(STORAGE_KEY);
-        return data ? JSON.parse(data) : [];
-    } catch {
-        return [];
-    }
+export async function loadCharacters() {
+    return getCharacterRepo().list();
 }
 
-export function saveCharacters(characters) {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(characters));
+export async function saveCharacters(characters) {
+    return getCharacterRepo().save(characters);
 }
 
-export function loadEquipSets() {
-    try {
-        const data = localStorage.getItem(EQUIP_STORAGE_KEY);
-        const sets = data ? JSON.parse(data) : [];
-        // 後方互換性: job/character フィールドが無い古いセットにデフォルトを補完。
-        return sets.map(s => ({ job: '', character: '', ...s }));
-    } catch {
-        return [];
-    }
+export async function loadEquipSets() {
+    return getEquipSetRepo().list();
 }
 
-export function saveEquipSets(sets) {
-    localStorage.setItem(EQUIP_STORAGE_KEY, JSON.stringify(sets));
+export async function saveEquipSets(sets) {
+    return getEquipSetRepo().save(sets);
 }

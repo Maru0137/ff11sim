@@ -19,6 +19,32 @@
             color: #eee;
         }
 
+        .page-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 16px;
+        }
+        .auth-ui {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 0.9em;
+        }
+        .auth-ui .auth-user { color: #aaa; }
+        .auth-ui .auth-btn {
+            background: #16213e;
+            color: #eee;
+            border: 1px solid #444;
+            padding: 6px 12px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 0.9em;
+        }
+        .auth-ui .auth-btn:hover { background: #1f2a4a; }
+        .auth-ui .auth-btn-google { background: #4285f4; border-color: #4285f4; }
+        .auth-ui .auth-btn-google:hover { background: #357ae8; }
+
         h1 {
             text-align: center;
             color: #f0c040;
@@ -799,7 +825,10 @@
 </head>
 
 <body>
-    <h1>FF11 ステータスシミュレータ</h1>
+    <header class="page-header">
+        <h1>FF11 ステータスシミュレータ</h1>
+        <div id="auth-ui" class="auth-ui"></div>
+    </header>
 
     <div class="tabs">
         <button class="tab-btn active" data-tab="tab-characters">キャラクター管理</button>
@@ -1509,6 +1538,11 @@
             updateEquipEditStatus as _updateEquipEditStatus,
             clearAllEquipStats,
         } from './js/status-display.js';
+        import { mountAuthUI } from './js/auth-ui.js';
+        import { onAuthChange } from './js/supabase-client.js';
+        import './js/sync.js';
+
+        mountAuthUI(document.getElementById('auth-ui'));
 
         let wasmReady = false;
         const itemSearch = new ItemSearch();
@@ -1910,8 +1944,8 @@
             });
         }
 
-        function renderCharList() {
-            const characters = loadCharacters();
+        async function renderCharList() {
+            const characters = await loadCharacters();
             const list = document.getElementById('charList');
             if (characters.length === 0) {
                 list.innerHTML = '<li class="empty-msg">キャラクターが登録されていません</li>';
@@ -1933,7 +1967,7 @@
                 });
             }
             // Update equipment set character selector
-            updateEquipCharSelector();
+            await updateEquipCharSelector();
         }
 
         function showEditForm(character) {
@@ -2040,7 +2074,7 @@
             editingCharName = null;
         }
 
-        function saveCharacter() {
+        async function saveCharacter() {
             const name = document.getElementById('charName').value.trim();
             if (!name) {
                 alert('キャラクター名を入力してください。');
@@ -2072,7 +2106,7 @@
             });
             const skills = { values: skill_values };
 
-            const characters = loadCharacters();
+            const characters = await loadCharacters();
 
             if (editingCharName) {
                 const idx = characters.findIndex(c => c.name === editingCharName);
@@ -2087,30 +2121,30 @@
                 characters.push({ name, race, job_levels, merit_points, job_points, skills });
             }
 
-            saveCharacters(characters);
-            renderCharList();
+            await saveCharacters(characters);
+            await renderCharList();
             hideEditForm();
         }
 
-        function deleteCharacter(name) {
+        async function deleteCharacter(name) {
             if (!confirm(`キャラクター「${name}」を削除しますか？`)) return;
-            const characters = loadCharacters().filter(c => c.name !== name);
-            saveCharacters(characters);
-            renderCharList();
+            const characters = (await loadCharacters()).filter(c => c.name !== name);
+            await saveCharacters(characters);
+            await renderCharList();
             if (editingCharName === name) hideEditForm();
         }
 
-        document.getElementById('charList').addEventListener('click', (e) => {
+        document.getElementById('charList').addEventListener('click', async (e) => {
             const editBtn = e.target.closest('[data-edit]');
             const deleteBtn = e.target.closest('[data-delete]');
             if (editBtn) {
                 const name = editBtn.dataset.edit;
-                const characters = loadCharacters();
+                const characters = await loadCharacters();
                 const ch = characters.find(c => c.name === name);
                 if (ch) showEditForm(ch);
             }
             if (deleteBtn) {
-                deleteCharacter(deleteBtn.dataset.delete);
+                await deleteCharacter(deleteBtn.dataset.delete);
             }
         });
 
@@ -2343,7 +2377,7 @@
         }
 
         // Render equipment set tabs for selected character+job
-        function renderEquipSetTabs() {
+        async function renderEquipSetTabs() {
             const tabBar = document.getElementById('equipSetTabBar');
             tabBar.innerHTML = '';
 
@@ -2355,7 +2389,7 @@
 
             tabBar.classList.remove('hidden');
 
-            const sets = loadEquipSets().filter(
+            const sets = (await loadEquipSets()).filter(
                 s => s.character === currentEquipChar && s.job === currentEquipJob
             );
 
@@ -2381,13 +2415,13 @@
 
             // Auto-select first tab if any sets exist
             if (sets.length > 0) {
-                selectEquipSetTab(sets[0].name);
+                await selectEquipSetTab(sets[0].name);
             } else {
                 hideEquipSetEditForm();
             }
         }
 
-        function selectEquipSetTab(name) {
+        async function selectEquipSetTab(name) {
             isNewEquipSet = false;
 
             // Update tab active state
@@ -2395,7 +2429,7 @@
                 t.classList.toggle('active', t.dataset.equipsetName === name);
             });
 
-            const sets = loadEquipSets();
+            const sets = await loadEquipSets();
             const es = sets.find(
                 s => s.character === currentEquipChar && s.job === currentEquipJob && s.name === name
             );
@@ -2476,14 +2510,14 @@
             isNewEquipSet = false;
         }
 
-        function saveEquipSet() {
+        async function saveEquipSet() {
             const name = document.getElementById('equipSetName').value.trim();
             if (!name) {
                 alert('装備セット名を入力してください。');
                 return;
             }
 
-            const sets = loadEquipSets();
+            const sets = await loadEquipSets();
             const character = currentEquipChar;
             const job = currentEquipJob;
 
@@ -2511,22 +2545,22 @@
                 sets.push({ name, job, character, slots: { ...currentEquipSlots } });
             }
 
-            saveEquipSets(sets);
-            renderEquipSetTabs();
+            await saveEquipSets(sets);
+            await renderEquipSetTabs();
             // Select the saved set
-            selectEquipSetTab(name);
+            await selectEquipSetTab(name);
         }
 
-        function deleteEquipSet() {
+        async function deleteEquipSet() {
             if (!editingEquipSetName) return;
             if (!confirm(`装備セット「${editingEquipSetName}」を削除しますか？`)) return;
 
-            const sets = loadEquipSets().filter(
+            const sets = (await loadEquipSets()).filter(
                 s => !(s.character === currentEquipChar && s.job === currentEquipJob && s.name === editingEquipSetName)
             );
-            saveEquipSets(sets);
+            await saveEquipSets(sets);
             editingEquipSetName = null;
-            renderEquipSetTabs();
+            await renderEquipSetTabs();
         }
 
         // 装備編集ステータスは js/status-display.js に分離。
@@ -2655,25 +2689,11 @@
             return rankEntry ? rankEntry.text : null;
         }
 
-        function calculateEquipSetBonuses(equipSetNameOrObject) {
-            console.log('[DEBUG] calculateEquipSetBonuses called with:', equipSetNameOrObject);
-            if (!equipSetNameOrObject || !itemsLoaded) {
-                console.log('[DEBUG] No equip set or items not loaded');
+        function calculateEquipSetBonuses(equipSet) {
+            if (!equipSet || !equipSet.slots || !itemsLoaded) {
                 return getEmptyStats();
             }
-
-            let slots;
-            // Handle both string (set name) and object (direct slots)
-            if (typeof equipSetNameOrObject === 'string') {
-                const sets = loadEquipSets();
-                const set = sets.find(s => s.name === equipSetNameOrObject);
-                if (!set) return getEmptyStats();
-                slots = set.slots;
-            } else if (typeof equipSetNameOrObject === 'object' && equipSetNameOrObject.slots) {
-                slots = equipSetNameOrObject.slots;
-            } else {
-                return getEmptyStats();
-            }
+            const slots = equipSet.slots;
 
             console.log('[DEBUG] Processing slots:', slots);
             const statsArray = [];
@@ -2759,11 +2779,12 @@
         // Initialize
         // ==============================================
 
-        function updateEquipCharSelector() {
+        async function updateEquipCharSelector() {
             const sel = document.getElementById('equipSelectChar');
             const currentVal = sel.value;
             sel.innerHTML = '<option value="">-- キャラクターを選択 --</option>';
-            loadCharacters().forEach(ch => {
+            const characters = await loadCharacters();
+            characters.forEach(ch => {
                 const opt = document.createElement('option');
                 opt.value = ch.name;
                 opt.textContent = `${ch.name} (${RACE_NAMES[ch.race] || ch.race})`;
@@ -2796,8 +2817,26 @@
                 equipJobSel.appendChild(opt);
             });
 
-            updateEquipCharSelector();
-            renderCharList();
+            await updateEquipCharSelector();
+            await renderCharList();
+
+            // 認証状態が変わったら表示中のリストを再描画
+            // (INITIAL は initWasm 完了直後に呼ばれて二重実行になるのでスキップ)
+            let initialAuthSeen = false;
+            onAuthChange(async (_user, event) => {
+                if (event === 'INITIAL' && !initialAuthSeen) {
+                    initialAuthSeen = true;
+                    return;
+                }
+                await renderCharList();
+                await renderEquipSetTabs();
+            });
+
+            // sync.js が localStorage → Supabase アップロード完了時に発火
+            window.addEventListener('ff11sim:synced', async () => {
+                await renderCharList();
+                await renderEquipSetTabs();
+            });
         }
 
         initWasm();

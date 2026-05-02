@@ -2,3 +2,4 @@ Cargo.lock
 rust/target
 web/pkg/
 web/data/items.json
+web/js/config.js

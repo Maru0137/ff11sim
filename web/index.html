@@ -840,6 +840,104 @@
                 gap: 10px;
             }
         }
+
+        /* ===== 共有ボタン (toolbar) ===== */
+        .btn-share {
+            background: #5b6ec7;
+            color: #fff;
+        }
+        .btn-share:hover { background: #6c80d9; }
+
+        /* ===== モーダル (共有 URL 表示 / インポート) ===== */
+        .modal-backdrop {
+            position: fixed;
+            inset: 0;
+            background: rgba(0,0,0,0.6);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 1000;
+        }
+        .modal-backdrop.hidden { display: none; }
+        .modal-box {
+            background: #1c1c2e;
+            border: 1px solid #444;
+            border-radius: 8px;
+            padding: 20px;
+            width: min(520px, 90vw);
+            color: #eee;
+            box-shadow: 0 8px 32px rgba(0,0,0,0.5);
+        }
+        .modal-box h3 { margin-top: 0; }
+        .modal-box .form-group { margin: 10px 0; }
+        .modal-box .modal-actions {
+            display: flex;
+            gap: 8px;
+            justify-content: flex-end;
+            margin-top: 16px;
+        }
+        .modal-box input[readonly] {
+            width: 100%;
+            background: #2a2a3e;
+            color: #eee;
+            border: 1px solid #444;
+            padding: 6px;
+            border-radius: 4px;
+            font-family: monospace;
+            font-size: 12px;
+        }
+
+        /* ===== 共有閲覧モード (?share=<id>) ===== */
+        .shared-header {
+            background: #2a2a3e;
+            border: 1px solid #5b6ec7;
+            border-radius: 6px;
+            padding: 12px 16px;
+            margin: 16px 0;
+            display: flex;
+            align-items: center;
+            gap: 16px;
+            flex-wrap: wrap;
+        }
+        .shared-header .shared-badge {
+            background: #5b6ec7;
+            color: #fff;
+            padding: 4px 10px;
+            border-radius: 4px;
+            font-size: 12px;
+            font-weight: bold;
+        }
+        .shared-header .shared-meta {
+            font-size: 14px;
+            color: #ccc;
+        }
+        .shared-header .shared-meta strong { color: #fff; }
+
+        body.share-mode .tabs,
+        body.share-mode #tab-characters,
+        body.share-mode .equipset-selectors,
+        body.share-mode #equipSetTabBar,
+        body.share-mode #equipSetNameGroup,
+        body.share-mode #btnSaveEquipSet,
+        body.share-mode #btnCopyEquipSet,
+        body.share-mode #btnDeleteEquipSet,
+        body.share-mode #btnShareEquipSet {
+            display: none !important;
+        }
+        /* clear/arrow は grid 列を維持するため visibility:hidden で隠す
+           (display:none にするとグリッド列がシフトしてレイアウトが崩れる) */
+        body.share-mode .equip-slot-clear,
+        body.share-mode .equip-slot-arrow {
+            visibility: hidden;
+        }
+        /* share モードでは入力を無効化 */
+        body.share-mode .equip-slot-search,
+        body.share-mode .equip-slot-custom-desc,
+        body.share-mode .equip-slot-aug-path {
+            pointer-events: none;
+            opacity: 0.85;
+            background: #2a2a3e !important;
+        }
     </style>
 </head>
 
@@ -1041,7 +1139,15 @@
         <div id="equipSetTabBar" class="equipset-tabs hidden"></div>
 
         <div id="equipEditSection" class="hidden">
-            <div class="form-group">
+            <div id="sharedHeader" class="shared-header" style="display:none">
+                <span class="shared-badge">共有された装備セット</span>
+                <span class="shared-meta">
+                    <strong id="sharedSetName">-</strong>
+                    <span id="sharedSetMeta"></span>
+                </span>
+            </div>
+
+            <div class="form-group" id="equipSetNameGroup">
                 <label for="equipSetName">名前</label>
                 <input type="text" id="equipSetName" placeholder="装備セット名">
             </div>
@@ -1572,7 +1678,48 @@
             <div class="btn-group">
                 <button class="btn btn-primary" id="btnSaveEquipSet">保存</button>
                 <button class="btn btn-secondary" id="btnCopyEquipSet">複製</button>
+                <button class="btn btn-share" id="btnShareEquipSet">共有</button>
+                <button class="btn btn-primary" id="btnImportShare" style="display:none">インポート</button>
                 <button class="btn btn-danger" id="btnDeleteEquipSet">削除</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 共有 URL 表示モーダル -->
+    <div id="shareUrlModal" class="modal-backdrop hidden">
+        <div class="modal-box">
+            <h3>装備セットを共有</h3>
+            <p>下記 URL をコピーして共有してください。閲覧者はこの装備セットを見て、自分のキャラクターにインポートできます。</p>
+            <div class="form-group">
+                <input type="text" id="shareUrlInput" readonly>
+            </div>
+            <div class="modal-actions">
+                <button class="btn btn-secondary" id="btnCopyShareUrl">URL をコピー</button>
+                <button class="btn btn-danger" id="btnCloseShareUrlModal">閉じる</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- インポート先選択モーダル -->
+    <div id="importShareModal" class="modal-backdrop hidden">
+        <div class="modal-box">
+            <h3>装備セットをインポート</h3>
+            <p id="importShareDescription"></p>
+            <div class="form-group">
+                <label for="importShareCharSelect">対象キャラクター</label>
+                <select id="importShareCharSelect"></select>
+            </div>
+            <div class="form-group">
+                <label for="importShareJobSelect">対象ジョブ</label>
+                <select id="importShareJobSelect"></select>
+            </div>
+            <div class="form-group">
+                <label for="importShareNameInput">装備セット名</label>
+                <input type="text" id="importShareNameInput" placeholder="装備セット名">
+            </div>
+            <div class="modal-actions">
+                <button class="btn btn-primary" id="btnConfirmImportShare">インポート</button>
+                <button class="btn btn-danger" id="btnCancelImportShare">キャンセル</button>
             </div>
         </div>
     </div>
@@ -1601,10 +1748,21 @@
             clearAllEquipStats,
         } from './js/status-display.js';
         import { mountAuthUI } from './js/auth-ui.js';
-        import { onAuthChange } from './js/supabase-client.js';
+        import { onAuthChange, getCurrentUser } from './js/supabase-client.js';
+        import {
+            createShare, loadSharedEquipSet,
+            getShareIdFromUrl, buildShareUrl,
+        } from './js/share.js';
         import './js/sync.js';
 
         mountAuthUI(document.getElementById('auth-ui'));
+
+        // 共有閲覧モード判定 (?share=<uuid>)
+        const _sharedId = getShareIdFromUrl();
+        const SHARE_MODE = _sharedId != null;
+        let _sharedEquipSet = null;
+        // 共有モード時のキャラクター snapshot (loadCharacters() に存在しないため)
+        let _sharedCharacterOverride = null;
 
         let wasmReady = false;
         const itemSearch = new ItemSearch();
@@ -2713,6 +2871,8 @@
                 calculate_status_from_profile,
                 calculate_default_skills,
                 calculateEquipSetBonuses,
+                // 共有閲覧モードでは元キャラの snapshot を渡す
+                characterOverride: _sharedCharacterOverride,
             });
         }
 
@@ -2770,6 +2930,138 @@
         document.getElementById('btnSaveEquipSet').addEventListener('click', saveEquipSet);
         document.getElementById('btnCopyEquipSet').addEventListener('click', copyEquipSet);
         document.getElementById('btnDeleteEquipSet').addEventListener('click', deleteEquipSet);
+
+        // ===== 共有 (作成側): 編集中の装備セットを shared_equipsets テーブルに INSERT =====
+        document.getElementById('btnShareEquipSet').addEventListener('click', async () => {
+            if (!getCurrentUser()) {
+                alert('共有するにはログインが必要です。');
+                return;
+            }
+            if (!editingEquipSetName) {
+                alert('共有する装備セットを開いてから実行してください。');
+                return;
+            }
+            const equipSet = {
+                name: editingEquipSetName,
+                character: currentEquipChar,
+                job: currentEquipJob,
+                support_job: currentEquipSupportJob || null,
+                slots: { ...currentEquipSlots },
+            };
+            // 閲覧側でステータス再現するためキャラクター snapshot を同梱
+            const characters = await loadCharacters();
+            const charSnapshot = characters.find(c => c.name === currentEquipChar) || null;
+            try {
+                const url = await createShare(equipSet, charSnapshot);
+                document.getElementById('shareUrlInput').value = url;
+                document.getElementById('shareUrlModal').classList.remove('hidden');
+            } catch (e) {
+                console.error('createShare failed:', e);
+                alert('共有 URL の発行に失敗しました: ' + (e.message || e));
+            }
+        });
+
+        document.getElementById('btnCopyShareUrl').addEventListener('click', async () => {
+            const input = document.getElementById('shareUrlInput');
+            try {
+                await navigator.clipboard.writeText(input.value);
+                const btn = document.getElementById('btnCopyShareUrl');
+                const orig = btn.textContent;
+                btn.textContent = 'コピーしました!';
+                setTimeout(() => { btn.textContent = orig; }, 1500);
+            } catch {
+                // フォールバック: 選択するだけ
+                input.select();
+            }
+        });
+
+        document.getElementById('btnCloseShareUrlModal').addEventListener('click', () => {
+            document.getElementById('shareUrlModal').classList.add('hidden');
+        });
+
+        // ===== インポート (閲覧側): 共有装備セットを自分のキャラ + ジョブにコピー =====
+        document.getElementById('btnImportShare').addEventListener('click', async () => {
+            if (!_sharedEquipSet) return;
+            if (!getCurrentUser()) {
+                if (confirm('インポートにはログインが必要です。Google でログインしますか?')) {
+                    const { signInWithGoogle } = await import('./js/supabase-client.js');
+                    await signInWithGoogle();
+                }
+                return;
+            }
+            // モーダル: キャラ + ジョブ + 名前 を選択
+            const charSel = document.getElementById('importShareCharSelect');
+            const jobSel = document.getElementById('importShareJobSelect');
+            const nameInput = document.getElementById('importShareNameInput');
+            const desc = document.getElementById('importShareDescription');
+
+            const characters = await loadCharacters();
+            charSel.innerHTML = '';
+            if (characters.length === 0) {
+                alert('先に「キャラクター管理」タブからキャラクターを作成してください。');
+                return;
+            }
+            characters.forEach(ch => {
+                const opt = document.createElement('option');
+                opt.value = ch.name;
+                opt.textContent = `${ch.name} (${RACE_NAMES[ch.race] || ch.race})`;
+                charSel.appendChild(opt);
+            });
+
+            jobSel.innerHTML = '';
+            JOBS.forEach(j => {
+                const opt = document.createElement('option');
+                opt.value = j.key;
+                opt.textContent = j.name;
+                jobSel.appendChild(opt);
+            });
+            // 共有元のジョブをデフォルト選択
+            if (_sharedEquipSet.job) jobSel.value = _sharedEquipSet.job;
+
+            nameInput.value = _sharedEquipSet.name || '共有装備セット';
+            desc.textContent = `共有元: ${_sharedEquipSet.characterName || '(未設定)'} / ${_sharedEquipSet.job || '(未設定)'} / ${_sharedEquipSet.name}`;
+
+            document.getElementById('importShareModal').classList.remove('hidden');
+        });
+
+        document.getElementById('btnCancelImportShare').addEventListener('click', () => {
+            document.getElementById('importShareModal').classList.add('hidden');
+        });
+
+        document.getElementById('btnConfirmImportShare').addEventListener('click', async () => {
+            const character = document.getElementById('importShareCharSelect').value;
+            const job = document.getElementById('importShareJobSelect').value;
+            const name = document.getElementById('importShareNameInput').value.trim();
+            if (!character || !job || !name) {
+                alert('キャラクター・ジョブ・名前を全て指定してください。');
+                return;
+            }
+            const sets = await loadEquipSets();
+            // 重複名は (2), (3) ... を付与して回避
+            const used = new Set(
+                sets.filter(s => s.character === character && s.job === job).map(s => s.name)
+            );
+            let finalName = name;
+            let i = 2;
+            while (used.has(finalName)) finalName = `${name} (${i++})`;
+
+            sets.push({
+                name: finalName,
+                character,
+                job,
+                slots: { ...(_sharedEquipSet.slots || {}) },
+            });
+            try {
+                await saveEquipSets(sets);
+                alert(`「${finalName}」としてインポートしました。`);
+                document.getElementById('importShareModal').classList.add('hidden');
+                // share=URL を外して通常モードに戻る
+                window.location.href = window.location.origin + window.location.pathname;
+            } catch (e) {
+                console.error('import failed:', e);
+                alert('インポートに失敗しました: ' + (e.message || e));
+            }
+        });
 
         // === Augment helper functions ===
         // AUGMENT_JA_TO_EN は constants.js、convertAugmentJaToEn は utils.js に定義。
@@ -2954,6 +3246,62 @@
                 opt.textContent = job.name;
                 equipJobSel.appendChild(opt);
             });
+
+            // ===== 共有閲覧モード =====
+            // ?share=<id> 付きで開かれた場合は通常 UI をスキップして共有データを読み込む
+            if (SHARE_MODE) {
+                document.body.classList.add('share-mode');
+                // 装備セットタブを active に切り替え
+                document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
+                document.getElementById('tab-equipsets').classList.add('active');
+                try {
+                    _sharedEquipSet = await loadSharedEquipSet(_sharedId);
+                    // ヘッダー反映
+                    document.getElementById('sharedHeader').style.display = '';
+                    document.getElementById('sharedSetName').textContent = _sharedEquipSet.name || '(無名)';
+                    // 例: "Hum WAR99/SAM59 ML50"
+                    // ジョブキーは main が "War"、support が "war" と大小文字が混在しているので正規化する
+                    const normJobKey = (k) => k ? k.charAt(0).toUpperCase() + k.slice(1).toLowerCase() : '';
+                    const charSummary = (() => {
+                        const snap = _sharedEquipSet.characterSnapshot;
+                        if (!snap) return '';
+                        const race = snap.race || '?';
+                        const mainKey = normJobKey(_sharedEquipSet.job);
+                        const supKey = normJobKey(_sharedEquipSet.support_job);
+                        const jl = snap.job_levels || {};
+                        const mainJl = jl[mainKey] || { level: 0, master_lv: 0 };
+                        const supJl = supKey ? (jl[supKey] || { level: 0 }) : null;
+                        const mainStr = mainKey ? `${mainKey.toUpperCase()}${mainJl.level || ''}` : '';
+                        const supStr = supJl && supKey ? `/${supKey.toUpperCase()}${supJl.level || ''}` : '';
+                        const mlStr = mainJl.master_lv ? ` ML${mainJl.master_lv}` : '';
+                        return `${race} ${mainStr}${supStr}${mlStr}`.trim();
+                    })();
+                    document.getElementById('sharedSetMeta').textContent =
+                        ` / 共有元: ${_sharedEquipSet.characterName || '?'}` +
+                        (charSummary ? ` / ${charSummary}` : '');
+                    // インポートボタンを表示
+                    document.getElementById('btnImportShare').style.display = '';
+                    // ステータス再現用 character snapshot を override にセット
+                    _sharedCharacterOverride = _sharedEquipSet.characterSnapshot || null;
+                    // 装備編集フォームに流し込んで描画
+                    currentEquipChar = _sharedEquipSet.characterName || '(共有元)';
+                    currentEquipJob = _sharedEquipSet.job || '';
+                    currentEquipSupportJob = _sharedEquipSet.support_job || '';
+                    // showEquipSetEditForm は equipSet.slots を読むので合わせて name/slots を持たせる
+                    showEquipSetEditForm({
+                        name: _sharedEquipSet.name,
+                        slots: _sharedEquipSet.slots || {},
+                    });
+                } catch (e) {
+                    console.error('failed to load shared equipset:', e);
+                    document.getElementById('equipEditSection').classList.remove('hidden');
+                    document.getElementById('sharedHeader').style.display = '';
+                    document.getElementById('sharedSetName').textContent = '読み込みに失敗しました';
+                    document.getElementById('sharedSetMeta').textContent =
+                        ` / ${e.message || e}`;
+                }
+                return;
+            }
 
             await updateEquipCharSelector();
             await renderCharList();

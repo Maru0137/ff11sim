@@ -55,12 +55,28 @@ create table public.items (
 );
 
 -- ---------------------------------------------------------------------------
+-- 5. shared_equipsets: 装備セット共有機能用
+--    ?share=<id> で誰でも閲覧可、認証ユーザーのみ作成可
+-- ---------------------------------------------------------------------------
+create table public.shared_equipsets (
+  id uuid primary key default gen_random_uuid(),
+  user_id uuid references auth.users(id) on delete set null,
+  name text not null,
+  character_name text,
+  job text,
+  data jsonb not null,
+  created_at timestamptz default now()
+);
+create index shared_equipsets_user_id_idx on public.shared_equipsets (user_id);
+
+-- ---------------------------------------------------------------------------
 -- Row Level Security
 -- ---------------------------------------------------------------------------
 alter table public.profiles enable row level security;
 alter table public.characters enable row level security;
 alter table public.equipsets enable row level security;
 alter table public.items enable row level security;
+alter table public.shared_equipsets enable row level security;
 
 create policy "users can rw own profile" on public.profiles
   for all using (auth.uid() = id) with check (auth.uid() = id);
@@ -73,6 +89,13 @@ create policy "users can rw own equipsets" on public.equipsets
 
 create policy "anyone can read items" on public.items
   for select using (true);
+
+create policy "anyone can read shared equipsets" on public.shared_equipsets
+  for select using (true);
+create policy "authenticated users can create shared equipsets" on public.shared_equipsets
+  for insert with check (auth.uid() = user_id);
+create policy "owner can delete shared equipsets" on public.shared_equipsets
+  for delete using (auth.uid() = user_id);
 
 -- ---------------------------------------------------------------------------
 -- updated_at 自動更新 trigger

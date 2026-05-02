@@ -649,6 +649,11 @@
             border-color: #f0c040;
         }
 
+        .equip-slot-aug-path:disabled {
+            opacity: 0.4;
+            cursor: not-allowed;
+        }
+
 
         .equip-slot-aug-text {
             font-size: 11px;
@@ -3077,8 +3082,12 @@
 
             const slotData = currentEquipSlots[slotKey];
             const augInfo = slotData ? getItemAugments(slotData.item_id) : null;
+            const hasAug = !!(augInfo && augInfo.paths && augInfo.paths.length > 0);
 
-            if (!augInfo || !augInfo.paths || augInfo.paths.length === 0) {
+            // オーグメント候補が無い (装備未選択 or 該当装備にオーグなし) 場合は disabled に
+            pathSelect.disabled = !hasAug;
+
+            if (!hasAug) {
                 pathSelect.innerHTML = '<option value="">-- オーグメント --</option>';
                 updateAugTextDisplay(slotKey);
                 return;

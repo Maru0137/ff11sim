@@ -209,15 +209,26 @@ export async function updateEquipEditStatus(deps) {
         const wsDamagePct = equip.weapon_skill_damage_pct || 0;
 
         // ----- Tab 1: 待機/回避/防御 -----
-        setText('statDefHp', totalStats.hp || '-');
-        setText('statDefMp', totalStats.mp || '-');
-        setText('statDefDef', totalStats.def || '-');
-        setText('statDefMdef', totalStats.mdef || '-');
-        setText('statDefEva', numOrDash(evasionTotal));
-        setText('statDefMeva', numOrDash(magicEvasionTotal));
-        setText('statDefDt', pctOrDash(equip.damage_taken_pct));
-        setText('statDefPdt', pctOrDash(equip.physical_damage_taken_pct));
-        setText('statDefMdt', pctOrDash(equip.magic_damage_taken_pct));
+        setText('statDefRegen', numOrDash(equip.regen));
+        setText('statDefRefresh', numOrDash(equip.refresh));
+        setText('statDefRegain', numOrDash(equip.regain));
+        setText('statDefFastCast', pctOrDash(equip.fast_cast_pct));
+        setText('statDefQuickMagic', pctOrDash(equip.quick_magic_pct));
+        // Snapshot/Rapid Shot は装備テキストでも単位無し表記が標準
+        setText('statDefSnapshot', numOrDash(equip.snapshot_pct));
+        setText('statDefRapidShot', numOrDash(equip.rapid_shot_pct));
+        // 属性レジスト
+        for (const elem of ['fire', 'ice', 'wind', 'earth', 'lightning', 'water', 'light', 'dark']) {
+            const id = 'statDefRes' + elem.charAt(0).toUpperCase() + elem.slice(1);
+            setText(id, numOrDash(equip['resist_' + elem]));
+        }
+        // 状態異常レジスト
+        for (const st of ['sleep', 'paralysis', 'bind', 'silence', 'gravity', 'slow',
+                          'petrification', 'stun', 'poison', 'charm', 'blind', 'curse',
+                          'virus', 'amnesia', 'terror', 'death']) {
+            const id = 'statDefRes' + st.charAt(0).toUpperCase() + st.slice(1);
+            setText(id, numOrDash(equip['resist_' + st]));
+        }
 
         // ----- Tab 2: オートアタック (近接) -----
         setText('statAaMainSkill', formatWeaponSkill(totalStats.main_weapon_skill, totalStats.main_weapon_skill_value));

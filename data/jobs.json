@@ -1,0 +1,27 @@
+{
+  "version": 1,
+  "data": [
+    { "key": "War", "name_ja": "戦士" },
+    { "key": "Mnk", "name_ja": "モンク" },
+    { "key": "Whm", "name_ja": "白魔道士" },
+    { "key": "Blm", "name_ja": "黒魔道士" },
+    { "key": "Rdm", "name_ja": "赤魔道士" },
+    { "key": "Thf", "name_ja": "シーフ" },
+    { "key": "Pld", "name_ja": "ナイト" },
+    { "key": "Drk", "name_ja": "暗黒騎士" },
+    { "key": "Bst", "name_ja": "獣使い" },
+    { "key": "Brd", "name_ja": "吟遊詩人" },
+    { "key": "Rng", "name_ja": "狩人" },
+    { "key": "Sam", "name_ja": "侍" },
+    { "key": "Nin", "name_ja": "忍者" },
+    { "key": "Drg", "name_ja": "竜騎士" },
+    { "key": "Smn", "name_ja": "召喚士" },
+    { "key": "Blu", "name_ja": "青魔道士" },
+    { "key": "Cor", "name_ja": "コルセア" },
+    { "key": "Pup", "name_ja": "からくり士" },
+    { "key": "Dnc", "name_ja": "踊り子" },
+    { "key": "Sch", "name_ja": "学者" },
+    { "key": "Geo", "name_ja": "風水士" },
+    { "key": "Run", "name_ja": "魔導剣士" }
+  ]
+}

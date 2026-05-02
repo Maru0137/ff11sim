@@ -1,0 +1,21 @@
+{
+  "version": 1,
+  "data": [
+    { "key": "main", "label_ja": "メイン" },
+    { "key": "sub", "label_ja": "サブ" },
+    { "key": "range", "label_ja": "レンジ" },
+    { "key": "ammo", "label_ja": "矢弾" },
+    { "key": "head", "label_ja": "頭" },
+    { "key": "body", "label_ja": "胴" },
+    { "key": "hands", "label_ja": "両手" },
+    { "key": "legs", "label_ja": "両脚" },
+    { "key": "feet", "label_ja": "両足" },
+    { "key": "neck", "label_ja": "首" },
+    { "key": "waist", "label_ja": "腰" },
+    { "key": "ear1", "label_ja": "左耳" },
+    { "key": "ear2", "label_ja": "右耳" },
+    { "key": "ring1", "label_ja": "左指" },
+    { "key": "ring2", "label_ja": "右指" },
+    { "key": "back", "label_ja": "背" }
+  ]
+}

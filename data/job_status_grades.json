@@ -1,0 +1,27 @@
+{
+  "version": 1,
+  "data": {
+    "War": { "Hp": "B", "Mp": null, "Str": "A", "Dex": "C", "Vit": "D", "Agi": "C", "Int": "F", "Mnd": "F", "Chr": "E" },
+    "Mnk": { "Hp": "A", "Mp": null, "Str": "C", "Dex": "B", "Vit": "A", "Agi": "F", "Int": "G", "Mnd": "D", "Chr": "E" },
+    "Whm": { "Hp": "E", "Mp": "C", "Str": "D", "Dex": "F", "Vit": "D", "Agi": "E", "Int": "E", "Mnd": "A", "Chr": "C" },
+    "Blm": { "Hp": "F", "Mp": "B", "Str": "F", "Dex": "C", "Vit": "F", "Agi": "C", "Int": "A", "Mnd": "E", "Chr": "D" },
+    "Rdm": { "Hp": "D", "Mp": "D", "Str": "D", "Dex": "D", "Vit": "E", "Agi": "E", "Int": "C", "Mnd": "C", "Chr": "D" },
+    "Thf": { "Hp": "D", "Mp": null, "Str": "D", "Dex": "A", "Vit": "D", "Agi": "B", "Int": "C", "Mnd": "G", "Chr": "G" },
+    "Pld": { "Hp": "C", "Mp": "F", "Str": "B", "Dex": "E", "Vit": "A", "Agi": "G", "Int": "G", "Mnd": "C", "Chr": "C" },
+    "Drk": { "Hp": "C", "Mp": "F", "Str": "A", "Dex": "C", "Vit": "C", "Agi": "D", "Int": "C", "Mnd": "G", "Chr": "G" },
+    "Bst": { "Hp": "C", "Mp": null, "Str": "D", "Dex": "C", "Vit": "D", "Agi": "F", "Int": "E", "Mnd": "E", "Chr": "A" },
+    "Brd": { "Hp": "D", "Mp": null, "Str": "D", "Dex": "D", "Vit": "D", "Agi": "F", "Int": "D", "Mnd": "D", "Chr": "B" },
+    "Rng": { "Hp": "E", "Mp": null, "Str": "E", "Dex": "D", "Vit": "D", "Agi": "A", "Int": "E", "Mnd": "D", "Chr": "E" },
+    "Sam": { "Hp": "B", "Mp": null, "Str": "C", "Dex": "C", "Vit": "C", "Agi": "D", "Int": "E", "Mnd": "E", "Chr": "D" },
+    "Nin": { "Hp": "D", "Mp": null, "Str": "C", "Dex": "B", "Vit": "C", "Agi": "B", "Int": "D", "Mnd": "G", "Chr": "F" },
+    "Drg": { "Hp": "B", "Mp": null, "Str": "B", "Dex": "D", "Vit": "C", "Agi": "D", "Int": "F", "Mnd": "E", "Chr": "C" },
+    "Smn": { "Hp": "G", "Mp": "A", "Str": "F", "Dex": "E", "Vit": "F", "Agi": "D", "Int": "B", "Mnd": "B", "Chr": "B" },
+    "Blu": { "Hp": "D", "Mp": "D", "Str": "E", "Dex": "E", "Vit": "E", "Agi": "E", "Int": "E", "Mnd": "E", "Chr": "E" },
+    "Cor": { "Hp": "D", "Mp": null, "Str": "E", "Dex": "C", "Vit": "E", "Agi": "B", "Int": "C", "Mnd": "E", "Chr": "E" },
+    "Pup": { "Hp": "D", "Mp": null, "Str": "E", "Dex": "B", "Vit": "D", "Agi": "C", "Int": "E", "Mnd": "F", "Chr": "C" },
+    "Dnc": { "Hp": "D", "Mp": null, "Str": "D", "Dex": "C", "Vit": "E", "Agi": "B", "Int": "F", "Mnd": "F", "Chr": "B" },
+    "Sch": { "Hp": "E", "Mp": "D", "Str": "F", "Dex": "D", "Vit": "E", "Agi": "D", "Int": "B", "Mnd": "D", "Chr": "C" },
+    "Geo": { "Hp": "D", "Mp": "C", "Str": "F", "Dex": "D", "Vit": "D", "Agi": "E", "Int": "B", "Mnd": "B", "Chr": "E" },
+    "Run": { "Hp": "B", "Mp": "F", "Str": "C", "Dex": "D", "Vit": "E", "Agi": "B", "Int": "D", "Mnd": "D", "Chr": "F" }
+  }
+}

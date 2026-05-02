@@ -1,0 +1,10 @@
+{
+  "version": 1,
+  "data": [
+    { "key": "Hum", "name_ja": "ヒューム" },
+    { "key": "Elv", "name_ja": "エルヴァーン" },
+    { "key": "Tar", "name_ja": "タルタル" },
+    { "key": "Mit", "name_ja": "ミスラ" },
+    { "key": "Gal", "name_ja": "ガルカ" }
+  ]
+}

@@ -891,6 +891,63 @@
             font-family: monospace;
             font-size: 12px;
         }
+        .modal-box.modal-large {
+            width: min(720px, 95vw);
+            max-height: 85vh;
+            overflow-y: auto;
+        }
+
+        /* カスタムオーグメント書式ヘルプ */
+        .aug-help-btn {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            background: none;
+            border: 1px solid #666;
+            color: #ccc;
+            width: 16px;
+            height: 16px;
+            border-radius: 50%;
+            font-size: 10px;
+            line-height: 1;
+            padding: 0;
+            cursor: pointer;
+            margin-left: 6px;
+            vertical-align: middle;
+        }
+        .aug-help-btn:hover {
+            border-color: #f0c040;
+            color: #f0c040;
+        }
+        .aug-help-content table {
+            border-collapse: collapse;
+            width: 100%;
+            font-size: 12px;
+            margin-top: 8px;
+        }
+        .aug-help-content th,
+        .aug-help-content td {
+            border: 1px solid #444;
+            padding: 4px 8px;
+            text-align: left;
+            vertical-align: top;
+        }
+        .aug-help-content th {
+            background: #2a2a3e;
+            color: #f0c040;
+        }
+        .aug-help-content code {
+            background: #0f0f23;
+            padding: 1px 5px;
+            border-radius: 3px;
+            color: #cda;
+            font-size: 11px;
+        }
+        .aug-help-content .note {
+            font-size: 11px;
+            color: #aaa;
+            margin-top: 8px;
+        }
 
         /* ===== 共有閲覧モード (?share=<id>) ===== */
         .shared-header {
@@ -1729,6 +1786,51 @@
         </div>
     </div>
 
+    <!-- カスタムオーグメント書式ヘルプモーダル -->
+    <div id="customAugHelpModal" class="modal-backdrop hidden">
+        <div class="modal-box modal-large aug-help-content">
+            <h3>カスタムオーグメントの書き方</h3>
+            <p>「カスタム」欄には、装備の説明欄に表示されるオーグメント効果（オーグメント候補に無い効果も含む）をテキストで自由に追加できます。</p>
+            <p><strong>基本書式</strong>: <code>項目名+数値</code> または <code>項目名-数値</code>（複数項目は半角空白で区切る）</p>
+            <p>例: <code>STR+11 命中+10 ヘイスト+3%</code></p>
+            <h4>主な対応項目</h4>
+            <table>
+                <thead><tr><th>分類</th><th>日本語表記</th><th>英語表記</th><th>記入例</th></tr></thead>
+                <tbody>
+                    <tr><td rowspan="3">基本ステータス</td><td>HP / MP</td><td>HP / MP</td><td><code>HP+50</code> <code>MP+5%</code></td></tr>
+                    <tr><td>STR / DEX / VIT / AGI / INT / MND / CHR</td><td>同左</td><td><code>STR+11 DEX+11</code></td></tr>
+                    <tr><td colspan="2">スラッシュ区切りで複数指定可</td><td><code>STR/VIT+10</code></td></tr>
+
+                    <tr><td rowspan="6">戦闘ステータス</td><td>命中</td><td>Accuracy</td><td><code>命中+15</code></td></tr>
+                    <tr><td>攻 (攻撃)</td><td>Attack</td><td><code>攻+20</code> <code>攻+3%</code></td></tr>
+                    <tr><td>回避</td><td>Evasion</td><td><code>回避+10</code></td></tr>
+                    <tr><td>飛命 / 飛攻</td><td>Ranged Accuracy / Ranged Attack</td><td><code>飛攻+25</code></td></tr>
+                    <tr><td>魔命 / 魔攻 / 魔回避</td><td>Magic Accuracy / "Magic Atk. Bonus" / Magic Evasion</td><td><code>魔攻+15</code></td></tr>
+                    <tr><td>魔法ダメージ</td><td>Magic Damage</td><td><code>魔法ダメージ+10</code></td></tr>
+
+                    <tr><td rowspan="6">特殊効果</td><td>ヘイスト+N%</td><td>Haste+N%</td><td><code>ヘイスト+3%</code></td></tr>
+                    <tr><td>ダブルアタック+N%</td><td>"Double Attack"+N%</td><td><code>ダブルアタック+5%</code></td></tr>
+                    <tr><td>トリプルアタック+N%</td><td>"Triple Attack"+N%</td><td><code>トリプルアタック+3%</code></td></tr>
+                    <tr><td>クワッドアタック+N%</td><td>"Quadruple Attack"+N%</td><td><code>クワッドアタック+2%</code></td></tr>
+                    <tr><td>クリティカルヒット率+N%</td><td>Critical hit rate+N%</td><td><code>クリティカルヒット率+5%</code></td></tr>
+                    <tr><td>クリティカルヒットダメージ+N%</td><td>Critical hit damage+N%</td><td><code>クリティカルヒットダメージ+10%</code></td></tr>
+
+                    <tr><td rowspan="6">WS / 連携 / TP</td><td>ウェポンスキルのダメージ+N%</td><td>Weapon skill damage+N%</td><td><code>ウェポンスキルのダメージ+5%</code></td></tr>
+                    <tr><td>ストアTP+N</td><td>"Store TP"+N</td><td><code>ストアTP+10</code></td></tr>
+                    <tr><td>TPボーナス+N</td><td>"TP Bonus"+N</td><td><code>TPボーナス+500</code></td></tr>
+                    <tr><td>連携ボーナス+N / 連携ダメージ+N%</td><td>"Skillchain Bonus"+N</td><td><code>連携ボーナス+10</code></td></tr>
+                    <tr><td>マジックバーストダメージ+N%</td><td>Magic burst damage+N%</td><td><code>マジックバーストダメージ+10%</code></td></tr>
+                    <tr><td>モクシャ / モクシャII</td><td>"Subtle Blow" / "Subtle Blow II"</td><td><code>モクシャ+10</code></td></tr>
+                </tbody>
+            </table>
+            <p class="note">※ 日本語で書いた項目は内部で英語表記に自動変換されてからパースされます。一覧に無い項目（例: <code>"Triple Attack"+3%</code>）は装備説明欄と同じ英語表記で直接記入することもできます。</p>
+            <p class="note">※ 数値の前に <code>+</code> または <code>-</code>、末尾に <code>%</code> を付けると割合扱いです（HP/MP/Attack の一部のみ対応）。</p>
+            <div class="modal-actions">
+                <button class="btn btn-danger" id="btnCloseCustomAugHelp">閉じる</button>
+            </div>
+        </div>
+    </div>
+
     <script src="js/item-search.js"></script>
     <script src="js/equip-stats.js"></script>
     <script type="module">
@@ -2404,6 +2506,17 @@
             headerLabels.forEach(text => {
                 const span = document.createElement('span');
                 span.textContent = text;
+                if (text === 'カスタム') {
+                    const helpBtn = document.createElement('button');
+                    helpBtn.type = 'button';
+                    helpBtn.className = 'aug-help-btn';
+                    helpBtn.textContent = '?';
+                    helpBtn.title = 'カスタムオーグメント欄の書き方を表示';
+                    helpBtn.addEventListener('click', () => {
+                        document.getElementById('customAugHelpModal').classList.remove('hidden');
+                    });
+                    span.appendChild(helpBtn);
+                }
                 headerEl.appendChild(span);
             });
             container.appendChild(headerEl);
@@ -2456,7 +2569,7 @@
                 customDescInput.type = 'text';
                 customDescInput.className = 'equip-slot-custom-desc';
                 customDescInput.dataset.slot = slot.key;
-                customDescInput.placeholder = 'STR+5 Accuracy+10 ...';
+                customDescInput.placeholder = '例: STR+5 命中+10 ヘイスト+3%';
 
                 const augContainer = document.createElement('div');
                 augContainer.className = 'equip-slot-aug-container';
@@ -2982,6 +3095,17 @@
 
         document.getElementById('btnCloseShareUrlModal').addEventListener('click', () => {
             document.getElementById('shareUrlModal').classList.add('hidden');
+        });
+
+        // カスタムオーグメント書式ヘルプモーダル
+        document.getElementById('btnCloseCustomAugHelp').addEventListener('click', () => {
+            document.getElementById('customAugHelpModal').classList.add('hidden');
+        });
+        document.getElementById('customAugHelpModal').addEventListener('click', (e) => {
+            // 背景クリックで閉じる
+            if (e.target.id === 'customAugHelpModal') {
+                e.currentTarget.classList.add('hidden');
+            }
         });
 
         // ===== インポート (閲覧側): 共有装備セットを自分のキャラ + ジョブにコピー =====

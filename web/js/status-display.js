@@ -138,6 +138,7 @@ export async function updateEquipEditStatus(deps) {
             ranged_accuracy: equip.ranged_accuracy || 0,
             store_tp: equip.store_tp || 0,
             double_attack_pct: equip.double_attack_pct || 0,
+            skillchain_bonus: equip.skillchain_bonus || 0,
             main_weapon_skill_id: mainWeaponSkillId,
             sub_weapon_skill_id: subWeaponSkillId,
             ranged_weapon_skill_id: rangedWeaponSkillId,
@@ -216,6 +217,8 @@ export async function updateEquipEditStatus(deps) {
         const magicEvasionTotal = (equip.magic_evasion || 0) + (totalStats.magic_evasion_bonus || 0);
         const magicDamageTotal = equip.magic_damage || 0;
         const wsDamagePct = equip.weapon_skill_damage_pct || 0;
+        // 連携ボーナス総合 (装備 + ジョブ特性 + ギフト) は WASM 側で算出済み。
+        const skillchainBonusTotal = totalStats.skillchain_bonus || 0;
 
         // ----- Tab 1: 待機/回避/防御 -----
         setText('statDefRegen', numOrDash(equip.regen));
@@ -282,7 +285,7 @@ export async function updateEquipEditStatus(deps) {
         setText('statMwsCritDmg', pctOrDash(equip.critical_hit_damage_pct));
         setText('statMwsWsdmg', pctOrDash(wsDamagePct));
         setText('statMwsTpb', numOrDash(equip.tp_bonus));
-        setText('statMwsScb', numOrDash(equip.skillchain_bonus));
+        setText('statMwsScb', numOrDash(skillchainBonusTotal));
         setText('statMwsPdl', pctOrDash(equip.physical_damage_limit_pct));
 
         // ----- Tab 5: 遠隔物理 WS -----
@@ -296,7 +299,7 @@ export async function updateEquipEditStatus(deps) {
         setText('statRwsCritDmg', pctOrDash(equip.critical_hit_damage_pct));
         setText('statRwsWsdmg', pctOrDash(wsDamagePct));
         setText('statRwsTpb', numOrDash(equip.tp_bonus));
-        setText('statRwsScb', numOrDash(equip.skillchain_bonus));
+        setText('statRwsScb', numOrDash(skillchainBonusTotal));
         setText('statRwsPdl', pctOrDash(equip.physical_damage_limit_pct));
         setText('statRwsTs', numOrDash(equip.true_shot));
 
@@ -321,7 +324,7 @@ export async function updateEquipEditStatus(deps) {
         setText('statEwsMcrit2', pctOrDash(equip.magic_critical_hit_2_pct));
         setText('statEwsWsdmg', pctOrDash(wsDamagePct));
         setText('statEwsTpb', numOrDash(equip.tp_bonus));
-        setText('statEwsScb', numOrDash(equip.skillchain_bonus));
+        setText('statEwsScb', numOrDash(skillchainBonusTotal));
 
         // ----- Tab 7: 近接属性物理 WS -----
         // 物理 WS 系の攻撃/命中/DA 等と、属性 WS の魔攻/魔命/魔法ダメ等を併記。
@@ -353,7 +356,7 @@ export async function updateEquipEditStatus(deps) {
         setText('statMewsCritDmg', pctOrDash(equip.critical_hit_damage_pct));
         setText('statMewsWsdmg', pctOrDash(wsDamagePct));
         setText('statMewsTpb', numOrDash(equip.tp_bonus));
-        setText('statMewsScb', numOrDash(equip.skillchain_bonus));
+        setText('statMewsScb', numOrDash(skillchainBonusTotal));
         setText('statMewsPdl', pctOrDash(equip.physical_damage_limit_pct));
 
         // ----- Tab 8: 遠隔属性物理 WS -----
@@ -376,7 +379,7 @@ export async function updateEquipEditStatus(deps) {
         setText('statRewsCritDmg', pctOrDash(equip.critical_hit_damage_pct));
         setText('statRewsWsdmg', pctOrDash(wsDamagePct));
         setText('statRewsTpb', numOrDash(equip.tp_bonus));
-        setText('statRewsScb', numOrDash(equip.skillchain_bonus));
+        setText('statRewsScb', numOrDash(skillchainBonusTotal));
         setText('statRewsPdl', pctOrDash(equip.physical_damage_limit_pct));
         setText('statRewsTs', numOrDash(equip.true_shot));
 

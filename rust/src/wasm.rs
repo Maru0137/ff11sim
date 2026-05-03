@@ -68,6 +68,8 @@ pub struct StatusResult {
     pub store_tp: i32,
     /// ダブルアタック発動率総合値 (%) (装備 + ジョブ特性 + メリット + JPカテゴリ)
     pub double_attack_pct: i32,
+    /// 連携ボーナス総合値 (%) (装備 + ジョブ特性 + ギフト)
+    pub skillchain_bonus: i32,
     pub total_jp_spent: i32,
     /// メインジョブ/サポートジョブで制限されたスキル有効値（キー: スキル名）
     pub effective_skills: BTreeMap<String, i32>,
@@ -301,6 +303,9 @@ fn chara_to_status_result(chara: &Chara) -> StatusResult {
     let magic_attack_bonus_trait = chara.job_trait_total(JobTrait::MagicAttackBonus);
     let store_tp_trait = chara.job_trait_total(JobTrait::StoreTp);
     let double_attack_trait = chara.job_trait_total(JobTrait::DoubleAttack);
+    // 連携ボーナス: ジョブ特性 + ギフト + 装備の合計
+    // (max(main, sup) ではなく main のみ — サポートジョブ特性の skillchain bonus は実装未確認のため)
+    let skillchain_bonus_trait = chara.job_trait_total(JobTrait::SkillchainBonus);
 
     // ジョブポイント / ギフトによる戦闘ステータスボーナス
     let total_jp = chara.job_points.total_jp_spent();
@@ -538,6 +543,10 @@ fn chara_to_status_result(chara: &Chara) -> StatusResult {
         magic_evasion_bonus,
         store_tp: store_tp_total,
         double_attack_pct: double_attack_pct_total,
+        // 連携ボーナス総合 = 装備 + ジョブ特性 + ギフト
+        skillchain_bonus: chara.bonus_stats.skillchain_bonus
+            + skillchain_bonus_trait
+            + gift.skillchain_bonus,
         total_jp_spent: total_jp,
         effective_skills,
         main_weapon_skill,
@@ -967,6 +976,74 @@ mod tests {
             result.store_tp, 15,
             "WAR99/SAM49 サポート Store TP rank2: got {} expected 15",
             result.store_tp
+        );
+    }
+
+    /// SAM99 (JP 0) で連携ボーナスのジョブ特性のみが StatusResult に反映される。
+    /// SAM Lv78/88/98 で +8/+12/+16 → Lv99 では +16
+    #[test]
+    fn test_sam99_skillchain_bonus_trait() {
+        let chara = Chara::builder()
+            .race(Race::Hum)
+            .main_job(Job::Sam, 99)
+            .master_lv(0)
+            .build()
+            .expect("Failed to build Chara");
+        let result = chara_to_status_result(&chara);
+        assert_eq!(
+            result.skillchain_bonus, 16,
+            "SAM99 (JP 0) Skillchain Bonus: got {} expected 16 (装備0 + 特性16 + ギフト0)",
+            result.skillchain_bonus
+        );
+    }
+
+    /// JS の calculate_status_from_profile 経由でも skillchain_bonus が反映されることを確認。
+    /// 装備・JP なしで SAM99 → 16 (特性のみ)
+    #[test]
+    fn test_sam99_skillchain_via_profile() {
+        use crate::character_profile::{CharacterProfile, JobLevel};
+        let mut profile = CharacterProfile {
+            name: "Test".to_string(),
+            race: Race::Hum,
+            job_levels: enum_map::enum_map! { _ => JobLevel { level: 0, master_lv: 0 } },
+            merit_points: MeritPoints::default(),
+            job_points: crate::job_points::JobPoints::default(),
+            skills: CharacterSkills::default(),
+        };
+        profile.job_levels[Job::Sam] = JobLevel { level: 99, master_lv: 0 };
+
+        let chara = profile.to_chara(Job::Sam, None).unwrap();
+        let result = chara_to_status_result(&chara);
+        assert_eq!(
+            result.skillchain_bonus, 16,
+            "SAM99 (装備0/JP0) Skillchain Bonus via profile: got {} expected 16",
+            result.skillchain_bonus
+        );
+    }
+
+    /// SAM99 (JP 全振り) でジョブ特性 +16 + ギフト +8 + 装備 +22 = +46
+    #[test]
+    fn test_sam99_skillchain_bonus_total() {
+        let bonus = BonusStats {
+            skillchain_bonus: 22, // 装備 (例: ムパカキャップ +15 + C. Palug Hammer +7)
+            ..BonusStats::default()
+        };
+        let chara = Chara::builder()
+            .race(Race::Hum)
+            .main_job(Job::Sam, 99)
+            .master_lv(0)
+            .job_points(JobPointCategories::all_maxed())
+            .bonus_stats(bonus)
+            .build()
+            .expect("Failed to build Chara");
+        let result = chara_to_status_result(&chara);
+        // 全振り JP: 各カテゴリ 20 ランク, 1 カテゴリ 210 JP, 10 カテゴリ = 2100 JP
+        // ギフト 4 段 (150/450/1125/2000) すべて解放 → +2*4 = +8
+        // 特性 +16, 装備 +22 → 合計 46
+        assert_eq!(
+            result.skillchain_bonus, 46,
+            "SAM99 JP 全振り Skillchain Bonus: got {} expected 46 (装備22 + 特性16 + ギフト8)",
+            result.skillchain_bonus
         );
     }
 

@@ -24,6 +24,8 @@ pub enum GiftStatKind {
     RangedAttack,
     /// 遠隔命中（飛命）。物理命中には加算されない
     RangedAccuracy,
+    /// 連携ボーナス効果アップ (%)
+    SkillchainBonus,
     /// Skill bonuses, capacity points, automaton bonuses など、
     /// 現状のステータス計算には反映しないギフトの placeholder
     None,
@@ -92,6 +94,8 @@ pub struct GiftBonuses {
     /// 遠隔系専用（メイン攻撃には加算しない）
     pub ranged_attack: i32,
     pub ranged_accuracy: i32,
+    /// 連携ボーナス (%) — ジョブ特性 / 装備 / メリット等と合算される
+    pub skillchain_bonus: i32,
 }
 
 impl GiftBonuses {
@@ -108,6 +112,7 @@ impl GiftBonuses {
             GiftStatKind::StoreTp => self.store_tp += value,
             GiftStatKind::RangedAttack => self.ranged_attack += value,
             GiftStatKind::RangedAccuracy => self.ranged_accuracy += value,
+            GiftStatKind::SkillchainBonus => self.skillchain_bonus += value,
             GiftStatKind::None => {}
         }
     }

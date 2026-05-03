@@ -53,6 +53,7 @@ pub enum JobTrait {
     MagicAttackBonus,
     StoreTp,
     DoubleAttack,
+    SkillchainBonus,
 }
 
 // Cumulative bonus values per rank for each trait.
@@ -71,6 +72,11 @@ const STORE_TP: &[i32] = &[10, 15, 20, 25, 30];
 // Double Attack: WAR Lv25/50/75/85/99, cumulative +10/+12/+14/+16/+18 (%)
 // （2015年5月14日 VU で習得タイミングが大幅に増加）
 const DOUBLE_ATTACK: &[i32] = &[10, 12, 14, 16, 18];
+// Skillchain Bonus: 連携ダメージを増加させるジョブ特性。
+// 全ジョブ共通の累積値: rank1=8%, rank2=12%, rank3=16%, rank4=20%, rank5=23%
+// (https://wiki.ffo.jp/html/20337.html 参照)
+// 装備の "Skillchain Bonus" / "連携ダメージ" 系と合算される。
+const SKILLCHAIN_BONUS: &[i32] = &[8, 12, 16, 20, 23];
 
 fn trait_cumulative(trait_kind: JobTrait) -> &'static [i32] {
     match trait_kind {
@@ -85,6 +91,7 @@ fn trait_cumulative(trait_kind: JobTrait) -> &'static [i32] {
         JobTrait::MagicAttackBonus => MAGIC_ATTACK_BONUS,
         JobTrait::StoreTp => STORE_TP,
         JobTrait::DoubleAttack => DOUBLE_ATTACK,
+        JobTrait::SkillchainBonus => SKILLCHAIN_BONUS,
     }
 }
 
@@ -143,6 +150,14 @@ fn trait_levels(job: Job, trait_kind: JobTrait) -> &'static [i32] {
         // Double Attack: WAR (Lv25, 50, 75, 85, 99)
         (JobTrait::DoubleAttack, Job::War) => &[25, 50, 75, 85, 99],
 
+        // Skillchain Bonus: MNK/NIN/SAM/BLU/DNC
+        // (https://wiki.ffo.jp/html/20337.html)
+        (JobTrait::SkillchainBonus, Job::Mnk) => &[85, 95],
+        (JobTrait::SkillchainBonus, Job::Nin) => &[85, 95],
+        (JobTrait::SkillchainBonus, Job::Sam) => &[78, 88, 98],
+        (JobTrait::SkillchainBonus, Job::Blu) => &[83, 96, 99, 99, 99],
+        (JobTrait::SkillchainBonus, Job::Dnc) => &[45, 58, 71, 84, 97],
+
         _ => &[],
     }
 }
@@ -157,5 +172,74 @@ pub fn job_trait_bonus(job: Job, trait_kind: JobTrait, lv: i32) -> i32 {
     } else {
         let idx = std::cmp::min(rank, cumulative.len()) - 1;
         cumulative[idx]
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    /// 連携ボーナス (Skillchain Bonus) ジョブ特性の値検証
+    /// データソース: https://wiki.ffo.jp/html/20337.html
+    /// 累積値: rank1=8, rank2=12, rank3=16, rank4=20, rank5=23
+    #[test]
+    fn test_skillchain_bonus_trait_sam() {
+        // SAM: Lv78/88/98 で rank1/2/3
+        assert_eq!(job_trait_bonus(Job::Sam, JobTrait::SkillchainBonus, 77), 0);
+        assert_eq!(job_trait_bonus(Job::Sam, JobTrait::SkillchainBonus, 78), 8);
+        assert_eq!(job_trait_bonus(Job::Sam, JobTrait::SkillchainBonus, 87), 8);
+        assert_eq!(job_trait_bonus(Job::Sam, JobTrait::SkillchainBonus, 88), 12);
+        assert_eq!(job_trait_bonus(Job::Sam, JobTrait::SkillchainBonus, 97), 12);
+        assert_eq!(job_trait_bonus(Job::Sam, JobTrait::SkillchainBonus, 98), 16);
+        assert_eq!(job_trait_bonus(Job::Sam, JobTrait::SkillchainBonus, 99), 16);
+    }
+
+    #[test]
+    fn test_skillchain_bonus_trait_mnk_nin() {
+        // MNK / NIN: Lv85/95 で rank1/2
+        for &job in &[Job::Mnk, Job::Nin] {
+            assert_eq!(job_trait_bonus(job, JobTrait::SkillchainBonus, 84), 0);
+            assert_eq!(job_trait_bonus(job, JobTrait::SkillchainBonus, 85), 8);
+            assert_eq!(job_trait_bonus(job, JobTrait::SkillchainBonus, 95), 12);
+            assert_eq!(job_trait_bonus(job, JobTrait::SkillchainBonus, 99), 12);
+        }
+    }
+
+    #[test]
+    fn test_skillchain_bonus_trait_blu() {
+        // BLU: Lv83/96/99/99/99 で rank1〜5 (Lv99 で 3 ランク同時習得)
+        assert_eq!(job_trait_bonus(Job::Blu, JobTrait::SkillchainBonus, 82), 0);
+        assert_eq!(job_trait_bonus(Job::Blu, JobTrait::SkillchainBonus, 83), 8);
+        assert_eq!(job_trait_bonus(Job::Blu, JobTrait::SkillchainBonus, 95), 8);
+        assert_eq!(job_trait_bonus(Job::Blu, JobTrait::SkillchainBonus, 96), 12);
+        assert_eq!(job_trait_bonus(Job::Blu, JobTrait::SkillchainBonus, 98), 12);
+        assert_eq!(job_trait_bonus(Job::Blu, JobTrait::SkillchainBonus, 99), 23);
+    }
+
+    #[test]
+    fn test_skillchain_bonus_trait_dnc() {
+        // DNC: Lv45/58/71/84/97 で rank1〜5
+        assert_eq!(job_trait_bonus(Job::Dnc, JobTrait::SkillchainBonus, 44), 0);
+        assert_eq!(job_trait_bonus(Job::Dnc, JobTrait::SkillchainBonus, 45), 8);
+        assert_eq!(job_trait_bonus(Job::Dnc, JobTrait::SkillchainBonus, 58), 12);
+        assert_eq!(job_trait_bonus(Job::Dnc, JobTrait::SkillchainBonus, 71), 16);
+        assert_eq!(job_trait_bonus(Job::Dnc, JobTrait::SkillchainBonus, 84), 20);
+        assert_eq!(job_trait_bonus(Job::Dnc, JobTrait::SkillchainBonus, 97), 23);
+        assert_eq!(job_trait_bonus(Job::Dnc, JobTrait::SkillchainBonus, 99), 23);
+    }
+
+    #[test]
+    fn test_skillchain_bonus_trait_other_jobs() {
+        // 連携ボーナスを習得しないジョブは常に 0
+        for &job in &[Job::War, Job::Whm, Job::Blm, Job::Rdm, Job::Thf, Job::Pld,
+                      Job::Drk, Job::Bst, Job::Brd, Job::Rng, Job::Drg, Job::Smn,
+                      Job::Cor, Job::Pup, Job::Sch, Job::Geo, Job::Run] {
+            assert_eq!(
+                job_trait_bonus(job, JobTrait::SkillchainBonus, 99),
+                0,
+                "{:?} should not have Skillchain Bonus trait",
+                job,
+            );
+        }
     }
 }

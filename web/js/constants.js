@@ -76,6 +76,8 @@ export const AUGMENT_JA_TO_EN = [
     ['ストアTP', '"Store TP"'],
     ['TPボーナス', '"TP Bonus"'],
     ['連携ボーナス', '"Skillchain Bonus"'],
+    // 連携ダメージ +N% (Mpaca 系オーグメント等) は内部的に Skillchain Bonus と同種扱い
+    ['連携ダメージ', '"Skillchain Bonus"'],
     ['トゥルーショット', '"True Shot"'],
     ['アフィニティ', 'Affinity'],
     ['ヘイスト', 'Haste'],

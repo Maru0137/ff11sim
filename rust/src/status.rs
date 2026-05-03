@@ -208,6 +208,9 @@ pub struct BonusStats {
     /// 装備品のダブルアタック発動率合計 (%)
     #[serde(default)]
     pub double_attack_pct: i32,
+    /// 装備品の連携ボーナス合計 (%) — オーグメントの「連携ダメージ」も含む
+    #[serde(default)]
+    pub skillchain_bonus: i32,
     /// 装備メイン武器のスキル種別 ID（アイテム JSON の `skill` フィールド値、未装備時は None）
     #[serde(default)]
     pub main_weapon_skill_id: Option<i32>,

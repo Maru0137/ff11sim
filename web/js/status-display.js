@@ -139,6 +139,12 @@ export async function updateEquipEditStatus(deps) {
             store_tp: equip.store_tp || 0,
             double_attack_pct: equip.double_attack_pct || 0,
             skillchain_bonus: equip.skillchain_bonus || 0,
+            triple_attack_pct: equip.triple_attack_pct || 0,
+            regen: equip.regen || 0,
+            refresh: equip.refresh || 0,
+            subtle_blow: equip.subtle_blow || 0,
+            rapid_shot_pct: equip.rapid_shot_pct || 0,
+            fast_cast_pct: equip.fast_cast_pct || 0,
             main_weapon_skill_id: mainWeaponSkillId,
             sub_weapon_skill_id: subWeaponSkillId,
             ranged_weapon_skill_id: rangedWeaponSkillId,
@@ -221,14 +227,15 @@ export async function updateEquipEditStatus(deps) {
         const skillchainBonusTotal = totalStats.skillchain_bonus || 0;
 
         // ----- Tab 1: 待機/回避/防御 -----
-        setText('statDefRegen', numOrDash(equip.regen));
-        setText('statDefRefresh', numOrDash(equip.refresh));
+        // オートリジェネ/オートリフレシュは装備 + ジョブ特性の合計を表示
+        setText('statDefRegen', numOrDash(totalStats.regen));
+        setText('statDefRefresh', numOrDash(totalStats.refresh));
         setText('statDefRegain', numOrDash(equip.regain));
-        setText('statDefFastCast', pctOrDash(equip.fast_cast_pct));
+        setText('statDefFastCast', pctOrDash(totalStats.fast_cast_pct));
         setText('statDefQuickMagic', pctOrDash(equip.quick_magic_pct));
         // Snapshot/Rapid Shot は装備テキストでも単位無し表記が標準
         setText('statDefSnapshot', numOrDash(equip.snapshot_pct));
-        setText('statDefRapidShot', numOrDash(equip.rapid_shot_pct));
+        setText('statDefRapidShot', numOrDash(totalStats.rapid_shot_pct));
         // 属性レジスト
         for (const elem of ['fire', 'ice', 'wind', 'earth', 'lightning', 'water', 'light', 'dark']) {
             const id = 'statDefRes' + elem.charAt(0).toUpperCase() + elem.slice(1);
@@ -251,13 +258,13 @@ export async function updateEquipEditStatus(deps) {
         setText('statAaSubAcc', totalStats.sub_accuracy != null ? totalStats.sub_accuracy : '-');
         setText('statAaStp', numOrDash(totalStats.store_tp));
         setText('statAaDa', pctOrDash(totalStats.double_attack_pct));
-        setText('statAaTa', pctOrDash(equip.triple_attack_pct));
+        setText('statAaTa', pctOrDash(totalStats.triple_attack_pct));
         setText('statAaQa', pctOrDash(equip.quad_attack_pct));
         setText('statAaCrit', pctOrDash(equip.critical_hit_rate_pct));
         setText('statAaDaDmg', pctOrDash(equip.double_attack_damage_pct));
         setText('statAaTaDmg', pctOrDash(equip.triple_attack_damage_pct));
         setText('statAaCritDmg', pctOrDash(equip.critical_hit_damage_pct));
-        setText('statAaSb', numOrDash(equip.subtle_blow));
+        setText('statAaSb', numOrDash(totalStats.subtle_blow));
         setText('statAaSb2', numOrDash(equip.subtle_blow_2));
 
         // ----- Tab 3: 遠隔攻撃 -----
@@ -276,10 +283,10 @@ export async function updateEquipEditStatus(deps) {
         setText('statMwsSubAtk', totalStats.sub_attack != null ? totalStats.sub_attack : '-');
         setText('statMwsSubAcc', totalStats.sub_accuracy != null ? totalStats.sub_accuracy : '-');
         setText('statMwsStp', numOrDash(totalStats.store_tp));
-        setText('statMwsSb', numOrDash(equip.subtle_blow));
+        setText('statMwsSb', numOrDash(totalStats.subtle_blow));
         setText('statMwsSb2', numOrDash(equip.subtle_blow_2));
         setText('statMwsDa', pctOrDash(totalStats.double_attack_pct));
-        setText('statMwsTa', pctOrDash(equip.triple_attack_pct));
+        setText('statMwsTa', pctOrDash(totalStats.triple_attack_pct));
         setText('statMwsQa', pctOrDash(equip.quad_attack_pct));
         setText('statMwsCrit', pctOrDash(equip.critical_hit_rate_pct));
         setText('statMwsCritDmg', pctOrDash(equip.critical_hit_damage_pct));
@@ -293,7 +300,7 @@ export async function updateEquipEditStatus(deps) {
         setText('statRwsAtk', totalStats.ranged_attack != null ? totalStats.ranged_attack : '-');
         setText('statRwsAcc', totalStats.ranged_accuracy != null ? totalStats.ranged_accuracy : '-');
         setText('statRwsStp', numOrDash(totalStats.store_tp));
-        setText('statRwsSb', numOrDash(equip.subtle_blow));
+        setText('statRwsSb', numOrDash(totalStats.subtle_blow));
         setText('statRwsSb2', numOrDash(equip.subtle_blow_2));
         setText('statRwsCrit', pctOrDash(equip.critical_hit_rate_pct));
         setText('statRwsCritDmg', pctOrDash(equip.critical_hit_damage_pct));
@@ -317,7 +324,7 @@ export async function updateEquipEditStatus(deps) {
         setText('statEwsMatk', numOrDash(magicAttackTotal));
         setText('statEwsMacc', numOrDash(magicAccuracyTotal));
         setText('statEwsStp', numOrDash(totalStats.store_tp));
-        setText('statEwsSb', numOrDash(equip.subtle_blow));
+        setText('statEwsSb', numOrDash(totalStats.subtle_blow));
         setText('statEwsSb2', numOrDash(equip.subtle_blow_2));
         setText('statEwsMdmg', numOrDash(magicDamageTotal));
         setText('statEwsAff', numOrDash(equip.magic_affinity));
@@ -347,10 +354,10 @@ export async function updateEquipEditStatus(deps) {
         setText('statMewsAff', numOrDash(equip.magic_affinity));
         setText('statMewsMcrit2', pctOrDash(equip.magic_critical_hit_2_pct));
         setText('statMewsStp', numOrDash(totalStats.store_tp));
-        setText('statMewsSb', numOrDash(equip.subtle_blow));
+        setText('statMewsSb', numOrDash(totalStats.subtle_blow));
         setText('statMewsSb2', numOrDash(equip.subtle_blow_2));
         setText('statMewsDa', pctOrDash(totalStats.double_attack_pct));
-        setText('statMewsTa', pctOrDash(equip.triple_attack_pct));
+        setText('statMewsTa', pctOrDash(totalStats.triple_attack_pct));
         setText('statMewsQa', pctOrDash(equip.quad_attack_pct));
         setText('statMewsCrit', pctOrDash(equip.critical_hit_rate_pct));
         setText('statMewsCritDmg', pctOrDash(equip.critical_hit_damage_pct));
@@ -373,7 +380,7 @@ export async function updateEquipEditStatus(deps) {
         setText('statRewsAff', numOrDash(equip.magic_affinity));
         setText('statRewsMcrit2', pctOrDash(equip.magic_critical_hit_2_pct));
         setText('statRewsStp', numOrDash(totalStats.store_tp));
-        setText('statRewsSb', numOrDash(equip.subtle_blow));
+        setText('statRewsSb', numOrDash(totalStats.subtle_blow));
         setText('statRewsSb2', numOrDash(equip.subtle_blow_2));
         setText('statRewsCrit', pctOrDash(equip.critical_hit_rate_pct));
         setText('statRewsCritDmg', pctOrDash(equip.critical_hit_damage_pct));

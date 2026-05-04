@@ -70,6 +70,18 @@ pub struct StatusResult {
     pub double_attack_pct: i32,
     /// 連携ボーナス総合値 (%) (装備 + ジョブ特性 + ギフト)
     pub skillchain_bonus: i32,
+    /// Triple Attack 発動率総合値 (%) (装備 + ジョブ特性)
+    pub triple_attack_pct: i32,
+    /// Regen 総合値 (3 秒ごとの HP 回復量、装備 + オートリジェネ特性)
+    pub regen: i32,
+    /// Refresh 総合値 (3 秒ごとの MP 回復量、装備 + オートリフレシュ特性)
+    pub refresh: i32,
+    /// Subtle Blow 総合値 (装備 + ジョブ特性 モクシャ)
+    pub subtle_blow: i32,
+    /// Rapid Shot 発動率総合値 (%) (装備 + ジョブ特性)
+    pub rapid_shot_pct: i32,
+    /// Fast Cast 総合値 (%) (装備 + ジョブ特性)
+    pub fast_cast_pct: i32,
     pub total_jp_spent: i32,
     /// メインジョブ/サポートジョブで制限されたスキル有効値（キー: スキル名）
     pub effective_skills: BTreeMap<String, i32>,
@@ -301,6 +313,14 @@ fn chara_to_status_result(chara: &Chara) -> StatusResult {
     let evasion_bonus_trait = chara.job_trait_total(JobTrait::EvasionBonus);
     let accuracy_bonus_trait = chara.job_trait_total(JobTrait::AccuracyBonus);
     let magic_attack_bonus_trait = chara.job_trait_total(JobTrait::MagicAttackBonus);
+    let magic_accuracy_bonus_trait = chara.job_trait_total(JobTrait::MagicAccuracyBonus);
+    let magic_evasion_bonus_trait = chara.job_trait_total(JobTrait::MagicEvasionBonus);
+    let auto_regen_trait = chara.job_trait_total(JobTrait::AutoRegen);
+    let auto_refresh_trait = chara.job_trait_total(JobTrait::AutoRefresh);
+    let triple_attack_trait = chara.job_trait_total(JobTrait::TripleAttack);
+    let subtle_blow_trait = chara.job_trait_total(JobTrait::SubtleBlow);
+    let rapid_shot_trait = chara.job_trait_total(JobTrait::RapidShot);
+    let fast_cast_trait = chara.job_trait_total(JobTrait::FastCast);
     let store_tp_trait = chara.job_trait_total(JobTrait::StoreTp);
     let double_attack_trait = chara.job_trait_total(JobTrait::DoubleAttack);
     // 連携ボーナス: ジョブ特性 + ギフト + 装備の合計
@@ -442,8 +462,10 @@ fn chara_to_status_result(chara: &Chara) -> StatusResult {
     let evasion_bonus = evasion_bonus_trait + gift.physical_evasion + jp_cat.physical_evasion;
     let accuracy_bonus = accuracy_bonus_trait + gift.physical_accuracy + jp_cat.physical_accuracy;
     let magic_attack_bonus = magic_attack_bonus_trait + gift.magic_attack + jp_cat.magic_attack;
-    let magic_accuracy_bonus = gift.magic_accuracy + jp_cat.magic_accuracy;
-    let magic_evasion_bonus = gift.magic_evasion + jp_cat.magic_evasion;
+    let magic_accuracy_bonus =
+        magic_accuracy_bonus_trait + gift.magic_accuracy + jp_cat.magic_accuracy;
+    let magic_evasion_bonus =
+        magic_evasion_bonus_trait + gift.magic_evasion + jp_cat.magic_evasion;
     let store_tp_total = chara.bonus_stats.store_tp
         + store_tp_trait
         + store_tp_merit
@@ -547,6 +569,15 @@ fn chara_to_status_result(chara: &Chara) -> StatusResult {
         skillchain_bonus: chara.bonus_stats.skillchain_bonus
             + skillchain_bonus_trait
             + gift.skillchain_bonus,
+        // Triple Attack 総合 = 装備 + ジョブ特性
+        triple_attack_pct: chara.bonus_stats.triple_attack_pct + triple_attack_trait,
+        // オートリジェネ/リフレシュ 総合 = 装備 + ジョブ特性
+        regen: chara.bonus_stats.regen + auto_regen_trait,
+        refresh: chara.bonus_stats.refresh + auto_refresh_trait,
+        // モクシャ / ラピッドショット / ファストキャスト 総合 = 装備 + ジョブ特性
+        subtle_blow: chara.bonus_stats.subtle_blow + subtle_blow_trait,
+        rapid_shot_pct: chara.bonus_stats.rapid_shot_pct + rapid_shot_trait,
+        fast_cast_pct: chara.bonus_stats.fast_cast_pct + fast_cast_trait,
         total_jp_spent: total_jp,
         effective_skills,
         main_weapon_skill,
@@ -1018,6 +1049,145 @@ mod tests {
             result.skillchain_bonus, 16,
             "SAM99 (装備0/JP0) Skillchain Bonus via profile: got {} expected 16",
             result.skillchain_bonus
+        );
+    }
+
+    /// SMN90 → AutoRefresh rank 2 = +2/3sec が StatusResult.refresh に反映
+    /// PLD35 → rank 1 = +1
+    #[test]
+    fn test_pld_smn_auto_refresh() {
+        let pld = Chara::builder()
+            .race(Race::Hum)
+            .main_job(Job::Pld, 99)
+            .master_lv(0)
+            .build()
+            .unwrap();
+        let smn90 = Chara::builder()
+            .race(Race::Hum)
+            .main_job(Job::Smn, 90)
+            .master_lv(0)
+            .build()
+            .unwrap();
+        assert_eq!(chara_to_status_result(&pld).refresh, 1);
+        assert_eq!(chara_to_status_result(&smn90).refresh, 2);
+    }
+
+    /// RUN95 → AutoRegen rank 3 = +3/3sec、装備 +5 とで合計 +8
+    #[test]
+    fn test_run_auto_regen_with_equip() {
+        let bonus = BonusStats {
+            regen: 5, // 装備合計
+            ..BonusStats::default()
+        };
+        let chara = Chara::builder()
+            .race(Race::Hum)
+            .main_job(Job::Run, 99)
+            .master_lv(0)
+            .bonus_stats(bonus)
+            .build()
+            .unwrap();
+        assert_eq!(chara_to_status_result(&chara).regen, 5 + 3);
+    }
+
+    /// NIN91 → SubtleBlow rank 6 = 27、装備 +10 とで合計 37
+    #[test]
+    fn test_nin_subtle_blow_with_equip() {
+        let bonus = BonusStats { subtle_blow: 10, ..BonusStats::default() };
+        let chara = Chara::builder()
+            .race(Race::Hum)
+            .main_job(Job::Nin, 99)
+            .master_lv(0)
+            .bonus_stats(bonus)
+            .build()
+            .unwrap();
+        assert_eq!(chara_to_status_result(&chara).subtle_blow, 10 + 27);
+    }
+
+    /// RDM90 → FastCast rank 5 = 25%、装備 +10% とで合計 35%
+    #[test]
+    fn test_rdm_fast_cast_with_equip() {
+        let bonus = BonusStats { fast_cast_pct: 10, ..BonusStats::default() };
+        let chara = Chara::builder()
+            .race(Race::Hum)
+            .main_job(Job::Rdm, 99)
+            .master_lv(0)
+            .bonus_stats(bonus)
+            .build()
+            .unwrap();
+        assert_eq!(chara_to_status_result(&chara).fast_cast_pct, 10 + 25);
+    }
+
+    /// RNG76 → RapidShot rank 2 (cumulative 配列 [25] のため clamp で 25)
+    #[test]
+    fn test_rng_rapid_shot() {
+        let chara = Chara::builder()
+            .race(Race::Hum)
+            .main_job(Job::Rng, 99)
+            .master_lv(0)
+            .build()
+            .unwrap();
+        assert_eq!(chara_to_status_result(&chara).rapid_shot_pct, 25);
+    }
+
+    /// THF95 → TripleAttack rank 2 = 6%、装備 +5% とで合計 11%
+    #[test]
+    fn test_thf_triple_attack_with_equip() {
+        let bonus = BonusStats {
+            triple_attack_pct: 5,
+            ..BonusStats::default()
+        };
+        let chara = Chara::builder()
+            .race(Race::Hum)
+            .main_job(Job::Thf, 99)
+            .master_lv(0)
+            .bonus_stats(bonus)
+            .build()
+            .unwrap();
+        assert_eq!(chara_to_status_result(&chara).triple_attack_pct, 5 + 6);
+    }
+
+    /// BLU99 0 JP → MagicAccuracyBonus rank 1 = +10 が StatusResult.magic_accuracy_bonus に反映
+    #[test]
+    fn test_blu99_magic_accuracy_bonus_no_gift() {
+        let chara = Chara::builder()
+            .race(Race::Hum)
+            .main_job(Job::Blu, 99)
+            .master_lv(0)
+            .build()
+            .expect("Failed to build BLU");
+        let result = chara_to_status_result(&chara);
+        assert_eq!(
+            result.magic_accuracy_bonus, 10,
+            "BLU99 0 JP MagicAccuracyBonus: got {} expected 10",
+            result.magic_accuracy_bonus
+        );
+        assert_eq!(
+            result.magic_evasion_bonus, 10,
+            "BLU99 0 JP MagicEvasionBonus: got {} expected 10",
+            result.magic_evasion_bonus
+        );
+    }
+
+    /// BLU99 + JP 全振り (≥1200) で「ジョブ特性効果アップ」ギフトにより rank 2 にアップ → +22
+    /// 加えて BLU の MagicAccuracy ギフトカテゴリ (累積) が乗る。
+    #[test]
+    fn test_blu99_magic_accuracy_bonus_gift_full_jp() {
+        let chara = Chara::builder()
+            .race(Race::Hum)
+            .main_job(Job::Blu, 99)
+            .master_lv(0)
+            .job_points(JobPointCategories::all_maxed())
+            .build()
+            .expect("Failed to build BLU");
+        let result = chara_to_status_result(&chara);
+        // ジョブ特性「ジョブ特性効果アップ」: 1200 JP 以上で rank+2 → rank 1+2=3 (累積配列 [10,22] で clamp → 22)
+        // BLU の MagicAccuracy ギフト (data/job_gifts.json):
+        //   tiers [[125,5],[450,8],[1050,10],[1900,13]] → 全振り 2100 JP で 5+8+10+13 = 36 加算
+        // 期待値: 特性 22 + ギフト 36 = 58
+        assert_eq!(
+            result.magic_accuracy_bonus, 22 + 36,
+            "BLU99 全振り MagicAccuracyBonus: got {} expected 58 (特性22 + ギフト36)",
+            result.magic_accuracy_bonus
         );
     }
 

@@ -81,15 +81,21 @@ impl Chara {
     /// Calculate total job trait bonus from main + support job.
     /// メインジョブが BLU の場合、ギフト「ジョブ特性効果アップ」(100JP=+1, 1200JP=+2 ランク)
     /// を base rank に加算する (除外特性: Gilfinder/DoubleAttack/AutoRefresh/TripleAttack)。
+    ///
+    /// 集約規則: 「効果の強い方」を採用。通常特性 (正値) は max、
+    /// MartialArts のような負値特性 (隔短縮) は min を取りたいため、
+    /// 単純に絶対値が大きい方を選ぶ (符号は同一前提)。
     pub fn job_trait_total(&self, trait_kind: JobTrait) -> i32 {
         let main = self.main_job_trait_bonus(trait_kind);
         let support = match (&self.support_job, &self.support_lv) {
             (Some(job), Some(lv)) => job_trait_bonus(*job, trait_kind, *lv),
             _ => 0,
         };
-        // Traits don't stack additively between main and support;
-        // the higher value is used.
-        std::cmp::max(main, support)
+        if main.abs() >= support.abs() {
+            main
+        } else {
+            support
+        }
     }
 
     /// メインジョブ単独のジョブ特性ボーナス (BLU ギフトを考慮)。
@@ -407,14 +413,22 @@ mod tests {
 
     #[test]
     fn test_blu_unlearned_trait_not_granted_by_gift() {
-        // BLU は AutoRegen を Lv16 から習得 (rank 1)、Lv99 で base rank 1。
-        // ただし AutoRegen は trait_cumulative=PLACEHOLDER (=0) のため値は 0。
-        // ギフトで rank up しても 0 のまま (まだ実値未実装)。
+        // BLU が習得しない特性 (例: WAR の Smite, DRG の Strafe) はギフト適用外。
+        // BLU は Smite/Strafe を持たない → 0 のまま。
         let chara1200 = build_blu99_with_jp(1200);
-        assert_eq!(chara1200.job_trait_total(JobTrait::AutoRegen), 0);
-
-        // BLU が習得しない特性 (例: WAR の Smite) はギフト適用外。
-        // BLU は Smite を持たない → 0 のまま。
         assert_eq!(chara1200.job_trait_total(JobTrait::Smite), 0);
+        assert_eq!(chara1200.job_trait_total(JobTrait::Strafe), 0);
+    }
+
+    #[test]
+    fn test_blu_auto_regen_with_gift() {
+        // BLU は AutoRegen を Lv16 から習得 (rank 1 = +1/3sec)。
+        // 1200 JP で「ジョブ特性効果アップ」rank+2 → rank 3 = +3/3sec
+        let chara0 = build_blu99_with_jp(0);
+        let chara100 = build_blu99_with_jp(100);
+        let chara1200 = build_blu99_with_jp(1200);
+        assert_eq!(chara0.job_trait_total(JobTrait::AutoRegen), 1);
+        assert_eq!(chara100.job_trait_total(JobTrait::AutoRegen), 2);
+        assert_eq!(chara1200.job_trait_total(JobTrait::AutoRegen), 3);
     }
 }

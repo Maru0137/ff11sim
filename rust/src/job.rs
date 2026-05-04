@@ -172,6 +172,27 @@ const MAGIC_ACCURACY_BONUS: &[i32] = &[10, 22];
 // 同上。BLU Lv99 = rank 1 (+10)、ギフト 100 JP で rank 2 (累積 +22)。
 const MAGIC_EVASION_BONUS: &[i32] = &[10, 22];
 
+// オートリジェネ (https://wiki.ffo.jp/html/2675.html)
+// 3 秒ごとに HP を回復。rank 1 = +1, rank 2 = +2, rank 3 = +3
+const AUTO_REGEN: &[i32] = &[1, 2, 3];
+
+// オートリフレシュ (https://wiki.ffo.jp/html/2723.html)
+// 3 秒ごとに MP を回復。rank 1 = +1, rank 2 = +2 (SMN Lv90 のみ rank 2)
+// 注: BLU の「ジョブ特性効果アップ」ギフトは AutoRefresh に適用されない (除外特性)
+const AUTO_REFRESH: &[i32] = &[1, 2];
+
+// トリプルアタック (https://wiki.ffo.jp/html/1634.html)
+// 約 5%/6% の確率で 3 回攻撃。rank 1 = 5%, rank 2 = 6%
+// 注: BLU の「ジョブ特性効果アップ」ギフトは TripleAttack に適用されない (除外特性)
+// THF の TA ギフト (G125/G450/G1050/G1900 で +8/+10/+12/+14 累積) は別途実装が必要
+const TRIPLE_ATTACK: &[i32] = &[5, 6];
+
+// マーシャルアーツ (https://wiki.ffo.jp/html/3240.html)
+// 格闘武器の攻撃間隔短縮。値は負 (隔短縮量)。
+// rank 1=-80, rank 2=-100, rank 3=-120, rank 4=-140, rank 5=-160, rank 6=-180, rank 7=-200
+// 注: 攻撃間隔計算はまだ未実装のため、現時点では値の保持のみ
+const MARTIAL_ARTS: &[i32] = &[-80, -100, -120, -140, -160, -180, -200];
+
 // ダメージ上限アップ (https://wiki.ffo.jp/html/37531.html)
 // 「攻防関数上限」を rank ごとに +0.1 引き上げる特性。
 // 整数表現として「0.1 単位」で扱い、rank 1 = 10 (= +1.0 を 10 倍したスケール) ではなく
@@ -205,13 +226,13 @@ fn trait_cumulative(trait_kind: JobTrait) -> &'static [i32] {
         JobTrait::MagicAccuracyBonus => MAGIC_ACCURACY_BONUS,
         JobTrait::MagicEvasionBonus => MAGIC_EVASION_BONUS,
         JobTrait::MaxDamageBoost => MAX_DAMAGE_BOOST,
+        JobTrait::AutoRegen => AUTO_REGEN,
+        JobTrait::AutoRefresh => AUTO_REFRESH,
+        JobTrait::TripleAttack => TRIPLE_ATTACK,
+        JobTrait::MartialArts => MARTIAL_ARTS,
 
         // 新規 (プレースホルダー)
-        JobTrait::AutoRegen
-        | JobTrait::AutoRefresh
-        | JobTrait::TripleAttack
-        | JobTrait::MartialArts
-        | JobTrait::Counter
+        JobTrait::Counter
         | JobTrait::SubtleBlow
         | JobTrait::KickAttacks
         | JobTrait::Daken
@@ -901,6 +922,24 @@ mod tests {
             (MaxDamageBoost, Drg) => 30,  // (30,60,90) rank 3
             (MaxDamageBoost, Pup) => 20,  // (45,90) rank 2
             (MaxDamageBoost, Dnc) => 20,  // (45,90) rank 2
+
+            // --- AutoRegen (cumulative [1, 2, 3]) ---
+            (AutoRegen, Whm) => 2, // (25,76) rank 2
+            (AutoRegen, Blu) => 1, // (16) rank 1
+            (AutoRegen, Run) => 3, // (35,65,95) rank 3
+
+            // --- AutoRefresh (cumulative [1, 2]) ---
+            (AutoRefresh, Pld) => 1, // (35) rank 1
+            (AutoRefresh, Smn) => 2, // (25,90) rank 2
+            (AutoRefresh, Blu) => 1, // (58) rank 1
+
+            // --- TripleAttack (cumulative [5, 6]) ---
+            (TripleAttack, Thf) => 6, // (55,95) rank 2
+            (TripleAttack, Blu) => 5, // (92) rank 1
+
+            // --- MartialArts (cumulative [-80,-100,-120,-140,-160,-180,-200]) ---
+            (MartialArts, Mnk) => -200, // (1,16,31,46,61,75,82) rank 7
+            (MartialArts, Pup) => -160, // (25,50,75,86,97) rank 5
 
             // --- 残りの新規特性: trait_cumulative=PLACEHOLDER_TRAIT(0) のため Lv99 値は常に 0 ---
             // 習得の有無は test_trait_levels_defined_for_all_pairs 側で構造的に検証

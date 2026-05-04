@@ -211,6 +211,15 @@ pub struct BonusStats {
     /// 装備品の連携ボーナス合計 (%) — オーグメントの「連携ダメージ」も含む
     #[serde(default)]
     pub skillchain_bonus: i32,
+    /// 装備品の Triple Attack 発動率合計 (%)
+    #[serde(default)]
+    pub triple_attack_pct: i32,
+    /// 装備品の Regen 合計
+    #[serde(default)]
+    pub regen: i32,
+    /// 装備品の Refresh 合計
+    #[serde(default)]
+    pub refresh: i32,
     /// 装備メイン武器のスキル種別 ID（アイテム JSON の `skill` フィールド値、未装備時は None）
     #[serde(default)]
     pub main_weapon_skill_id: Option<i32>,

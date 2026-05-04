@@ -163,6 +163,23 @@ const DOUBLE_ATTACK: &[i32] = &[10, 12, 14, 16, 18];
 // (https://wiki.ffo.jp/html/20337.html 参照)
 const SKILLCHAIN_BONUS: &[i32] = &[8, 12, 16, 20, 23];
 
+// 魔法命中率アップ (https://wiki.ffo.jp/html/28672.html)
+// BLU Lv99 で rank 1 (+10)、ギフト「ジョブ特性効果アップ」(100JP) で rank 2 (累積 +22)。
+// rank 3 は wiki に記載なし → 累積配列を 2 要素に止めて clamp で rank 2 値にフォールバック。
+const MAGIC_ACCURACY_BONUS: &[i32] = &[10, 22];
+
+// 魔法回避率アップ (https://wiki.ffo.jp/html/28673.html)
+// 同上。BLU Lv99 = rank 1 (+10)、ギフト 100 JP で rank 2 (累積 +22)。
+const MAGIC_EVASION_BONUS: &[i32] = &[10, 22];
+
+// ダメージ上限アップ (https://wiki.ffo.jp/html/37531.html)
+// 「攻防関数上限」を rank ごとに +0.1 引き上げる特性。
+// 整数表現として「0.1 単位」で扱い、rank 1 = 10 (= +1.0 を 10 倍したスケール) ではなく
+// 0.1 単位そのまま 1, 2, 3, 4, 5 として扱う方が直感的だが、
+// 既存 i32 シグネチャに合わせて「100 倍したパーセント」相当 (10 = +0.1) で保存する。
+// (※ 攻防関数の上限はまだダメージ計算に組み込まれていないため、現時点では値の保持のみ)
+const MAX_DAMAGE_BOOST: &[i32] = &[10, 20, 30, 40, 50];
+
 /// プレースホルダー: 新規スケルトン特性用 (効果値未調査)。
 /// 8 ランクまでの (job, trait) に対応するため十分な長さを確保。
 /// 個別の特性実装時にこの参照を専用定数に差し替える。
@@ -184,11 +201,13 @@ fn trait_cumulative(trait_kind: JobTrait) -> &'static [i32] {
         JobTrait::DoubleAttack => DOUBLE_ATTACK,
         JobTrait::SkillchainBonus => SKILLCHAIN_BONUS,
 
+        // 効果値あり
+        JobTrait::MagicAccuracyBonus => MAGIC_ACCURACY_BONUS,
+        JobTrait::MagicEvasionBonus => MAGIC_EVASION_BONUS,
+        JobTrait::MaxDamageBoost => MAX_DAMAGE_BOOST,
+
         // 新規 (プレースホルダー)
-        JobTrait::MagicAccuracyBonus
-        | JobTrait::MagicEvasionBonus
-        | JobTrait::MaxDamageBoost
-        | JobTrait::AutoRegen
+        JobTrait::AutoRegen
         | JobTrait::AutoRefresh
         | JobTrait::TripleAttack
         | JobTrait::MartialArts
@@ -562,16 +581,53 @@ fn trait_levels(job: Job, trait_kind: JobTrait) -> &'static [i32] {
     }
 }
 
-/// Calculate the job trait bonus for a given job at a given level.
-pub fn job_trait_bonus(job: Job, trait_kind: JobTrait, lv: i32) -> i32 {
-    let levels = trait_levels(job, trait_kind);
-    let cumulative = trait_cumulative(trait_kind);
-    let rank = levels.iter().filter(|&&req_lv| lv >= req_lv).count();
+/// 指定 (job, trait, lv) で習得済みのランク数を返す (0 = 未習得)。
+pub fn trait_rank_at_lv(job: Job, trait_kind: JobTrait, lv: i32) -> usize {
+    trait_levels(job, trait_kind)
+        .iter()
+        .filter(|&&req_lv| lv >= req_lv)
+        .count()
+}
+
+/// 指定 trait・rank に対応する累積効果値を返す (rank=0 → 0)。
+/// rank が cumulative 配列長を超える場合は配列末尾の値で clamp。
+pub fn trait_value_at_rank(trait_kind: JobTrait, rank: usize) -> i32 {
     if rank == 0 {
-        0
+        return 0;
+    }
+    let cumulative = trait_cumulative(trait_kind);
+    let idx = std::cmp::min(rank, cumulative.len()) - 1;
+    cumulative[idx]
+}
+
+/// Calculate the job trait bonus for a given job at a given level (ギフト未考慮)。
+pub fn job_trait_bonus(job: Job, trait_kind: JobTrait, lv: i32) -> i32 {
+    let rank = trait_rank_at_lv(job, trait_kind, lv);
+    trait_value_at_rank(trait_kind, rank)
+}
+
+/// BLU の「ジョブ特性効果アップ」ギフト (https://wiki.ffo.jp/html/34014.html) で
+/// ランクアップの効果を受けない特性。
+/// (Gilfinder / DoubleAttack / AutoRefresh / TripleAttack)
+pub fn is_blu_trait_effect_up_excluded(trait_kind: JobTrait) -> bool {
+    matches!(
+        trait_kind,
+        JobTrait::Gilfinder
+            | JobTrait::DoubleAttack
+            | JobTrait::AutoRefresh
+            | JobTrait::TripleAttack
+    )
+}
+
+/// BLU の「ジョブ特性効果アップ」ギフトによる追加ランク数。
+/// 100JP = +1 rank, 1200JP = +2 rank。
+pub fn blu_trait_effect_up_bonus_ranks(total_jp: i32) -> usize {
+    if total_jp >= 1200 {
+        2
+    } else if total_jp >= 100 {
+        1
     } else {
-        let idx = std::cmp::min(rank, cumulative.len()) - 1;
-        cumulative[idx]
+        0
     }
 }
 
@@ -825,7 +881,28 @@ mod tests {
             (SkillchainBonus, Blu) => 23, // (83,96,99,99,99) rank 5
             (SkillchainBonus, Dnc) => 23, // (45,58,71,84,97) rank 5
 
-            // --- 新規特性: trait_cumulative=PLACEHOLDER_TRAIT(0) のため Lv99 値は常に 0 ---
+            // --- MagicAccuracyBonus (cumulative [10]) ---
+            (MagicAccuracyBonus, Blu) => 10, // (99) rank 1
+
+            // --- MagicEvasionBonus (cumulative [10]) ---
+            (MagicEvasionBonus, Blu) => 10, // (99) rank 1
+
+            // --- MaxDamageBoost (cumulative [10,20,30,40,50]) ---
+            // 値は「0.1 × 100 倍」表現 (10 = +0.1 攻防関数上限)
+            (MaxDamageBoost, War) => 20,  // (40,80) rank 2
+            (MaxDamageBoost, Mnk) => 30,  // (30,60,90) rank 3
+            (MaxDamageBoost, Rdm) => 10,  // (40) rank 1
+            (MaxDamageBoost, Thf) => 10,  // (50) rank 1
+            (MaxDamageBoost, Drk) => 50,  // (20,40,55,70,80) rank 5
+            (MaxDamageBoost, Bst) => 20,  // (45,90) rank 2
+            (MaxDamageBoost, Rng) => 30,  // (30,60,90) rank 3
+            (MaxDamageBoost, Sam) => 20,  // (40,80) rank 2
+            (MaxDamageBoost, Nin) => 10,  // (50) rank 1
+            (MaxDamageBoost, Drg) => 30,  // (30,60,90) rank 3
+            (MaxDamageBoost, Pup) => 20,  // (45,90) rank 2
+            (MaxDamageBoost, Dnc) => 20,  // (45,90) rank 2
+
+            // --- 残りの新規特性: trait_cumulative=PLACEHOLDER_TRAIT(0) のため Lv99 値は常に 0 ---
             // 習得の有無は test_trait_levels_defined_for_all_pairs 側で構造的に検証
 
             _ => 0,

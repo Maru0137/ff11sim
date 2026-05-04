@@ -301,6 +301,8 @@ fn chara_to_status_result(chara: &Chara) -> StatusResult {
     let evasion_bonus_trait = chara.job_trait_total(JobTrait::EvasionBonus);
     let accuracy_bonus_trait = chara.job_trait_total(JobTrait::AccuracyBonus);
     let magic_attack_bonus_trait = chara.job_trait_total(JobTrait::MagicAttackBonus);
+    let magic_accuracy_bonus_trait = chara.job_trait_total(JobTrait::MagicAccuracyBonus);
+    let magic_evasion_bonus_trait = chara.job_trait_total(JobTrait::MagicEvasionBonus);
     let store_tp_trait = chara.job_trait_total(JobTrait::StoreTp);
     let double_attack_trait = chara.job_trait_total(JobTrait::DoubleAttack);
     // 連携ボーナス: ジョブ特性 + ギフト + 装備の合計
@@ -442,8 +444,10 @@ fn chara_to_status_result(chara: &Chara) -> StatusResult {
     let evasion_bonus = evasion_bonus_trait + gift.physical_evasion + jp_cat.physical_evasion;
     let accuracy_bonus = accuracy_bonus_trait + gift.physical_accuracy + jp_cat.physical_accuracy;
     let magic_attack_bonus = magic_attack_bonus_trait + gift.magic_attack + jp_cat.magic_attack;
-    let magic_accuracy_bonus = gift.magic_accuracy + jp_cat.magic_accuracy;
-    let magic_evasion_bonus = gift.magic_evasion + jp_cat.magic_evasion;
+    let magic_accuracy_bonus =
+        magic_accuracy_bonus_trait + gift.magic_accuracy + jp_cat.magic_accuracy;
+    let magic_evasion_bonus =
+        magic_evasion_bonus_trait + gift.magic_evasion + jp_cat.magic_evasion;
     let store_tp_total = chara.bonus_stats.store_tp
         + store_tp_trait
         + store_tp_merit
@@ -1018,6 +1022,51 @@ mod tests {
             result.skillchain_bonus, 16,
             "SAM99 (装備0/JP0) Skillchain Bonus via profile: got {} expected 16",
             result.skillchain_bonus
+        );
+    }
+
+    /// BLU99 (0 JP) → MagicAccuracyBonus rank 1 = +10 が StatusResult.magic_accuracy_bonus に反映
+    #[test]
+    fn test_blu99_magic_accuracy_bonus_no_gift() {
+        let chara = Chara::builder()
+            .race(Race::Hum)
+            .main_job(Job::Blu, 99)
+            .master_lv(0)
+            .build()
+            .expect("Failed to build BLU");
+        let result = chara_to_status_result(&chara);
+        assert_eq!(
+            result.magic_accuracy_bonus, 10,
+            "BLU99 0 JP MagicAccuracyBonus: got {} expected 10",
+            result.magic_accuracy_bonus
+        );
+        assert_eq!(
+            result.magic_evasion_bonus, 10,
+            "BLU99 0 JP MagicEvasionBonus: got {} expected 10",
+            result.magic_evasion_bonus
+        );
+    }
+
+    /// BLU99 + JP 全振り (≥1200) で「ジョブ特性効果アップ」ギフトにより rank 2 にアップ → +22
+    /// 加えて BLU の MagicAccuracy ギフトカテゴリ (累積) が乗る。
+    #[test]
+    fn test_blu99_magic_accuracy_bonus_gift_full_jp() {
+        let chara = Chara::builder()
+            .race(Race::Hum)
+            .main_job(Job::Blu, 99)
+            .master_lv(0)
+            .job_points(JobPointCategories::all_maxed())
+            .build()
+            .expect("Failed to build BLU");
+        let result = chara_to_status_result(&chara);
+        // ジョブ特性「ジョブ特性効果アップ」: 1200 JP 以上で rank+2 → rank 1+2=3 (累積配列 [10,22] で clamp → 22)
+        // BLU の MagicAccuracy ギフト (data/job_gifts.json):
+        //   tiers [[125,5],[450,8],[1050,10],[1900,13]] → 全振り 2100 JP で 5+8+10+13 = 36 加算
+        // 期待値: 特性 22 + ギフト 36 = 58
+        assert_eq!(
+            result.magic_accuracy_bonus, 22 + 36,
+            "BLU99 全振り MagicAccuracyBonus: got {} expected 58 (特性22 + ギフト36)",
+            result.magic_accuracy_bonus
         );
     }
 

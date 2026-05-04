@@ -1,6 +1,9 @@
 use std::option::Option;
 
-use crate::job::{job_trait_bonus, Job, JobTrait};
+use crate::job::{
+    blu_trait_effect_up_bonus_ranks, is_blu_trait_effect_up_excluded, job_trait_bonus,
+    trait_rank_at_lv, trait_value_at_rank, Job, JobTrait,
+};
 use crate::job_points::JobPointCategories;
 use crate::race::Race;
 use crate::skills::CharacterSkills;
@@ -76,8 +79,10 @@ impl Chara {
     }
 
     /// Calculate total job trait bonus from main + support job.
+    /// メインジョブが BLU の場合、ギフト「ジョブ特性効果アップ」(100JP=+1, 1200JP=+2 ランク)
+    /// を base rank に加算する (除外特性: Gilfinder/DoubleAttack/AutoRefresh/TripleAttack)。
     pub fn job_trait_total(&self, trait_kind: JobTrait) -> i32 {
-        let main = job_trait_bonus(self.main_job, trait_kind, self.main_lv);
+        let main = self.main_job_trait_bonus(trait_kind);
         let support = match (&self.support_job, &self.support_lv) {
             (Some(job), Some(lv)) => job_trait_bonus(*job, trait_kind, *lv),
             _ => 0,
@@ -85,6 +90,21 @@ impl Chara {
         // Traits don't stack additively between main and support;
         // the higher value is used.
         std::cmp::max(main, support)
+    }
+
+    /// メインジョブ単独のジョブ特性ボーナス (BLU ギフトを考慮)。
+    fn main_job_trait_bonus(&self, trait_kind: JobTrait) -> i32 {
+        let base_rank = trait_rank_at_lv(self.main_job, trait_kind, self.main_lv);
+        if base_rank == 0 {
+            // 未習得特性にはギフトのランクアップは適用されない
+            return 0;
+        }
+        let bonus_rank = if self.main_job == Job::Blu && !is_blu_trait_effect_up_excluded(trait_kind) {
+            blu_trait_effect_up_bonus_ranks(self.job_points.total_jp_spent())
+        } else {
+            0
+        };
+        trait_value_at_rank(trait_kind, base_rank + bonus_rank)
     }
 }
 
@@ -285,5 +305,116 @@ mod tests {
         assert_eq!(chara.status(StatusKind::Hp), 1340);
         // STR = race(D:37.5) + job(A:45) = 82
         assert_eq!(chara.status(StatusKind::Str), 82);
+    }
+
+    // -----------------------------------------------------------------------
+    // BLU ギフト「ジョブ特性効果アップ」(https://wiki.ffo.jp/html/34014.html)
+    // 100 JP = +1 rank, 1200 JP = +2 rank
+    // 例外: Gilfinder / DoubleAttack / AutoRefresh / TripleAttack
+    // -----------------------------------------------------------------------
+
+    /// total_jp >= target_jp を満たす最小構成の JobPointCategories を返す。
+    /// JP コストは rank r ごとに r*(r+1)/2、各カテゴリ rank 0..=20。
+    fn build_jp_categories_with_at_least(target_jp: i32) -> JobPointCategories {
+        let mut jpc = JobPointCategories::default();
+        let mut total = 0;
+        for rank in jpc.ranks.iter_mut() {
+            if total >= target_jp {
+                break;
+            }
+            // このカテゴリで rank r まで上げると cost r*(r+1)/2
+            // target を超える最小 r を選ぶ
+            let need = target_jp - total;
+            let mut r = 0;
+            while r < 20 && r * (r + 1) / 2 < need {
+                r += 1;
+            }
+            *rank = r;
+            total += r * (r + 1) / 2;
+        }
+        jpc
+    }
+
+    fn build_blu99_with_jp(target_jp: i32) -> Chara {
+        let jpc = build_jp_categories_with_at_least(target_jp);
+        Chara::builder()
+            .race(Race::Hum)
+            .main_job(Job::Blu, 99)
+            .master_lv(0)
+            .job_points(jpc)
+            .build()
+            .expect("Failed to build BLU")
+    }
+
+    #[test]
+    fn test_blu_magic_accuracy_bonus_no_gift() {
+        // BLU99, 0 JP → rank 1 = +10
+        let chara = build_blu99_with_jp(0);
+        assert_eq!(chara.job_trait_total(JobTrait::MagicAccuracyBonus), 10);
+        assert_eq!(chara.job_trait_total(JobTrait::MagicEvasionBonus), 10);
+    }
+
+    #[test]
+    fn test_blu_magic_accuracy_bonus_gift_100jp() {
+        // BLU99, 100 JP → rank 1 + 1 = rank 2 = +22 (累積)
+        let chara = build_blu99_with_jp(100);
+        assert_eq!(chara.job_trait_total(JobTrait::MagicAccuracyBonus), 22);
+        assert_eq!(chara.job_trait_total(JobTrait::MagicEvasionBonus), 22);
+    }
+
+    #[test]
+    fn test_blu_magic_accuracy_bonus_gift_1200jp() {
+        // BLU99, 1200 JP → rank 1 + 2 = rank 3
+        // wiki に rank 3 値の記載がないため累積配列 [10,22] で clamp → 22
+        let chara = build_blu99_with_jp(1200);
+        assert_eq!(chara.job_trait_total(JobTrait::MagicAccuracyBonus), 22);
+        assert_eq!(chara.job_trait_total(JobTrait::MagicEvasionBonus), 22);
+    }
+
+    #[test]
+    fn test_blu_double_attack_excluded_from_gift() {
+        // BLU99 は DoubleAttack rank 1 (Lv80) を持つが、ギフト除外特性のためランクアップしない。
+        // DOUBLE_ATTACK = [10, 12, 14, 16, 18] → rank 1 = 10
+        let chara0 = build_blu99_with_jp(0);
+        let chara1200 = build_blu99_with_jp(1200);
+        assert_eq!(chara0.job_trait_total(JobTrait::DoubleAttack), 10);
+        // ギフト除外なので 1200 JP でも値は変わらず 10 のまま
+        assert_eq!(chara1200.job_trait_total(JobTrait::DoubleAttack), 10);
+    }
+
+    #[test]
+    fn test_non_blu_main_no_gift_effect() {
+        // SAM99 (非 BLU) には「ジョブ特性効果アップ」ギフトは適用されない。
+        // SAM の StoreTp = rank 5 = 30 (Lv99, 配列末尾)、JP の有無で値が変わらないこと。
+        let sam_no_jp = Chara::builder()
+            .race(Race::Hum)
+            .main_job(Job::Sam, 99)
+            .master_lv(0)
+            .build()
+            .unwrap();
+        let sam_full_jp = Chara::builder()
+            .race(Race::Hum)
+            .main_job(Job::Sam, 99)
+            .master_lv(0)
+            .job_points(JobPointCategories::all_maxed())
+            .build()
+            .unwrap();
+        assert_eq!(sam_no_jp.job_trait_total(JobTrait::StoreTp), 30);
+        // ※ Store TP のジョブ特性自体は変わらず 30。JP カテゴリ「ストアTP」は
+        //   wasm 側で別途加算されるが、job_trait_total としては 30 のまま。
+        assert_eq!(sam_full_jp.job_trait_total(JobTrait::StoreTp), 30);
+    }
+
+    #[test]
+    fn test_blu_unlearned_trait_not_granted_by_gift() {
+        // BLU は AutoRegen を Lv16 から習得 (rank 1)、Lv99 で base rank 1。
+        // ただし AutoRegen は trait_cumulative=PLACEHOLDER (=0) のため値は 0。
+        // ギフトで rank up しても 0 のまま (まだ実値未実装)。
+        let chara1200 = build_blu99_with_jp(1200);
+        assert_eq!(chara1200.job_trait_total(JobTrait::AutoRegen), 0);
+
+        // BLU が習得しない特性 (例: WAR の Smite) はギフト適用外。
+        // BLU は Smite を持たない → 0 のまま。
+        assert_eq!(chara1200.job_trait_total(JobTrait::Smite), 0);
     }
 }

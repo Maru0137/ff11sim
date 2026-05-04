@@ -237,6 +237,135 @@ const FAST_CAST: &[i32] = &[5, 10, 15, 20, 25, 30];
 // 全キラー共通: rank1=8%, rank2=10%, rank3=12% (rank 3 は BLU ギフト専用)
 const KILLER: &[i32] = &[8, 10, 12];
 
+// 各種レジスト特性 (例: https://wiki.ffo.jp/html/3256.html 他)
+// 全レジスト共通: rank1=10%, rank2=15%, rank3=20%, rank4=25%, rank5=30%
+const RESIST_DEFAULT: &[i32] = &[10, 15, 20, 25, 30];
+
+// 警戒 (https://wiki.ffo.jp/html/2984.html): RNG Lv5、視覚感知範囲縮小 (バイナリ)
+// ステルス (https://wiki.ffo.jp/html/2393.html): NIN Lv5/86、聴覚感知範囲縮小 (2 ランクだが効果は段階的でない)
+// ギルスティール (https://wiki.ffo.jp/html/1677.html): THF Lv5/85, BLU Lv90、ギル取得約1.5倍 (バイナリ)
+// アサシン (https://wiki.ffo.jp/html/888.html): THF Lv60、だまし討ち強化 (バイナリ)
+// 女神の慈悲 (https://wiki.ffo.jp/html/3246.html): WHM Lv50、ナ系魔法/イレース範囲化 (バイナリ)
+// シールドバリア (https://wiki.ffo.jp/html/37984.html): PLD Lv70、プロテス強化 (バイナリ)
+// トランキルハート (https://wiki.ffo.jp/html/23693.html): WHM/RDM/SCH、回復魔法敵対心軽減 (バイナリ・スキル依存)
+// バイナリ系: 習得済みなら値=1、未習得なら 0 を返す
+const TRAIT_BINARY: &[i32] = &[1];
+const TRAIT_BINARY_2: &[i32] = &[1, 1];
+
+// トレジャーハンター (https://wiki.ffo.jp/html/1678.html): TH レベルそのもの。THF Lv15/45/90 で +1/+2/+3, BLU Lv98 で +1
+const TREASURE_HUNTER: &[i32] = &[1, 2, 3];
+
+// シールドマスタリー (https://wiki.ffo.jp/html/3316.html)
+// 盾防御発動時の TP ボーナス。rank1=+10, 2=+20, 3=+30, 4=+40
+const SHIELD_MASTERY: &[i32] = &[10, 20, 30, 40];
+
+// スマイト (https://wiki.ffo.jp/html/35682.html)
+// 攻撃力アップ。rank1=+10%, 2=+15%, 3=+20%, 4=+25%, 5=+30%
+const SMITE: &[i32] = &[10, 15, 20, 25, 30];
+
+// C.インクリース (https://wiki.ffo.jp/html/20004.html)
+// クリティカルダメージボーナス。rank1=+5%, 2=+8%, 3=+11%, 4=+14%
+const CRIT_INCREASE: &[i32] = &[5, 8, 11, 14];
+
+// C.リデュース (https://wiki.ffo.jp/html/20045.html)
+// 被クリティカルダメージ軽減。rank1=-5%, 2=-8%, 3=-11%, 4=-14%
+// 値は軽減量を正の整数で保持 (=実際の効果は -5%)
+const CRIT_REDUCE: &[i32] = &[5, 8, 11, 14];
+
+// デッドエイム (https://wiki.ffo.jp/html/23695.html)
+// 遠隔クリティカルダメージボーナス。rank1=+10%, 2=+20%, 3=+30%, 4=+35%, 5=+40%, 6=+45%
+const DEAD_AIM: &[i32] = &[10, 20, 30, 35, 40, 45];
+
+// タンデムヒット (https://wiki.ffo.jp/html/38004.html)
+// ペット連携時の命中/魔命ボーナス。rank5=+50 のみ wiki 記載、ranks 1-4 は線形補間と仮定
+const TANDEM_HIT: &[i32] = &[10, 20, 30, 40, 50];
+
+// タンデムモクシャ (https://wiki.ffo.jp/html/38005.html)
+// ペット連携時の与TP減少。rank3=モクシャII+14 ベース、rank 1/2 は推定
+const TANDEM_SUBTLE_BLOW: &[i32] = &[5, 10, 14];
+
+// タクティカルパリー (https://wiki.ffo.jp/html/20336.html)
+// 受け流し発動時の TP ボーナス。rank1=+20, 2=+30, 3=+40, 4=+50
+const TACTICAL_PARRY: &[i32] = &[20, 30, 40, 50];
+
+// タクティカルガード (https://wiki.ffo.jp/html/20277.html)
+// ガード発動時の TP ボーナス。rank1=+30, 2=+45, 3=+60
+const TACTICAL_GUARD: &[i32] = &[30, 45, 60];
+
+// エクストリームガード (https://wiki.ffo.jp/html/20048.html)
+// 盾防御時の固定値ダメージ軽減。rank1=2, 2=4, 3=6, 4=8
+const EXTREME_GUARD: &[i32] = &[2, 4, 6, 8];
+
+// スタウトサーヴァント (https://wiki.ffo.jp/html/19979.html)
+// ペット被ダメージ軽減 (%)。rank1=5, 2=7, 3=9
+const STOUT_SERVANT: &[i32] = &[5, 7, 9];
+
+// リサイクル (https://wiki.ffo.jp/html/8018.html)
+// 矢弾消費せず遠隔攻撃の発動率。rank1=+10%, 2=+20%, 3=+30%, 4=+40%
+const RECYCLE: &[i32] = &[10, 20, 30, 40];
+
+// トゥルーショット (https://wiki.ffo.jp/html/20222.html)
+// 適正距離での遠隔ダメージボーナス。rank1=+3%, 2=+5%, 3=+7%
+const TRUE_SHOT: &[i32] = &[3, 5, 7];
+
+// ブラッドブーン (https://wiki.ffo.jp/html/20335.html)
+// 契約の履行 MP 消費軽減発動率。rank1=20%, 2=23%, 3=26%, 4=29%
+const BLOOD_BOON: &[i32] = &[20, 23, 26, 29];
+
+// WS ダメージアップ (https://wiki.ffo.jp/html/37765.html)
+// rank1=+7%, 2=+10%, 3=+13%, 4=+16%, 5=+19%, 6=+21%
+const WEAPON_SKILL_DAMAGE: &[i32] = &[7, 10, 13, 16, 19, 21];
+
+// フェンサー (https://wiki.ffo.jp/html/20275.html)
+// クリ発動率ボーナス + WS TPボーナス。rank1=+3%, 2=+5%、ranks 3-8 は +2%/rank 推定
+// 上限は「+8」(8 ランク)
+const FENCER: &[i32] = &[3, 5, 7, 9, 11, 13, 15, 17];
+
+// コンサーブTP (https://wiki.ffo.jp/html/18171.html)
+// WS 後 TP 残存発動率。rank1=15%, 2=18%, 3=21%, 4=24%, 5=26%
+const CONSERVE_TP: &[i32] = &[15, 18, 21, 24, 26];
+
+// ストレイフ (https://wiki.ffo.jp/html/1902.html)
+// 飛竜ブレス命中率アップ。具体的な数値は wiki に記載なし → ランク数のみ保持
+const STRAFE: &[i32] = &[1, 2, 3, 4];
+
+// マジックアキュメン (https://wiki.ffo.jp/html/20007.html)
+// 精霊/暗黒魔法ダメージ時の TP。rank1=+25, 2=+50, 3=+75, 4=+100, 5=+125
+const MAGIC_ACUMEN: &[i32] = &[25, 50, 75, 100, 125];
+
+// MB.ボーナス (https://wiki.ffo.jp/html/20225.html)
+// マジックバーストダメージボーナス。rank1=+5%, 2=+7%, 3=+9%, 4=+11%, 5=+13%
+const MAGIC_BURST_BONUS: &[i32] = &[5, 7, 9, 11, 13];
+
+// ディバインベニゾン (https://wiki.ffo.jp/html/20046.html)
+// ナ系/イレース詠唱時間短縮。rank1=10%, 2=20%, 3=30%, 4=40%, 5=50% (敵対心 -5/-10/-15/-20/-25)
+const DIVINE_BENISON: &[i32] = &[10, 20, 30, 40, 50];
+
+// エレメントセレリティ (https://wiki.ffo.jp/html/22228.html)
+// 精霊魔法詠唱時間短縮 (% 表現)。rank1=10, 2=15, 3=20, 4=25, 5=30
+const ELEMENTAL_CELERITY: &[i32] = &[10, 15, 20, 25, 30];
+
+// デスペレートブロー (https://wiki.ffo.jp/html/3250.html)
+// ラストリゾート両手武器攻撃間隔短縮。rank1=+5%, 2=+10%, 3=+15% ヘイスト
+const DESPERATE_BLOWS: &[i32] = &[5, 10, 15];
+
+// ストルワートソウル (https://wiki.ffo.jp/html/23694.html)
+// 暗黒 HP 消費軽減。rank1=15%軽減, rank2=50%軽減
+const STALWART_SOUL: &[i32] = &[15, 50];
+
+// カーディナルチャント (https://wiki.ffo.jp/html/28474.html)
+// 精霊魔法効果アップ (方角依存、複数ステータス)。本実装では魔攻代表値を保持。
+// rank1=5, 2=7, 3=10
+const CARDINAL_CHANT: &[i32] = &[5, 7, 10];
+
+// テナシティ (https://wiki.ffo.jp/html/28271.html)
+// 状態異常レジスト発動率。rank1=+5%, 2=+7%, 3=+9%, 4=+11%, 5=+13%, 6=+15%
+const TENACITY: &[i32] = &[5, 7, 9, 11, 13, 15];
+
+// インクァルタタ (https://wiki.ffo.jp/html/28305.html)
+// 受け流し率ボーナス。rank1=+5%, 2=+7%, 3=+9%, 4=+11%, 5=+13%, 6=+15%, 7=+17%, 8=+19%
+const INQUARTATA: &[i32] = &[5, 7, 9, 11, 13, 15, 17, 19];
+
 // マーシャルアーツ (https://wiki.ffo.jp/html/3240.html)
 // 格闘武器の攻撃間隔短縮。値は負 (隔短縮量)。
 // rank 1=-80, rank 2=-100, rank 3=-120, rank 4=-140, rank 5=-160, rank 6=-180, rank 7=-200
@@ -303,7 +432,7 @@ fn trait_cumulative(trait_kind: JobTrait) -> &'static [i32] {
         | JobTrait::PlantoidKiller
         | JobTrait::BeastKiller => KILLER,
 
-        // 新規 (プレースホルダー)
+        // レジスト系は全て共通の累積値
         JobTrait::ResistVirus
         | JobTrait::ResistPetrify
         | JobTrait::ResistGravity
@@ -314,42 +443,46 @@ fn trait_cumulative(trait_kind: JobTrait) -> &'static [i32] {
         | JobTrait::ResistPoison
         | JobTrait::ResistBlind
         | JobTrait::ResistBind
-        | JobTrait::ResistAmnesia
-        | JobTrait::WideScan
-        | JobTrait::Stealth
-        | JobTrait::Gilfinder
-        | JobTrait::TreasureHunter
+        | JobTrait::ResistAmnesia => RESIST_DEFAULT,
+
+        // バイナリ (1 ランク)
+        JobTrait::WideScan
         | JobTrait::Assassin
         | JobTrait::DivineVeil
-        | JobTrait::ShieldMastery
         | JobTrait::ShieldBarrier
-        | JobTrait::Smite
-        | JobTrait::CritIncrease
-        | JobTrait::CritReduce
-        | JobTrait::DeadAim
-        | JobTrait::TandemHit
-        | JobTrait::TandemSubtleBlow
-        | JobTrait::TacticalParry
-        | JobTrait::TacticalGuard
-        | JobTrait::ExtremeGuard
-        | JobTrait::StoutServant
-        | JobTrait::Recycle
-        | JobTrait::TrueShot
-        | JobTrait::BloodBoon
-        | JobTrait::WeaponSkillDamage
-        | JobTrait::Fencer
-        | JobTrait::ConserveTp
-        | JobTrait::Strafe
-        | JobTrait::MagicAcumen
-        | JobTrait::MagicBurstBonus
-        | JobTrait::DivineBenison
-        | JobTrait::ElementalCelerity
-        | JobTrait::TranquilHeart
-        | JobTrait::DesperateBlows
-        | JobTrait::StalwartSoul
-        | JobTrait::CardinalChant
-        | JobTrait::Tenacity
-        | JobTrait::Inquartata => PLACEHOLDER_TRAIT,
+        | JobTrait::TranquilHeart => TRAIT_BINARY,
+
+        // バイナリ (2 ランク扱い)
+        JobTrait::Stealth | JobTrait::Gilfinder => TRAIT_BINARY_2,
+
+        JobTrait::TreasureHunter => TREASURE_HUNTER,
+        JobTrait::ShieldMastery => SHIELD_MASTERY,
+        JobTrait::Smite => SMITE,
+        JobTrait::CritIncrease => CRIT_INCREASE,
+        JobTrait::CritReduce => CRIT_REDUCE,
+        JobTrait::DeadAim => DEAD_AIM,
+        JobTrait::TandemHit => TANDEM_HIT,
+        JobTrait::TandemSubtleBlow => TANDEM_SUBTLE_BLOW,
+        JobTrait::TacticalParry => TACTICAL_PARRY,
+        JobTrait::TacticalGuard => TACTICAL_GUARD,
+        JobTrait::ExtremeGuard => EXTREME_GUARD,
+        JobTrait::StoutServant => STOUT_SERVANT,
+        JobTrait::Recycle => RECYCLE,
+        JobTrait::TrueShot => TRUE_SHOT,
+        JobTrait::BloodBoon => BLOOD_BOON,
+        JobTrait::WeaponSkillDamage => WEAPON_SKILL_DAMAGE,
+        JobTrait::Fencer => FENCER,
+        JobTrait::ConserveTp => CONSERVE_TP,
+        JobTrait::Strafe => STRAFE,
+        JobTrait::MagicAcumen => MAGIC_ACUMEN,
+        JobTrait::MagicBurstBonus => MAGIC_BURST_BONUS,
+        JobTrait::DivineBenison => DIVINE_BENISON,
+        JobTrait::ElementalCelerity => ELEMENTAL_CELERITY,
+        JobTrait::DesperateBlows => DESPERATE_BLOWS,
+        JobTrait::StalwartSoul => STALWART_SOUL,
+        JobTrait::CardinalChant => CARDINAL_CHANT,
+        JobTrait::Tenacity => TENACITY,
+        JobTrait::Inquartata => INQUARTATA,
     }
 }
 
@@ -1057,6 +1190,162 @@ mod tests {
             (PlantoidKiller, Blu) => 8,  // (44) rank 1
             (BeastKiller, Bst) => 10,    // (70,94) rank 2
             (BeastKiller, Blu) => 8,     // (4) rank 1
+
+            // --- Resist 系 (cumulative [10, 15, 20, 25, 30]) ---
+            (ResistVirus, War) => 30,    // (15,35,55,70,81) rank 5
+            (ResistPetrify, Rdm) => 30,  // (10,30,50,70,81) rank 5
+            (ResistGravity, Thf) => 30,  // (20,40,60,75,81) rank 5
+            (ResistGravity, Blu) => 10,  // (69) rank 1
+            (ResistSleep, Pld) => 25,    // (20,40,60,81) rank 4
+            (ResistSleep, Blu) => 10,    // (30) rank 1
+            (ResistParalyze, Drk) => 30, // (20,40,60,75,81) rank 5
+            (ResistParalyze, Cor) => 30, // (5,25,45,65,81) rank 5
+            (ResistSlow, Bst) => 30,     // (15,35,55,75,81) rank 5
+            (ResistSlow, Smn) => 25,     // (20,40,60,81) rank 4
+            (ResistSlow, Pup) => 25,     // (10,50,70,81) rank 4
+            (ResistSlow, Dnc) => 20,     // (20,55,81) rank 3
+            (ResistSilence, Brd) => 30,  // (5,25,45,65,81) rank 5
+            (ResistSilence, Sch) => 25,  // (10,40,70,81) rank 4
+            (ResistSilence, Blu) => 10,  // (99) rank 1
+            (ResistPoison, Rng) => 25,   // (20,40,60,81) rank 4
+            (ResistBlind, Sam) => 30,    // (5,25,45,65,81) rank 5
+            (ResistBind, Nin) => 30,     // (10,30,50,70,81) rank 5
+            (ResistAmnesia, Bst) => 30,  // (15,35,55,75,95) rank 5
+            (ResistAmnesia, Cor) => 25,  // (30,50,70,90) rank 4
+            (ResistAmnesia, Pup) => 30,  // (15,35,55,75,95) rank 5
+
+            // --- バイナリ特性 (cumulative [1] / [1, 1]) ---
+            (WideScan, Rng) => 1,
+            (Stealth, Nin) => 1,
+            (Gilfinder, Thf) => 1,
+            (Gilfinder, Blu) => 1,
+            (Assassin, Thf) => 1,
+            (DivineVeil, Whm) => 1,
+            (ShieldBarrier, Pld) => 1,
+            (TranquilHeart, Whm) => 1,
+            (TranquilHeart, Rdm) => 1,
+            (TranquilHeart, Sch) => 1,
+
+            // --- TreasureHunter (cumulative [1, 2, 3]) ---
+            (TreasureHunter, Thf) => 3, // (15,45,90) rank 3
+            (TreasureHunter, Blu) => 1, // (98) rank 1
+
+            // --- ShieldMastery (cumulative [10, 20, 30, 40]) ---
+            (ShieldMastery, War) => 30, // (80,87,94) rank 3
+            (ShieldMastery, Rdm) => 20, // (87,97) rank 2
+            (ShieldMastery, Pld) => 40, // (25,50,75,96) rank 4
+
+            // --- Smite (cumulative [10, 15, 20, 25, 30]) ---
+            (Smite, War) => 20, // (35,65,95) rank 3
+            (Smite, Mnk) => 15, // (40,80) rank 2
+            (Smite, Drk) => 30, // (15,35,55,75,95) rank 5
+            (Smite, Drg) => 15, // (40,80) rank 2
+            (Smite, Pup) => 10, // (60) rank 1
+
+            // --- CritIncrease (cumulative [5, 8, 11, 14]) ---
+            (CritIncrease, War) => 8,  // (78,84) rank 2
+            (CritIncrease, Thf) => 14, // (78,84,91,97) rank 4
+            (CritIncrease, Drk) => 8,  // (85,95) rank 2
+            (CritIncrease, Blu) => 5,  // (99) rank 1
+            (CritIncrease, Dnc) => 11, // (80,88,99) rank 3
+
+            // --- CritReduce (cumulative [5, 8, 11, 14]) ---
+            (CritReduce, Pld) => 14, // (79,85,91,96) rank 4
+            (CritReduce, Brd) => 8,  // (80,91) rank 2
+            (CritReduce, Drg) => 8,  // (85,95) rank 2
+            (CritReduce, Pup) => 8,  // (85,95) rank 2
+
+            // --- DeadAim (cumulative [10, 20, 30, 35, 40, 45]) ---
+            (DeadAim, Rng) => 45, // (50,60,70,80,90,99) rank 6
+
+            // --- TandemHit (cumulative [10, 20, 30, 40, 50]) ---
+            (TandemHit, Bst) => 50, // (30,45,60,75,90) rank 5
+
+            // --- TandemSubtleBlow (cumulative [5, 10, 14]) ---
+            (TandemSubtleBlow, Bst) => 14, // (40,60,80) rank 3
+
+            // --- TacticalParry (cumulative [20, 30, 40, 50]) ---
+            (TacticalParry, Drk) => 30, // (88,98) rank 2
+            (TacticalParry, Nin) => 40, // (77,87,97) rank 3
+            (TacticalParry, Dnc) => 50, // (77,84,91,98) rank 4
+            (TacticalParry, Run) => 40, // (40,60,85) rank 3
+
+            // --- TacticalGuard (cumulative [30, 45, 60]) ---
+            (TacticalGuard, Mnk) => 60, // (77,87,97) rank 3
+            (TacticalGuard, Pup) => 45, // (80,90) rank 2
+
+            // --- ExtremeGuard (cumulative [2, 4, 6, 8]) ---
+            (ExtremeGuard, War) => 6, // (80,88,99) rank 3
+            (ExtremeGuard, Whm) => 4, // (85,95) rank 2
+            (ExtremeGuard, Pld) => 8, // (77,82,88,93) rank 4
+
+            // --- StoutServant (cumulative [5, 7, 9]) ---
+            (StoutServant, Bst) => 9, // (78,88,98) rank 3
+            (StoutServant, Smn) => 7, // (85,95) rank 2
+            (StoutServant, Pup) => 9, // (78,88,98) rank 3
+
+            // --- Recycle (cumulative [10, 20, 30, 40]) ---
+            (Recycle, Rng) => 40, // (20,35,50,65) rank 4
+            (Recycle, Cor) => 30, // (35,65,95) rank 3
+
+            // --- TrueShot (cumulative [3, 5, 7]) ---
+            (TrueShot, Rng) => 7, // (78,88,98) rank 3
+            (TrueShot, Cor) => 5, // (85,95) rank 2
+
+            // --- BloodBoon (cumulative [20, 23, 26, 29]) ---
+            (BloodBoon, Smn) => 29, // (60,70,80,90) rank 4
+
+            // --- WeaponSkillDamage (cumulative [7, 10, 13, 16, 19, 21]) ---
+            (WeaponSkillDamage, Drg) => 21, // (45,55,65,75,85,95) rank 6
+
+            // --- Fencer (cumulative [3, 5, 7, 9, 11, 13, 15, 17]) ---
+            (Fencer, War) => 11, // (45,58,71,84,97) rank 5
+            (Fencer, Bst) => 3,  // (80) rank 1
+            (Fencer, Brd) => 5,  // (85,95) rank 2
+
+            // --- ConserveTp (cumulative [15, 18, 21, 24, 26]) ---
+            (ConserveTp, Rng) => 18, // (80,91) rank 2
+            (ConserveTp, Drg) => 26, // (45,58,71,84,97) rank 5
+            (ConserveTp, Dnc) => 21, // (77,87,97) rank 3
+
+            // --- Strafe (cumulative [1, 2, 3, 4] placeholder) ---
+            (Strafe, Drg) => 4, // (20,40,60,80) rank 4
+
+            // --- MagicAcumen (cumulative [25, 50, 75, 100, 125]) ---
+            (MagicAcumen, Blm) => 50,  // (85,95) rank 2
+            (MagicAcumen, Drk) => 125, // (45,58,71,84,97) rank 5
+            (MagicAcumen, Sch) => 75,  // (78,88,98) rank 3
+
+            // --- MagicBurstBonus (cumulative [5, 7, 9, 11, 13]) ---
+            (MagicBurstBonus, Blm) => 13, // (45,58,71,84,97) rank 5
+            (MagicBurstBonus, Rdm) => 7,  // (85,95) rank 2
+            (MagicBurstBonus, Nin) => 7,  // (80,90) rank 2
+            (MagicBurstBonus, Blu) => 7,  // (78,90) rank 2
+            (MagicBurstBonus, Sch) => 9,  // (79,89,99) rank 3
+
+            // --- DivineBenison (cumulative [10, 20, 30, 40, 50]) ---
+            (DivineBenison, Whm) => 50, // (50,60,70,80,90) rank 5
+
+            // --- ElementalCelerity (cumulative [10, 15, 20, 25, 30]) ---
+            (ElementalCelerity, Blm) => 30, // (50,60,70,80,90) rank 5
+            (ElementalCelerity, Geo) => 15, // (55,80) rank 2
+
+            // --- DesperateBlows (cumulative [5, 10, 15]) ---
+            (DesperateBlows, Drk) => 15, // (15,30,45) rank 3
+
+            // --- StalwartSoul (cumulative [15, 50]) ---
+            (StalwartSoul, Drk) => 50, // (45,90) rank 2
+
+            // --- CardinalChant (cumulative [5, 7, 10]) ---
+            (CardinalChant, Geo) => 10, // (25,45,85) rank 3
+
+            // --- Tenacity (cumulative [5, 7, 9, 11, 13, 15]) ---
+            (Tenacity, Blu) => 5,  // (99) rank 1
+            (Tenacity, Run) => 15, // (5,25,45,75,80,95) rank 6
+
+            // --- Inquartata (cumulative [5, 7, 9, 11, 13, 15, 17, 19]) ---
+            (Inquartata, Blu) => 5,  // (99) rank 1
+            (Inquartata, Run) => 11, // (15,45,75,90) rank 4
 
             // --- 残りの新規特性: trait_cumulative=PLACEHOLDER_TRAIT(0) のため Lv99 値は常に 0 ---
             // 習得の有無は test_trait_levels_defined_for_all_pairs 側で構造的に検証

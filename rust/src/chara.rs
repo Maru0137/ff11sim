@@ -1,9 +1,6 @@
 use std::option::Option;
 
-use crate::job::{
-    blu_trait_effect_up_bonus_ranks, is_blu_trait_effect_up_excluded, job_trait_bonus,
-    trait_rank_at_lv, trait_value_at_rank, Job, JobTrait,
-};
+use crate::job::{blu_trait_effect_up_bonus_ranks, Job, JobTrait};
 use crate::job_points::JobPointCategories;
 use crate::race::Race;
 use crate::skills::CharacterSkills;
@@ -88,7 +85,7 @@ impl Chara {
     pub fn job_trait_total(&self, trait_kind: JobTrait) -> i32 {
         let main = self.main_job_trait_bonus(trait_kind);
         let support = match (&self.support_job, &self.support_lv) {
-            (Some(job), Some(lv)) => job_trait_bonus(*job, trait_kind, *lv),
+            (Some(job), Some(lv)) => job.trait_bonus(trait_kind, *lv),
             _ => 0,
         };
         if main.abs() >= support.abs() {
@@ -100,17 +97,17 @@ impl Chara {
 
     /// メインジョブ単独のジョブ特性ボーナス (BLU ギフトを考慮)。
     fn main_job_trait_bonus(&self, trait_kind: JobTrait) -> i32 {
-        let base_rank = trait_rank_at_lv(self.main_job, trait_kind, self.main_lv);
+        let base_rank = self.main_job.trait_rank_at_lv(trait_kind, self.main_lv);
         if base_rank == 0 {
             // 未習得特性にはギフトのランクアップは適用されない
             return 0;
         }
-        let bonus_rank = if self.main_job == Job::Blu && !is_blu_trait_effect_up_excluded(trait_kind) {
+        let bonus_rank = if self.main_job == Job::Blu && !trait_kind.is_blu_effect_up_excluded() {
             blu_trait_effect_up_bonus_ranks(self.job_points.total_jp_spent())
         } else {
             0
         };
-        trait_value_at_rank(trait_kind, base_rank + bonus_rank)
+        trait_kind.value_at_rank(base_rank + bonus_rank)
     }
 }
 

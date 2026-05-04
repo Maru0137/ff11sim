@@ -219,6 +219,24 @@ const ZANSHIN: &[i32] = &[15, 25, 35, 45, 50];
 // rank 2/3 の正確な値は wiki に記載なし → 配列を [25] に止めて clamp で同値にフォールバック
 const RAPID_SHOT: &[i32] = &[25];
 
+// クリアマインド (https://wiki.ffo.jp/html/1725.html)
+// ヒーリング中の MP 回復量。基準値 12/tick に対するボーナス。
+// 累積値: rank1=15, 2=18, 3=21, 4=24, 5=27, 6=30 (基準12 + 各 +3/rank)
+// → 基準を除いたボーナスとして [3, 6, 9, 12, 15, 18] を保持
+const CLEAR_MIND: &[i32] = &[3, 6, 9, 12, 15, 18];
+
+// コンサーブMP (https://wiki.ffo.jp/html/3314.html)
+// 消費 MP 軽減発動率。rank1=25%, 2=28%, 3=31%, 4=34%, 5=37%, 6=40%, 7=43%
+const CONSERVE_MP: &[i32] = &[25, 28, 31, 34, 37, 40, 43];
+
+// ファストキャスト (https://wiki.ffo.jp/html/1717.html)
+// 詠唱時間短縮 (% 表現)。FC 係数 0.05/rank。rank 1=5, ..., rank 6=30
+const FAST_CAST: &[i32] = &[5, 10, 15, 20, 25, 30];
+
+// 各種キラー特性 (https://wiki.ffo.jp/html/2673.html 他)
+// 全キラー共通: rank1=8%, rank2=10%, rank3=12% (rank 3 は BLU ギフト専用)
+const KILLER: &[i32] = &[8, 10, 12];
+
 // マーシャルアーツ (https://wiki.ffo.jp/html/3240.html)
 // 格闘武器の攻撃間隔短縮。値は負 (隔短縮量)。
 // rank 1=-80, rank 2=-100, rank 3=-120, rank 4=-140, rank 5=-160, rank 6=-180, rank 7=-200
@@ -269,12 +287,11 @@ fn trait_cumulative(trait_kind: JobTrait) -> &'static [i32] {
         JobTrait::DualWield => DUAL_WIELD,
         JobTrait::Zanshin => ZANSHIN,
         JobTrait::RapidShot => RAPID_SHOT,
-
-        // 新規 (プレースホルダー)
-        JobTrait::ClearMind
-        | JobTrait::ConserveMp
-        | JobTrait::FastCast
-        | JobTrait::UndeadKiller
+        JobTrait::ClearMind => CLEAR_MIND,
+        JobTrait::ConserveMp => CONSERVE_MP,
+        JobTrait::FastCast => FAST_CAST,
+        // キラー系は全て共通の累積値
+        JobTrait::UndeadKiller
         | JobTrait::ArcanaKiller
         | JobTrait::DemonKiller
         | JobTrait::DragonKiller
@@ -284,8 +301,10 @@ fn trait_cumulative(trait_kind: JobTrait) -> &'static [i32] {
         | JobTrait::LizardKiller
         | JobTrait::AquanKiller
         | JobTrait::PlantoidKiller
-        | JobTrait::BeastKiller
-        | JobTrait::ResistVirus
+        | JobTrait::BeastKiller => KILLER,
+
+        // 新規 (プレースホルダー)
+        JobTrait::ResistVirus
         | JobTrait::ResistPetrify
         | JobTrait::ResistGravity
         | JobTrait::ResistSleep
@@ -1002,6 +1021,42 @@ mod tests {
             (RapidShot, Rng) => 25, // (15,76) rank 2 → cumulative[1]=cumulative.last()=25
             (RapidShot, Cor) => 25, // (15,91) rank 2 → 同上
             (RapidShot, Blu) => 25, // (38) rank 1
+
+            // --- ClearMind (cumulative [3, 6, 9, 12, 15, 18]) ---
+            (ClearMind, Whm) => 18, // (20,35,50,65,80,96) rank 6
+            (ClearMind, Blm) => 18, // (15,30,45,60,75,96) rank 6
+            (ClearMind, Rdm) => 12, // (31,53,75,91) rank 4
+            (ClearMind, Smn) => 18, // (15,30,45,60,75,91) rank 6
+            (ClearMind, Blu) => 12, // (24,46,61,66) rank 4
+            (ClearMind, Sch) => 18, // (20,35,50,65,76,91) rank 6
+            (ClearMind, Geo) => 18, // (20,35,50,65,76,91) rank 6
+
+            // --- ConserveMP (cumulative [25, 28, 31, 34, 37, 40, 43]) ---
+            (ConserveMp, Blm) => 31, // (20,76,86) rank 3
+            (ConserveMp, Blu) => 34, // (65,68,99,99) rank 4
+            (ConserveMp, Sch) => 28, // (25,96) rank 2
+            (ConserveMp, Geo) => 43, // (10,25,40,55,70,85,99) rank 7
+
+            // --- FastCast (cumulative [5, 10, 15, 20, 25, 30]) ---
+            (FastCast, Rdm) => 25, // (15,35,55,76,90) rank 5
+            (FastCast, Blu) => 15, // (72,99,99) rank 3
+
+            // --- Killer 系 (全て cumulative [8, 10, 12]) ---
+            (UndeadKiller, Pld) => 10, // (5,86) rank 2
+            (UndeadKiller, Blu) => 8,  // (34) rank 1
+            (ArcanaKiller, Drk) => 10, // (25,86) rank 2
+            (DemonKiller, Sam) => 10,  // (40,86) rank 2
+            (DragonKiller, Drg) => 10, // (25,86) rank 2
+            (VerminKiller, Bst) => 10, // (10,76) rank 2
+            (BirdKiller, Bst) => 10,   // (20,79) rank 2
+            (AmorphKiller, Bst) => 10, // (30,82) rank 2
+            (LizardKiller, Bst) => 10, // (40,85) rank 2
+            (LizardKiller, Blu) => 8,  // (20) rank 1
+            (AquanKiller, Bst) => 10,  // (50,88) rank 2
+            (PlantoidKiller, Bst) => 10, // (60,91) rank 2
+            (PlantoidKiller, Blu) => 8,  // (44) rank 1
+            (BeastKiller, Bst) => 10,    // (70,94) rank 2
+            (BeastKiller, Blu) => 8,     // (4) rank 1
 
             // --- 残りの新規特性: trait_cumulative=PLACEHOLDER_TRAIT(0) のため Lv99 値は常に 0 ---
             // 習得の有無は test_trait_levels_defined_for_all_pairs 側で構造的に検証

@@ -144,6 +144,7 @@ export async function updateEquipEditStatus(deps) {
             refresh: equip.refresh || 0,
             subtle_blow: equip.subtle_blow || 0,
             rapid_shot_pct: equip.rapid_shot_pct || 0,
+            fast_cast_pct: equip.fast_cast_pct || 0,
             main_weapon_skill_id: mainWeaponSkillId,
             sub_weapon_skill_id: subWeaponSkillId,
             ranged_weapon_skill_id: rangedWeaponSkillId,
@@ -230,7 +231,7 @@ export async function updateEquipEditStatus(deps) {
         setText('statDefRegen', numOrDash(totalStats.regen));
         setText('statDefRefresh', numOrDash(totalStats.refresh));
         setText('statDefRegain', numOrDash(equip.regain));
-        setText('statDefFastCast', pctOrDash(equip.fast_cast_pct));
+        setText('statDefFastCast', pctOrDash(totalStats.fast_cast_pct));
         setText('statDefQuickMagic', pctOrDash(equip.quick_magic_pct));
         // Snapshot/Rapid Shot は装備テキストでも単位無し表記が標準
         setText('statDefSnapshot', numOrDash(equip.snapshot_pct));

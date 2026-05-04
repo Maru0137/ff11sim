@@ -187,6 +187,38 @@ const AUTO_REFRESH: &[i32] = &[1, 2];
 // THF の TA ギフト (G125/G450/G1050/G1900 で +8/+10/+12/+14 累積) は別途実装が必要
 const TRIPLE_ATTACK: &[i32] = &[5, 6];
 
+// カウンター (https://wiki.ffo.jp/html/567.html)
+// 反撃発動率。rank 1 = 8%, rank 2 = 12%
+const COUNTER: &[i32] = &[8, 12];
+
+// モクシャ (https://wiki.ffo.jp/html/3066.html)
+// 与TP減少。rank 1=5, 2=10, 3=15, 4=20, 5=25, 6=27
+const SUBTLE_BLOW: &[i32] = &[5, 10, 15, 20, 25, 27];
+
+// 蹴撃 (https://wiki.ffo.jp/html/3265.html)
+// 蹴撃発動率。rank 1=10%, 2=12%, 3=14%
+const KICK_ATTACKS: &[i32] = &[10, 12, 14];
+
+// 打剣 (https://wiki.ffo.jp/html/31980.html)
+// 手裏剣自動投擲発動率。rank 1=20%, 2=25%, 3=30%, 4=35%, 5=40%
+// (G150/G500/G1125/G2000 でさらに上昇するが NIN ジョブポイントギフトの仕組み)
+const DAKEN: &[i32] = &[20, 25, 30, 35, 40];
+
+// 二刀流 (https://wiki.ffo.jp/html/449.html)
+// 攻撃間隔短縮率 (% reduction)。rank 1=10, 2=15, 3=25, 4=30, 5=35, 6=40
+// (rank 6 は BLU 1200JP「ジョブ特性効果アップ」専用)
+const DUAL_WIELD: &[i32] = &[10, 15, 25, 30, 35, 40];
+
+// 残心 (https://wiki.ffo.jp/html/3390.html)
+// ミス時再攻撃発動率。rank 1=15%, 2=25%, 3=35%, 4=45%, 5=50%
+// (G80/G405/G980/G1805 で SAM ジョブポイントギフトによりさらに上昇)
+const ZANSHIN: &[i32] = &[15, 25, 35, 45, 50];
+
+// ラピッドショット (https://wiki.ffo.jp/html/2986.html)
+// 遠隔攻撃間隔短縮の発動率。rank 1 ≒ 25% と推測
+// rank 2/3 の正確な値は wiki に記載なし → 配列を [25] に止めて clamp で同値にフォールバック
+const RAPID_SHOT: &[i32] = &[25];
+
 // マーシャルアーツ (https://wiki.ffo.jp/html/3240.html)
 // 格闘武器の攻撃間隔短縮。値は負 (隔短縮量)。
 // rank 1=-80, rank 2=-100, rank 3=-120, rank 4=-140, rank 5=-160, rank 6=-180, rank 7=-200
@@ -230,16 +262,16 @@ fn trait_cumulative(trait_kind: JobTrait) -> &'static [i32] {
         JobTrait::AutoRefresh => AUTO_REFRESH,
         JobTrait::TripleAttack => TRIPLE_ATTACK,
         JobTrait::MartialArts => MARTIAL_ARTS,
+        JobTrait::Counter => COUNTER,
+        JobTrait::SubtleBlow => SUBTLE_BLOW,
+        JobTrait::KickAttacks => KICK_ATTACKS,
+        JobTrait::Daken => DAKEN,
+        JobTrait::DualWield => DUAL_WIELD,
+        JobTrait::Zanshin => ZANSHIN,
+        JobTrait::RapidShot => RAPID_SHOT,
 
         // 新規 (プレースホルダー)
-        JobTrait::Counter
-        | JobTrait::SubtleBlow
-        | JobTrait::KickAttacks
-        | JobTrait::Daken
-        | JobTrait::DualWield
-        | JobTrait::Zanshin
-        | JobTrait::RapidShot
-        | JobTrait::ClearMind
+        JobTrait::ClearMind
         | JobTrait::ConserveMp
         | JobTrait::FastCast
         | JobTrait::UndeadKiller
@@ -940,6 +972,36 @@ mod tests {
             // --- MartialArts (cumulative [-80,-100,-120,-140,-160,-180,-200]) ---
             (MartialArts, Mnk) => -200, // (1,16,31,46,61,75,82) rank 7
             (MartialArts, Pup) => -160, // (25,50,75,86,97) rank 5
+
+            // --- Counter (cumulative [8, 12]) ---
+            (Counter, Mnk) => 12, // (10,81) rank 2
+            (Counter, Blu) => 12, // (70,98) rank 2
+
+            // --- SubtleBlow (cumulative [5, 10, 15, 20, 25, 27]) ---
+            (SubtleBlow, Mnk) => 25, // (5,20,40,65,91) rank 5
+            (SubtleBlow, Nin) => 27, // (15,30,45,60,75,91) rank 6
+            (SubtleBlow, Dnc) => 20, // (25,45,65,86) rank 4
+
+            // --- KickAttacks (cumulative [10, 12, 14]) ---
+            (KickAttacks, Mnk) => 14, // (51,71,76) rank 3
+
+            // --- Daken (cumulative [20, 25, 30, 35, 40]) ---
+            (Daken, Nin) => 40, // (25,40,55,70,95) rank 5
+
+            // --- DualWield (cumulative [10, 15, 25, 30, 35, 40]) ---
+            (DualWield, Thf) => 25, // (83,90,98) rank 3
+            (DualWield, Nin) => 35, // (10,25,45,65,83) rank 5
+            (DualWield, Blu) => 30, // (80,89,99,99) rank 4
+            (DualWield, Dnc) => 30, // (20,40,60,80) rank 4
+
+            // --- Zanshin (cumulative [15, 25, 35, 45, 50]) ---
+            (Zanshin, Sam) => 50, // (20,35,50,65,95) rank 5
+            (Zanshin, Blu) => 15, // (83) rank 1
+
+            // --- RapidShot (cumulative [25] のみ確定、rank 2/3 wiki記載なし → clamp で 25) ---
+            (RapidShot, Rng) => 25, // (15,76) rank 2 → cumulative[1]=cumulative.last()=25
+            (RapidShot, Cor) => 25, // (15,91) rank 2 → 同上
+            (RapidShot, Blu) => 25, // (38) rank 1
 
             // --- 残りの新規特性: trait_cumulative=PLACEHOLDER_TRAIT(0) のため Lv99 値は常に 0 ---
             // 習得の有無は test_trait_levels_defined_for_all_pairs 側で構造的に検証

@@ -220,6 +220,12 @@ pub struct BonusStats {
     /// 装備品の Refresh 合計
     #[serde(default)]
     pub refresh: i32,
+    /// 装備品の Subtle Blow 合計
+    #[serde(default)]
+    pub subtle_blow: i32,
+    /// 装備品の Rapid Shot 発動率合計 (%)
+    #[serde(default)]
+    pub rapid_shot_pct: i32,
     /// 装備メイン武器のスキル種別 ID（アイテム JSON の `skill` フィールド値、未装備時は None）
     #[serde(default)]
     pub main_weapon_skill_id: Option<i32>,

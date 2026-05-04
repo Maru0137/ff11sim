@@ -76,6 +76,10 @@ pub struct StatusResult {
     pub regen: i32,
     /// Refresh 総合値 (3 秒ごとの MP 回復量、装備 + オートリフレシュ特性)
     pub refresh: i32,
+    /// Subtle Blow 総合値 (装備 + ジョブ特性 モクシャ)
+    pub subtle_blow: i32,
+    /// Rapid Shot 発動率総合値 (%) (装備 + ジョブ特性)
+    pub rapid_shot_pct: i32,
     pub total_jp_spent: i32,
     /// メインジョブ/サポートジョブで制限されたスキル有効値（キー: スキル名）
     pub effective_skills: BTreeMap<String, i32>,
@@ -312,6 +316,8 @@ fn chara_to_status_result(chara: &Chara) -> StatusResult {
     let auto_regen_trait = chara.job_trait_total(JobTrait::AutoRegen);
     let auto_refresh_trait = chara.job_trait_total(JobTrait::AutoRefresh);
     let triple_attack_trait = chara.job_trait_total(JobTrait::TripleAttack);
+    let subtle_blow_trait = chara.job_trait_total(JobTrait::SubtleBlow);
+    let rapid_shot_trait = chara.job_trait_total(JobTrait::RapidShot);
     let store_tp_trait = chara.job_trait_total(JobTrait::StoreTp);
     let double_attack_trait = chara.job_trait_total(JobTrait::DoubleAttack);
     // 連携ボーナス: ジョブ特性 + ギフト + 装備の合計
@@ -565,6 +571,9 @@ fn chara_to_status_result(chara: &Chara) -> StatusResult {
         // オートリジェネ/リフレシュ 総合 = 装備 + ジョブ特性
         regen: chara.bonus_stats.regen + auto_regen_trait,
         refresh: chara.bonus_stats.refresh + auto_refresh_trait,
+        // モクシャ / ラピッドショット 総合 = 装備 + ジョブ特性
+        subtle_blow: chara.bonus_stats.subtle_blow + subtle_blow_trait,
+        rapid_shot_pct: chara.bonus_stats.rapid_shot_pct + rapid_shot_trait,
         total_jp_spent: total_jp,
         effective_skills,
         main_weapon_skill,
@@ -1074,6 +1083,32 @@ mod tests {
             .build()
             .unwrap();
         assert_eq!(chara_to_status_result(&chara).regen, 5 + 3);
+    }
+
+    /// NIN91 → SubtleBlow rank 6 = 27、装備 +10 とで合計 37
+    #[test]
+    fn test_nin_subtle_blow_with_equip() {
+        let bonus = BonusStats { subtle_blow: 10, ..BonusStats::default() };
+        let chara = Chara::builder()
+            .race(Race::Hum)
+            .main_job(Job::Nin, 99)
+            .master_lv(0)
+            .bonus_stats(bonus)
+            .build()
+            .unwrap();
+        assert_eq!(chara_to_status_result(&chara).subtle_blow, 10 + 27);
+    }
+
+    /// RNG76 → RapidShot rank 2 (cumulative 配列 [25] のため clamp で 25)
+    #[test]
+    fn test_rng_rapid_shot() {
+        let chara = Chara::builder()
+            .race(Race::Hum)
+            .main_job(Job::Rng, 99)
+            .master_lv(0)
+            .build()
+            .unwrap();
+        assert_eq!(chara_to_status_result(&chara).rapid_shot_pct, 25);
     }
 
     /// THF95 → TripleAttack rank 2 = 6%、装備 +5% とで合計 11%

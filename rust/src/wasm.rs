@@ -1103,7 +1103,8 @@ mod tests {
         assert_eq!(chara_to_status_result(&chara).subtle_blow, 10 + 27);
     }
 
-    /// RDM90 → FastCast rank 5 = 25%、装備 +10% とで合計 35%
+    /// RDM99 → FastCast rank 6 = 30%、装備 +10% とで合計 40%
+    /// (RDM は Lv15 で rank 2 を直接習得し、最大は Lv90 で rank 6)
     #[test]
     fn test_rdm_fast_cast_with_equip() {
         let bonus = BonusStats { fast_cast_pct: 10, ..BonusStats::default() };
@@ -1114,7 +1115,7 @@ mod tests {
             .bonus_stats(bonus)
             .build()
             .unwrap();
-        assert_eq!(chara_to_status_result(&chara).fast_cast_pct, 10 + 25);
+        assert_eq!(chara_to_status_result(&chara).fast_cast_pct, 10 + 30);
     }
 
     /// RNG76 → RapidShot rank 2 (cumulative 配列 [25] のため clamp で 25)
@@ -1146,32 +1147,11 @@ mod tests {
         assert_eq!(chara_to_status_result(&chara).triple_attack_pct, 5 + 6);
     }
 
-    /// BLU99 0 JP → MagicAccuracyBonus rank 1 = +10 が StatusResult.magic_accuracy_bonus に反映
+    /// BLU99 + JP 全振り でジョブ特性は青魔法未対応のため 0、ギフトカテゴリのみが乗る。
+    /// BLU の MagicAccuracy ギフト (data/job_gifts.json):
+    ///   tiers [[125,5],[450,8],[1050,10],[1900,13]] → 全振り 2100 JP で 5+8+10+13 = 36
     #[test]
-    fn test_blu99_magic_accuracy_bonus_no_gift() {
-        let chara = Chara::builder()
-            .race(Race::Hum)
-            .main_job(Job::Blu, 99)
-            .master_lv(0)
-            .build()
-            .expect("Failed to build BLU");
-        let result = chara_to_status_result(&chara);
-        assert_eq!(
-            result.magic_accuracy_bonus, 10,
-            "BLU99 0 JP MagicAccuracyBonus: got {} expected 10",
-            result.magic_accuracy_bonus
-        );
-        assert_eq!(
-            result.magic_evasion_bonus, 10,
-            "BLU99 0 JP MagicEvasionBonus: got {} expected 10",
-            result.magic_evasion_bonus
-        );
-    }
-
-    /// BLU99 + JP 全振り (≥1200) で「ジョブ特性効果アップ」ギフトにより rank 2 にアップ → +22
-    /// 加えて BLU の MagicAccuracy ギフトカテゴリ (累積) が乗る。
-    #[test]
-    fn test_blu99_magic_accuracy_bonus_gift_full_jp() {
+    fn test_blu99_magic_accuracy_bonus_gift_category_only() {
         let chara = Chara::builder()
             .race(Race::Hum)
             .main_job(Job::Blu, 99)
@@ -1180,13 +1160,9 @@ mod tests {
             .build()
             .expect("Failed to build BLU");
         let result = chara_to_status_result(&chara);
-        // ジョブ特性「ジョブ特性効果アップ」: 1200 JP 以上で rank+2 → rank 1+2=3 (累積配列 [10,22] で clamp → 22)
-        // BLU の MagicAccuracy ギフト (data/job_gifts.json):
-        //   tiers [[125,5],[450,8],[1050,10],[1900,13]] → 全振り 2100 JP で 5+8+10+13 = 36 加算
-        // 期待値: 特性 22 + ギフト 36 = 58
         assert_eq!(
-            result.magic_accuracy_bonus, 22 + 36,
-            "BLU99 全振り MagicAccuracyBonus: got {} expected 58 (特性22 + ギフト36)",
+            result.magic_accuracy_bonus, 36,
+            "BLU99 全振り MagicAccuracyBonus: got {} expected 36 (ギフトカテゴリのみ)",
             result.magic_accuracy_bonus
         );
     }

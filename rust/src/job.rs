@@ -1172,7 +1172,7 @@ mod tests {
             (Alertness, Rng) => 1, // (5) rank 1
 
             // --- Stealth (cumulative [1, 1]) ---
-            (Stealth, Nin) => 1,
+            (Stealth, Nin) => 1, // (5,86) rank 2
 
             // --- Gilfinder (cumulative [1, 1]) ---
             (Gilfinder, Thf) => 1,

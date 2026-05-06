@@ -114,7 +114,7 @@ pub enum JobTrait {
     ResistBlind,
     ResistBind,
     ResistAmnesia,
-    WideScan,
+    Alertness,
     Stealth,
     Gilfinder,
     TreasureHunter,
@@ -454,7 +454,7 @@ impl JobTrait {
             | JobTrait::ResistBlind
             | JobTrait::ResistBind
             | JobTrait::ResistAmnesia => RESIST_DEFAULT,
-            JobTrait::WideScan => TRAIT_BINARY,
+            JobTrait::Alertness => TRAIT_BINARY,
             JobTrait::Stealth => TRAIT_BINARY_2,
             JobTrait::Gilfinder => TRAIT_BINARY_2,
             JobTrait::TreasureHunter => TREASURE_HUNTER,
@@ -669,7 +669,7 @@ impl Job {
             (JobTrait::ResistAmnesia, Job::Pup) => &[15, 35, 55, 75, 95],
 
             // ============ 警戒 / ステルス / その他 THF系 ============
-            (JobTrait::WideScan, Job::Rng) => &[5],
+            (JobTrait::Alertness, Job::Rng) => &[5],
             (JobTrait::Stealth, Job::Nin) => &[5, 86],
             (JobTrait::Gilfinder, Job::Thf) => &[5, 85],
             // トレジャーハンター I/II/III は wiki 上は別項だが、
@@ -963,7 +963,7 @@ mod tests {
         JobTrait::ResistBlind,
         JobTrait::ResistBind,
         JobTrait::ResistAmnesia,
-        JobTrait::WideScan,
+        JobTrait::Alertness,
         JobTrait::Stealth,
         JobTrait::Gilfinder,
         JobTrait::TreasureHunter,
@@ -1168,8 +1168,8 @@ mod tests {
             (ResistAmnesia, Cor) => 25,  // (30,50,70,90) rank 4
             (ResistAmnesia, Pup) => 30,  // (15,35,55,75,95) rank 5
 
-            // --- WideScan (cumulative [1]) ---
-            (WideScan, Rng) => 1,
+            // --- Alertness (cumulative [1]) ---
+            (Alertness, Rng) => 1,
 
             // --- Stealth (cumulative [1, 1]) ---
             (Stealth, Nin) => 1,

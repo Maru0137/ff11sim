@@ -15,7 +15,6 @@ use enum_map::EnumMap;
 use serde::Deserialize;
 
 use crate::job::Job;
-use crate::job_points::GiftStatKind;
 use crate::race::Race;
 use crate::skills::{SkillKind, SkillRank};
 use crate::status::{Grade, StatusKind};
@@ -157,22 +156,8 @@ pub static SKILL_CAP_CONTROL_POINTS: LazyLock<SkillCapControlPoints> = LazyLock:
     .data
 });
 
-/// 1 ギフトスロット (ステータス + 4 ティア)
-#[derive(Debug, Clone, Copy, Deserialize)]
-pub struct GiftSlotDef {
-    pub stat: GiftStatKind,
-    /// 各ティア = `[累計 JP 閾値, 効果値]`
-    pub tiers: [[i32; 2]; 4],
-}
-
-/// ジョブ別ギフト定義。スロット数はジョブごとに 6〜7。
-pub static JOB_GIFTS: LazyLock<EnumMap<Job, Vec<GiftSlotDef>>> = LazyLock::new(|| {
-    serde_json::from_str::<DataFile<EnumMap<Job, Vec<GiftSlotDef>>>>(include_str!(
-        "../../data/job_gifts.json"
-    ))
-    .expect("job_gifts.json parse failed")
-    .data
-});
+// ギフト定義は src/gift.rs (Gift enum + Job::gift_tiers) に移行済み。
+// 旧 JSON ベースの GiftSlotDef / JOB_GIFTS は削除した。
 
 #[cfg(test)]
 mod tests {

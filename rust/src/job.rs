@@ -814,17 +814,8 @@ impl JobTrait {
     }
 }
 
-/// BLU の「ジョブ特性効果アップ」ギフトによる追加ランク数。
-/// 100JP = +1 rank, 1200JP = +2 rank。
-pub fn blu_trait_effect_up_bonus_ranks(total_jp: i32) -> usize {
-    if total_jp >= 1200 {
-        2
-    } else if total_jp >= 100 {
-        1
-    } else {
-        0
-    }
-}
+// BLU の「ジョブ特性効果アップ」ギフトは src/gift.rs の `Gift::JobTraitEffectUp`
+// に統合済み。`Job::Blu.gift_value(Gift::JobTraitEffectUp, total_jp)` で取得する。
 
 #[cfg(test)]
 mod tests {

@@ -630,7 +630,10 @@ impl Job {
             (JobTrait::ConserveMp, Job::Geo) => &[10, 25, 40, 55, 70, 85, 99],
 
             // ============ ファストキャスト (FastCast) ============
-            (JobTrait::FastCast, Job::Rdm) => &[15, 35, 55, 76, 90],
+            // RDM は rank 1 を習得しない (Lv15 で直接 rank 2 を習得)。
+            // count ベースのランク算出に合わせるため rank 2 の習得 Lv (15) を
+            // 重複させて rank 1 をスキップする。
+            (JobTrait::FastCast, Job::Rdm) => &[15, 15, 35, 55, 76, 90],
 
             // ============ 各種キラー特性 ============
             (JobTrait::UndeadKiller, Job::Pld) => &[5, 86],
@@ -1130,7 +1133,7 @@ mod tests {
             (ConserveMp, Geo) => 43, // (10,25,40,55,70,85,99) rank 7
 
             // --- FastCast (cumulative [5, 10, 15, 20, 25, 30]) ---
-            (FastCast, Rdm) => 25, // (15,35,55,76,90) rank 5
+            (FastCast, Rdm) => 30, // (15(skip rank 1),15,35,55,76,90) rank 6
 
             // --- Killer 系 (全て cumulative [8, 10, 12]) ---
             (UndeadKiller, Pld) => 10,   // (5,86) rank 2

@@ -1103,7 +1103,8 @@ mod tests {
         assert_eq!(chara_to_status_result(&chara).subtle_blow, 10 + 27);
     }
 
-    /// RDM90 → FastCast rank 5 = 25%、装備 +10% とで合計 35%
+    /// RDM99 → FastCast rank 6 = 30%、装備 +10% とで合計 40%
+    /// (RDM は Lv15 で rank 2 を直接習得し、最大は Lv90 で rank 6)
     #[test]
     fn test_rdm_fast_cast_with_equip() {
         let bonus = BonusStats { fast_cast_pct: 10, ..BonusStats::default() };
@@ -1114,7 +1115,7 @@ mod tests {
             .bonus_stats(bonus)
             .build()
             .unwrap();
-        assert_eq!(chara_to_status_result(&chara).fast_cast_pct, 10 + 25);
+        assert_eq!(chara_to_status_result(&chara).fast_cast_pct, 10 + 30);
     }
 
     /// RNG76 → RapidShot rank 2 (cumulative 配列 [25] のため clamp で 25)

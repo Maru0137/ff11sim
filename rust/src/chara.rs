@@ -349,41 +349,9 @@ mod tests {
             .expect("Failed to build BLU")
     }
 
-    #[test]
-    fn test_blu_magic_accuracy_bonus_no_gift() {
-        // BLU99, 0 JP → rank 1 = +10
-        let chara = build_blu99_with_jp(0);
-        assert_eq!(chara.job_trait_total(JobTrait::MagicAccuracyBonus), 10);
-        assert_eq!(chara.job_trait_total(JobTrait::MagicEvasionBonus), 10);
-    }
-
-    #[test]
-    fn test_blu_magic_accuracy_bonus_gift_100jp() {
-        // BLU99, 100 JP → rank 1 + 1 = rank 2 = +22 (累積)
-        let chara = build_blu99_with_jp(100);
-        assert_eq!(chara.job_trait_total(JobTrait::MagicAccuracyBonus), 22);
-        assert_eq!(chara.job_trait_total(JobTrait::MagicEvasionBonus), 22);
-    }
-
-    #[test]
-    fn test_blu_magic_accuracy_bonus_gift_1200jp() {
-        // BLU99, 1200 JP → rank 1 + 2 = rank 3
-        // wiki に rank 3 値の記載がないため累積配列 [10,22] で clamp → 22
-        let chara = build_blu99_with_jp(1200);
-        assert_eq!(chara.job_trait_total(JobTrait::MagicAccuracyBonus), 22);
-        assert_eq!(chara.job_trait_total(JobTrait::MagicEvasionBonus), 22);
-    }
-
-    #[test]
-    fn test_blu_double_attack_excluded_from_gift() {
-        // BLU99 は DoubleAttack rank 1 (Lv80) を持つが、ギフト除外特性のためランクアップしない。
-        // DOUBLE_ATTACK = [10, 12, 14, 16, 18] → rank 1 = 10
-        let chara0 = build_blu99_with_jp(0);
-        let chara1200 = build_blu99_with_jp(1200);
-        assert_eq!(chara0.job_trait_total(JobTrait::DoubleAttack), 10);
-        // ギフト除外なので 1200 JP でも値は変わらず 10 のまま
-        assert_eq!(chara1200.job_trait_total(JobTrait::DoubleAttack), 10);
-    }
+    // 注: BLU の特性は青魔法セットによって決まるため、青魔法対応までは
+    //     trait_levels に BLU の習得レベルを定義しない。
+    //     そのため BLU 個別の特性 / ギフト適用テストは青魔法対応後に追加する。
 
     #[test]
     fn test_non_blu_main_no_gift_effect() {
@@ -411,21 +379,8 @@ mod tests {
     #[test]
     fn test_blu_unlearned_trait_not_granted_by_gift() {
         // BLU が習得しない特性 (例: WAR の Smite, DRG の Strafe) はギフト適用外。
-        // BLU は Smite/Strafe を持たない → 0 のまま。
         let chara1200 = build_blu99_with_jp(1200);
         assert_eq!(chara1200.job_trait_total(JobTrait::Smite), 0);
         assert_eq!(chara1200.job_trait_total(JobTrait::Strafe), 0);
-    }
-
-    #[test]
-    fn test_blu_auto_regen_with_gift() {
-        // BLU は AutoRegen を Lv16 から習得 (rank 1 = +1/3sec)。
-        // 1200 JP で「ジョブ特性効果アップ」rank+2 → rank 3 = +3/3sec
-        let chara0 = build_blu99_with_jp(0);
-        let chara100 = build_blu99_with_jp(100);
-        let chara1200 = build_blu99_with_jp(1200);
-        assert_eq!(chara0.job_trait_total(JobTrait::AutoRegen), 1);
-        assert_eq!(chara100.job_trait_total(JobTrait::AutoRegen), 2);
-        assert_eq!(chara1200.job_trait_total(JobTrait::AutoRegen), 3);
     }
 }

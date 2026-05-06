@@ -520,49 +520,40 @@ impl Job {
             (JobTrait::AttackBonus, Job::War) => &[30, 65, 91],
             (JobTrait::AttackBonus, Job::Drk) => &[10, 30, 50, 70, 76, 83, 91, 99],
             (JobTrait::AttackBonus, Job::Drg) => &[10, 91],
-            (JobTrait::AttackBonus, Job::Blu) => &[38, 63, 86, 99],
 
             // ============ 物理防御力アップ (DefenseBonus) ============
             (JobTrait::DefenseBonus, Job::War) => &[10, 45, 86],
             (JobTrait::DefenseBonus, Job::Pld) => &[10, 30, 50, 70, 76, 91],
-            (JobTrait::DefenseBonus, Job::Blu) => &[40, 75, 99, 99],
 
             // ============ 魔法防御力アップ (MagicDefenseBonus) ============
             (JobTrait::MagicDefenseBonus, Job::Whm) => &[10, 30, 50, 70, 81, 91],
             (JobTrait::MagicDefenseBonus, Job::Rdm) => &[25, 45, 96],
-            (JobTrait::MagicDefenseBonus, Job::Blu) => &[50, 99, 99],
             (JobTrait::MagicDefenseBonus, Job::Run) => &[10, 30, 50, 70, 76, 91, 99],
 
             // ============ 物理命中率アップ (AccuracyBonus) ============
             (JobTrait::AccuracyBonus, Job::Rng) => &[10, 30, 50, 70, 86, 96],
             (JobTrait::AccuracyBonus, Job::Drg) => &[30, 60, 76],
-            (JobTrait::AccuracyBonus, Job::Blu) => &[63, 83, 99, 99],
             (JobTrait::AccuracyBonus, Job::Dnc) => &[30, 60, 76],
             (JobTrait::AccuracyBonus, Job::Run) => &[50, 70, 90],
 
             // ============ 物理回避率アップ (EvasionBonus) ============
             (JobTrait::EvasionBonus, Job::Thf) => &[10, 30, 50, 70, 76, 88],
-            (JobTrait::EvasionBonus, Job::Blu) => &[69, 99],
             (JobTrait::EvasionBonus, Job::Pup) => &[20, 40, 60, 76],
             (JobTrait::EvasionBonus, Job::Dnc) => &[15, 45, 75, 86],
 
             // ============ 魔法攻撃力アップ (MagicAttackBonus) ============
             (JobTrait::MagicAttackBonus, Job::Blm) => &[10, 30, 50, 70, 81, 91],
             (JobTrait::MagicAttackBonus, Job::Rdm) => &[20, 40, 86],
-            (JobTrait::MagicAttackBonus, Job::Blu) => &[32, 62, 74, 87],
 
             // ============ 魔法命中率アップ (MagicAccuracyBonus) ============
-            (JobTrait::MagicAccuracyBonus, Job::Blu) => &[99],
 
             // ============ 魔法回避率アップ (MagicEvasionBonus) ============
-            (JobTrait::MagicEvasionBonus, Job::Blu) => &[99],
 
             // ============ HPmaxアップ (MaxHpBoost) ============
             (JobTrait::MaxHpBoost, Job::War) => &[30, 50, 70, 90],
             (JobTrait::MaxHpBoost, Job::Mnk) => &[15, 25, 35, 45, 55, 65],
             (JobTrait::MaxHpBoost, Job::Pld) => &[45, 85],
             (JobTrait::MaxHpBoost, Job::Nin) => &[20, 40, 60, 80, 99],
-            (JobTrait::MaxHpBoost, Job::Blu) => &[62, 91, 99, 99],
             (JobTrait::MaxHpBoost, Job::Run) => &[20, 40, 60, 80, 99],
 
             // ============ HPmaxアップII (MaxHpBoost2) ============
@@ -570,7 +561,6 @@ impl Job {
 
             // ============ MPmaxアップ (MaxMpBoost) ============
             (JobTrait::MaxMpBoost, Job::Smn) => &[10, 30, 50, 70, 76, 96],
-            (JobTrait::MaxMpBoost, Job::Blu) => &[40, 82],
             (JobTrait::MaxMpBoost, Job::Sch) => &[30, 88],
             (JobTrait::MaxMpBoost, Job::Geo) => &[30, 60, 90],
 
@@ -590,21 +580,17 @@ impl Job {
 
             // ============ オートリジェネ (AutoRegen) ============
             (JobTrait::AutoRegen, Job::Whm) => &[25, 76],
-            (JobTrait::AutoRegen, Job::Blu) => &[16],
             (JobTrait::AutoRegen, Job::Run) => &[35, 65, 95],
 
             // ============ オートリフレシュ (AutoRefresh) ============
             (JobTrait::AutoRefresh, Job::Pld) => &[35],
             (JobTrait::AutoRefresh, Job::Smn) => &[25, 90],
-            (JobTrait::AutoRefresh, Job::Blu) => &[58],
 
             // ============ ダブルアタック (DoubleAttack) ============
             (JobTrait::DoubleAttack, Job::War) => &[25, 50, 75, 85, 99],
-            (JobTrait::DoubleAttack, Job::Blu) => &[80],
 
             // ============ トリプルアタック (TripleAttack) ============
             (JobTrait::TripleAttack, Job::Thf) => &[55, 95],
-            (JobTrait::TripleAttack, Job::Blu) => &[92],
 
             // ============ マーシャルアーツ (MartialArts) ============
             (JobTrait::MartialArts, Job::Mnk) => &[1, 16, 31, 46, 61, 75, 82],
@@ -612,7 +598,6 @@ impl Job {
 
             // ============ カウンター (Counter) ============
             (JobTrait::Counter, Job::Mnk) => &[10, 81],
-            (JobTrait::Counter, Job::Blu) => &[70, 98],
 
             // ============ モクシャ (SubtleBlow) ============
             (JobTrait::SubtleBlow, Job::Mnk) => &[5, 20, 40, 65, 91],
@@ -628,20 +613,16 @@ impl Job {
             // ============ 二刀流 (DualWield) ============
             (JobTrait::DualWield, Job::Thf) => &[83, 90, 98],
             (JobTrait::DualWield, Job::Nin) => &[10, 25, 45, 65, 83],
-            (JobTrait::DualWield, Job::Blu) => &[80, 89, 99, 99],
             (JobTrait::DualWield, Job::Dnc) => &[20, 40, 60, 80],
 
             // ============ 残心 (Zanshin) ============
             (JobTrait::Zanshin, Job::Sam) => &[20, 35, 50, 65, 95],
-            (JobTrait::Zanshin, Job::Blu) => &[83],
 
             // ============ ストアTP (StoreTp) ============
             (JobTrait::StoreTp, Job::Sam) => &[10, 30, 50, 70, 90],
-            (JobTrait::StoreTp, Job::Blu) => &[69, 95, 99],
 
             // ============ ラピッドショット (RapidShot) ============
             (JobTrait::RapidShot, Job::Rng) => &[15, 76],
-            (JobTrait::RapidShot, Job::Blu) => &[38],
             (JobTrait::RapidShot, Job::Cor) => &[15, 91],
 
             // ============ クリアマインド (ClearMind) ============
@@ -649,23 +630,19 @@ impl Job {
             (JobTrait::ClearMind, Job::Blm) => &[15, 30, 45, 60, 75, 96],
             (JobTrait::ClearMind, Job::Rdm) => &[31, 53, 75, 91],
             (JobTrait::ClearMind, Job::Smn) => &[15, 30, 45, 60, 75, 91],
-            (JobTrait::ClearMind, Job::Blu) => &[24, 46, 61, 66],
             (JobTrait::ClearMind, Job::Sch) => &[20, 35, 50, 65, 76, 91],
             (JobTrait::ClearMind, Job::Geo) => &[20, 35, 50, 65, 76, 91],
 
             // ============ コンサーブMP (ConserveMp) ============
             (JobTrait::ConserveMp, Job::Blm) => &[20, 76, 86],
-            (JobTrait::ConserveMp, Job::Blu) => &[65, 68, 99, 99],
             (JobTrait::ConserveMp, Job::Sch) => &[25, 96],
             (JobTrait::ConserveMp, Job::Geo) => &[10, 25, 40, 55, 70, 85, 99],
 
             // ============ ファストキャスト (FastCast) ============
             (JobTrait::FastCast, Job::Rdm) => &[15, 35, 55, 76, 90],
-            (JobTrait::FastCast, Job::Blu) => &[72, 99, 99],
 
             // ============ 各種キラー特性 ============
             (JobTrait::UndeadKiller, Job::Pld) => &[5, 86],
-            (JobTrait::UndeadKiller, Job::Blu) => &[34],
             (JobTrait::ArcanaKiller, Job::Drk) => &[25, 86],
             (JobTrait::DemonKiller, Job::Sam) => &[40, 86],
             (JobTrait::DragonKiller, Job::Drg) => &[25, 86],
@@ -673,20 +650,15 @@ impl Job {
             (JobTrait::BirdKiller, Job::Bst) => &[20, 79],
             (JobTrait::AmorphKiller, Job::Bst) => &[30, 82],
             (JobTrait::LizardKiller, Job::Bst) => &[40, 85],
-            (JobTrait::LizardKiller, Job::Blu) => &[20],
             (JobTrait::AquanKiller, Job::Bst) => &[50, 88],
             (JobTrait::PlantoidKiller, Job::Bst) => &[60, 91],
-            (JobTrait::PlantoidKiller, Job::Blu) => &[44],
             (JobTrait::BeastKiller, Job::Bst) => &[70, 94],
-            (JobTrait::BeastKiller, Job::Blu) => &[4],
 
             // ============ 各種レジスト特性 ============
             (JobTrait::ResistVirus, Job::War) => &[15, 35, 55, 70, 81],
             (JobTrait::ResistPetrify, Job::Rdm) => &[10, 30, 50, 70, 81],
             (JobTrait::ResistGravity, Job::Thf) => &[20, 40, 60, 75, 81],
-            (JobTrait::ResistGravity, Job::Blu) => &[69],
             (JobTrait::ResistSleep, Job::Pld) => &[20, 40, 60, 81],
-            (JobTrait::ResistSleep, Job::Blu) => &[30],
             (JobTrait::ResistParalyze, Job::Drk) => &[20, 40, 60, 75, 81],
             (JobTrait::ResistParalyze, Job::Cor) => &[5, 25, 45, 65, 81],
             (JobTrait::ResistSlow, Job::Bst) => &[15, 35, 55, 75, 81],
@@ -694,7 +666,6 @@ impl Job {
             (JobTrait::ResistSlow, Job::Pup) => &[10, 50, 70, 81],
             (JobTrait::ResistSlow, Job::Dnc) => &[20, 55, 81],
             (JobTrait::ResistSilence, Job::Brd) => &[5, 25, 45, 65, 81],
-            (JobTrait::ResistSilence, Job::Blu) => &[99],
             (JobTrait::ResistSilence, Job::Sch) => &[10, 40, 70, 81],
             (JobTrait::ResistPoison, Job::Rng) => &[20, 40, 60, 81],
             (JobTrait::ResistBlind, Job::Sam) => &[5, 25, 45, 65, 81],
@@ -707,11 +678,9 @@ impl Job {
             (JobTrait::WideScan, Job::Rng) => &[5],
             (JobTrait::Stealth, Job::Nin) => &[5, 86],
             (JobTrait::Gilfinder, Job::Thf) => &[5, 85],
-            (JobTrait::Gilfinder, Job::Blu) => &[90],
             // トレジャーハンター I/II/III は wiki 上は別項だが、
             // 仕組み上は同一特性の段階的強化 (THF Lv15→rank1, Lv45→rank2, Lv90→rank3) なので統合。
             (JobTrait::TreasureHunter, Job::Thf) => &[15, 45, 90],
-            (JobTrait::TreasureHunter, Job::Blu) => &[98],
             (JobTrait::Assassin, Job::Thf) => &[60],
 
             // ============ 女神の慈悲 / シールド系 ============
@@ -732,7 +701,6 @@ impl Job {
             (JobTrait::CritIncrease, Job::War) => &[78, 84],
             (JobTrait::CritIncrease, Job::Thf) => &[78, 84, 91, 97],
             (JobTrait::CritIncrease, Job::Drk) => &[85, 95],
-            (JobTrait::CritIncrease, Job::Blu) => &[99],
             (JobTrait::CritIncrease, Job::Dnc) => &[80, 88, 99],
             (JobTrait::CritReduce, Job::Pld) => &[79, 85, 91, 96],
             (JobTrait::CritReduce, Job::Brd) => &[80, 91],
@@ -770,7 +738,6 @@ impl Job {
             (JobTrait::SkillchainBonus, Job::Mnk) => &[85, 95],
             (JobTrait::SkillchainBonus, Job::Nin) => &[85, 95],
             (JobTrait::SkillchainBonus, Job::Sam) => &[78, 88, 98],
-            (JobTrait::SkillchainBonus, Job::Blu) => &[83, 96, 99, 99, 99],
             (JobTrait::SkillchainBonus, Job::Dnc) => &[45, 58, 71, 84, 97],
 
             // ============ 派生・特殊 ============
@@ -788,7 +755,6 @@ impl Job {
             (JobTrait::MagicBurstBonus, Job::Blm) => &[45, 58, 71, 84, 97],
             (JobTrait::MagicBurstBonus, Job::Rdm) => &[85, 95],
             (JobTrait::MagicBurstBonus, Job::Nin) => &[80, 90],
-            (JobTrait::MagicBurstBonus, Job::Blu) => &[78, 90],
             (JobTrait::MagicBurstBonus, Job::Sch) => &[79, 89, 99],
             (JobTrait::DivineBenison, Job::Whm) => &[50, 60, 70, 80, 90],
             (JobTrait::ElementalCelerity, Job::Blm) => &[50, 60, 70, 80, 90],
@@ -799,9 +765,7 @@ impl Job {
             (JobTrait::DesperateBlows, Job::Drk) => &[15, 30, 45],
             (JobTrait::StalwartSoul, Job::Drk) => &[45, 90],
             (JobTrait::CardinalChant, Job::Geo) => &[25, 45, 85],
-            (JobTrait::Tenacity, Job::Blu) => &[99],
             (JobTrait::Tenacity, Job::Run) => &[5, 25, 45, 75, 80, 95],
-            (JobTrait::Inquartata, Job::Blu) => &[99],
             (JobTrait::Inquartata, Job::Run) => &[15, 45, 75, 90],
 
             _ => &[],
@@ -892,17 +856,6 @@ mod tests {
     }
 
     #[test]
-    fn test_skillchain_bonus_trait_blu() {
-        // BLU: Lv83/96/99/99/99 で rank1〜5 (Lv99 で 3 ランク同時習得)
-        assert_eq!(Job::Blu.trait_bonus(JobTrait::SkillchainBonus, 82), 0);
-        assert_eq!(Job::Blu.trait_bonus(JobTrait::SkillchainBonus, 83), 8);
-        assert_eq!(Job::Blu.trait_bonus(JobTrait::SkillchainBonus, 95), 8);
-        assert_eq!(Job::Blu.trait_bonus(JobTrait::SkillchainBonus, 96), 12);
-        assert_eq!(Job::Blu.trait_bonus(JobTrait::SkillchainBonus, 98), 12);
-        assert_eq!(Job::Blu.trait_bonus(JobTrait::SkillchainBonus, 99), 23);
-    }
-
-    #[test]
     fn test_skillchain_bonus_trait_dnc() {
         // DNC: Lv45/58/71/84/97 で rank1〜5
         assert_eq!(Job::Dnc.trait_bonus(JobTrait::SkillchainBonus, 44), 0);
@@ -917,6 +870,7 @@ mod tests {
     #[test]
     fn test_skillchain_bonus_trait_other_jobs() {
         // 連携ボーナスを習得しないジョブは常に 0
+        // BLU は青魔法セットによって特性が変わるため Mnk/Nin/Sam/Dnc 以外は 0 (青魔法未対応)
         for &job in &[
             Job::War,
             Job::Whm,
@@ -930,6 +884,7 @@ mod tests {
             Job::Rng,
             Job::Drg,
             Job::Smn,
+            Job::Blu,
             Job::Cor,
             Job::Pup,
             Job::Sch,
@@ -1064,17 +1019,14 @@ mod tests {
             (AttackBonus, War) => 35, // (30,65,91) rank 3
             (AttackBonus, Drk) => 96, // (10,30,50,70,76,83,91,99) rank 8
             (AttackBonus, Drg) => 22, // (10,91) rank 2
-            (AttackBonus, Blu) => 48, // (38,63,86,99) rank 4
 
             // --- DefenseBonus (cumulative [10,22,35,48,60,72]) ---
             (DefenseBonus, War) => 35, // (10,45,86) rank 3
             (DefenseBonus, Pld) => 72, // (10,30,50,70,76,91) rank 6
-            (DefenseBonus, Blu) => 48, // (40,75,99,99) rank 4
 
             // --- MagicDefenseBonus (cumulative [10,12,14,16,18,20,22]) ---
             (MagicDefenseBonus, Whm) => 20, // (10,30,50,70,81,91) rank 6
             (MagicDefenseBonus, Rdm) => 14, // (25,45,96) rank 3
-            (MagicDefenseBonus, Blu) => 14, // (50,99,99) rank 3
             (MagicDefenseBonus, Run) => 22, // (10,30,50,70,76,91,99) rank 7
 
             // --- MaxHpBoost (cumulative [30,60,120,180,240,280]) ---
@@ -1083,7 +1035,6 @@ mod tests {
             (MaxHpBoost, Nin) => 240, // (20,40,60,80,99) rank 5
             (MaxHpBoost, Run) => 240, // (20,40,60,80,99) rank 5
             (MaxHpBoost, Pld) => 60,  // (45,85) rank 2
-            (MaxHpBoost, Blu) => 180, // (62,91,99,99) rank 4
 
             // --- MaxHpBoost2 (cumulative [150,300,450]) ---
             (MaxHpBoost2, Mnk) => 450, // (75,85,95) rank 3
@@ -1092,46 +1043,37 @@ mod tests {
             (MaxMpBoost, Smn) => 100, // (10,30,50,70,76,96) rank 6
             (MaxMpBoost, Sch) => 20,  // (30,88) rank 2
             (MaxMpBoost, Geo) => 40,  // (30,60,90) rank 3
-            (MaxMpBoost, Blu) => 20,  // (40,82) rank 2
 
             // --- EvasionBonus (cumulative [10,22,35,48,60,72]) ---
             (EvasionBonus, Thf) => 72, // (10,30,50,70,76,88) rank 6
             (EvasionBonus, Dnc) => 48, // (15,45,75,86) rank 4
             (EvasionBonus, Pup) => 48, // (20,40,60,76) rank 4
-            (EvasionBonus, Blu) => 22, // (69,99) rank 2
 
             // --- AccuracyBonus (cumulative [10,22,35,48,60,72]) ---
             (AccuracyBonus, Rng) => 72, // (10,30,50,70,86,96) rank 6
             (AccuracyBonus, Drg) => 35, // (30,60,76) rank 3
             (AccuracyBonus, Dnc) => 35, // (30,60,76) rank 3
             (AccuracyBonus, Run) => 35, // (50,70,90) rank 3
-            (AccuracyBonus, Blu) => 48, // (63,83,99,99) rank 4
 
             // --- MagicAttackBonus (cumulative [20,24,28,32,36,40]) ---
             (MagicAttackBonus, Blm) => 40, // (10,30,50,70,81,91) rank 6
             (MagicAttackBonus, Rdm) => 28, // (20,40,86) rank 3
-            (MagicAttackBonus, Blu) => 32, // (32,62,74,87) rank 4
 
             // --- StoreTp (cumulative [10,15,20,25,30]) ---
             (StoreTp, Sam) => 30, // (10,30,50,70,90) rank 5
-            (StoreTp, Blu) => 20, // (69,95,99) rank 3
 
             // --- DoubleAttack (cumulative [10,12,14,16,18]) ---
             (DoubleAttack, War) => 18, // (25,50,75,85,99) rank 5
-            (DoubleAttack, Blu) => 10, // (80) rank 1
 
             // --- SkillchainBonus (cumulative [8,12,16,20,23]) ---
             (SkillchainBonus, Mnk) => 12, // (85,95) rank 2
             (SkillchainBonus, Nin) => 12, // (85,95) rank 2
             (SkillchainBonus, Sam) => 16, // (78,88,98) rank 3
-            (SkillchainBonus, Blu) => 23, // (83,96,99,99,99) rank 5
             (SkillchainBonus, Dnc) => 23, // (45,58,71,84,97) rank 5
 
             // --- MagicAccuracyBonus (cumulative [10]) ---
-            (MagicAccuracyBonus, Blu) => 10, // (99) rank 1
 
             // --- MagicEvasionBonus (cumulative [10]) ---
-            (MagicEvasionBonus, Blu) => 10, // (99) rank 1
 
             // --- MaxDamageBoost (cumulative [10,20,30,40,50]) ---
             // 値は「0.1 × 100 倍」表現 (10 = +0.1 攻防関数上限)
@@ -1150,17 +1092,14 @@ mod tests {
 
             // --- AutoRegen (cumulative [1, 2, 3]) ---
             (AutoRegen, Whm) => 2, // (25,76) rank 2
-            (AutoRegen, Blu) => 1, // (16) rank 1
             (AutoRegen, Run) => 3, // (35,65,95) rank 3
 
             // --- AutoRefresh (cumulative [1, 2]) ---
             (AutoRefresh, Pld) => 1, // (35) rank 1
             (AutoRefresh, Smn) => 2, // (25,90) rank 2
-            (AutoRefresh, Blu) => 1, // (58) rank 1
 
             // --- TripleAttack (cumulative [5, 6]) ---
             (TripleAttack, Thf) => 6, // (55,95) rank 2
-            (TripleAttack, Blu) => 5, // (92) rank 1
 
             // --- MartialArts (cumulative [-80,-100,-120,-140,-160,-180,-200]) ---
             (MartialArts, Mnk) => -200, // (1,16,31,46,61,75,82) rank 7
@@ -1168,7 +1107,6 @@ mod tests {
 
             // --- Counter (cumulative [8, 12]) ---
             (Counter, Mnk) => 12, // (10,81) rank 2
-            (Counter, Blu) => 12, // (70,98) rank 2
 
             // --- SubtleBlow (cumulative [5, 10, 15, 20, 25, 27]) ---
             (SubtleBlow, Mnk) => 25, // (5,20,40,65,91) rank 5
@@ -1184,40 +1122,33 @@ mod tests {
             // --- DualWield (cumulative [10, 15, 25, 30, 35, 40]) ---
             (DualWield, Thf) => 25, // (83,90,98) rank 3
             (DualWield, Nin) => 35, // (10,25,45,65,83) rank 5
-            (DualWield, Blu) => 30, // (80,89,99,99) rank 4
             (DualWield, Dnc) => 30, // (20,40,60,80) rank 4
 
             // --- Zanshin (cumulative [15, 25, 35, 45, 50]) ---
             (Zanshin, Sam) => 50, // (20,35,50,65,95) rank 5
-            (Zanshin, Blu) => 15, // (83) rank 1
 
             // --- RapidShot (cumulative [25] のみ確定、rank 2/3 wiki記載なし → clamp で 25) ---
             (RapidShot, Rng) => 25, // (15,76) rank 2 → cumulative[1]=cumulative.last()=25
             (RapidShot, Cor) => 25, // (15,91) rank 2 → 同上
-            (RapidShot, Blu) => 25, // (38) rank 1
 
             // --- ClearMind (cumulative [3, 6, 9, 12, 15, 18]) ---
             (ClearMind, Whm) => 18, // (20,35,50,65,80,96) rank 6
             (ClearMind, Blm) => 18, // (15,30,45,60,75,96) rank 6
             (ClearMind, Rdm) => 12, // (31,53,75,91) rank 4
             (ClearMind, Smn) => 18, // (15,30,45,60,75,91) rank 6
-            (ClearMind, Blu) => 12, // (24,46,61,66) rank 4
             (ClearMind, Sch) => 18, // (20,35,50,65,76,91) rank 6
             (ClearMind, Geo) => 18, // (20,35,50,65,76,91) rank 6
 
             // --- ConserveMP (cumulative [25, 28, 31, 34, 37, 40, 43]) ---
             (ConserveMp, Blm) => 31, // (20,76,86) rank 3
-            (ConserveMp, Blu) => 34, // (65,68,99,99) rank 4
             (ConserveMp, Sch) => 28, // (25,96) rank 2
             (ConserveMp, Geo) => 43, // (10,25,40,55,70,85,99) rank 7
 
             // --- FastCast (cumulative [5, 10, 15, 20, 25, 30]) ---
             (FastCast, Rdm) => 25, // (15,35,55,76,90) rank 5
-            (FastCast, Blu) => 15, // (72,99,99) rank 3
 
             // --- Killer 系 (全て cumulative [8, 10, 12]) ---
             (UndeadKiller, Pld) => 10,   // (5,86) rank 2
-            (UndeadKiller, Blu) => 8,    // (34) rank 1
             (ArcanaKiller, Drk) => 10,   // (25,86) rank 2
             (DemonKiller, Sam) => 10,    // (40,86) rank 2
             (DragonKiller, Drg) => 10,   // (25,86) rank 2
@@ -1225,20 +1156,15 @@ mod tests {
             (BirdKiller, Bst) => 10,     // (20,79) rank 2
             (AmorphKiller, Bst) => 10,   // (30,82) rank 2
             (LizardKiller, Bst) => 10,   // (40,85) rank 2
-            (LizardKiller, Blu) => 8,    // (20) rank 1
             (AquanKiller, Bst) => 10,    // (50,88) rank 2
             (PlantoidKiller, Bst) => 10, // (60,91) rank 2
-            (PlantoidKiller, Blu) => 8,  // (44) rank 1
             (BeastKiller, Bst) => 10,    // (70,94) rank 2
-            (BeastKiller, Blu) => 8,     // (4) rank 1
 
             // --- Resist 系 (cumulative [10, 15, 20, 25, 30]) ---
             (ResistVirus, War) => 30,    // (15,35,55,70,81) rank 5
             (ResistPetrify, Rdm) => 30,  // (10,30,50,70,81) rank 5
             (ResistGravity, Thf) => 30,  // (20,40,60,75,81) rank 5
-            (ResistGravity, Blu) => 10,  // (69) rank 1
             (ResistSleep, Pld) => 25,    // (20,40,60,81) rank 4
-            (ResistSleep, Blu) => 10,    // (30) rank 1
             (ResistParalyze, Drk) => 30, // (20,40,60,75,81) rank 5
             (ResistParalyze, Cor) => 30, // (5,25,45,65,81) rank 5
             (ResistSlow, Bst) => 30,     // (15,35,55,75,81) rank 5
@@ -1247,7 +1173,6 @@ mod tests {
             (ResistSlow, Dnc) => 20,     // (20,55,81) rank 3
             (ResistSilence, Brd) => 30,  // (5,25,45,65,81) rank 5
             (ResistSilence, Sch) => 25,  // (10,40,70,81) rank 4
-            (ResistSilence, Blu) => 10,  // (99) rank 1
             (ResistPoison, Rng) => 25,   // (20,40,60,81) rank 4
             (ResistBlind, Sam) => 30,    // (5,25,45,65,81) rank 5
             (ResistBind, Nin) => 30,     // (10,30,50,70,81) rank 5
@@ -1259,7 +1184,6 @@ mod tests {
             (WideScan, Rng) => 1,
             (Stealth, Nin) => 1,
             (Gilfinder, Thf) => 1,
-            (Gilfinder, Blu) => 1,
             (Assassin, Thf) => 1,
             (DivineVeil, Whm) => 1,
             (ShieldBarrier, Pld) => 1,
@@ -1269,7 +1193,6 @@ mod tests {
 
             // --- TreasureHunter (cumulative [1, 2, 3]) ---
             (TreasureHunter, Thf) => 3, // (15,45,90) rank 3
-            (TreasureHunter, Blu) => 1, // (98) rank 1
 
             // --- ShieldMastery (cumulative [10, 20, 30, 40]) ---
             (ShieldMastery, War) => 30, // (80,87,94) rank 3
@@ -1287,7 +1210,6 @@ mod tests {
             (CritIncrease, War) => 8,  // (78,84) rank 2
             (CritIncrease, Thf) => 14, // (78,84,91,97) rank 4
             (CritIncrease, Drk) => 8,  // (85,95) rank 2
-            (CritIncrease, Blu) => 5,  // (99) rank 1
             (CritIncrease, Dnc) => 11, // (80,88,99) rank 3
 
             // --- CritReduce (cumulative [5, 8, 11, 14]) ---
@@ -1361,7 +1283,6 @@ mod tests {
             (MagicBurstBonus, Blm) => 13, // (45,58,71,84,97) rank 5
             (MagicBurstBonus, Rdm) => 7,  // (85,95) rank 2
             (MagicBurstBonus, Nin) => 7,  // (80,90) rank 2
-            (MagicBurstBonus, Blu) => 7,  // (78,90) rank 2
             (MagicBurstBonus, Sch) => 9,  // (79,89,99) rank 3
 
             // --- DivineBenison (cumulative [10, 20, 30, 40, 50]) ---
@@ -1381,11 +1302,9 @@ mod tests {
             (CardinalChant, Geo) => 10, // (25,45,85) rank 3
 
             // --- Tenacity (cumulative [5, 7, 9, 11, 13, 15]) ---
-            (Tenacity, Blu) => 5,  // (99) rank 1
             (Tenacity, Run) => 15, // (5,25,45,75,80,95) rank 6
 
             // --- Inquartata (cumulative [5, 7, 9, 11, 13, 15, 17, 19]) ---
-            (Inquartata, Blu) => 5,  // (99) rank 1
             (Inquartata, Run) => 11, // (15,45,75,90) rank 4
 
             // --- 残りの新規特性: trait_cumulative=PLACEHOLDER_TRAIT(0) のため Lv99 値は常に 0 ---

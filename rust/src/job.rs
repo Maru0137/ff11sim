@@ -330,9 +330,11 @@ const BLOOD_BOON: &[i32] = &[20, 23, 26, 29];
 const WEAPON_SKILL_DAMAGE: &[i32] = &[7, 10, 13, 16, 19, 21];
 
 // フェンサー (https://wiki.ffo.jp/html/20275.html)
-// クリ発動率ボーナス + WS TPボーナス。rank1=+3%, 2=+5%、ranks 3-8 は +2%/rank 推定
-// 上限は「+8」(8 ランク)
-const FENCER: &[i32] = &[3, 5, 7, 9, 11, 13, 15, 17];
+// クリ発動率ボーナスと WS TP ボーナスの 2 つの効果を持ち、それぞれ rank ごとに
+// スケールが異なる。単一の値を保持する形式に合わないため、cumulative には
+// rank 番号をそのまま入れて、効果は呼び出し側で rank ベースで計算する。
+// 上限は rank 8。
+const FENCER: &[i32] = &[1, 2, 3, 4, 5, 6, 7, 8];
 
 // コンサーブTP (https://wiki.ffo.jp/html/18171.html)
 // WS 後 TP 残存発動率。rank1=15%, 2=18%, 3=21%, 4=24%, 5=26%
@@ -1264,10 +1266,10 @@ mod tests {
             // --- WeaponSkillDamage (cumulative [7, 10, 13, 16, 19, 21]) ---
             (WeaponSkillDamage, Drg) => 21, // (45,55,65,75,85,95) rank 6
 
-            // --- Fencer (cumulative [3, 5, 7, 9, 11, 13, 15, 17]) ---
-            (Fencer, War) => 11, // (45,58,71,84,97) rank 5
-            (Fencer, Bst) => 3,  // (80) rank 1
-            (Fencer, Brd) => 5,  // (85,95) rank 2
+            // --- Fencer (cumulative [1, 2, 3, 4, 5, 6, 7, 8] = rank 番号) ---
+            (Fencer, War) => 5, // (45,58,71,84,97) rank 5
+            (Fencer, Bst) => 1, // (80) rank 1
+            (Fencer, Brd) => 2, // (85,95) rank 2
 
             // --- ConserveTp (cumulative [15, 18, 21, 24, 26]) ---
             (ConserveTp, Rng) => 18, // (80,91) rank 2

@@ -198,8 +198,10 @@ pub fn calc_gift_bonuses(job: Job, total_jp: i32) -> GiftBonuses {
         magic_accuracy: job.gift_value(Gift::MagicAccuracy, total_jp),
         magic_evasion: job.gift_value(Gift::MagicEvasion, total_jp),
         store_tp: job.gift_value(Gift::StoreTp, total_jp),
-        ranged_attack: job.gift_value(Gift::RangedAttack, total_jp),
-        ranged_accuracy: job.gift_value(Gift::RangedAccuracy, total_jp),
+        // 遠隔系のギフトはティア定義が存在しないため 0 固定。
+        // 実際の遠隔系ボーナスは calc_jp_category_bonuses (JP カテゴリ項目) 側で計算する。
+        ranged_attack: 0,
+        ranged_accuracy: 0,
         skillchain_bonus: job.gift_value(Gift::SkillchainBonus, total_jp),
     }
 }

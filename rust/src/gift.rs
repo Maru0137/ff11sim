@@ -26,12 +26,11 @@ pub enum Gift {
     MagicDefense,
     MagicAccuracy,
     MagicEvasion,
-    /// 飛攻 (遠隔攻撃力) — Cor/Rng の専用枠
-    RangedAttack,
-    /// 飛命 (遠隔命中)
-    RangedAccuracy,
     StoreTp,
     SkillchainBonus,
+    // 注: 遠隔系 (RangedAttack/RangedAccuracy) はギフトとしてのティア定義が
+    //     存在しないため Gift enum には含めない。COR の「遠隔命中アップ」等は
+    //     ジョブポイント項目 (JP category) 側で扱う。
 
     // ============ ジョブ特性効果アップ系 ============
     DoubleAttackRate,
@@ -57,8 +56,6 @@ pub const ALL_GIFTS: &[Gift] = &[
     Gift::MagicDefense,
     Gift::MagicAccuracy,
     Gift::MagicEvasion,
-    Gift::RangedAttack,
-    Gift::RangedAccuracy,
     Gift::StoreTp,
     Gift::SkillchainBonus,
     Gift::DoubleAttackRate,

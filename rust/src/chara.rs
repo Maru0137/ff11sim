@@ -1,6 +1,7 @@
 use std::option::Option;
 
-use crate::job::{blu_trait_effect_up_bonus_ranks, Job, JobTrait};
+use crate::gift::Gift;
+use crate::job::{Job, JobTrait};
 use crate::job_points::JobPointCategories;
 use crate::race::Race;
 use crate::skills::CharacterSkills;
@@ -95,15 +96,19 @@ impl Chara {
         }
     }
 
-    /// メインジョブ単独のジョブ特性ボーナス (BLU ギフトを考慮)。
+    /// メインジョブ単独のジョブ特性ボーナス (BLU の JobTraitEffectUp ギフトを考慮)。
     fn main_job_trait_bonus(&self, trait_kind: JobTrait) -> i32 {
         let base_rank = self.main_job.trait_rank_at_lv(trait_kind, self.main_lv);
         if base_rank == 0 {
             // 未習得特性にはギフトのランクアップは適用されない
             return 0;
         }
-        let bonus_rank = if self.main_job == Job::Blu && !trait_kind.is_blu_effect_up_excluded() {
-            blu_trait_effect_up_bonus_ranks(self.job_points.total_jp_spent())
+        // BLU の「ジョブ特性効果アップ」ギフトで base rank を強化
+        // (除外特性: Gilfinder/DoubleAttack/AutoRefresh/TripleAttack)
+        let bonus_rank = if !trait_kind.is_blu_effect_up_excluded() {
+            self.main_job
+                .gift_value(Gift::JobTraitEffectUp, self.job_points.total_jp_spent())
+                as usize
         } else {
             0
         };

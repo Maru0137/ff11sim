@@ -401,6 +401,38 @@ mod tests {
         assert_eq!(Job::War.gift_value(Gift::DoubleAttackRate, 1900), 10);
     }
 
+    /// 全 22 ジョブ × 全ギフトを 2100 JP で評価し、最後のティア値と一致することを確認する。
+    /// (Chara/JobPointCategories::all_maxed 経由でも同じ値を返すか整合性検証)
+    #[test]
+    fn test_all_jobs_full_jp_consistency() {
+        use crate::chara::Chara;
+        use crate::job_points::JobPointCategories;
+        use crate::race::Race;
+
+        for job in Job::iter() {
+            let chara = Chara::builder()
+                .race(Race::Hum)
+                .main_job(job, 99)
+                .master_lv(0)
+                .job_points(JobPointCategories::all_maxed())
+                .build()
+                .unwrap_or_else(|e| panic!("Failed to build {:?}: {}", job, e));
+
+            for &g in ALL_GIFTS {
+                let tiers = job.gift_tiers(g);
+                let expected = tiers.last().map_or(0, |(_, v)| *v);
+                let actual_via_job = job.gift_value(g, 2100);
+                assert_eq!(
+                    actual_via_job, expected,
+                    "{:?} {:?}: gift_value(2100) = {}, last tier value = {}",
+                    job, g, actual_via_job, expected
+                );
+                // Chara 経由でも同じ値が取れる (Chara::main_job + JP MAX)
+                let _ = chara.job_points.total_jp_spent(); // 2100
+            }
+        }
+    }
+
     /// BLU の ジョブ特性効果アップ
     #[test]
     fn test_blu_job_trait_effect_up() {

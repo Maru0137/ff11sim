@@ -1169,7 +1169,7 @@ mod tests {
             (ResistAmnesia, Pup) => 30,  // (15,35,55,75,95) rank 5
 
             // --- Alertness (cumulative [1]) ---
-            (Alertness, Rng) => 1,
+            (Alertness, Rng) => 1, // (5) rank 1
 
             // --- Stealth (cumulative [1, 1]) ---
             (Stealth, Nin) => 1,

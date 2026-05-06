@@ -261,7 +261,9 @@ const RESIST_DEFAULT: &[i32] = &[10, 15, 20, 25, 30];
 // トランキルハート (https://wiki.ffo.jp/html/23693.html): WHM/RDM/SCH、回復魔法敵対心軽減 (バイナリ・スキル依存)
 // バイナリ系: 習得済みなら値=1、未習得なら 0 を返す
 const TRAIT_BINARY: &[i32] = &[1];
-const TRAIT_BINARY_2: &[i32] = &[1, 1];
+// 2 ランクのバイナリ系特性。wiki に具体的効果値の記載がないため、
+// rank 番号をそのまま値として扱う (rank 1 → 1, rank 2 → 2)。
+const TRAIT_BINARY_2: &[i32] = &[1, 2];
 
 // トレジャーハンター (https://wiki.ffo.jp/html/1678.html): TH レベルそのもの。THF Lv15/45/90 で +1/+2/+3, BLU Lv98 で +1
 const TREASURE_HUNTER: &[i32] = &[1, 2, 3];
@@ -1171,11 +1173,11 @@ mod tests {
             // --- Alertness (cumulative [1]) ---
             (Alertness, Rng) => 1, // (5) rank 1
 
-            // --- Stealth (cumulative [1, 1]) ---
-            (Stealth, Nin) => 1, // (5,86) rank 2
+            // --- Stealth (cumulative [1, 2]) ---
+            (Stealth, Nin) => 2, // (5,86) rank 2
 
-            // --- Gilfinder (cumulative [1, 1]) ---
-            (Gilfinder, Thf) => 1,
+            // --- Gilfinder (cumulative [1, 2]) ---
+            (Gilfinder, Thf) => 2, // (5,85) rank 2
 
             // --- TreasureHunter (cumulative [1, 2, 3]) ---
             (TreasureHunter, Thf) => 3, // (15,45,90) rank 3

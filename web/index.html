@@ -416,6 +416,22 @@
             margin-top: 15px;
         }
 
+        /* 装備セットの「名前」入力と保存/複製/共有/削除ボタンを一行に並べる */
+        .equipset-toolbar {
+            display: flex;
+            align-items: flex-end;
+            gap: 12px;
+            margin-bottom: 15px;
+        }
+        .equipset-toolbar .form-group {
+            flex: 1;
+            margin-bottom: 0;
+        }
+        .equipset-toolbar .btn-group {
+            margin-top: 0;
+            flex-shrink: 0;
+        }
+
         .job-level-table {
             width: 100%;
             border-collapse: collapse;
@@ -1209,9 +1225,18 @@
                 </span>
             </div>
 
-            <div class="form-group" id="equipSetNameGroup">
-                <label for="equipSetName">名前</label>
-                <input type="text" id="equipSetName" placeholder="装備セット名">
+            <div class="equipset-toolbar">
+                <div class="form-group" id="equipSetNameGroup">
+                    <label for="equipSetName">名前</label>
+                    <input type="text" id="equipSetName" placeholder="装備セット名">
+                </div>
+                <div class="btn-group" id="equipSetButtonGroup">
+                    <button class="btn btn-primary" id="btnSaveEquipSet">保存</button>
+                    <button class="btn btn-secondary" id="btnCopyEquipSet">複製</button>
+                    <button class="btn btn-share" id="btnShareEquipSet">共有</button>
+                    <button class="btn btn-primary" id="btnImportShare" style="display:none">インポート</button>
+                    <button class="btn btn-danger" id="btnDeleteEquipSet">削除</button>
+                </div>
             </div>
 
             <div id="equipStatusSection" class="status-section">
@@ -1735,15 +1760,6 @@
                 </div>
             </div>
             <div id="equipSlotsContainer" class="equip-slot-grid"></div>
-
-
-            <div class="btn-group">
-                <button class="btn btn-primary" id="btnSaveEquipSet">保存</button>
-                <button class="btn btn-secondary" id="btnCopyEquipSet">複製</button>
-                <button class="btn btn-share" id="btnShareEquipSet">共有</button>
-                <button class="btn btn-primary" id="btnImportShare" style="display:none">インポート</button>
-                <button class="btn btn-danger" id="btnDeleteEquipSet">削除</button>
-            </div>
         </div>
     </div>
 

@@ -118,8 +118,7 @@ impl GiftBonuses {
     }
 }
 
-// ギフト定義は data/job_gifts.json から `JOB_GIFTS` (data_loader) で読み込む。
-use crate::data_loader::JOB_GIFTS;
+use crate::gift::Gift;
 
 /// ジョブポイントカテゴリの直接ステータス効果（ランクあたり）。
 /// ほとんどのカテゴリはアビリティ固有の効果だが、一部のカテゴリは
@@ -180,42 +179,29 @@ fn jp_category_effects(job: Job) -> &'static [JpCategoryEffect] {
     }
 }
 
-/// 戦士の「ダブルアタック確率アップ」ギフトによる発動率 (%) を計算する。
-/// 累計 JP の閾値で +2 / +2 / +3 / +3 (累計 +10%)。
-/// 閾値: 125 / 450 / 1050 / 1900 JP
+/// 戦士の「ダブルアタック確率アップ」ギフトによる発動率 (%)。
+/// 新しい `Gift::DoubleAttackRate` を経由。
 pub fn calc_war_da_gift_bonus(total_jp: i32) -> i32 {
-    const THRESHOLDS: [(i32, i32); 4] = [(125, 2), (450, 2), (1050, 3), (1900, 3)];
-    let mut bonus = 0;
-    for &(req, val) in &THRESHOLDS {
-        if total_jp >= req {
-            bonus += val;
-        } else {
-            break;
-        }
-    }
-    bonus
+    Job::War.gift_value(Gift::DoubleAttackRate, total_jp)
 }
 
 /// 累計 JP 量から得られるギフトのボーナス合計を計算する。
-/// ギフトは各ティアのボーナスが累積加算される（例: 7 → 11 → 14 → 18 と解放されると 7+11+14+18=50）。
+/// 各 `Gift` 種別ごとに `Job::gift_value` を呼び出して合算する。
 pub fn calc_gift_bonuses(job: Job, total_jp: i32) -> GiftBonuses {
-    let mut bonuses = GiftBonuses::default();
-    for slot_def in &JOB_GIFTS[job] {
-        let mut slot_total = 0;
-        for tier in &slot_def.tiers {
-            let threshold = tier[0];
-            let value = tier[1];
-            if total_jp >= threshold {
-                slot_total += value;
-            } else {
-                break;
-            }
-        }
-        if slot_total != 0 {
-            bonuses.add(slot_def.stat, slot_total);
-        }
+    GiftBonuses {
+        physical_attack: job.gift_value(Gift::PhysicalAttack, total_jp),
+        physical_defense: job.gift_value(Gift::PhysicalDefense, total_jp),
+        physical_accuracy: job.gift_value(Gift::PhysicalAccuracy, total_jp),
+        physical_evasion: job.gift_value(Gift::PhysicalEvasion, total_jp),
+        magic_attack: job.gift_value(Gift::MagicAttack, total_jp),
+        magic_defense: job.gift_value(Gift::MagicDefense, total_jp),
+        magic_accuracy: job.gift_value(Gift::MagicAccuracy, total_jp),
+        magic_evasion: job.gift_value(Gift::MagicEvasion, total_jp),
+        store_tp: job.gift_value(Gift::StoreTp, total_jp),
+        ranged_attack: job.gift_value(Gift::RangedAttack, total_jp),
+        ranged_accuracy: job.gift_value(Gift::RangedAccuracy, total_jp),
+        skillchain_bonus: job.gift_value(Gift::SkillchainBonus, total_jp),
     }
-    bonuses
 }
 
 /// JP カテゴリの直接ステータス効果を計算する

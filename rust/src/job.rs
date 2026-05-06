@@ -652,7 +652,7 @@ impl Job {
             (JobTrait::ResistVirus, Job::War) => &[15, 35, 55, 70, 81],
             (JobTrait::ResistPetrify, Job::Rdm) => &[10, 30, 50, 70, 81],
             (JobTrait::ResistGravity, Job::Thf) => &[20, 40, 60, 75, 81],
-            (JobTrait::ResistSleep, Job::Pld) => &[20, 40, 60, 81],
+            (JobTrait::ResistSleep, Job::Pld) => &[20, 40, 60, 75, 81],
             (JobTrait::ResistParalyze, Job::Drk) => &[20, 40, 60, 75, 81],
             (JobTrait::ResistParalyze, Job::Cor) => &[5, 25, 45, 65, 81],
             (JobTrait::ResistSlow, Job::Bst) => &[15, 35, 55, 75, 81],
@@ -1152,7 +1152,7 @@ mod tests {
             (ResistVirus, War) => 30,    // (15,35,55,70,81) rank 5
             (ResistPetrify, Rdm) => 30,  // (10,30,50,70,81) rank 5
             (ResistGravity, Thf) => 30,  // (20,40,60,75,81) rank 5
-            (ResistSleep, Pld) => 25,    // (20,40,60,81) rank 4
+            (ResistSleep, Pld) => 30,    // (20,40,60,75,81) rank 5
             (ResistParalyze, Drk) => 30, // (20,40,60,75,81) rank 5
             (ResistParalyze, Cor) => 30, // (5,25,45,65,81) rank 5
             (ResistSlow, Bst) => 30,     // (15,35,55,75,81) rank 5

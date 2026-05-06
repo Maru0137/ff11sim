@@ -63,26 +63,22 @@ impl Job {
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum JobTrait {
-    // 既存 12 (実値あり)
+    // wiki ジョブ特性一覧 (https://wiki.ffo.jp/html/450.html) の表示順に合わせる
     AttackBonus,
     DefenseBonus,
+    AccuracyBonus,
+    EvasionBonus,
+    MagicAttackBonus,
     MagicDefenseBonus,
+    MagicAccuracyBonus,
+    MagicEvasionBonus,
     MaxHpBoost,
     MaxHpBoost2,
     MaxMpBoost,
-    EvasionBonus,
-    AccuracyBonus,
-    MagicAttackBonus,
-    StoreTp,
-    DoubleAttack,
-    SkillchainBonus,
-
-    // 新規 (skeleton: 効果値はプレースホルダー)
-    MagicAccuracyBonus,
-    MagicEvasionBonus,
     MaxDamageBoost,
     AutoRegen,
     AutoRefresh,
+    DoubleAttack,
     TripleAttack,
     MartialArts,
     Counter,
@@ -91,6 +87,7 @@ pub enum JobTrait {
     Daken,
     DualWield,
     Zanshin,
+    StoreTp,
     RapidShot,
     ClearMind,
     ConserveMp,
@@ -138,6 +135,7 @@ pub enum JobTrait {
     Recycle,
     TrueShot,
     BloodBoon,
+    SkillchainBonus,
     WeaponSkillDamage,
     Fencer,
     ConserveTp,
@@ -402,27 +400,23 @@ impl JobTrait {
     /// 累積効果値テーブル (rank=1 → cumulative[0], rank=2 → cumulative[1], ...)。
     /// バイナリ特性は `&[1]` (1 ランク) または `&[1, 1]` (2 ランク扱い)。
     fn cumulative(&self) -> &'static [i32] {
+        // wiki ジョブ特性一覧 (https://wiki.ffo.jp/html/450.html) の表示順
         match self {
-            // 既存 12 (実値)
             JobTrait::AttackBonus => ATTACK_BONUS,
             JobTrait::DefenseBonus => DEFENSE_BONUS,
+            JobTrait::AccuracyBonus => ACCURACY_BONUS,
+            JobTrait::EvasionBonus => EVASION_BONUS,
+            JobTrait::MagicAttackBonus => MAGIC_ATTACK_BONUS,
             JobTrait::MagicDefenseBonus => MAGIC_DEFENSE_BONUS,
+            JobTrait::MagicAccuracyBonus => MAGIC_ACCURACY_BONUS,
+            JobTrait::MagicEvasionBonus => MAGIC_EVASION_BONUS,
             JobTrait::MaxHpBoost => MAX_HP_BOOST,
             JobTrait::MaxHpBoost2 => MAX_HP_BOOST2,
             JobTrait::MaxMpBoost => MAX_MP_BOOST,
-            JobTrait::EvasionBonus => EVASION_BONUS,
-            JobTrait::AccuracyBonus => ACCURACY_BONUS,
-            JobTrait::MagicAttackBonus => MAGIC_ATTACK_BONUS,
-            JobTrait::StoreTp => STORE_TP,
-            JobTrait::DoubleAttack => DOUBLE_ATTACK,
-            JobTrait::SkillchainBonus => SKILLCHAIN_BONUS,
-
-            // 効果値あり
-            JobTrait::MagicAccuracyBonus => MAGIC_ACCURACY_BONUS,
-            JobTrait::MagicEvasionBonus => MAGIC_EVASION_BONUS,
             JobTrait::MaxDamageBoost => MAX_DAMAGE_BOOST,
             JobTrait::AutoRegen => AUTO_REGEN,
             JobTrait::AutoRefresh => AUTO_REFRESH,
+            JobTrait::DoubleAttack => DOUBLE_ATTACK,
             JobTrait::TripleAttack => TRIPLE_ATTACK,
             JobTrait::MartialArts => MARTIAL_ARTS,
             JobTrait::Counter => COUNTER,
@@ -431,6 +425,7 @@ impl JobTrait {
             JobTrait::Daken => DAKEN,
             JobTrait::DualWield => DUAL_WIELD,
             JobTrait::Zanshin => ZANSHIN,
+            JobTrait::StoreTp => STORE_TP,
             JobTrait::RapidShot => RAPID_SHOT,
             JobTrait::ClearMind => CLEAR_MIND,
             JobTrait::ConserveMp => CONSERVE_MP,
@@ -447,7 +442,6 @@ impl JobTrait {
             | JobTrait::AquanKiller
             | JobTrait::PlantoidKiller
             | JobTrait::BeastKiller => KILLER,
-
             // レジスト系は全て共通の累積値
             JobTrait::ResistVirus
             | JobTrait::ResistPetrify
@@ -460,19 +454,14 @@ impl JobTrait {
             | JobTrait::ResistBlind
             | JobTrait::ResistBind
             | JobTrait::ResistAmnesia => RESIST_DEFAULT,
-
-            // バイナリ (1 ランク)
-            JobTrait::WideScan
-            | JobTrait::Assassin
-            | JobTrait::DivineVeil
-            | JobTrait::ShieldBarrier
-            | JobTrait::TranquilHeart => TRAIT_BINARY,
-
-            // バイナリ (2 ランク扱い)
-            JobTrait::Stealth | JobTrait::Gilfinder => TRAIT_BINARY_2,
-
+            JobTrait::WideScan => TRAIT_BINARY,
+            JobTrait::Stealth => TRAIT_BINARY_2,
+            JobTrait::Gilfinder => TRAIT_BINARY_2,
             JobTrait::TreasureHunter => TREASURE_HUNTER,
+            JobTrait::Assassin => TRAIT_BINARY,
+            JobTrait::DivineVeil => TRAIT_BINARY,
             JobTrait::ShieldMastery => SHIELD_MASTERY,
+            JobTrait::ShieldBarrier => TRAIT_BINARY,
             JobTrait::Smite => SMITE,
             JobTrait::CritIncrease => CRIT_INCREASE,
             JobTrait::CritReduce => CRIT_REDUCE,
@@ -486,6 +475,7 @@ impl JobTrait {
             JobTrait::Recycle => RECYCLE,
             JobTrait::TrueShot => TRUE_SHOT,
             JobTrait::BloodBoon => BLOOD_BOON,
+            JobTrait::SkillchainBonus => SKILLCHAIN_BONUS,
             JobTrait::WeaponSkillDamage => WEAPON_SKILL_DAMAGE,
             JobTrait::Fencer => FENCER,
             JobTrait::ConserveTp => CONSERVE_TP,
@@ -494,6 +484,7 @@ impl JobTrait {
             JobTrait::MagicBurstBonus => MAGIC_BURST_BONUS,
             JobTrait::DivineBenison => DIVINE_BENISON,
             JobTrait::ElementalCelerity => ELEMENTAL_CELERITY,
+            JobTrait::TranquilHeart => TRAIT_BINARY,
             JobTrait::DesperateBlows => DESPERATE_BLOWS,
             JobTrait::StalwartSoul => STALWART_SOUL,
             JobTrait::CardinalChant => CARDINAL_CHANT,
@@ -916,27 +907,24 @@ mod tests {
     // ここも追従する必要あり)。
     // ===========================================================================
 
-    /// 全ジョブ特性 (86 個 = 既存 12 + 新規 74)
+    /// 全ジョブ特性 (86 個)
+    /// wiki ジョブ特性一覧 (https://wiki.ffo.jp/html/450.html) の表示順
     const ALL_TRAITS: &[JobTrait] = &[
-        // 既存 12
         JobTrait::AttackBonus,
         JobTrait::DefenseBonus,
+        JobTrait::AccuracyBonus,
+        JobTrait::EvasionBonus,
+        JobTrait::MagicAttackBonus,
         JobTrait::MagicDefenseBonus,
+        JobTrait::MagicAccuracyBonus,
+        JobTrait::MagicEvasionBonus,
         JobTrait::MaxHpBoost,
         JobTrait::MaxHpBoost2,
         JobTrait::MaxMpBoost,
-        JobTrait::EvasionBonus,
-        JobTrait::AccuracyBonus,
-        JobTrait::MagicAttackBonus,
-        JobTrait::StoreTp,
-        JobTrait::DoubleAttack,
-        JobTrait::SkillchainBonus,
-        // 新規
-        JobTrait::MagicAccuracyBonus,
-        JobTrait::MagicEvasionBonus,
         JobTrait::MaxDamageBoost,
         JobTrait::AutoRegen,
         JobTrait::AutoRefresh,
+        JobTrait::DoubleAttack,
         JobTrait::TripleAttack,
         JobTrait::MartialArts,
         JobTrait::Counter,
@@ -945,6 +933,7 @@ mod tests {
         JobTrait::Daken,
         JobTrait::DualWield,
         JobTrait::Zanshin,
+        JobTrait::StoreTp,
         JobTrait::RapidShot,
         JobTrait::ClearMind,
         JobTrait::ConserveMp,
@@ -992,6 +981,7 @@ mod tests {
         JobTrait::Recycle,
         JobTrait::TrueShot,
         JobTrait::BloodBoon,
+        JobTrait::SkillchainBonus,
         JobTrait::WeaponSkillDamage,
         JobTrait::Fencer,
         JobTrait::ConserveTp,
@@ -1014,6 +1004,7 @@ mod tests {
     fn expected_trait_at_lv99(job: Job, trait_kind: JobTrait) -> i32 {
         use Job::*;
         use JobTrait::*;
+        // wiki ジョブ特性一覧 (https://wiki.ffo.jp/html/450.html) の表示順
         match (trait_kind, job) {
             // --- AttackBonus (cumulative [10,22,35,48,60,72,84,96]) ---
             (AttackBonus, War) => 35, // (30,65,91) rank 3
@@ -1024,10 +1015,29 @@ mod tests {
             (DefenseBonus, War) => 35, // (10,45,86) rank 3
             (DefenseBonus, Pld) => 72, // (10,30,50,70,76,91) rank 6
 
+            // --- AccuracyBonus (cumulative [10,22,35,48,60,72]) ---
+            (AccuracyBonus, Rng) => 72, // (10,30,50,70,86,96) rank 6
+            (AccuracyBonus, Drg) => 35, // (30,60,76) rank 3
+            (AccuracyBonus, Dnc) => 35, // (30,60,76) rank 3
+            (AccuracyBonus, Run) => 35, // (50,70,90) rank 3
+
+            // --- EvasionBonus (cumulative [10,22,35,48,60,72]) ---
+            (EvasionBonus, Thf) => 72, // (10,30,50,70,76,88) rank 6
+            (EvasionBonus, Dnc) => 48, // (15,45,75,86) rank 4
+            (EvasionBonus, Pup) => 48, // (20,40,60,76) rank 4
+
+            // --- MagicAttackBonus (cumulative [20,24,28,32,36,40]) ---
+            (MagicAttackBonus, Blm) => 40, // (10,30,50,70,81,91) rank 6
+            (MagicAttackBonus, Rdm) => 28, // (20,40,86) rank 3
+
             // --- MagicDefenseBonus (cumulative [10,12,14,16,18,20,22]) ---
             (MagicDefenseBonus, Whm) => 20, // (10,30,50,70,81,91) rank 6
             (MagicDefenseBonus, Rdm) => 14, // (25,45,96) rank 3
             (MagicDefenseBonus, Run) => 22, // (10,30,50,70,76,91,99) rank 7
+
+            // --- MagicAccuracyBonus (cumulative [10]) ---
+
+            // --- MagicEvasionBonus (cumulative [10]) ---
 
             // --- MaxHpBoost (cumulative [30,60,120,180,240,280]) ---
             (MaxHpBoost, Mnk) => 280, // (15,25,35,45,55,65) rank 6
@@ -1043,37 +1053,6 @@ mod tests {
             (MaxMpBoost, Smn) => 100, // (10,30,50,70,76,96) rank 6
             (MaxMpBoost, Sch) => 20,  // (30,88) rank 2
             (MaxMpBoost, Geo) => 40,  // (30,60,90) rank 3
-
-            // --- EvasionBonus (cumulative [10,22,35,48,60,72]) ---
-            (EvasionBonus, Thf) => 72, // (10,30,50,70,76,88) rank 6
-            (EvasionBonus, Dnc) => 48, // (15,45,75,86) rank 4
-            (EvasionBonus, Pup) => 48, // (20,40,60,76) rank 4
-
-            // --- AccuracyBonus (cumulative [10,22,35,48,60,72]) ---
-            (AccuracyBonus, Rng) => 72, // (10,30,50,70,86,96) rank 6
-            (AccuracyBonus, Drg) => 35, // (30,60,76) rank 3
-            (AccuracyBonus, Dnc) => 35, // (30,60,76) rank 3
-            (AccuracyBonus, Run) => 35, // (50,70,90) rank 3
-
-            // --- MagicAttackBonus (cumulative [20,24,28,32,36,40]) ---
-            (MagicAttackBonus, Blm) => 40, // (10,30,50,70,81,91) rank 6
-            (MagicAttackBonus, Rdm) => 28, // (20,40,86) rank 3
-
-            // --- StoreTp (cumulative [10,15,20,25,30]) ---
-            (StoreTp, Sam) => 30, // (10,30,50,70,90) rank 5
-
-            // --- DoubleAttack (cumulative [10,12,14,16,18]) ---
-            (DoubleAttack, War) => 18, // (25,50,75,85,99) rank 5
-
-            // --- SkillchainBonus (cumulative [8,12,16,20,23]) ---
-            (SkillchainBonus, Mnk) => 12, // (85,95) rank 2
-            (SkillchainBonus, Nin) => 12, // (85,95) rank 2
-            (SkillchainBonus, Sam) => 16, // (78,88,98) rank 3
-            (SkillchainBonus, Dnc) => 23, // (45,58,71,84,97) rank 5
-
-            // --- MagicAccuracyBonus (cumulative [10]) ---
-
-            // --- MagicEvasionBonus (cumulative [10]) ---
 
             // --- MaxDamageBoost (cumulative [10,20,30,40,50]) ---
             // 値は「0.1 × 100 倍」表現 (10 = +0.1 攻防関数上限)
@@ -1097,6 +1076,9 @@ mod tests {
             // --- AutoRefresh (cumulative [1, 2]) ---
             (AutoRefresh, Pld) => 1, // (35) rank 1
             (AutoRefresh, Smn) => 2, // (25,90) rank 2
+
+            // --- DoubleAttack (cumulative [10,12,14,16,18]) ---
+            (DoubleAttack, War) => 18, // (25,50,75,85,99) rank 5
 
             // --- TripleAttack (cumulative [5, 6]) ---
             (TripleAttack, Thf) => 6, // (55,95) rank 2
@@ -1126,6 +1108,9 @@ mod tests {
 
             // --- Zanshin (cumulative [15, 25, 35, 45, 50]) ---
             (Zanshin, Sam) => 50, // (20,35,50,65,95) rank 5
+
+            // --- StoreTp (cumulative [10,15,20,25,30]) ---
+            (StoreTp, Sam) => 30, // (10,30,50,70,90) rank 5
 
             // --- RapidShot (cumulative [25] のみ確定、rank 2/3 wiki記載なし → clamp で 25) ---
             (RapidShot, Rng) => 25, // (15,76) rank 2 → cumulative[1]=cumulative.last()=25
@@ -1180,24 +1165,31 @@ mod tests {
             (ResistAmnesia, Cor) => 25,  // (30,50,70,90) rank 4
             (ResistAmnesia, Pup) => 30,  // (15,35,55,75,95) rank 5
 
-            // --- バイナリ特性 (cumulative [1] / [1, 1]) ---
+            // --- WideScan (cumulative [1]) ---
             (WideScan, Rng) => 1,
+
+            // --- Stealth (cumulative [1, 1]) ---
             (Stealth, Nin) => 1,
+
+            // --- Gilfinder (cumulative [1, 1]) ---
             (Gilfinder, Thf) => 1,
-            (Assassin, Thf) => 1,
-            (DivineVeil, Whm) => 1,
-            (ShieldBarrier, Pld) => 1,
-            (TranquilHeart, Whm) => 1,
-            (TranquilHeart, Rdm) => 1,
-            (TranquilHeart, Sch) => 1,
 
             // --- TreasureHunter (cumulative [1, 2, 3]) ---
             (TreasureHunter, Thf) => 3, // (15,45,90) rank 3
+
+            // --- Assassin (cumulative [1]) ---
+            (Assassin, Thf) => 1,
+
+            // --- DivineVeil (cumulative [1]) ---
+            (DivineVeil, Whm) => 1,
 
             // --- ShieldMastery (cumulative [10, 20, 30, 40]) ---
             (ShieldMastery, War) => 30, // (80,87,94) rank 3
             (ShieldMastery, Rdm) => 20, // (87,97) rank 2
             (ShieldMastery, Pld) => 40, // (25,50,75,96) rank 4
+
+            // --- ShieldBarrier (cumulative [1]) ---
+            (ShieldBarrier, Pld) => 1,
 
             // --- Smite (cumulative [10, 15, 20, 25, 30]) ---
             (Smite, War) => 20, // (35,65,95) rank 3
@@ -1258,6 +1250,12 @@ mod tests {
             // --- BloodBoon (cumulative [20, 23, 26, 29]) ---
             (BloodBoon, Smn) => 29, // (60,70,80,90) rank 4
 
+            // --- SkillchainBonus (cumulative [8,12,16,20,23]) ---
+            (SkillchainBonus, Mnk) => 12, // (85,95) rank 2
+            (SkillchainBonus, Nin) => 12, // (85,95) rank 2
+            (SkillchainBonus, Sam) => 16, // (78,88,98) rank 3
+            (SkillchainBonus, Dnc) => 23, // (45,58,71,84,97) rank 5
+
             // --- WeaponSkillDamage (cumulative [7, 10, 13, 16, 19, 21]) ---
             (WeaponSkillDamage, Drg) => 21, // (45,55,65,75,85,95) rank 6
 
@@ -1292,6 +1290,11 @@ mod tests {
             (ElementalCelerity, Blm) => 30, // (50,60,70,80,90) rank 5
             (ElementalCelerity, Geo) => 15, // (55,80) rank 2
 
+            // --- TranquilHeart (cumulative [1]) ---
+            (TranquilHeart, Whm) => 1,
+            (TranquilHeart, Rdm) => 1,
+            (TranquilHeart, Sch) => 1,
+
             // --- DesperateBlows (cumulative [5, 10, 15]) ---
             (DesperateBlows, Drk) => 15, // (15,30,45) rank 3
 
@@ -1307,8 +1310,6 @@ mod tests {
             // --- Inquartata (cumulative [5, 7, 9, 11, 13, 15, 17, 19]) ---
             (Inquartata, Run) => 11, // (15,45,75,90) rank 4
 
-            // --- 残りの新規特性: trait_cumulative=PLACEHOLDER_TRAIT(0) のため Lv99 値は常に 0 ---
-            // 習得の有無は test_trait_levels_defined_for_all_pairs 側で構造的に検証
             _ => 0,
         }
     }

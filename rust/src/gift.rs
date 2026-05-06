@@ -399,33 +399,200 @@ mod tests {
     }
 
     /// 全 22 ジョブ × 全ギフトを 2100 JP で評価し、最後のティア値と一致することを確認する。
-    /// (Chara/JobPointCategories::all_maxed 経由でも同じ値を返すか整合性検証)
+    /// (gift_tiers_table の構造整合性: gift_value(2100) == tiers.last().value)
     #[test]
     fn test_all_jobs_full_jp_consistency() {
-        use crate::chara::Chara;
-        use crate::job_points::JobPointCategories;
-        use crate::race::Race;
-
         for job in Job::iter() {
-            let chara = Chara::builder()
-                .race(Race::Hum)
-                .main_job(job, 99)
-                .master_lv(0)
-                .job_points(JobPointCategories::all_maxed())
-                .build()
-                .unwrap_or_else(|e| panic!("Failed to build {:?}: {}", job, e));
-
             for &g in ALL_GIFTS {
                 let tiers = job.gift_tiers(g);
                 let expected = tiers.last().map_or(0, |(_, v)| *v);
-                let actual_via_job = job.gift_value(g, 2100);
+                let actual = job.gift_value(g, 2100);
                 assert_eq!(
-                    actual_via_job, expected,
+                    actual, expected,
                     "{:?} {:?}: gift_value(2100) = {}, last tier value = {}",
-                    job, g, actual_via_job, expected
+                    job, g, actual, expected
                 );
-                // Chara 経由でも同じ値が取れる (Chara::main_job + JP MAX)
-                let _ = chara.job_points.total_jp_spent(); // 2100
+            }
+        }
+    }
+
+    /// 各 (job, gift) ペアの 2100 JP 時の期待値 (gift_tiers_table とは独立した
+    /// ハードコード値)。書き起こし時のタイポ検知に使う。
+    /// 一覧に無いペアは 0 (このジョブが当該ギフトを獲得しない)。
+    fn expected_gift_at_full_jp(job: Job, gift: Gift) -> i32 {
+        use Gift::*;
+        use Job::*;
+        match (gift, job) {
+            // ========= PhysicalDefense (slot0: 5/180/605/1280) =========
+            (PhysicalDefense, War) => 70,
+            (PhysicalDefense, Mnk) => 36,
+            (PhysicalDefense, Thf) => 28,
+            (PhysicalDefense, Pld) => 106,
+            (PhysicalDefense, Drk) => 28,
+            (PhysicalDefense, Bst) => 70,
+            (PhysicalDefense, Brd) => 22,
+            (PhysicalDefense, Rng) => 22,
+            (PhysicalDefense, Sam) => 42,
+            (PhysicalDefense, Nin) => 22,
+            (PhysicalDefense, Drg) => 42,
+            (PhysicalDefense, Smn) => 22,
+            (PhysicalDefense, Blu) => 42,
+            (PhysicalDefense, Cor) => 22,
+            (PhysicalDefense, Dnc) => 42,
+            (PhysicalDefense, Run) => 70,
+
+            // ========= PhysicalAttack (slot1: 10/210/660/1360) =========
+            (PhysicalAttack, War) => 70,
+            (PhysicalAttack, Mnk) => 56,
+            (PhysicalAttack, Thf) => 50,
+            (PhysicalAttack, Pld) => 28,
+            (PhysicalAttack, Drk) => 106,
+            (PhysicalAttack, Bst) => 70,
+            (PhysicalAttack, Rng) => 70,
+            (PhysicalAttack, Sam) => 70,
+            (PhysicalAttack, Nin) => 56,
+            (PhysicalAttack, Drg) => 70,
+            (PhysicalAttack, Blu) => 56,
+            (PhysicalAttack, Cor) => 36,
+            (PhysicalAttack, Pup) => 56,
+            (PhysicalAttack, Dnc) => 56,
+            (PhysicalAttack, Run) => 56,
+
+            // ========= PhysicalEvasion (slot2: 20/245/720/1445) =========
+            (PhysicalEvasion, War) => 36,
+            (PhysicalEvasion, Mnk) => 42,
+            (PhysicalEvasion, Thf) => 70,
+            (PhysicalEvasion, Pld) => 22,
+            (PhysicalEvasion, Drk) => 22,
+            (PhysicalEvasion, Bst) => 36,
+            (PhysicalEvasion, Brd) => 36,
+            (PhysicalEvasion, Rng) => 36,
+            (PhysicalEvasion, Sam) => 22,
+            (PhysicalEvasion, Nin) => 56,
+            (PhysicalEvasion, Drg) => 22,
+            (PhysicalEvasion, Smn) => 22,
+            (PhysicalEvasion, Blu) => 36,
+            (PhysicalEvasion, Cor) => 22,
+            (PhysicalEvasion, Pup) => 36,
+            (PhysicalEvasion, Dnc) => 56,
+            (PhysicalEvasion, Run) => 36,
+
+            // ========= PhysicalAccuracy (slot3: 30/280/780/1530) =========
+            (PhysicalAccuracy, War) => 36,
+            (PhysicalAccuracy, Mnk) => 41,
+            (PhysicalAccuracy, Whm) => 14,
+            (PhysicalAccuracy, Rdm) => 22,
+            (PhysicalAccuracy, Thf) => 36,
+            (PhysicalAccuracy, Pld) => 28,
+            (PhysicalAccuracy, Drk) => 22,
+            (PhysicalAccuracy, Bst) => 36,
+            (PhysicalAccuracy, Brd) => 22,
+            (PhysicalAccuracy, Rng) => 70,
+            (PhysicalAccuracy, Sam) => 42,
+            (PhysicalAccuracy, Nin) => 36,
+            (PhysicalAccuracy, Drg) => 36,
+            (PhysicalAccuracy, Blu) => 36,
+            (PhysicalAccuracy, Cor) => 36,
+            (PhysicalAccuracy, Pup) => 36,
+            (PhysicalAccuracy, Dnc) => 42,
+            (PhysicalAccuracy, Run) => 36,
+
+            // ========= MagicDefense (slot0 for casters: 5/180/605/1280) =========
+            (MagicDefense, Whm) => 50,
+            (MagicDefense, Blm) => 14,
+            (MagicDefense, Rdm) => 28,
+            (MagicDefense, Brd) => 36,
+            (MagicDefense, Smn) => 36,
+            (MagicDefense, Sch) => 36,
+            (MagicDefense, Geo) => 36,
+            (MagicDefense, Run) => 36,
+
+            // ========= MagicAttack =========
+            (MagicAttack, Whm) => 22,
+            (MagicAttack, Blm) => 50,
+            (MagicAttack, Rdm) => 28,
+            (MagicAttack, Sch) => 50,
+            (MagicAttack, Geo) => 50,
+            (MagicAttack, Nin) => 22,
+            (MagicAttack, Cor) => 14,
+
+            // ========= MagicEvasion =========
+            (MagicEvasion, War) => 36,
+            (MagicEvasion, Mnk) => 36,
+            (MagicEvasion, Whm) => 50,
+            (MagicEvasion, Blm) => 42,
+            (MagicEvasion, Rdm) => 56,
+            (MagicEvasion, Thf) => 36,
+            (MagicEvasion, Pld) => 42,
+            (MagicEvasion, Drk) => 42,
+            (MagicEvasion, Bst) => 36,
+            (MagicEvasion, Brd) => 36,
+            (MagicEvasion, Rng) => 36,
+            (MagicEvasion, Sam) => 36,
+            (MagicEvasion, Drg) => 36,
+            (MagicEvasion, Smn) => 42,
+            (MagicEvasion, Cor) => 36,
+            (MagicEvasion, Pup) => 36,
+            (MagicEvasion, Dnc) => 36,
+            (MagicEvasion, Sch) => 42,
+            (MagicEvasion, Geo) => 42,
+            (MagicEvasion, Run) => 42,
+
+            // ========= MagicAccuracy =========
+            (MagicAccuracy, War) => 36,
+            (MagicAccuracy, Mnk) => 36,
+            (MagicAccuracy, Whm) => 50,
+            (MagicAccuracy, Blm) => 42,
+            (MagicAccuracy, Rdm) => 70,
+            (MagicAccuracy, Thf) => 36,
+            (MagicAccuracy, Pld) => 42,
+            (MagicAccuracy, Drk) => 42,
+            (MagicAccuracy, Bst) => 36,
+            (MagicAccuracy, Brd) => 36,
+            (MagicAccuracy, Rng) => 36,
+            (MagicAccuracy, Sam) => 36,
+            (MagicAccuracy, Nin) => 36,
+            (MagicAccuracy, Drg) => 36,
+            (MagicAccuracy, Blu) => 36,
+            (MagicAccuracy, Cor) => 36,
+            (MagicAccuracy, Pup) => 36,
+            (MagicAccuracy, Dnc) => 36,
+            (MagicAccuracy, Sch) => 42,
+            (MagicAccuracy, Geo) => 42,
+            (MagicAccuracy, Run) => 36,
+
+            // ========= SkillchainBonus =========
+            (SkillchainBonus, Sam) => 8,
+            (SkillchainBonus, Dnc) => 8,
+
+            // ========= 戦士の特性効果アップ系・クリ率系 =========
+            (DoubleAttackRate, War) => 10,
+            (FencerEffect, War) => 230,
+            (CritIncreaseEffect, War) => 10,
+            (CriticalHitRate, War) => 10,
+            (WeaponSkillDamage, War) => 3,
+
+            // ========= BLU JobTraitEffectUp =========
+            (JobTraitEffectUp, Blu) => 2,
+
+            _ => 0,
+        }
+    }
+
+    /// 全 22 ジョブ × 全ギフトを 2100 JP で評価し、ハードコードされた期待値と一致するか検証する。
+    /// `gift_tiers_table` と `expected_gift_at_full_jp` の両方が二重チェックされ、
+    /// 書き起こし時のタイポを検知できる (JobTrait の `test_all_jobs_lv99_traits` と対称)。
+    #[test]
+    fn test_all_jobs_full_jp_gifts() {
+        for job in Job::iter() {
+            for &g in ALL_GIFTS {
+                let actual = job.gift_value(g, 2100);
+                let expected = expected_gift_at_full_jp(job, g);
+                assert_eq!(
+                    actual, expected,
+                    "{:?} 2100JP / {:?}: expected {}, got {}",
+                    job, g, expected, actual
+                );
             }
         }
     }

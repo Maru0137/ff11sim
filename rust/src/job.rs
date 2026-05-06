@@ -622,7 +622,7 @@ impl Job {
             (JobTrait::ClearMind, Job::Rdm) => &[31, 53, 75, 91],
             (JobTrait::ClearMind, Job::Smn) => &[15, 30, 45, 60, 75, 91],
             (JobTrait::ClearMind, Job::Sch) => &[20, 35, 50, 65, 76, 91],
-            (JobTrait::ClearMind, Job::Geo) => &[20, 35, 50, 65, 76, 91],
+            (JobTrait::ClearMind, Job::Geo) => &[20, 40, 60, 80, 99],
 
             // ============ コンサーブMP (ConserveMp) ============
             (JobTrait::ConserveMp, Job::Blm) => &[20, 76, 86],
@@ -1023,8 +1023,8 @@ mod tests {
 
             // --- EvasionBonus (cumulative [10,22,35,48,60,72]) ---
             (EvasionBonus, Thf) => 72, // (10,30,50,70,76,88) rank 6
-            (EvasionBonus, Dnc) => 48, // (15,45,75,86) rank 4
             (EvasionBonus, Pup) => 48, // (20,40,60,76) rank 4
+            (EvasionBonus, Dnc) => 48, // (15,45,75,86) rank 4
 
             // --- MagicAttackBonus (cumulative [20,24,28,32,36,40]) ---
             (MagicAttackBonus, Blm) => 40, // (10,30,50,70,81,91) rank 6
@@ -1040,11 +1040,11 @@ mod tests {
             // --- MagicEvasionBonus (cumulative [10]) ---
 
             // --- MaxHpBoost (cumulative [30,60,120,180,240,280]) ---
-            (MaxHpBoost, Mnk) => 280, // (15,25,35,45,55,65) rank 6
             (MaxHpBoost, War) => 180, // (30,50,70,90) rank 4
+            (MaxHpBoost, Mnk) => 280, // (15,25,35,45,55,65) rank 6
+            (MaxHpBoost, Pld) => 60,  // (45,85) rank 2
             (MaxHpBoost, Nin) => 240, // (20,40,60,80,99) rank 5
             (MaxHpBoost, Run) => 240, // (20,40,60,80,99) rank 5
-            (MaxHpBoost, Pld) => 60,  // (45,85) rank 2
 
             // --- MaxHpBoost2 (cumulative [150,300,450]) ---
             (MaxHpBoost2, Mnk) => 450, // (75,85,95) rank 3
@@ -1122,7 +1122,7 @@ mod tests {
             (ClearMind, Rdm) => 12, // (31,53,75,91) rank 4
             (ClearMind, Smn) => 18, // (15,30,45,60,75,91) rank 6
             (ClearMind, Sch) => 18, // (20,35,50,65,76,91) rank 6
-            (ClearMind, Geo) => 18, // (20,35,50,65,76,91) rank 6
+            (ClearMind, Geo) => 15, // (20,40,60,80,99) rank 5
 
             // --- ConserveMP (cumulative [25, 28, 31, 34, 37, 40, 43]) ---
             (ConserveMp, Blm) => 31, // (20,76,86) rank 3

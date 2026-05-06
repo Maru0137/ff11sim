@@ -353,8 +353,10 @@ const MAGIC_ACUMEN: &[i32] = &[25, 50, 75, 100, 125];
 const MAGIC_BURST_BONUS: &[i32] = &[5, 7, 9, 11, 13];
 
 // ディバインベニゾン (https://wiki.ffo.jp/html/20046.html)
-// ナ系/イレース詠唱時間短縮。rank1=10%, 2=20%, 3=30%, 4=40%, 5=50% (敵対心 -5/-10/-15/-20/-25)
-const DIVINE_BENISON: &[i32] = &[10, 20, 30, 40, 50];
+// ナ系/イレース詠唱時間短縮 (rank1=10%..rank5=50%) と敵対心 -5/-10/-15/-20/-25 の
+// 2 つの効果を持ち、それぞれスケールが異なる。単一の値を保持する形式に合わないため、
+// cumulative には rank 番号をそのまま入れて、効果は呼び出し側で rank ベースで計算する。
+const DIVINE_BENISON: &[i32] = &[1, 2, 3, 4, 5];
 
 // エレメントセレリティ (https://wiki.ffo.jp/html/22228.html)
 // 精霊魔法詠唱時間短縮 (% 表現)。rank1=10, 2=15, 3=20, 4=25, 5=30
@@ -1290,8 +1292,8 @@ mod tests {
             (MagicBurstBonus, Nin) => 7,  // (80,90) rank 2
             (MagicBurstBonus, Sch) => 9,  // (79,89,99) rank 3
 
-            // --- DivineBenison (cumulative [10, 20, 30, 40, 50]) ---
-            (DivineBenison, Whm) => 50, // (50,60,70,80,90) rank 5
+            // --- DivineBenison (cumulative [1, 2, 3, 4, 5] = rank 番号) ---
+            (DivineBenison, Whm) => 5, // (50,60,70,80,90) rank 5
 
             // --- ElementalCelerity (cumulative [10, 15, 20, 25, 30]) ---
             (ElementalCelerity, Blm) => 30, // (50,60,70,80,90) rank 5

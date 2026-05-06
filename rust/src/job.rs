@@ -371,9 +371,10 @@ const DESPERATE_BLOWS: &[i32] = &[5, 10, 15];
 const STALWART_SOUL: &[i32] = &[15, 50];
 
 // カーディナルチャント (https://wiki.ffo.jp/html/28474.html)
-// 精霊魔法効果アップ (方角依存、複数ステータス)。本実装では魔攻代表値を保持。
-// rank1=5, 2=7, 3=10
-const CARDINAL_CHANT: &[i32] = &[5, 7, 10];
+// 方角依存で複数ステータスに効果が乗るためスケールが一律でない。単一の値を
+// 保持する形式に合わないため、cumulative には rank 番号をそのまま入れて、
+// 効果は呼び出し側で rank ベースで計算する。
+const CARDINAL_CHANT: &[i32] = &[1, 2, 3];
 
 // テナシティ (https://wiki.ffo.jp/html/28271.html)
 // 状態異常レジスト発動率。rank1=+5%, 2=+7%, 3=+9%, 4=+11%, 5=+13%, 6=+15%
@@ -1310,8 +1311,8 @@ mod tests {
             // --- StalwartSoul (cumulative [15, 50]) ---
             (StalwartSoul, Drk) => 50, // (45,90) rank 2
 
-            // --- CardinalChant (cumulative [5, 7, 10]) ---
-            (CardinalChant, Geo) => 10, // (25,45,85) rank 3
+            // --- CardinalChant (cumulative [1, 2, 3] = rank 番号) ---
+            (CardinalChant, Geo) => 3, // (25,45,85) rank 3
 
             // --- Tenacity (cumulative [5, 7, 9, 11, 13, 15]) ---
             (Tenacity, Run) => 15, // (5,25,45,75,80,95) rank 6

@@ -2128,4 +2128,156 @@ mod tests {
             eprintln!("[debug] effective Dagger skill={}", dagger);
         }
     }
+
+    /// Brd99/Pld59 ML50 の回避値検証テスト。
+    ///
+    /// 装備セット (items.json + augments.json から抽出。Unity/path augment は注釈で明記):
+    ///
+    /// | スロット | 装備 | AGI / 回避値 / 回避スキル |
+    /// |---------|------|------------------------|
+    /// | main    | ニビルナイフ (id=20600) + 命中+20 攻+15 回避+20 (custom aug) | AGI+5 / 回避+49 (29+20 aug) / 短剣+242 受流+242 |
+    /// | sub     | 玄冥盾 (id=27645)                                  | 0 / 0 / 盾+112 |
+    /// | range   | リノス (id=21404) + AGI+8 回避+15 被物理-5% (custom aug) | AGI+8 / 回避+15 / 0 |
+    /// | ammo    | (なし)                                              | 0 / 0 / 0 |
+    /// | head    | 無の面 (id=24270)                                  | AGI+28 / 回避+100 / 0 |
+    /// | body    | レベレプレート (id=24125) Default30 (命中+30 飛命+30 魔命+30 DA+8% PDL+7%) | AGI+37 / 回避+123 / 0 |
+    /// | hands   | ニャメガントレ (id=23775) Type:B30 (攻+35 飛攻+35 WSD+11% DA+5% VIT+15) | AGI+12 / 回避+80 / 0 |
+    /// | legs    | レベレブレー (id=24131) Default30 (命中+30 飛命+30 魔命+30 DA+7% PDL+6%) | AGI+34 / 回避+119 / 0 |
+    /// | feet    | ヒポメネソックス+1 (id=27410) Unity max +20 + Default15 aug (回避+20 ALL BP+10) | AGI+33+10 / 回避+71+20+20 = 111 / 0 |
+    /// | neck    | ウォーダチャーム+1 (id=27505) Unity max +5                | 0 / 0 / 0 |
+    /// | waist   | 無の腰当 (id=26367)                                  | 0 / 回避+30 / 0 |
+    /// | ear1    | アスプロピアス (id=26119) Default30 aug (命中+15 飛命+15 魔命+15 ALL BP+10 ストアTP+5) | AGI+10 / 0 / 0 |
+    /// | ear2    | アレテデルルナ+1 (id=28487) Unity max +25 (耐光)        | 0 / 0 / 0 |
+    /// | ring1   | シュネデックリング (id=27590)                          | 0 / 0 / 0 |
+    /// | ring2   | フォテファイリング (id=10773)                          | 0 / 0 / 0 |
+    /// | back    | 無の外装 (id=26274)                                  | 0 / 回避+50 / 0 |
+    ///
+    /// 装備合計:
+    ///   AGI = 5 + 8 + 28 + 37 + 12 + 34 + (33+10) + 10 = 177
+    ///       (= 装備ベース 157 + path augment ALL BP+10 ×2 = +20)
+    ///   回避値 = 49 + 15 + 100 + 123 + 80 + 119 + (71+20+20) + 30 + 50 = 677
+    ///       (= 装備ベース 657 + path augment 回避+20 = +20)
+    ///   回避スキル+ (装備直接加算): 0 (該当無し)
+    ///
+    /// 期待値式 (回避):
+    ///   AGI 総合 = 種族(Hum D) + 主ジョブ(Brd F) + サポ(Pld G)/2 + ML50 + メリット15 + 装備177 = 317
+    ///   回避スキル有効値 = Brd99 D cap (334) + ML50 + メリット16 = 400
+    ///   skill_term = piecewise(400) = 200 + (400-200)*0.9 = 380
+    ///   evasion_total = floor(317*0.5) + 380 + 677 + ギフト「物理回避アップ」(Brd 2100JP=22)
+    ///                 = 158 + 380 + 677 + 22 = 1237
+    #[test]
+    fn test_brd_pld_evasion_breakdown() {
+        use crate::character_profile::JobLevel;
+        use crate::skills::default_skills;
+        use enum_map::EnumMap;
+
+        // メリット: ステータス全 15、戦闘/魔法スキル 8 (既存テストと同条件)
+        let mut merit = MeritPoints {
+            hp: 15, mp: 15,
+            str_: 15, dex: 15, vit: 15, agi: 15, int: 15, mnd: 15, chr: 15,
+            ..Default::default()
+        };
+        for &key in &[
+            "HandToHand", "Dagger", "Sword", "GreatSword", "Axe", "GreatAxe",
+            "Scythe", "Polearm", "Katana", "GreatKatana", "Club", "Staff",
+            "Archery", "Marksmanship", "Throwing", "Guarding", "Evasion",
+            "Shield", "Parrying",
+        ] {
+            merit.combat_skill_merits.insert(key.to_string(), 8);
+        }
+        for &key in &[
+            "Divine", "Healing", "Enhancing", "Enfeebling", "Elemental",
+            "Dark", "Summoning", "Ninjutsu", "Singing", "StringInstrument",
+            "WindInstrument", "BlueMagic", "Geomancy", "Handbell",
+        ] {
+            merit.magic_skill_merits.insert(key.to_string(), 8);
+        }
+
+        // ジョブポイント全カテゴリ最大 (累計 2100 JP) → ギフト全段解放
+        let jp = crate::job_points::JobPointCategories::all_maxed();
+
+        let mut job_levels: EnumMap<Job, JobLevel> = EnumMap::default();
+        job_levels[Job::Brd] = JobLevel { level: 99, master_lv: 50 };
+        job_levels[Job::Pld] = JobLevel { level: 59, master_lv: 0 };
+        let skills = default_skills(&job_levels, &merit);
+
+        // 装備のスキル+ ボーナス (短剣/受流/盾、global slot として加算)
+        // ニビルナイフ: 短剣+242 受流+242
+        // 玄冥盾: 盾+112
+        // → main slot: Dagger+242
+        // → sub slot:  なし (Brd は受流持たないため Parrying を持っていてもジョブ依存)
+        // → global:   Shield+112, Parrying+242 (受流は global で加算)
+        let mut skill_bonus_main: BTreeMap<String, i32> = BTreeMap::new();
+        skill_bonus_main.insert("Dagger".to_string(), 242);
+
+        let mut skill_bonus_global: BTreeMap<String, i32> = BTreeMap::new();
+        skill_bonus_global.insert("Shield".to_string(), 112);
+        skill_bonus_global.insert("Parrying".to_string(), 242);
+
+        // BonusStats: 装備合計値 (Unity/path augment は最大値で集計)
+        // AGI = 5 (Nibiru) + 8 (Linos aug) + 28 (無の面) + 37 (Reverence body)
+        //     + 12 (Nyame hands) + 34 (Reverence legs) + 33+10 (Hipomenes base+ALLBP) + 10 (Aspropias ALLBP)
+        //     = 177
+        // 回避値 = 49 (Nibiru+aug) + 15 (Linos aug) + 100 (無の面)
+        //        + 123 (Reverence body) + 80 (Nyame hands) + 119 (Reverence legs)
+        //        + 71+20+20 (Hipomenes base+Unity+aug) + 30 (無の腰当) + 50 (無の外装)
+        //        = 677
+        let bonus = BonusStats {
+            agi: 177,
+            evasion: 677,
+            // 他のステータス (DEX/STR/etc.) は装備ベースを集計するが、回避テストでは AGI/回避値が主
+            // 必要に応じて他装備分も追加すべし
+            str_: 47 + 0 + 17 + 57 + 10, // body + nyame + legs + feet (近似)
+            dex: 5 + 45 + 42 + 0 + 11, // Nibiru + body + nyame + Hipomenes
+            vit: 0 + 37 + 39 + 35 + 10,
+            int: 0 + 39 + 28 + 43 + 17,
+            mnd: 0 + 28 + 40 + 22 + 19,
+            chr: 5 + 37 + 24 + 28 + 34, // Nibiru + body + nyame + legs + Hipomenes
+            // HP も忘れずに加算
+            hp: 130 + 91 + 119 + 13 + 100, // body + nyame + legs + Hipomenes + アスプロピアス
+            mp: 73 + 14 + 50, // nyame + Hipomenes + フォテファイリング
+            // 命中・攻撃: ニビル aug + 玄冥盾 + Reverence A path + Nyame B path 等
+            accuracy: 20 + 15 + 30 + 30 + 30 + 5, // Nibiru aug + 玄冥 + body Apath + nyame Bpath + legs Apath + フォテ
+            attack: 15 + 15 + 30 + 30 + 30, // Nibiru aug + 玄冥 + body + nyame + legs
+            main_weapon_skill_id: Some(2),    // ニビルナイフ = 短剣
+            sub_weapon_skill_id: None,        // 玄冥盾 = サブだが武器スキルではない
+            ranged_weapon_skill_id: Some(42), // リノス
+            skill_bonus_main,
+            skill_bonus_global,
+            ..BonusStats::default()
+        };
+
+        let chara = Chara::builder()
+            .race(Race::Hum)
+            .main_job(Job::Brd, 99)
+            .support_job(Job::Pld, 59)
+            .master_lv(50)
+            .merit_points(merit)
+            .job_points(jp)
+            .skills(skills)
+            .bonus_stats(bonus)
+            .build()
+            .expect("Failed to build Chara");
+
+        let result = chara_to_status_result(&chara);
+
+        // === デバッグ出力: cargo test -- --nocapture で確認 ===
+        eprintln!("[evasion] AGI total = {}", result.agi);
+        eprintln!("[evasion] effective Evasion skill = {:?}",
+                  result.effective_skills.get("Evasion"));
+        eprintln!("[evasion] evasion_bonus (trait+gift+jpcat) = {}", result.evasion_bonus);
+        eprintln!("[evasion] evasion total = {}", result.evasion);
+
+        // 期待値:
+        //   AGI 総合 = 317 (race 75 + ML 50 + merit 15 + 装備 177)
+        //   回避スキル有効値 = 400 (Brd99 D cap 334 + ML 50 + merit 16)
+        //   skill_term = 200 + (400-200)*0.9 = 380
+        //   evasion = floor(317/2) + 380 + 677 + 22 = 158 + 380 + 677 + 22 = 1237
+        assert_eq!(result.agi, 317, "AGI mismatch");
+        assert_eq!(result.effective_skills.get("Evasion").copied(), Some(400),
+                   "Evasion skill mismatch");
+        assert_eq!(result.evasion_bonus, 22,
+                   "evasion_bonus mismatch (Brd 2100JP gift PhysicalEvasion=22)");
+        assert_eq!(result.evasion, 1237, "evasion total mismatch");
+    }
 }

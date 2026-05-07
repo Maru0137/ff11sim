@@ -41,12 +41,22 @@ pub enum Gift {
     SmiteEffect,
     /// モクシャ効果アップ (相手に与える TP 減少 % 増)
     SubtleBlow,
+    /// マーシャルアーツ効果アップ (格闘の攻撃間隔減算)
+    MartialArtsEffect,
+    /// カウンター効果アップ (反撃発動確率 %)
+    CounterRate,
+    /// カウンターダメージアップ (カウンター時のダメージ %)
+    CounterDamage,
     /// BLU 専用: ジョブ特性効果アップ (rank +N)
     JobTraitEffectUp,
 
     // ============ クリ率/WS 系 ============
     CriticalHitRate,
     WeaponSkillDamage,
+
+    // ============ スキル系 ============
+    /// ガードスキルアップ (絶対値の skill 加算)
+    GuardSkill,
 }
 
 pub const ALL_GIFTS: &[Gift] = &[
@@ -67,9 +77,13 @@ pub const ALL_GIFTS: &[Gift] = &[
     Gift::CritIncreaseEffect,
     Gift::SmiteEffect,
     Gift::SubtleBlow,
+    Gift::MartialArtsEffect,
+    Gift::CounterRate,
+    Gift::CounterDamage,
     Gift::JobTraitEffectUp,
     Gift::CriticalHitRate,
     Gift::WeaponSkillDamage,
+    Gift::GuardSkill,
 ];
 
 impl Job {
@@ -293,10 +307,26 @@ fn gift_tiers_table(job: Job, gift: Gift) -> &'static [(i32, i32)] {
         (WeaponSkillDamage, War) => &[(550, 3)],
 
         // ============ SubtleBlow (モクシャ効果アップ) ============
-        // Mnk: 125/445/1050/1805 で -2/-2/-3/-3% (累積 +2/+4/+7/+10)
-        (SubtleBlow, Mnk) => &[(125, 2), (445, 4), (1050, 7), (1805, 10)],
+        // Mnk: 125/450/1050/1900 で -2/-2/-3/-3% (累積 +2/+4/+7/+10)
+        (SubtleBlow, Mnk) => &[(125, 2), (450, 4), (1050, 7), (1900, 10)],
         // Dnc: 80/360/910/1710 で +3/+3/+3/+4 (累積 +3/+6/+9/+13)
         (SubtleBlow, Dnc) => &[(80, 3), (360, 6), (910, 9), (1710, 13)],
+
+        // ============ MartialArtsEffect (Mnk のみ) ============
+        // 100/1200 で 格闘攻撃間隔 -5/-5 (累積 -5/-10)
+        (MartialArtsEffect, Mnk) => &[(100, -5), (1200, -10)],
+
+        // ============ CounterRate (Mnk のみ) ============
+        // 150/500/1125/2000 で 反撃確率 +2/+2/+3/+3% (累積 +2/+4/+7/+10)
+        (CounterRate, Mnk) => &[(150, 2), (500, 4), (1125, 7), (2000, 10)],
+
+        // ============ CounterDamage (Mnk のみ) ============
+        // 550 で カウンターダメージ +5% (1 ティアのみ)
+        (CounterDamage, Mnk) => &[(550, 5)],
+
+        // ============ GuardSkill (Mnk のみ) ============
+        // 80/405/980/1805 で +5/+8/+10/+13 (累積 +5/+13/+23/+36)
+        (GuardSkill, Mnk) => &[(80, 5), (405, 13), (980, 23), (1805, 36)],
 
         // ============ JobTraitEffectUp (BLU) ============
         // 100/1200 で +1/+2 rank
@@ -584,6 +614,12 @@ mod tests {
             // ========= SubtleBlow (モクシャ効果アップ) =========
             (SubtleBlow, Mnk) => 10,
             (SubtleBlow, Dnc) => 13,
+
+            // ========= MNK 専用ギフト =========
+            (MartialArtsEffect, Mnk) => -10,
+            (CounterRate, Mnk) => 10,
+            (CounterDamage, Mnk) => 5,
+            (GuardSkill, Mnk) => 36,
 
             // ========= BLU JobTraitEffectUp =========
             (JobTraitEffectUp, Blu) => 2,

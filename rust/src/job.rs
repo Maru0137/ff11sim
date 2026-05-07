@@ -126,8 +126,8 @@ pub enum JobTrait {
     CritIncrease,
     CritReduce,
     DeadAim,
-    TandemHit,
-    TandemSubtleBlow,
+    TandemStrike,
+    TandemBlow,
     TacticalParry,
     TacticalGuard,
     ExtremeGuard,
@@ -289,13 +289,13 @@ const CRIT_REDUCE: &[i32] = &[5, 8, 11, 14];
 // 遠隔クリティカルダメージボーナス。rank1=+10%, 2=+20%, 3=+30%, 4=+35%, 5=+40%, 6=+45%
 const DEAD_AIM: &[i32] = &[10, 20, 30, 35, 40, 45];
 
-// タンデムヒット (https://wiki.ffo.jp/html/38004.html)
+// タンデムヒット / Tandem Strike (https://wiki.ffo.jp/html/38004.html)
 // ペット連携時の命中/魔命ボーナス。rank5=+50 のみ wiki 記載、ranks 1-4 は線形補間と仮定
-const TANDEM_HIT: &[i32] = &[10, 20, 30, 40, 50];
+const TANDEM_STRIKE: &[i32] = &[10, 20, 30, 40, 50];
 
-// タンデムモクシャ (https://wiki.ffo.jp/html/38005.html)
+// タンデムモクシャ / Tandem Blow (https://wiki.ffo.jp/html/38005.html)
 // ペット連携時の与TP減少。rank3=モクシャII+14 ベース、rank 1/2 は推定
-const TANDEM_SUBTLE_BLOW: &[i32] = &[5, 10, 14];
+const TANDEM_BLOW: &[i32] = &[5, 10, 14];
 
 // タクティカルパリー (https://wiki.ffo.jp/html/20336.html)
 // 受け流し発動時の TP ボーナス。rank1=+20, 2=+30, 3=+40, 4=+50
@@ -473,8 +473,8 @@ impl JobTrait {
             JobTrait::CritIncrease => CRIT_INCREASE,
             JobTrait::CritReduce => CRIT_REDUCE,
             JobTrait::DeadAim => DEAD_AIM,
-            JobTrait::TandemHit => TANDEM_HIT,
-            JobTrait::TandemSubtleBlow => TANDEM_SUBTLE_BLOW,
+            JobTrait::TandemStrike => TANDEM_STRIKE,
+            JobTrait::TandemBlow => TANDEM_BLOW,
             JobTrait::TacticalParry => TACTICAL_PARRY,
             JobTrait::TacticalGuard => TACTICAL_GUARD,
             JobTrait::ExtremeGuard => EXTREME_GUARD,
@@ -710,8 +710,8 @@ impl Job {
             (JobTrait::DeadAim, Job::Rng) => &[50, 60, 70, 80, 90, 99],
 
             // ============ ペット連携系 (BST) ============
-            (JobTrait::TandemHit, Job::Bst) => &[30, 45, 60, 75, 90],
-            (JobTrait::TandemSubtleBlow, Job::Bst) => &[40, 60, 80],
+            (JobTrait::TandemStrike, Job::Bst) => &[30, 45, 60, 75, 90],
+            (JobTrait::TandemBlow, Job::Bst) => &[40, 60, 80],
 
             // ============ タクティカル系 (受け流し / ガード時 TP) ============
             (JobTrait::TacticalParry, Job::Drk) => &[88, 98],
@@ -973,8 +973,8 @@ mod tests {
         JobTrait::CritIncrease,
         JobTrait::CritReduce,
         JobTrait::DeadAim,
-        JobTrait::TandemHit,
-        JobTrait::TandemSubtleBlow,
+        JobTrait::TandemStrike,
+        JobTrait::TandemBlow,
         JobTrait::TacticalParry,
         JobTrait::TacticalGuard,
         JobTrait::ExtremeGuard,
@@ -1214,11 +1214,11 @@ mod tests {
             // --- DeadAim (cumulative [10, 20, 30, 35, 40, 45]) ---
             (DeadAim, Rng) => 45, // (50,60,70,80,90,99) rank 6
 
-            // --- TandemHit (cumulative [10, 20, 30, 40, 50]) ---
-            (TandemHit, Bst) => 50, // (30,45,60,75,90) rank 5
+            // --- TandemStrike (cumulative [10, 20, 30, 40, 50]) ---
+            (TandemStrike, Bst) => 50, // (30,45,60,75,90) rank 5
 
-            // --- TandemSubtleBlow (cumulative [5, 10, 14]) ---
-            (TandemSubtleBlow, Bst) => 14, // (40,60,80) rank 3
+            // --- TandemBlow (cumulative [5, 10, 14]) ---
+            (TandemBlow, Bst) => 14, // (40,60,80) rank 3
 
             // --- TacticalParry (cumulative [20, 30, 40, 50]) ---
             (TacticalParry, Drk) => 30, // (88,98) rank 2

@@ -22,9 +22,12 @@ function extractAllStats(descriptionEn) {
         ' $1+$2'
     );
 
-    // Strip "Pet: ..." segments (apply only to summoned pets, not the wearer).
-    // Continue until the next ":"-prefixed section or end of string.
-    text = text.replace(/Pet:[^:]*/g, '');
+    // Strip pet-prefixed segments (apply only to summoned pets/avatar/wyvern/automaton,
+    // not the wearer). 次の ":" プレフィックスまで (改行を跨ぎうる) を取り除く。
+    // Pet 行は折り返しで複数行に分割されることがあり、すべて Pet 用 stats として扱う。
+    // 例: アスプロピアスの「Pet: Accuracy+15\nRanged Accuracy+15\nMagic Accuracy+15」は
+    //     3 行ともペット用なのでまとめて除外する (キャラに追加される魔命/飛命は augment 経由)。
+    text = text.replace(/(?:Pet|Avatar|Wyvern|Automaton):[^:]*/g, '');
 
     // 省略表記を正式名称に展開（AF3+3 などで使われる "Rng. Atk." 形式に対応）。
     // 順序が重要: 複合形を単純形より先に展開する。
@@ -50,13 +53,16 @@ function extractAllStats(descriptionEn) {
 
     const result = {};
 
-    // Helper: match a signed stat pattern like "STR+15" or "Attack +22"
+    // Helper: match a signed stat pattern like "STR+15" or "Attack +22".
+    // 全ての出現を合算する (Unity Ranking 効果が同名ステで重複するケース等に対応)。
     function matchSigned(pattern) {
-        const re = new RegExp(pattern, 'i');
-        const m = text.match(re);
-        if (!m) return 0;
-        const sign = m[1] === '-' ? -1 : 1;
-        return sign * parseInt(m[2], 10);
+        const re = new RegExp(pattern, 'gi');
+        let total = 0;
+        for (const m of text.matchAll(re)) {
+            const sign = m[1] === '-' ? -1 : 1;
+            total += sign * parseInt(m[2], 10);
+        }
+        return total;
     }
 
     // Helper: match a colon-format pattern like "DEF:77" or "DMG:+165"
@@ -67,14 +73,16 @@ function extractAllStats(descriptionEn) {
         return parseInt(m[1], 10);
     }
 
-    // Helper: match a value where the sign is optional (e.g. "Snapshot"5 = +5)
-    // Default sign is "+" when omitted.
+    // Helper: match a value where the sign is optional (e.g. "Snapshot"5 = +5).
+    // Default sign is "+" when omitted. 全ての出現を合算する。
     function matchOptionalSign(pattern) {
-        const re = new RegExp(pattern, 'i');
-        const m = text.match(re);
-        if (!m) return 0;
-        const sign = m[1] === '-' ? -1 : 1;
-        return sign * parseInt(m[2], 10);
+        const re = new RegExp(pattern, 'gi');
+        let total = 0;
+        for (const m of text.matchAll(re)) {
+            const sign = m[1] === '-' ? -1 : 1;
+            total += sign * parseInt(m[2], 10);
+        }
+        return total;
     }
 
     // Helper: set value only if non-zero

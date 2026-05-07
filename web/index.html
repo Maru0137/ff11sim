@@ -695,6 +695,66 @@
             border-color: #f0c040;
         }
 
+        /* ===== モバイル向けレイアウト (縦積みカード) ===== */
+        /* PC のグリッド (7 列横並び) ではオーグメント欄が潰れて入力できないため、
+           狭い画面では各スロットを 4 行のカードに切り替える。 */
+        @media (max-width: 768px) {
+            .equip-slot-grid {
+                display: flex;
+                flex-direction: column;
+                gap: 12px;
+            }
+            .equip-slot-header {
+                display: none;
+            }
+            .equip-slot-row {
+                display: grid;
+                grid-template-columns: 56px 1fr auto;
+                grid-template-areas:
+                    "label   search   clear"
+                    "desc    desc     desc"
+                    "augpath augtext  augtext"
+                    "custom  custom   custom";
+                gap: 6px 8px;
+                padding: 8px;
+                background: #0f0f23;
+                border: 1px solid #2a2a40;
+                border-radius: 4px;
+            }
+            .equip-slot-label {
+                grid-area: label;
+                align-self: center;
+                text-align: left;
+            }
+            .equip-slot-input-wrapper {
+                grid-area: search;
+            }
+            .equip-slot-clear {
+                grid-area: clear;
+                align-self: center;
+            }
+            .equip-slot-description {
+                grid-area: desc;
+                max-height: none;
+            }
+            .equip-slot-aug-path {
+                grid-area: augpath;
+                width: 100%;
+            }
+            .equip-slot-aug-text {
+                grid-area: augtext;
+            }
+            .equip-slot-custom-desc {
+                grid-area: custom;
+                width: 100%;
+            }
+            /* 説明やAug説明が空のときは行高を 0 にして詰める */
+            .equip-slot-description:empty,
+            .equip-slot-aug-text:empty {
+                display: none;
+            }
+        }
+
         .status-section {
             margin-top: 20px;
             padding: 15px;

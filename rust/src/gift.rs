@@ -77,6 +77,116 @@ pub enum Gift {
     ElementalMagicSkill,
     /// 暗黒魔法スキルアップ
     DarkMagicSkill,
+    /// 強化魔法スキルアップ (Rdm/Sch/Run)
+    EnhancingMagicSkill,
+    /// 弱体魔法スキルアップ (Rdm)
+    EnfeeblingMagicSkill,
+    /// 召喚魔法スキルアップ (Smn)
+    SummoningMagicSkill,
+    /// 青魔法スキルアップ (Blu)
+    BlueMagicSkill,
+    /// 忍術スキルアップ (Nin)
+    NinjutsuSkill,
+    /// 風水魔法スキルアップ (Geo)
+    GeomancySkill,
+    /// 風水鈴スキルアップ (Geo)
+    GeomanticBellSkill,
+    /// 歌唱スキルアップ (Brd)
+    SingingSkill,
+    /// 弦楽器スキルアップ (Brd)
+    StringInstrumentSkill,
+    /// 管楽器スキルアップ (Brd)
+    WindInstrumentSkill,
+
+    // ============ ジョブ固有の特殊効果アップ系 ============
+    /// 青魔法効果アップ (Blu)
+    BlueMagicEffect,
+    /// 魔法剣ダメージアップ (Rdm)
+    EnspellEffect,
+    /// ファストキャスト効果アップ (Rdm, % 短縮)
+    FastCastEffect,
+    /// インクァルタタ効果アップ (Run, 受け流し率 %)
+    InquartataEffect,
+    /// 被強化魔法効果時間延長 (Run, 自身が受けた強化魔法の効果時間 %)
+    EnhanceMagicDurationOnSelf,
+    /// 残心発動率アップ (Sam, %)
+    ZanshinRate,
+    /// 心眼効果アップ (Sam, よける回数 +N)
+    SeiganEffect,
+    /// 八双・星眼効果アップ (Sam, 残心/カウンター確率の上限 +N%)
+    HassoSeiganEffect,
+    /// トレジャーハンター効果アップ (Thf, ランク +N)
+    TreasureHunterEffect,
+    /// シールドマスタリー効果アップ (Pld, TP ボーナス %)
+    ShieldMasteryEffect,
+    /// C.リデュース効果アップ (Pld, 被クリダメージ % 軽減)
+    CritReduceEffect,
+    /// プロテス効果アップ (Pld, 防御力 +N)
+    ProtesEffect,
+    /// ドレッドスパイク効果アップ (Drk, 吸収量 +N)
+    DreadSpikeEffect,
+    /// コンサーブTP効果アップ (Rng, %)
+    ConserveTpEffect,
+    /// ベロシティショット効果アップ (Rng, % 短縮)
+    VelocityShotEffect,
+    /// トゥルーショット効果アップ (Rng/Cor, %)
+    TrueshotEffect,
+    /// 乱れ撃ち効果アップ (Rng, 弾数 +N)
+    BarrageEffect,
+    /// 打剣効果アップ (Nin, %)
+    ShurikenThrowEffect,
+    /// スナップショット効果アップ (Cor, % 短縮)
+    SnapshotEffect,
+    /// 矢弾消費量軽減 (Cor, 不消費確率 %)
+    AmmoCostReduction,
+    /// クイックドロー再使用時間短縮 (Cor, -秒)
+    QuickDrawRecast,
+    /// 二刀流効果アップ (Thf/Dnc, 攻撃間隔 % 短縮)
+    DualWieldEffect,
+    /// フィニシングムーブ最大値アップ (Dnc, +N)
+    FinishingMoveCount,
+    /// 歌の詠唱時間短縮 (Brd, % 短縮)
+    SongCastTime,
+    /// 歌の効果時間延長 (Brd, %)
+    SongEffectDuration,
+
+    // ============ ペット系 (Bst/Smn/Pup/Drg) ============
+    /// ペットの物理攻撃力・物理防御力アップ (Bst)
+    PetPhysicalAtkDef,
+    /// ペットの物理命中・物理回避アップ (Bst)
+    PetPhysicalAccEva,
+    /// ペットステータスアップ (Bst, 全ステ +N)
+    PetStatus,
+    /// ペットのTPボーナス (Bst, +N)
+    PetTpBonus,
+    /// 召喚獣の物理攻撃力・物理防御力アップ (Smn)
+    AvatarPhysicalAtkDef,
+    /// 召喚獣の物理命中・物理回避アップ (Smn)
+    AvatarPhysicalAccEva,
+    /// 召喚獣の魔法攻撃力・魔法防御力アップ (Smn)
+    AvatarMagicalAtkDef,
+    /// 召喚獣・神獣の魔法命中・魔法回避アップ (Smn)
+    AvatarMagicalAccEva,
+    /// 神獣の加護効果アップ (Smn)
+    AvatarBlessingEffect,
+    /// オートマトンの物理攻撃力・物理防御力アップ (Pup)
+    AutomatonPhysicalAtkDef,
+    /// オートマトンの物理命中・物理回避アップ (Pup)
+    AutomatonPhysicalAccEva,
+    /// オートマトンの魔法攻撃力・魔法防御力アップ (Pup)
+    AutomatonMagicalAtkDef,
+    /// オートマトンの魔法命中・魔法回避アップ (Pup)
+    AutomatonMagicalAccEva,
+    /// オートマトンの属性値アップ (Pup)
+    AutomatonElementBoost,
+    /// ワイバーンのステータスアップ時の効果アップ (Drg)
+    WyvernBoostEffect,
+    /// ワイバーンの物理命中・物理回避アップ (Drg)
+    WyvernPhysicalAccEva,
+    /// ワイバーンの魔法命中・魔法回避アップ (Drg)
+    WyvernMagicalAccEva,
+    /// ブレス再使用時間短縮 (Drg, -秒)
+    BreathRecast,
 }
 
 pub const ALL_GIFTS: &[Gift] = &[
@@ -114,6 +224,59 @@ pub const ALL_GIFTS: &[Gift] = &[
     Gift::DivineMagicSkill,
     Gift::ElementalMagicSkill,
     Gift::DarkMagicSkill,
+    Gift::EnhancingMagicSkill,
+    Gift::EnfeeblingMagicSkill,
+    Gift::SummoningMagicSkill,
+    Gift::BlueMagicSkill,
+    Gift::NinjutsuSkill,
+    Gift::GeomancySkill,
+    Gift::GeomanticBellSkill,
+    Gift::SingingSkill,
+    Gift::StringInstrumentSkill,
+    Gift::WindInstrumentSkill,
+    Gift::BlueMagicEffect,
+    Gift::EnspellEffect,
+    Gift::FastCastEffect,
+    Gift::InquartataEffect,
+    Gift::EnhanceMagicDurationOnSelf,
+    Gift::ZanshinRate,
+    Gift::SeiganEffect,
+    Gift::HassoSeiganEffect,
+    Gift::TreasureHunterEffect,
+    Gift::ShieldMasteryEffect,
+    Gift::CritReduceEffect,
+    Gift::ProtesEffect,
+    Gift::DreadSpikeEffect,
+    Gift::ConserveTpEffect,
+    Gift::VelocityShotEffect,
+    Gift::TrueshotEffect,
+    Gift::BarrageEffect,
+    Gift::ShurikenThrowEffect,
+    Gift::SnapshotEffect,
+    Gift::AmmoCostReduction,
+    Gift::QuickDrawRecast,
+    Gift::DualWieldEffect,
+    Gift::FinishingMoveCount,
+    Gift::SongCastTime,
+    Gift::SongEffectDuration,
+    Gift::PetPhysicalAtkDef,
+    Gift::PetPhysicalAccEva,
+    Gift::PetStatus,
+    Gift::PetTpBonus,
+    Gift::AvatarPhysicalAtkDef,
+    Gift::AvatarPhysicalAccEva,
+    Gift::AvatarMagicalAtkDef,
+    Gift::AvatarMagicalAccEva,
+    Gift::AvatarBlessingEffect,
+    Gift::AutomatonPhysicalAtkDef,
+    Gift::AutomatonPhysicalAccEva,
+    Gift::AutomatonMagicalAtkDef,
+    Gift::AutomatonMagicalAccEva,
+    Gift::AutomatonElementBoost,
+    Gift::WyvernBoostEffect,
+    Gift::WyvernPhysicalAccEva,
+    Gift::WyvernMagicalAccEva,
+    Gift::BreathRecast,
 ];
 
 impl Job {
@@ -401,6 +564,146 @@ fn gift_tiers_table(job: Job, gift: Gift) -> &'static [(i32, i32)] {
         // ============ JobTraitEffectUp (BLU) ============
         // 100/1200 で +1/+2 rank
         (JobTraitEffectUp, Blu) => &[(100, 1), (1200, 2)],
+
+        // ============ 既存 enum の他ジョブ追加 ============
+        // ダブルアタック効果アップ (戦士 JP=125 で +2%, 1 ティア)
+        (DoubleAttackEffect, War) => &[(125, 2)],
+
+        // トリプルアタック確率アップ (Thf)
+        (TripleAttackRate, Thf) => &[(125, 2), (450, 4), (1050, 6), (1900, 8)],
+
+        // フェンサー効果アップ (Bst, TPボーナス +50/+50/+60/+70)
+        (FencerEffect, Bst) => &[(150, 50), (500, 100), (1125, 160), (2000, 230)],
+
+        // C.インクリース効果アップ (Thf, Drk, Rng, Dnc, Drg)
+        (CritIncreaseEffect, Thf) => &[(150, 2), (500, 4), (1125, 6), (2000, 8)],
+        (CritIncreaseEffect, Drk) => &[(125, 2), (450, 4), (1050, 6), (1900, 8)],
+        (CritIncreaseEffect, Rng) => &[(150, 2), (500, 4), (1125, 6), (2000, 8)],
+        (CritIncreaseEffect, Dnc) => &[(125, 2), (450, 4), (1050, 6), (1900, 8)],
+        // Drg「クリティカルダメージアップ」(意味は同じ与クリダメ %)
+        (CritIncreaseEffect, Drg) => &[(80, 2), (405, 4), (980, 6), (1805, 8)],
+
+        // WS ダメージアップ (Drk, Nin)
+        (WeaponSkillDamage, Drk) => &[(150, 2), (500, 4), (1125, 6), (2000, 8)],
+        (WeaponSkillDamage, Nin) => &[(1200, 5)],
+
+        // 神聖魔法スキル (Pld)
+        (DivineMagicSkill, Pld) => &[(80, 5), (405, 13), (980, 23), (1805, 36)],
+        // ケアル回復量 (Pld JP=1200 で +50, 1 ティア)
+        (CureAmount, Pld) => &[(1200, 50)],
+
+        // 回復魔法スキル (Sch)
+        (HealingMagicSkill, Sch) => &[(125, 5), (450, 13), (1050, 23), (1900, 36)],
+
+        // 精霊魔法スキル (Sch, Geo)
+        (ElementalMagicSkill, Sch) => &[(80, 5), (405, 13), (980, 23), (1805, 36)],
+        (ElementalMagicSkill, Geo) => &[(80, 5), (405, 13), (980, 23), (1805, 36)],
+
+        // 暗黒魔法スキル (Drk, Sch, Geo)
+        (DarkMagicSkill, Drk) => &[(80, 5), (405, 13), (980, 23), (1805, 36)],
+        (DarkMagicSkill, Sch) => &[(45, 5), (320, 13), (845, 23), (1620, 36)],
+        (DarkMagicSkill, Geo) => &[(125, 5), (450, 13), (1050, 23), (1900, 36)],
+
+        // マジックバーストダメージ (Sch)
+        (MagicBurstDamage, Sch) => &[(150, 3), (500, 6), (1125, 9), (2000, 13)],
+
+        // 魔法ダメージ (Geo)
+        (MagicDamage, Geo) => &[(150, 3), (500, 6), (1125, 9), (2000, 13)],
+
+        // マーシャルアーツ (Pup, JP=550 で -5, 1 ティア)
+        (MartialArtsEffect, Pup) => &[(550, -5)],
+
+        // ストアTP (Sam)
+        (StoreTp, Sam) => &[(125, 2), (450, 4), (1050, 6), (1900, 8)],
+
+        // 青魔の MDEF/MATK/MEVA (slot がずれる: MDEF=4, MATK=5, MEVA=6)
+        (MagicDefense, Blu) => &[(45, 5), (320, 13), (845, 23), (1620, 36)],
+        (MagicAttack, Blu) => &[(60, 5), (360, 13), (910, 23), (1710, 36)],
+        (MagicEvasion, Blu) => &[(80, 5), (405, 13), (980, 23), (1805, 36)],
+
+        // ============ 新規 enum: スキル系 ============
+        (EnhancingMagicSkill, Rdm) => &[(80, 5), (405, 13), (980, 23), (1805, 36)],
+        (EnhancingMagicSkill, Sch) => &[(60, 5), (360, 13), (910, 23), (1710, 36)],
+        (EnhancingMagicSkill, Run) => &[(125, 5), (450, 13), (1050, 23), (1900, 36)],
+
+        (EnfeeblingMagicSkill, Rdm) => &[(60, 5), (360, 13), (910, 23), (1710, 36)],
+
+        (SummoningMagicSkill, Smn) => &[(150, 5), (500, 13), (1125, 23), (2000, 36)],
+
+        (BlueMagicSkill, Blu) => &[(150, 5), (500, 13), (1125, 23), (2000, 36)],
+
+        (NinjutsuSkill, Nin) => &[(125, 5), (450, 13), (1050, 23), (1900, 36)],
+
+        (GeomancySkill, Geo) => &[(45, 5), (320, 13), (845, 23), (1620, 36)],
+        (GeomanticBellSkill, Geo) => &[(60, 5), (360, 13), (910, 23), (1710, 36)],
+
+        (SingingSkill, Brd) => &[(80, 5), (405, 13), (980, 23), (1805, 36)],
+        (StringInstrumentSkill, Brd) => &[(125, 5), (450, 13), (1050, 23), (1900, 36)],
+        (WindInstrumentSkill, Brd) => &[(150, 5), (500, 13), (1125, 23), (2000, 36)],
+
+        // ============ 新規 enum: ジョブ固有効果アップ系 ============
+        (BlueMagicEffect, Blu) => &[(550, 5)],
+
+        (EnspellEffect, Rdm) => &[(125, 5), (450, 10), (1050, 16), (1900, 23)],
+        (FastCastEffect, Rdm) => &[(150, 1), (500, 2), (1125, 3), (2000, 4)],
+
+        (InquartataEffect, Run) => &[(150, 2), (500, 4), (1125, 6), (2000, 8)],
+        (EnhanceMagicDurationOnSelf, Run) => &[(100, 10), (1200, 20)],
+
+        (ZanshinRate, Sam) => &[(80, 2), (405, 4), (980, 7), (1805, 10)],
+        (SeiganEffect, Sam) => &[(550, 1)],
+        (HassoSeiganEffect, Sam) => &[(100, 5), (1200, 10)],
+
+        (TreasureHunterEffect, Thf) => &[(80, 1), (405, 2), (980, 3), (1805, 4)],
+
+        (ShieldMasteryEffect, Pld) => &[(125, 3), (450, 6), (1050, 10), (1900, 15)],
+        (CritReduceEffect, Pld) => &[(150, 2), (500, 4), (1125, 6), (2000, 8)],
+        (ProtesEffect, Pld) => &[(550, 10)],
+
+        (DreadSpikeEffect, Drk) => &[(1200, 20)],
+
+        (ConserveTpEffect, Rng) => &[(80, 3), (405, 6), (980, 10), (1805, 15)],
+        (VelocityShotEffect, Rng) => &[(100, 5), (1200, 10)],
+        (TrueshotEffect, Rng) => &[(125, 2), (450, 4), (1050, 6), (1900, 8)],
+        (TrueshotEffect, Cor) => &[(150, 2), (500, 4), (1125, 6), (2000, 8)],
+        (BarrageEffect, Rng) => &[(550, 1)],
+
+        (ShurikenThrowEffect, Nin) => &[(150, 2), (500, 5), (1125, 9), (2000, 14)],
+
+        (SnapshotEffect, Cor) => &[(100, 5), (1200, 10)],
+        (AmmoCostReduction, Cor) => &[(125, 2), (450, 4), (1050, 6), (1900, 8)],
+        (QuickDrawRecast, Cor) => &[(550, 10)],
+
+        (DualWieldEffect, Thf) => &[(550, 5)],
+        (DualWieldEffect, Dnc) => &[(550, 5)],
+
+        (FinishingMoveCount, Dnc) => &[(100, 2), (1200, 4)],
+
+        (SongCastTime, Brd) => &[(550, 5)],
+        (SongEffectDuration, Brd) => &[(1200, 5)],
+
+        // ============ 新規 enum: ペット系 ============
+        (PetPhysicalAtkDef, Bst) => &[(80, 15), (405, 38), (980, 68), (1805, 106)],
+        (PetPhysicalAccEva, Bst) => &[(125, 10), (450, 25), (1050, 45), (1900, 70)],
+        (PetStatus, Bst) => &[(550, 8)],
+        (PetTpBonus, Bst) => &[(1200, 40)],
+
+        (AvatarPhysicalAtkDef, Smn) => &[(45, 15), (320, 38), (845, 68), (1620, 106)],
+        (AvatarPhysicalAccEva, Smn) => &[(60, 10), (360, 25), (910, 45), (1710, 70)],
+        (AvatarMagicalAtkDef, Smn) => &[(80, 5), (405, 13), (980, 23), (1805, 36)],
+        (AvatarMagicalAccEva, Smn) => &[(125, 10), (450, 25), (1050, 45), (1900, 70)],
+        (AvatarBlessingEffect, Smn) => &[(550, 1)],
+
+        (AutomatonPhysicalAtkDef, Pup) => &[(60, 15), (360, 38), (910, 68), (1710, 106)],
+        (AutomatonPhysicalAccEva, Pup) => &[(80, 10), (405, 25), (980, 45), (1805, 70)],
+        (AutomatonMagicalAtkDef, Pup) => &[(125, 5), (450, 13), (1050, 23), (1900, 36)],
+        (AutomatonMagicalAccEva, Pup) => &[(150, 10), (500, 25), (1125, 45), (2000, 70)],
+        (AutomatonElementBoost, Pup) => &[(100, 2), (1200, 4)],
+
+        (WyvernBoostEffect, Drg) => &[(100, 1), (1200, 2)],
+        (WyvernPhysicalAccEva, Drg) => &[(125, 10), (450, 25), (1050, 45), (1900, 70)],
+        (WyvernMagicalAccEva, Drg) => &[(150, 10), (500, 25), (1125, 45), (2000, 70)],
+        (BreathRecast, Drg) => &[(550, 10)],
 
         _ => &[],
     }
@@ -707,6 +1010,96 @@ mod tests {
 
             // ========= BLU JobTraitEffectUp =========
             (JobTraitEffectUp, Blu) => 2,
+
+            // ========= 既存 enum 追加分 (新規 (job, gift) ペア) =========
+            (DoubleAttackEffect, War) => 2,
+            (TripleAttackRate, Thf) => 8,
+            (FencerEffect, Bst) => 230,
+            (CritIncreaseEffect, Thf) => 8,
+            (CritIncreaseEffect, Drk) => 8,
+            (CritIncreaseEffect, Rng) => 8,
+            (CritIncreaseEffect, Dnc) => 8,
+            (CritIncreaseEffect, Drg) => 8,
+            (WeaponSkillDamage, Drk) => 8,
+            (WeaponSkillDamage, Nin) => 5,
+            (DivineMagicSkill, Pld) => 36,
+            (CureAmount, Pld) => 50,
+            (HealingMagicSkill, Sch) => 36,
+            (ElementalMagicSkill, Sch) => 36,
+            (ElementalMagicSkill, Geo) => 36,
+            (DarkMagicSkill, Drk) => 36,
+            (DarkMagicSkill, Sch) => 36,
+            (DarkMagicSkill, Geo) => 36,
+            (MagicBurstDamage, Sch) => 13,
+            (MagicDamage, Geo) => 13,
+            (MartialArtsEffect, Pup) => -5,
+            (StoreTp, Sam) => 8,
+            (MagicDefense, Blu) => 36,
+            (MagicAttack, Blu) => 36,
+            (MagicEvasion, Blu) => 36,
+
+            // ========= 新規 enum: スキル系 =========
+            (EnhancingMagicSkill, Rdm) => 36,
+            (EnhancingMagicSkill, Sch) => 36,
+            (EnhancingMagicSkill, Run) => 36,
+            (EnfeeblingMagicSkill, Rdm) => 36,
+            (SummoningMagicSkill, Smn) => 36,
+            (BlueMagicSkill, Blu) => 36,
+            (NinjutsuSkill, Nin) => 36,
+            (GeomancySkill, Geo) => 36,
+            (GeomanticBellSkill, Geo) => 36,
+            (SingingSkill, Brd) => 36,
+            (StringInstrumentSkill, Brd) => 36,
+            (WindInstrumentSkill, Brd) => 36,
+
+            // ========= 新規 enum: ジョブ固有効果アップ系 =========
+            (BlueMagicEffect, Blu) => 5,
+            (EnspellEffect, Rdm) => 23,
+            (FastCastEffect, Rdm) => 4,
+            (InquartataEffect, Run) => 8,
+            (EnhanceMagicDurationOnSelf, Run) => 20,
+            (ZanshinRate, Sam) => 10,
+            (SeiganEffect, Sam) => 1,
+            (HassoSeiganEffect, Sam) => 10,
+            (TreasureHunterEffect, Thf) => 4,
+            (ShieldMasteryEffect, Pld) => 15,
+            (CritReduceEffect, Pld) => 8,
+            (ProtesEffect, Pld) => 10,
+            (DreadSpikeEffect, Drk) => 20,
+            (ConserveTpEffect, Rng) => 15,
+            (VelocityShotEffect, Rng) => 10,
+            (TrueshotEffect, Rng) => 8,
+            (TrueshotEffect, Cor) => 8,
+            (BarrageEffect, Rng) => 1,
+            (ShurikenThrowEffect, Nin) => 14,
+            (SnapshotEffect, Cor) => 10,
+            (AmmoCostReduction, Cor) => 8,
+            (QuickDrawRecast, Cor) => 10,
+            (DualWieldEffect, Thf) => 5,
+            (DualWieldEffect, Dnc) => 5,
+            (FinishingMoveCount, Dnc) => 4,
+            (SongCastTime, Brd) => 5,
+            (SongEffectDuration, Brd) => 5,
+
+            // ========= 新規 enum: ペット系 =========
+            (PetPhysicalAtkDef, Bst) => 106,
+            (PetPhysicalAccEva, Bst) => 70,
+            (PetStatus, Bst) => 8,
+            (PetTpBonus, Bst) => 40,
+            (AvatarPhysicalAtkDef, Smn) => 106,
+            (AvatarPhysicalAccEva, Smn) => 70,
+            (AvatarMagicalAtkDef, Smn) => 36,
+            (AvatarMagicalAccEva, Smn) => 70,
+            (AvatarBlessingEffect, Smn) => 1,
+            (AutomatonPhysicalAtkDef, Pup) => 106,
+            (AutomatonPhysicalAccEva, Pup) => 70,
+            (AutomatonMagicalAtkDef, Pup) => 36,
+            (AutomatonMagicalAccEva, Pup) => 70,
+            (AutomatonElementBoost, Pup) => 4,
+            (WyvernBoostEffect, Drg) => 2,
+            (WyvernPhysicalAccEva, Drg) => 70,
+            (WyvernMagicalAccEva, Drg) => 70,
+            (BreathRecast, Drg) => 10,
 
             _ => 0,
         }

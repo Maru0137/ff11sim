@@ -390,15 +390,80 @@ export async function updateEquipEditStatus(deps) {
         setText('statRewsPdl', pctOrDash(equip.physical_damage_limit_pct));
         setText('statRewsTs', numOrDash(equip.true_shot));
 
-        // ----- Tab 9: 魔法 -----
-        setText('statMgMatk', numOrDash(magicAttackTotal));
-        setText('statMgMacc', numOrDash(magicAccuracyTotal));
-        setText('statMgMeva', numOrDash(magicEvasionTotal));
-        setText('statMgMdmg', numOrDash(magicDamageTotal));
-        setText('statMgInt', totalStats.int || '-');
-        setText('statMgMnd', totalStats.mnd || '-');
-        setText('statMgChr', totalStats.chr || '-');
-        setText('statMgMp', totalStats.mp || '-');
+        // ----- Tab 9-19: 魔法 (11 種別) -----
+        // 各種別ごとに: 該当スキル + 魔攻/魔命/魔回避/魔法ダメ + INT/MND/CHR/MP
+        // 呪歌 (歌唱/弦楽器/管楽器), 風水 (風水/風水鈴) は複数スキルを持つ。
+        const effSkillsForMagic = totalStats.effective_skills || {};
+        const magicTabs = [
+            { prefix: 'Divine',     skills: ['Divine'] },
+            { prefix: 'Healing',    skills: ['Healing'] },
+            { prefix: 'Enhancing',  skills: ['Enhancing'] },
+            { prefix: 'Enfeebling', skills: ['Enfeebling'] },
+            { prefix: 'Elemental',  skills: ['Elemental'] },
+            { prefix: 'Dark',       skills: ['Dark'] },
+            { prefix: 'Summoning',  skills: ['Summoning'] },
+            { prefix: 'Ninjutsu',   skills: ['Ninjutsu'] },
+            // 呪歌 = 歌唱 + 弦楽器 + 管楽器 (3 スキル別表示)
+            { prefix: 'Song',       skills: [
+                ['SongSingingSkill', 'Singing'],
+                ['SongStringSkill',  'StringInstrument'],
+                ['SongWindSkill',    'WindInstrument'],
+            ]},
+            { prefix: 'Blue',       skills: ['BlueMagic'] },
+            // 風水 = 風水 + 風水鈴 (2 スキル別表示)
+            { prefix: 'Geomancy',   skills: [
+                ['GeomancySkill',         'Geomancy'],
+                ['GeomancyHandbellSkill', 'Handbell'],
+            ]},
+        ];
+        // タブの可視性: メイン or サポートジョブが該当スキルを習得 (effective_skill > 0) しているもののみ表示
+        const skillKeysOf = (skills) => skills.map(s => typeof s === 'string' ? s : s[1]);
+        const isTabAvailable = (skills) =>
+            skillKeysOf(skills).some(k => (effSkillsForMagic[k] || 0) > 0);
+        let firstVisibleTab = null;
+        magicTabs.forEach(({ prefix, skills }) => {
+            // スキル値の表示 (単一スキル → "<prefix>Skill"、複数 → 各 ID 指定)
+            if (skills.length === 1 && typeof skills[0] === 'string') {
+                setText(`statMg${prefix}Skill`, numOrDash(effSkillsForMagic[skills[0]]));
+            } else {
+                skills.forEach(([idSuffix, key]) => {
+                    setText(`statMg${prefix}${idSuffix.replace(prefix, '')}`,
+                            numOrDash(effSkillsForMagic[key]));
+                });
+            }
+            setText(`statMg${prefix}Matk`, numOrDash(magicAttackTotal));
+            setText(`statMg${prefix}Macc`, numOrDash(magicAccuracyTotal));
+            setText(`statMg${prefix}Meva`, numOrDash(magicEvasionTotal));
+            setText(`statMg${prefix}Mdmg`, numOrDash(magicDamageTotal));
+            setText(`statMg${prefix}Int`, totalStats.int || '-');
+            setText(`statMg${prefix}Mnd`, totalStats.mnd || '-');
+            setText(`statMg${prefix}Chr`, totalStats.chr || '-');
+            setText(`statMg${prefix}Mp`,  totalStats.mp  || '-');
+
+            // ジョブが該当魔法スキルを持たない場合はタブ自体を非表示
+            const subtabId = `subtab-magic-${prefix.toLowerCase()}`;
+            const btn = document.querySelector(`.status-subtab-btn[data-subtab="${subtabId}"]`);
+            const content = document.getElementById(subtabId);
+            const visible = isTabAvailable(skills);
+            if (btn) btn.style.display = visible ? '' : 'none';
+            if (content && !visible) content.classList.remove('active');
+            if (visible && firstVisibleTab === null) firstVisibleTab = subtabId;
+        });
+        // 非表示タブが現在 active だった場合、可視の魔法タブ → 既定 (待機/回避/防御) へフォールバック
+        const activeBtn = document.querySelector('.status-subtab-btn.active');
+        if (activeBtn) {
+            const activeId = activeBtn.dataset.subtab;
+            if (activeId && activeId.startsWith('subtab-magic-') &&
+                activeBtn.style.display === 'none') {
+                const fallback = firstVisibleTab || 'subtab-defense';
+                document.querySelectorAll('.status-subtab-btn').forEach(b => b.classList.remove('active'));
+                document.querySelectorAll('.status-subtab-content').forEach(c => c.classList.remove('active'));
+                const newBtn = document.querySelector(`.status-subtab-btn[data-subtab="${fallback}"]`);
+                const newContent = document.getElementById(fallback);
+                if (newBtn) newBtn.classList.add('active');
+                if (newContent) newContent.classList.add('active');
+            }
+        }
 
         // 有効スキル値の表示（値が 0 のスキルは非表示）
         const skillsContainer = document.getElementById('equipEffectiveSkills');
@@ -473,9 +538,21 @@ export function clearAllEquipStats() {
         'statRewsMatk', 'statRewsMacc', 'statRewsMdmg', 'statRewsAff', 'statRewsMcrit2',
         'statRewsStp', 'statRewsSb', 'statRewsSb2', 'statRewsCrit', 'statRewsCritDmg',
         'statRewsWsdmg', 'statRewsTpb', 'statRewsScb', 'statRewsPdl', 'statRewsTs',
-        // Tab 9: 魔法
-        'statMgMatk', 'statMgMacc', 'statMgMeva', 'statMgMdmg',
-        'statMgInt', 'statMgMnd', 'statMgChr', 'statMgMp',
+        // Tab 9-19: 魔法 (11 種別)
+        ...['Divine', 'Healing', 'Enhancing', 'Enfeebling', 'Elemental', 'Dark',
+            'Summoning', 'Ninjutsu', 'Blue'].flatMap(p => [
+            `statMg${p}Skill`,
+            `statMg${p}Matk`, `statMg${p}Macc`, `statMg${p}Meva`, `statMg${p}Mdmg`,
+            `statMg${p}Int`, `statMg${p}Mnd`, `statMg${p}Chr`, `statMg${p}Mp`,
+        ]),
+        // 呪歌 (3 スキル別表示)
+        'statMgSongSingingSkill', 'statMgSongStringSkill', 'statMgSongWindSkill',
+        'statMgSongMatk', 'statMgSongMacc', 'statMgSongMeva', 'statMgSongMdmg',
+        'statMgSongInt', 'statMgSongMnd', 'statMgSongChr', 'statMgSongMp',
+        // 風水 (2 スキル別表示)
+        'statMgGeomancySkill', 'statMgGeomancyHandbellSkill',
+        'statMgGeomancyMatk', 'statMgGeomancyMacc', 'statMgGeomancyMeva', 'statMgGeomancyMdmg',
+        'statMgGeomancyInt', 'statMgGeomancyMnd', 'statMgGeomancyChr', 'statMgGeomancyMp',
     ];
     tabIds.forEach(id => {
         const elem = document.getElementById(id);

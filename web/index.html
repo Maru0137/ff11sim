@@ -1443,7 +1443,17 @@
                     <button class="status-subtab-btn" data-subtab="subtab-elemental-ws" type="button">属性WS</button>
                     <button class="status-subtab-btn" data-subtab="subtab-melee-elemental-ws" type="button">近接属性物理WS</button>
                     <button class="status-subtab-btn" data-subtab="subtab-ranged-elemental-ws" type="button">遠隔属性物理WS</button>
-                    <button class="status-subtab-btn" data-subtab="subtab-magic" type="button">魔法</button>
+                    <button class="status-subtab-btn" data-subtab="subtab-magic-divine" type="button">神聖魔法</button>
+                    <button class="status-subtab-btn" data-subtab="subtab-magic-healing" type="button">回復魔法</button>
+                    <button class="status-subtab-btn" data-subtab="subtab-magic-enhancing" type="button">強化魔法</button>
+                    <button class="status-subtab-btn" data-subtab="subtab-magic-enfeebling" type="button">弱体魔法</button>
+                    <button class="status-subtab-btn" data-subtab="subtab-magic-elemental" type="button">精霊魔法</button>
+                    <button class="status-subtab-btn" data-subtab="subtab-magic-dark" type="button">暗黒魔法</button>
+                    <button class="status-subtab-btn" data-subtab="subtab-magic-summoning" type="button">召喚魔法</button>
+                    <button class="status-subtab-btn" data-subtab="subtab-magic-ninjutsu" type="button">忍術</button>
+                    <button class="status-subtab-btn" data-subtab="subtab-magic-song" type="button">呪歌</button>
+                    <button class="status-subtab-btn" data-subtab="subtab-magic-blue" type="button">青魔法</button>
+                    <button class="status-subtab-btn" data-subtab="subtab-magic-geomancy" type="button">風水魔法</button>
                 </div>
 
                 <!-- 1. 待機/回避/防御 -->
@@ -1793,24 +1803,268 @@
                     </table>
                 </div>
 
-                <!-- 9. 魔法 -->
-                <div id="subtab-magic" class="status-subtab-content">
+                <!-- 9. 神聖魔法 -->
+                <div id="subtab-magic-divine" class="status-subtab-content">
                     <table class="status-table">
-                        <thead><tr><th>魔攻</th><th>魔命</th><th>魔回避</th><th>魔法ダメ</th></tr></thead>
+                        <thead><tr><th>神聖魔法スキル</th><th>魔攻</th><th>魔命</th><th>魔回避</th><th>魔法ダメ</th></tr></thead>
                         <tbody><tr>
-                            <td class="equip-val" id="statMgMatk">-</td>
-                            <td class="equip-val" id="statMgMacc">-</td>
-                            <td class="equip-val" id="statMgMeva">-</td>
-                            <td class="equip-val" id="statMgMdmg">-</td>
+                            <td class="equip-val" id="statMgDivineSkill">-</td>
+                            <td class="equip-val" id="statMgDivineMatk">-</td>
+                            <td class="equip-val" id="statMgDivineMacc">-</td>
+                            <td class="equip-val" id="statMgDivineMeva">-</td>
+                            <td class="equip-val" id="statMgDivineMdmg">-</td>
                         </tr></tbody>
                     </table>
                     <table class="status-table">
                         <thead><tr><th>INT</th><th>MND</th><th>CHR</th><th>MP</th></tr></thead>
                         <tbody><tr>
-                            <td class="equip-val" id="statMgInt">-</td>
-                            <td class="equip-val" id="statMgMnd">-</td>
-                            <td class="equip-val" id="statMgChr">-</td>
-                            <td class="equip-val" id="statMgMp">-</td>
+                            <td class="equip-val" id="statMgDivineInt">-</td>
+                            <td class="equip-val" id="statMgDivineMnd">-</td>
+                            <td class="equip-val" id="statMgDivineChr">-</td>
+                            <td class="equip-val" id="statMgDivineMp">-</td>
+                        </tr></tbody>
+                    </table>
+                </div>
+
+                <!-- 10. 回復魔法 -->
+                <div id="subtab-magic-healing" class="status-subtab-content">
+                    <table class="status-table">
+                        <thead><tr><th>回復魔法スキル</th><th>魔攻</th><th>魔命</th><th>魔回避</th><th>魔法ダメ</th></tr></thead>
+                        <tbody><tr>
+                            <td class="equip-val" id="statMgHealingSkill">-</td>
+                            <td class="equip-val" id="statMgHealingMatk">-</td>
+                            <td class="equip-val" id="statMgHealingMacc">-</td>
+                            <td class="equip-val" id="statMgHealingMeva">-</td>
+                            <td class="equip-val" id="statMgHealingMdmg">-</td>
+                        </tr></tbody>
+                    </table>
+                    <table class="status-table">
+                        <thead><tr><th>INT</th><th>MND</th><th>CHR</th><th>MP</th></tr></thead>
+                        <tbody><tr>
+                            <td class="equip-val" id="statMgHealingInt">-</td>
+                            <td class="equip-val" id="statMgHealingMnd">-</td>
+                            <td class="equip-val" id="statMgHealingChr">-</td>
+                            <td class="equip-val" id="statMgHealingMp">-</td>
+                        </tr></tbody>
+                    </table>
+                </div>
+
+                <!-- 11. 強化魔法 -->
+                <div id="subtab-magic-enhancing" class="status-subtab-content">
+                    <table class="status-table">
+                        <thead><tr><th>強化魔法スキル</th><th>魔攻</th><th>魔命</th><th>魔回避</th><th>魔法ダメ</th></tr></thead>
+                        <tbody><tr>
+                            <td class="equip-val" id="statMgEnhancingSkill">-</td>
+                            <td class="equip-val" id="statMgEnhancingMatk">-</td>
+                            <td class="equip-val" id="statMgEnhancingMacc">-</td>
+                            <td class="equip-val" id="statMgEnhancingMeva">-</td>
+                            <td class="equip-val" id="statMgEnhancingMdmg">-</td>
+                        </tr></tbody>
+                    </table>
+                    <table class="status-table">
+                        <thead><tr><th>INT</th><th>MND</th><th>CHR</th><th>MP</th></tr></thead>
+                        <tbody><tr>
+                            <td class="equip-val" id="statMgEnhancingInt">-</td>
+                            <td class="equip-val" id="statMgEnhancingMnd">-</td>
+                            <td class="equip-val" id="statMgEnhancingChr">-</td>
+                            <td class="equip-val" id="statMgEnhancingMp">-</td>
+                        </tr></tbody>
+                    </table>
+                </div>
+
+                <!-- 12. 弱体魔法 -->
+                <div id="subtab-magic-enfeebling" class="status-subtab-content">
+                    <table class="status-table">
+                        <thead><tr><th>弱体魔法スキル</th><th>魔攻</th><th>魔命</th><th>魔回避</th><th>魔法ダメ</th></tr></thead>
+                        <tbody><tr>
+                            <td class="equip-val" id="statMgEnfeeblingSkill">-</td>
+                            <td class="equip-val" id="statMgEnfeeblingMatk">-</td>
+                            <td class="equip-val" id="statMgEnfeeblingMacc">-</td>
+                            <td class="equip-val" id="statMgEnfeeblingMeva">-</td>
+                            <td class="equip-val" id="statMgEnfeeblingMdmg">-</td>
+                        </tr></tbody>
+                    </table>
+                    <table class="status-table">
+                        <thead><tr><th>INT</th><th>MND</th><th>CHR</th><th>MP</th></tr></thead>
+                        <tbody><tr>
+                            <td class="equip-val" id="statMgEnfeeblingInt">-</td>
+                            <td class="equip-val" id="statMgEnfeeblingMnd">-</td>
+                            <td class="equip-val" id="statMgEnfeeblingChr">-</td>
+                            <td class="equip-val" id="statMgEnfeeblingMp">-</td>
+                        </tr></tbody>
+                    </table>
+                </div>
+
+                <!-- 13. 精霊魔法 -->
+                <div id="subtab-magic-elemental" class="status-subtab-content">
+                    <table class="status-table">
+                        <thead><tr><th>精霊魔法スキル</th><th>魔攻</th><th>魔命</th><th>魔回避</th><th>魔法ダメ</th></tr></thead>
+                        <tbody><tr>
+                            <td class="equip-val" id="statMgElementalSkill">-</td>
+                            <td class="equip-val" id="statMgElementalMatk">-</td>
+                            <td class="equip-val" id="statMgElementalMacc">-</td>
+                            <td class="equip-val" id="statMgElementalMeva">-</td>
+                            <td class="equip-val" id="statMgElementalMdmg">-</td>
+                        </tr></tbody>
+                    </table>
+                    <table class="status-table">
+                        <thead><tr><th>INT</th><th>MND</th><th>CHR</th><th>MP</th></tr></thead>
+                        <tbody><tr>
+                            <td class="equip-val" id="statMgElementalInt">-</td>
+                            <td class="equip-val" id="statMgElementalMnd">-</td>
+                            <td class="equip-val" id="statMgElementalChr">-</td>
+                            <td class="equip-val" id="statMgElementalMp">-</td>
+                        </tr></tbody>
+                    </table>
+                </div>
+
+                <!-- 14. 暗黒魔法 -->
+                <div id="subtab-magic-dark" class="status-subtab-content">
+                    <table class="status-table">
+                        <thead><tr><th>暗黒魔法スキル</th><th>魔攻</th><th>魔命</th><th>魔回避</th><th>魔法ダメ</th></tr></thead>
+                        <tbody><tr>
+                            <td class="equip-val" id="statMgDarkSkill">-</td>
+                            <td class="equip-val" id="statMgDarkMatk">-</td>
+                            <td class="equip-val" id="statMgDarkMacc">-</td>
+                            <td class="equip-val" id="statMgDarkMeva">-</td>
+                            <td class="equip-val" id="statMgDarkMdmg">-</td>
+                        </tr></tbody>
+                    </table>
+                    <table class="status-table">
+                        <thead><tr><th>INT</th><th>MND</th><th>CHR</th><th>MP</th></tr></thead>
+                        <tbody><tr>
+                            <td class="equip-val" id="statMgDarkInt">-</td>
+                            <td class="equip-val" id="statMgDarkMnd">-</td>
+                            <td class="equip-val" id="statMgDarkChr">-</td>
+                            <td class="equip-val" id="statMgDarkMp">-</td>
+                        </tr></tbody>
+                    </table>
+                </div>
+
+                <!-- 15. 召喚魔法 -->
+                <div id="subtab-magic-summoning" class="status-subtab-content">
+                    <table class="status-table">
+                        <thead><tr><th>召喚魔法スキル</th><th>魔攻</th><th>魔命</th><th>魔回避</th><th>魔法ダメ</th></tr></thead>
+                        <tbody><tr>
+                            <td class="equip-val" id="statMgSummoningSkill">-</td>
+                            <td class="equip-val" id="statMgSummoningMatk">-</td>
+                            <td class="equip-val" id="statMgSummoningMacc">-</td>
+                            <td class="equip-val" id="statMgSummoningMeva">-</td>
+                            <td class="equip-val" id="statMgSummoningMdmg">-</td>
+                        </tr></tbody>
+                    </table>
+                    <table class="status-table">
+                        <thead><tr><th>INT</th><th>MND</th><th>CHR</th><th>MP</th></tr></thead>
+                        <tbody><tr>
+                            <td class="equip-val" id="statMgSummoningInt">-</td>
+                            <td class="equip-val" id="statMgSummoningMnd">-</td>
+                            <td class="equip-val" id="statMgSummoningChr">-</td>
+                            <td class="equip-val" id="statMgSummoningMp">-</td>
+                        </tr></tbody>
+                    </table>
+                </div>
+
+                <!-- 16. 忍術 -->
+                <div id="subtab-magic-ninjutsu" class="status-subtab-content">
+                    <table class="status-table">
+                        <thead><tr><th>忍術スキル</th><th>魔攻</th><th>魔命</th><th>魔回避</th><th>魔法ダメ</th></tr></thead>
+                        <tbody><tr>
+                            <td class="equip-val" id="statMgNinjutsuSkill">-</td>
+                            <td class="equip-val" id="statMgNinjutsuMatk">-</td>
+                            <td class="equip-val" id="statMgNinjutsuMacc">-</td>
+                            <td class="equip-val" id="statMgNinjutsuMeva">-</td>
+                            <td class="equip-val" id="statMgNinjutsuMdmg">-</td>
+                        </tr></tbody>
+                    </table>
+                    <table class="status-table">
+                        <thead><tr><th>INT</th><th>MND</th><th>CHR</th><th>MP</th></tr></thead>
+                        <tbody><tr>
+                            <td class="equip-val" id="statMgNinjutsuInt">-</td>
+                            <td class="equip-val" id="statMgNinjutsuMnd">-</td>
+                            <td class="equip-val" id="statMgNinjutsuChr">-</td>
+                            <td class="equip-val" id="statMgNinjutsuMp">-</td>
+                        </tr></tbody>
+                    </table>
+                </div>
+
+                <!-- 17. 呪歌 -->
+                <div id="subtab-magic-song" class="status-subtab-content">
+                    <table class="status-table">
+                        <thead><tr><th>歌唱スキル</th><th>弦楽器スキル</th><th>管楽器スキル</th></tr></thead>
+                        <tbody><tr>
+                            <td class="equip-val" id="statMgSongSingingSkill">-</td>
+                            <td class="equip-val" id="statMgSongStringSkill">-</td>
+                            <td class="equip-val" id="statMgSongWindSkill">-</td>
+                        </tr></tbody>
+                    </table>
+                    <table class="status-table">
+                        <thead><tr><th>魔攻</th><th>魔命</th><th>魔回避</th><th>魔法ダメ</th></tr></thead>
+                        <tbody><tr>
+                            <td class="equip-val" id="statMgSongMatk">-</td>
+                            <td class="equip-val" id="statMgSongMacc">-</td>
+                            <td class="equip-val" id="statMgSongMeva">-</td>
+                            <td class="equip-val" id="statMgSongMdmg">-</td>
+                        </tr></tbody>
+                    </table>
+                    <table class="status-table">
+                        <thead><tr><th>INT</th><th>MND</th><th>CHR</th><th>MP</th></tr></thead>
+                        <tbody><tr>
+                            <td class="equip-val" id="statMgSongInt">-</td>
+                            <td class="equip-val" id="statMgSongMnd">-</td>
+                            <td class="equip-val" id="statMgSongChr">-</td>
+                            <td class="equip-val" id="statMgSongMp">-</td>
+                        </tr></tbody>
+                    </table>
+                </div>
+
+                <!-- 18. 青魔法 -->
+                <div id="subtab-magic-blue" class="status-subtab-content">
+                    <table class="status-table">
+                        <thead><tr><th>青魔法スキル</th><th>魔攻</th><th>魔命</th><th>魔回避</th><th>魔法ダメ</th></tr></thead>
+                        <tbody><tr>
+                            <td class="equip-val" id="statMgBlueSkill">-</td>
+                            <td class="equip-val" id="statMgBlueMatk">-</td>
+                            <td class="equip-val" id="statMgBlueMacc">-</td>
+                            <td class="equip-val" id="statMgBlueMeva">-</td>
+                            <td class="equip-val" id="statMgBlueMdmg">-</td>
+                        </tr></tbody>
+                    </table>
+                    <table class="status-table">
+                        <thead><tr><th>INT</th><th>MND</th><th>CHR</th><th>MP</th></tr></thead>
+                        <tbody><tr>
+                            <td class="equip-val" id="statMgBlueInt">-</td>
+                            <td class="equip-val" id="statMgBlueMnd">-</td>
+                            <td class="equip-val" id="statMgBlueChr">-</td>
+                            <td class="equip-val" id="statMgBlueMp">-</td>
+                        </tr></tbody>
+                    </table>
+                </div>
+
+                <!-- 19. 風水魔法 -->
+                <div id="subtab-magic-geomancy" class="status-subtab-content">
+                    <table class="status-table">
+                        <thead><tr><th>風水魔法スキル</th><th>風水鈴スキル</th></tr></thead>
+                        <tbody><tr>
+                            <td class="equip-val" id="statMgGeomancySkill">-</td>
+                            <td class="equip-val" id="statMgGeomancyHandbellSkill">-</td>
+                        </tr></tbody>
+                    </table>
+                    <table class="status-table">
+                        <thead><tr><th>魔攻</th><th>魔命</th><th>魔回避</th><th>魔法ダメ</th></tr></thead>
+                        <tbody><tr>
+                            <td class="equip-val" id="statMgGeomancyMatk">-</td>
+                            <td class="equip-val" id="statMgGeomancyMacc">-</td>
+                            <td class="equip-val" id="statMgGeomancyMeva">-</td>
+                            <td class="equip-val" id="statMgGeomancyMdmg">-</td>
+                        </tr></tbody>
+                    </table>
+                    <table class="status-table">
+                        <thead><tr><th>INT</th><th>MND</th><th>CHR</th><th>MP</th></tr></thead>
+                        <tbody><tr>
+                            <td class="equip-val" id="statMgGeomancyInt">-</td>
+                            <td class="equip-val" id="statMgGeomancyMnd">-</td>
+                            <td class="equip-val" id="statMgGeomancyChr">-</td>
+                            <td class="equip-val" id="statMgGeomancyMp">-</td>
                         </tr></tbody>
                     </table>
                 </div>

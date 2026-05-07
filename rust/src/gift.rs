@@ -47,6 +47,12 @@ pub enum Gift {
     CounterRate,
     /// カウンターダメージアップ (カウンター時のダメージ %)
     CounterDamage,
+    /// ケアル回復量アップ (ケアル系の絶対値加算)
+    CureAmount,
+    /// 回復魔法詠唱時間短縮 (% 減算、回復魔法のみ)
+    HealingMagicCastTime,
+    /// リジェネ回復量アップ
+    RegenAmount,
     /// BLU 専用: ジョブ特性効果アップ (rank +N)
     JobTraitEffectUp,
 
@@ -57,6 +63,10 @@ pub enum Gift {
     // ============ スキル系 ============
     /// ガードスキルアップ (絶対値の skill 加算)
     GuardSkill,
+    /// 回復魔法スキルアップ
+    HealingMagicSkill,
+    /// 神聖魔法スキルアップ
+    DivineMagicSkill,
 }
 
 pub const ALL_GIFTS: &[Gift] = &[
@@ -80,10 +90,15 @@ pub const ALL_GIFTS: &[Gift] = &[
     Gift::MartialArtsEffect,
     Gift::CounterRate,
     Gift::CounterDamage,
+    Gift::CureAmount,
+    Gift::HealingMagicCastTime,
+    Gift::RegenAmount,
     Gift::JobTraitEffectUp,
     Gift::CriticalHitRate,
     Gift::WeaponSkillDamage,
     Gift::GuardSkill,
+    Gift::HealingMagicSkill,
+    Gift::DivineMagicSkill,
 ];
 
 impl Job {
@@ -327,6 +342,26 @@ fn gift_tiers_table(job: Job, gift: Gift) -> &'static [(i32, i32)] {
         // ============ GuardSkill (Mnk のみ) ============
         // 80/405/980/1805 で +5/+8/+10/+13 (累積 +5/+13/+23/+36)
         (GuardSkill, Mnk) => &[(80, 5), (405, 13), (980, 23), (1805, 36)],
+
+        // ============ CureAmount (ケアル回復量アップ, Whm のみ) ============
+        // 125/450/1050/1900 で +5/+5/+6/+7 (累積 +5/+10/+16/+23)
+        (CureAmount, Whm) => &[(125, 5), (450, 10), (1050, 16), (1900, 23)],
+
+        // ============ HealingMagicCastTime (回復魔法詠唱時間短縮, Whm のみ) ============
+        // 150/500/1125/2000 で -2/-2/-2/-2% (累積 -2/-4/-6/-8)
+        (HealingMagicCastTime, Whm) => &[(150, 2), (500, 4), (1125, 6), (2000, 8)],
+
+        // ============ RegenAmount (リジェネ回復量アップ, Whm のみ) ============
+        // 550 で +5 (1 ティア)
+        (RegenAmount, Whm) => &[(550, 5)],
+
+        // ============ HealingMagicSkill (回復魔法スキル, Whm のみ) ============
+        // 60/360/910/1710 で +5/+8/+10/+13 (累積 +5/+13/+23/+36)
+        (HealingMagicSkill, Whm) => &[(60, 5), (360, 13), (910, 23), (1710, 36)],
+
+        // ============ DivineMagicSkill (神聖魔法スキル, Whm のみ) ============
+        // 80/405/980/1805 で +5/+8/+10/+13 (累積 +5/+13/+23/+36)
+        (DivineMagicSkill, Whm) => &[(80, 5), (405, 13), (980, 23), (1805, 36)],
 
         // ============ JobTraitEffectUp (BLU) ============
         // 100/1200 で +1/+2 rank
@@ -620,6 +655,13 @@ mod tests {
             (CounterRate, Mnk) => 10,
             (CounterDamage, Mnk) => 5,
             (GuardSkill, Mnk) => 36,
+
+            // ========= WHM 専用ギフト =========
+            (CureAmount, Whm) => 23,
+            (HealingMagicCastTime, Whm) => 8,
+            (RegenAmount, Whm) => 5,
+            (HealingMagicSkill, Whm) => 36,
+            (DivineMagicSkill, Whm) => 36,
 
             // ========= BLU JobTraitEffectUp =========
             (JobTraitEffectUp, Blu) => 2,

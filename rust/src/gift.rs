@@ -53,6 +53,12 @@ pub enum Gift {
     HealingMagicCastTime,
     /// リジェネ回復量アップ
     RegenAmount,
+    /// マジックバーストダメージアップ (MB ダメージ %)
+    MagicBurstDamage,
+    /// 魔法ダメージアップ (魔法ダメージ絶対値加算)
+    MagicDamage,
+    /// エレメントセレリティ効果アップ (精霊魔法詠唱時間短縮 % 追加)
+    ElementalCelerityEffect,
     /// BLU 専用: ジョブ特性効果アップ (rank +N)
     JobTraitEffectUp,
 
@@ -67,6 +73,10 @@ pub enum Gift {
     HealingMagicSkill,
     /// 神聖魔法スキルアップ
     DivineMagicSkill,
+    /// 精霊魔法スキルアップ
+    ElementalMagicSkill,
+    /// 暗黒魔法スキルアップ
+    DarkMagicSkill,
 }
 
 pub const ALL_GIFTS: &[Gift] = &[
@@ -93,12 +103,17 @@ pub const ALL_GIFTS: &[Gift] = &[
     Gift::CureAmount,
     Gift::HealingMagicCastTime,
     Gift::RegenAmount,
+    Gift::MagicBurstDamage,
+    Gift::MagicDamage,
+    Gift::ElementalCelerityEffect,
     Gift::JobTraitEffectUp,
     Gift::CriticalHitRate,
     Gift::WeaponSkillDamage,
     Gift::GuardSkill,
     Gift::HealingMagicSkill,
     Gift::DivineMagicSkill,
+    Gift::ElementalMagicSkill,
+    Gift::DarkMagicSkill,
 ];
 
 impl Job {
@@ -362,6 +377,26 @@ fn gift_tiers_table(job: Job, gift: Gift) -> &'static [(i32, i32)] {
         // ============ DivineMagicSkill (神聖魔法スキル, Whm のみ) ============
         // 80/405/980/1805 で +5/+8/+10/+13 (累積 +5/+13/+23/+36)
         (DivineMagicSkill, Whm) => &[(80, 5), (405, 13), (980, 23), (1805, 36)],
+
+        // ============ MagicBurstDamage (マジックバーストダメージ, Blm のみ) ============
+        // 80/405/980/1805 で +5/+5/+6/+7% (累積 +5/+10/+16/+23)
+        (MagicBurstDamage, Blm) => &[(80, 5), (405, 10), (980, 16), (1805, 23)],
+
+        // ============ MagicDamage (魔法ダメージ, Blm のみ) ============
+        // 125/450/1050/1900 で +5/+5/+6/+7 (累積 +5/+10/+16/+23)
+        (MagicDamage, Blm) => &[(125, 5), (450, 10), (1050, 16), (1900, 23)],
+
+        // ============ ElementalCelerityEffect (Blm のみ) ============
+        // 150/500/1125/2000 で -2/-2/-2/-2% (累積 -2/-4/-6/-8)
+        (ElementalCelerityEffect, Blm) => &[(150, 2), (500, 4), (1125, 6), (2000, 8)],
+
+        // ============ ElementalMagicSkill (精霊魔法スキル, Blm のみ) ============
+        // 45/320/845/1620 で +5/+8/+10/+13 (累積 +5/+13/+23/+36)
+        (ElementalMagicSkill, Blm) => &[(45, 5), (320, 13), (845, 23), (1620, 36)],
+
+        // ============ DarkMagicSkill (暗黒魔法スキル, Blm のみ) ============
+        // 60/360/910/1710 で +5/+8/+10/+13 (累積 +5/+13/+23/+36)
+        (DarkMagicSkill, Blm) => &[(60, 5), (360, 13), (910, 23), (1710, 36)],
 
         // ============ JobTraitEffectUp (BLU) ============
         // 100/1200 で +1/+2 rank
@@ -662,6 +697,13 @@ mod tests {
             (RegenAmount, Whm) => 5,
             (HealingMagicSkill, Whm) => 36,
             (DivineMagicSkill, Whm) => 36,
+
+            // ========= BLM 専用ギフト =========
+            (MagicBurstDamage, Blm) => 23,
+            (MagicDamage, Blm) => 23,
+            (ElementalCelerityEffect, Blm) => 8,
+            (ElementalMagicSkill, Blm) => 36,
+            (DarkMagicSkill, Blm) => 36,
 
             // ========= BLU JobTraitEffectUp =========
             (JobTraitEffectUp, Blu) => 2,

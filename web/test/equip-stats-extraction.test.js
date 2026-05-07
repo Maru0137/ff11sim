@@ -138,6 +138,63 @@ console.log('\n=== 全魔法スキル一括加算 (Magic skills +N) ===');
     check('ホクスニトルク Sword (combat skills は未対応 → 0)', sb.Sword ?? 0, 0);
 }
 
+console.log('\n=== JA→EN 変換: 個別魔法スキル名の優先 (regression for #28) ===');
+{
+    // 「強化魔法スキル+N」「弱体魔法スキル+N」等の JA を convertAugmentJaToEn で
+    // EN 化する際、'魔法スキル' → 'Magic skills' の汎用パターンが先に発火して
+    // "Enhancing magic skill" を "強化Magic skills" に壊し、結果として 14 種すべての
+    // 魔法スキルに +N 加算される regression を防ぐ。
+    const fs = require('fs');
+    const path = require('path');
+    const constJs = fs.readFileSync(path.join(__dirname, '..', 'js', 'constants.js'), 'utf8');
+    const m = constJs.match(/AUGMENT_JA_TO_EN\s*=\s*(\[[\s\S]*?\n\]);/);
+    const AUG_JA_TO_EN = eval(m[1]);
+    const jaToEn = (text) => {
+        let out = text;
+        for (const [ja, en] of AUG_JA_TO_EN) out = out.split(ja).join(en);
+        return out;
+    };
+
+    // ゴストファイケープ (id=28621) custom: "弱体魔法スキル+10 強化魔法スキル+10 強化魔法効果時間+19%"
+    const cust = '弱体魔法スキル+10 強化魔法スキル+10 強化魔法効果時間+19%';
+    const en = jaToEn(cust);
+    const sb = extractSkillBonuses(en);
+    check('ゴストファイケープ custom Enhancing (+10)', sb.Enhancing ?? 0, 10);
+    check('ゴストファイケープ custom Enfeebling (+10)', sb.Enfeebling ?? 0, 10);
+    // 他の魔法スキルには加算されないこと (汎用 "Magic skills" として誤展開されない)
+    check('ゴストファイケープ custom Healing (誤展開されない)', sb.Healing ?? 0, 0);
+    check('ゴストファイケープ custom Geomancy (誤展開されない)', sb.Geomancy ?? 0, 0);
+    check('ゴストファイケープ custom BlueMagic (誤展開されない)', sb.BlueMagic ?? 0, 0);
+}
+{
+    // 個別魔法スキル名 9 種すべての JA→EN 変換を確認
+    const fs = require('fs');
+    const path = require('path');
+    const constJs = fs.readFileSync(path.join(__dirname, '..', 'js', 'constants.js'), 'utf8');
+    const mt = constJs.match(/AUGMENT_JA_TO_EN\s*=\s*(\[[\s\S]*?\n\]);/);
+    const AUG_JA_TO_EN = eval(mt[1]);
+    const jaToEn = (text) => {
+        let out = text;
+        for (const [ja, en] of AUG_JA_TO_EN) out = out.split(ja).join(en);
+        return out;
+    };
+    const cases = [
+        ['神聖魔法スキル+5', 'Divine'],
+        ['回復魔法スキル+5', 'Healing'],
+        ['強化魔法スキル+5', 'Enhancing'],
+        ['弱体魔法スキル+5', 'Enfeebling'],
+        ['精霊魔法スキル+5', 'Elemental'],
+        ['暗黒魔法スキル+5', 'Dark'],
+        ['召喚魔法スキル+5', 'Summoning'],
+        ['青魔法スキル+5', 'BlueMagic'],
+        ['風水魔法スキル+5', 'Geomancy'],
+    ];
+    for (const [ja, key] of cases) {
+        const sb = extractSkillBonuses(jaToEn(ja));
+        check(`JA→EN ${ja} → ${key} のみ +5`, sb[key] ?? 0, 5);
+    }
+}
+
 console.log('\n=== 既存挙動の維持 (回帰チェック) ===');
 {
     // ニビルナイフ (id=20600): 既存の単一ステ抽出が壊れないこと

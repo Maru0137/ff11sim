@@ -72,6 +72,22 @@ export const AUGMENT_JA_TO_EN = [
     ['モクシャII', '"Subtle Blow II"'],
     ['モクシャ', '"Subtle Blow"'],
     ['魔法ダメージ', 'Magic Damage'],
+    // 個別魔法スキル名 (「魔法スキル」より先に置換しないと「強化魔法スキル」→「強化Magic skills」になり
+    //                   汎用パターンで全 14 スキルに加算される regression が発生する)
+    ['神聖魔法スキル', 'Divine magic skill'],
+    ['回復魔法スキル', 'Healing magic skill'],
+    ['強化魔法スキル', 'Enhancing magic skill'],
+    ['弱体魔法スキル', 'Enfeebling magic skill'],
+    ['精霊魔法スキル', 'Elemental magic skill'],
+    ['暗黒魔法スキル', 'Dark magic skill'],
+    ['召喚魔法スキル', 'Summoning magic skill'],
+    ['青魔法スキル', 'Blue magic skill'],
+    ['風水魔法スキル', 'Geomancy skill'],
+    ['忍術スキル', 'Ninjutsu skill'],
+    ['歌唱スキル', 'Singing skill'],
+    ['弦楽器スキル', 'String instrument skill'],
+    ['管楽器スキル', 'Wind instrument skill'],
+    ['風水鈴スキル', 'Handbell skill'],
     // 全魔法スキル一括加算 (extractSkillBonuses で 14 種に展開される)
     ['魔法スキル', 'Magic skills'],
     ['被ダメージ', 'Damage taken'],

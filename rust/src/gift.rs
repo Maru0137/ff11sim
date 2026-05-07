@@ -112,7 +112,7 @@ pub enum Gift {
     /// 残心発動率アップ (Sam, %)
     ZanshinRate,
     /// 心眼効果アップ (Sam, よける回数 +N)
-    SeiganEffect,
+    ThirdEyeEffect,
     /// 八双・星眼効果アップ (Sam, 残心/カウンター確率の上限 +N%)
     HassoSeiganEffect,
     /// トレジャーハンター効果アップ (Thf, レベルが上がる確率 %)
@@ -123,7 +123,7 @@ pub enum Gift {
     ShieldMasteryEffect,
     /// C.リデュース効果アップ (Pld, 被クリダメージ % 軽減)
     CritReduceEffect,
-    /// プロテス効果アップ (Pld, 防御力 +N)
+    /// プロテス効果アップ (Pld, プロテス系防御力 +N)
     ProtesEffect,
     /// ドレッドスパイク効果アップ (Drk, 吸収量 +N)
     DreadSpikeEffect,
@@ -242,7 +242,7 @@ pub const ALL_GIFTS: &[Gift] = &[
     Gift::InquartataEffect,
     Gift::EnhanceMagicDurationOnSelf,
     Gift::ZanshinRate,
-    Gift::SeiganEffect,
+    Gift::ThirdEyeEffect,
     Gift::HassoSeiganEffect,
     Gift::TreasureHunterEffect,
     Gift::TreasureHunterMaxLevel,
@@ -676,7 +676,7 @@ fn gift_tiers_table(job: Job, gift: Gift) -> &'static [(i32, i32)] {
         (EnhanceMagicDurationOnSelf, Run) => &[(100, 10), (1200, 20)],
 
         (ZanshinRate, Sam) => &[(80, 2), (405, 4), (980, 7), (1805, 10)],
-        (SeiganEffect, Sam) => &[(550, 1)],
+        (ThirdEyeEffect, Sam) => &[(550, 1)],
         (HassoSeiganEffect, Sam) => &[(100, 5), (1200, 10)],
 
         // TreasureHunterEffect: TH レベルが上がる確率 +5%/+5%/+6%/+7% (累積 5/10/16/23)
@@ -1088,7 +1088,7 @@ mod tests {
             (InquartataEffect, Run) => 8,
             (EnhanceMagicDurationOnSelf, Run) => 20,
             (ZanshinRate, Sam) => 10,
-            (SeiganEffect, Sam) => 1,
+            (ThirdEyeEffect, Sam) => 1,
             (HassoSeiganEffect, Sam) => 10,
             (TreasureHunterEffect, Thf) => 23,
             (TreasureHunterMaxLevel, Thf) => 2,

@@ -83,6 +83,236 @@ pub struct StatusResult {
     pub rapid_shot_pct: i32,
     /// Fast Cast 総合値 (%) (装備 + ジョブ特性)
     pub fast_cast_pct: i32,
+    /// デッドエイム総合値 (% — 遠隔クリティカルダメージ加算、ジョブ特性のみ Rng)
+    pub dead_aim: i32,
+    /// フェンサー総合値 (ジョブ特性ランク値 + ギフト「フェンサー効果アップ」TPボーナス)
+    pub fencer: i32,
+    /// マーシャルアーツ総合値 (格闘攻撃間隔短縮、負値で保持)
+    /// = ジョブ特性 (Mnk/Pup) + ギフト「マーシャルアーツ効果アップ」
+    pub martial_arts: i32,
+    /// 二刀流総合値 (% — 攻撃間隔短縮率の magnitude、正値で保持)
+    /// = ジョブ特性 DualWield (Thf/Nin/Dnc) + ギフト「二刀流効果アップ」(Thf/Dnc)
+    pub dual_wield: i32,
+    /// 残心総合値 (% — ミス時再攻撃発動率)
+    /// = ジョブ特性 Zanshin (Sam) + ギフト「残心発動率アップ」(Sam)
+    pub zanshin: i32,
+    /// スマイト総合値 (両手武器装備時 ATK +N、ジョブ特性のみ)
+    pub smite: i32,
+    /// 打剣総合値 (% — 忍者の打剣発動率)
+    /// = ジョブ特性 Daken (Nin) + ギフト「打剣効果アップ」(Nin)
+    pub daken: i32,
+    /// シールドバリア総合値 (Pld 専用、プロテス系効果強化のバイナリ)
+    /// = ジョブ特性 ShieldBarrier (バイナリ 0/1) のみ
+    pub shield_barrier: i32,
+    /// プロテス効果総合値 (Pld 専用、防御力 +N)
+    /// = ギフト「プロテス効果アップ」(Pld 550 JP で +10) のみ
+    pub protes_effect: i32,
+    /// クリアマインド総合値 (ヒーリング時 MP 回復量 +N、ジョブ特性のみ)
+    pub clear_mind: i32,
+    /// コンサーブ MP 総合値 (% — 魔法詠唱時の MP 消費軽減発動率、ジョブ特性のみ)
+    pub conserve_mp: i32,
+    /// トランキルハート総合値 (回復魔法敵対心軽減、バイナリ 0/1、ジョブ特性のみ)
+    pub tranquil_heart: i32,
+    /// ディバインベニゾン総合値 (Whm 専用、バニシュ・バニシュガ系の効果アップランク、ジョブ特性のみ)
+    pub divine_benison: i32,
+    /// カーディナルチャント総合値 (Geo 専用、白魔法効果アップランク、ジョブ特性のみ)
+    pub cardinal_chant: i32,
+    /// ブラッドブーン総合値 (Smn 専用、% — 召喚魔法 MP 消費軽減発動率、ジョブ特性のみ)
+    pub blood_boon: i32,
+    /// ベロシティショット効果総合値 (Rng 専用、ベロシティショットの遠隔攻撃間隔短縮量を増す、ギフトのみ)
+    pub velocity_shot_effect: i32,
+    /// ストレイフ総合値 (Drg 専用、ジョブ特性のみ)
+    pub strafe: i32,
+    /// トゥルーショット総合値 (% — 遠隔攻撃時の威力アップ)
+    /// = ジョブ特性 TrueShot (Rng/Cor) + ギフト「トゥルーショット効果アップ」(Rng/Cor)
+    pub trueshot: i32,
+    /// 乱れ撃ち総合値 (Rng 専用、弾数 +N、ギフトのみ)
+    pub barrage: i32,
+    /// スナップショット総合値 (Cor 専用、遠隔攻撃の構えキャンセル % 短縮の magnitude、ギフトのみ)
+    pub snapshot: i32,
+    /// リサイクル総合値 (% — 矢弾消費せず遠隔攻撃の発動率)
+    /// = ジョブ特性 Recycle (Rng/Cor) + ギフト「矢弾消費量軽減」(Cor)
+    pub recycle: i32,
+    /// シールドマスタリー総合値 (盾防御発動時の TP ボーナス、ジョブ特性のみ War/Rdm/Pld)
+    pub shield_mastery: i32,
+    /// シールドマスタリー効果総合値 (Pld 専用、ギフト「シールドマスタリー効果アップ」のみ)
+    pub shield_mastery_effect: i32,
+    /// アサシン総合値 (Thf 専用、だまし討ち強化、バイナリ 0/1、ジョブ特性のみ)
+    pub assassin: i32,
+    /// 歌の詠唱時間総合値 (% 短縮、Brd 専用、ギフトのみ)
+    pub song_cast_time: i32,
+    /// 歌の効果時間総合値 (% 延長、Brd 専用、ギフトのみ)
+    pub song_effect_duration: i32,
+    /// 心眼効果アップ総合値 (Sam 専用、よける回数 +N、ギフトのみ)
+    pub third_eye_effect: i32,
+    /// タンデムヒット (Tandem Strike) 総合値 (Bst 専用、ペット連携時の命中/魔命+N、ジョブ特性のみ)
+    pub tandem_strike: i32,
+    /// タンデムモクシャ (Tandem Blow) 総合値 (Bst 専用、ペット連携時の与TP-%、ジョブ特性のみ)
+    pub tandem_blow: i32,
+    /// レジストウィルス総合値 (ジョブ特性のみ)
+    pub resist_virus: i32,
+    /// レジストペトリ総合値 (石化、ジョブ特性のみ)
+    pub resist_petrify: i32,
+    /// レジストグラビティ総合値 (重力、ジョブ特性のみ)
+    pub resist_gravity: i32,
+    /// レジストスリプル総合値 (睡眠、ジョブ特性のみ)
+    pub resist_sleep: i32,
+    /// レジストパライズ総合値 (麻痺、ジョブ特性のみ)
+    pub resist_paralyze: i32,
+    /// レジストスロウ総合値 (ジョブ特性のみ)
+    pub resist_slow: i32,
+    /// レジストサイレス総合値 (静寂、ジョブ特性のみ)
+    pub resist_silence: i32,
+    /// レジストポイズン総合値 (毒、ジョブ特性のみ)
+    pub resist_poison: i32,
+    /// レジストブライン総合値 (暗闇、ジョブ特性のみ)
+    pub resist_blind: i32,
+    /// レジストバインド総合値 (バインド、ジョブ特性のみ)
+    pub resist_bind: i32,
+    /// レジストアムネジア総合値 (アムネジア、ジョブ特性のみ)
+    pub resist_amnesia: i32,
+    /// アンデッドキラー総合値 (ジョブ特性のみ)
+    pub undead_killer: i32,
+    /// アルカナキラー総合値 (ジョブ特性のみ)
+    pub arcana_killer: i32,
+    /// デーモンキラー総合値 (ジョブ特性のみ)
+    pub demon_killer: i32,
+    /// ドラゴンキラー総合値 (ジョブ特性のみ)
+    pub dragon_killer: i32,
+    /// ヴァーミンキラー総合値 (ジョブ特性のみ)
+    pub vermin_killer: i32,
+    /// バードキラー総合値 (ジョブ特性のみ)
+    pub bird_killer: i32,
+    /// アモルフキラー総合値 (不定形、ジョブ特性のみ)
+    pub amorph_killer: i32,
+    /// リザードキラー総合値 (ジョブ特性のみ)
+    pub lizard_killer: i32,
+    /// アクアンキラー総合値 (水棲、ジョブ特性のみ)
+    pub aquan_killer: i32,
+    /// プラントイドキラー総合値 (植物、ジョブ特性のみ)
+    pub plantoid_killer: i32,
+    /// ビーストキラー総合値 (獣、ジョブ特性のみ)
+    pub beast_killer: i32,
+    /// アラートネス総合値 (バイナリ、ジョブ特性のみ)
+    pub alertness: i32,
+    /// ステルス総合値 (バイナリ 2 ランク、ジョブ特性のみ)
+    pub stealth: i32,
+    /// ギルファインダー総合値 (バイナリ 2 ランク、ジョブ特性のみ)
+    pub gilfinder: i32,
+    /// タクティカルパリー総合値 (受け流し時 TP +N、ジョブ特性のみ)
+    pub tactical_parry: i32,
+    /// タクティカルガード総合値 (ガード時 TP +N、ジョブ特性のみ)
+    pub tactical_guard: i32,
+    /// エクストリームガード総合値 (ガード時被ダメ -%、ジョブ特性のみ)
+    pub extreme_guard: i32,
+    /// デスパレートブロー総合値 (HP 低下時の攻撃間隔短縮、ジョブ特性のみ)
+    pub desperate_blows: i32,
+    /// スタルワートソウル総合値 (ウェポンスキル時 HP/MP 回復、ジョブ特性のみ)
+    pub stalwart_soul: i32,
+    /// テナシティ総合値 (状態異常時被ダメ軽減、ジョブ特性のみ)
+    pub tenacity: i32,
+    /// マックスダメージブースト総合値 (物理ダメ最大値+N、ジョブ特性のみ)
+    pub max_damage_boost: i32,
+    // ============ A: クリティカル系 ============
+    /// クリティカルヒットダメージ総合値 (% — 与クリダメ強化)
+    /// = ジョブ特性 CritIncrease + ギフト「C.インクリース効果アップ」
+    pub crit_increase: i32,
+    /// クリティカルダメージ軽減総合値 (% — 被クリダメ軽減)
+    /// = ジョブ特性 CritReduce + ギフト「C.リデュース効果アップ」(Pld)
+    pub crit_reduce: i32,
+    /// 直接クリティカル率総合値 (% — War 専用、ギフトのみ)
+    pub critical_hit_rate: i32,
+    // ============ B: 戦闘特性系 (合算済み以外) ============
+    /// ウェポンスキルダメージ総合値 (%)
+    /// = ジョブ特性 WeaponSkillDamage + ギフト「ウェポンスキルダメージアップ」(War/Drk/Nin)
+    pub weapon_skill_damage: i32,
+    /// カウンター総合値 (% — 反撃発動率)
+    /// = ジョブ特性 Counter + ギフト「カウンター効果アップ」(Mnk)
+    pub counter: i32,
+    /// カウンターダメージ総合値 (% — Mnk 専用、ギフトのみ)
+    pub counter_damage: i32,
+    // ============ C: 魔法系 ============
+    /// ケアル回復量総合値 (+N、ギフトのみ Whm/Pld)
+    pub cure_amount: i32,
+    /// 回復魔法詠唱時間総合値 (% 短縮、ギフトのみ Whm)
+    pub healing_magic_cast_time: i32,
+    /// リジェネ回復量総合値 (+N、ギフトのみ Whm)
+    pub regen_amount: i32,
+    /// マジックバーストダメージ総合値 (%)
+    /// = ジョブ特性 MagicBurstBonus + ギフト「マジックバーストダメージアップ」(Blm/Sch)
+    pub magic_burst_damage: i32,
+    /// 魔法ダメージ総合値 (+N)
+    /// = ジョブ特性 MagicAcumen + ギフト「魔法ダメージアップ」(Blm/Geo)
+    pub magic_damage: i32,
+    /// エレメンタルセレリティ総合値 (% — 精霊魔法詠唱短縮)
+    /// = ジョブ特性 ElementalCelerity + ギフト「エレメントセレリティ効果アップ」(Blm)
+    pub elemental_celerity: i32,
+    /// 魔法剣ダメージ総合値 (+N、Rdm 専用、ギフトのみ)
+    pub enspell_effect: i32,
+    /// 被強化魔法効果時間総合値 (% 延長、Run 専用、ギフトのみ)
+    pub enhance_magic_duration_on_self: i32,
+    /// 青魔法効果アップ総合値 (% — 青魔の物理魔法効果強化、Blu 専用、ギフトのみ)
+    pub blue_magic_effect: i32,
+    // ============ D: 狩・コ・盗・盾系 (合算済み以外) ============
+    /// コンサーブTP総合値 (%)
+    /// = ジョブ特性 ConserveTp + ギフト「コンサーブTP効果アップ」(Rng)
+    pub conserve_tp: i32,
+    /// クイックドロー再使用時間総合値 (-秒、Cor 専用、ギフトのみ)
+    pub quick_draw_recast: i32,
+    /// トレジャーハンター総合値 (TH ランク+確率合算)
+    /// = ジョブ特性 TreasureHunter + ギフト「トレジャーハンター効果アップ」(Thf)
+    pub treasure_hunter: i32,
+    /// トレジャーハンター上限総合値 (上限+N、Thf 専用、ギフトのみ)
+    pub treasure_hunter_max_level: i32,
+    /// ドレッドスパイク効果総合値 (+N、Drk 専用、ギフトのみ)
+    pub dread_spike_effect: i32,
+    /// インクァルタタ総合値 (% — 受け流し率)
+    /// = ジョブ特性 Inquartata + ギフト「インクァルタタ効果アップ」(Run)
+    pub inquartata: i32,
+    // ============ E: 侍・踊系 (合算済み以外) ============
+    /// 八双・星眼効果アップ総合値 (% — 残心/カウンター上限+%、Sam 専用、ギフトのみ)
+    pub hasso_seigan_effect: i32,
+    /// フィニシングムーブ最大値総合値 (+N、Dnc 専用、ギフトのみ)
+    pub finishing_move_count: i32,
+    // ============ F: ペット系 ============
+    /// ペット物理攻撃/防御アップ (Bst 専用、ギフトのみ)
+    pub pet_physical_atk_def: i32,
+    /// ペット物理命中/回避アップ (Bst 専用、ギフトのみ)
+    pub pet_physical_acc_eva: i32,
+    /// ペットステータスアップ (Bst 専用、ギフトのみ)
+    pub pet_status: i32,
+    /// ペットTPボーナス (Bst 専用、ギフトのみ)
+    pub pet_tp_bonus: i32,
+    /// 召喚獣物理攻撃/防御アップ (Smn 専用、ギフトのみ)
+    pub avatar_physical_atk_def: i32,
+    /// 召喚獣物理命中/回避アップ (Smn 専用、ギフトのみ)
+    pub avatar_physical_acc_eva: i32,
+    /// 召喚獣魔法攻撃/防御アップ (Smn 専用、ギフトのみ)
+    pub avatar_magical_atk_def: i32,
+    /// 召喚獣魔法命中/回避アップ (Smn 専用、ギフトのみ)
+    pub avatar_magical_acc_eva: i32,
+    /// 神獣の加護効果アップ (Smn 専用、ギフトのみ)
+    pub avatar_blessing_effect: i32,
+    /// オートマトン物理攻撃/防御アップ (Pup 専用、ギフトのみ)
+    pub automaton_physical_atk_def: i32,
+    /// オートマトン物理命中/回避アップ (Pup 専用、ギフトのみ)
+    pub automaton_physical_acc_eva: i32,
+    /// オートマトン魔法攻撃/防御アップ (Pup 専用、ギフトのみ)
+    pub automaton_magical_atk_def: i32,
+    /// オートマトン魔法命中/回避アップ (Pup 専用、ギフトのみ)
+    pub automaton_magical_acc_eva: i32,
+    /// オートマトン属性値アップ (Pup 専用、ギフトのみ)
+    pub automaton_element_boost: i32,
+    /// ワイバーンステータスアップ時の効果アップ (Drg 専用、ギフトのみ)
+    pub wyvern_boost_effect: i32,
+    /// ワイバーン物理命中/回避アップ (Drg 専用、ギフトのみ)
+    pub wyvern_physical_acc_eva: i32,
+    /// ワイバーン魔法命中/回避アップ (Drg 専用、ギフトのみ)
+    pub wyvern_magical_acc_eva: i32,
+    /// ブレス再使用時間短縮 (Drg 専用、ギフトのみ、-秒)
+    pub breath_recast: i32,
+    /// スタウトサーヴァント総合値 (Bst 専用、ペット被ダメ軽減、ジョブ特性のみ)
+    pub stout_servant: i32,
     pub total_jp_spent: i32,
     /// メインジョブ/サポートジョブで制限されたスキル有効値（キー: スキル名）
     pub effective_skills: BTreeMap<String, i32>,
@@ -347,6 +577,27 @@ fn chara_to_status_result(chara: &Chara) -> StatusResult {
     let subtle_blow_trait = chara.job_trait_total(JobTrait::SubtleBlow);
     let rapid_shot_trait = chara.job_trait_total(JobTrait::RapidShot);
     let fast_cast_trait = chara.job_trait_total(JobTrait::FastCast);
+    let dead_aim_trait = chara.job_trait_total(JobTrait::DeadAim);
+    let fencer_trait = chara.job_trait_total(JobTrait::Fencer);
+    let martial_arts_trait = chara.job_trait_total(JobTrait::MartialArts);
+    let dual_wield_trait = chara.job_trait_total(JobTrait::DualWield);
+    let zanshin_trait = chara.job_trait_total(JobTrait::Zanshin);
+    let smite_trait = chara.job_trait_total(JobTrait::Smite);
+    let daken_trait = chara.job_trait_total(JobTrait::Daken);
+    let shield_barrier_trait = chara.job_trait_total(JobTrait::ShieldBarrier);
+    let clear_mind_trait = chara.job_trait_total(JobTrait::ClearMind);
+    let conserve_mp_trait = chara.job_trait_total(JobTrait::ConserveMp);
+    let tranquil_heart_trait = chara.job_trait_total(JobTrait::TranquilHeart);
+    let divine_benison_trait = chara.job_trait_total(JobTrait::DivineBenison);
+    let cardinal_chant_trait = chara.job_trait_total(JobTrait::CardinalChant);
+    let blood_boon_trait = chara.job_trait_total(JobTrait::BloodBoon);
+    let strafe_trait = chara.job_trait_total(JobTrait::Strafe);
+    let trueshot_trait = chara.job_trait_total(JobTrait::TrueShot);
+    let recycle_trait = chara.job_trait_total(JobTrait::Recycle);
+    let shield_mastery_trait = chara.job_trait_total(JobTrait::ShieldMastery);
+    let assassin_trait = chara.job_trait_total(JobTrait::Assassin);
+    let tandem_strike_trait = chara.job_trait_total(JobTrait::TandemStrike);
+    let tandem_blow_trait = chara.job_trait_total(JobTrait::TandemBlow);
     let store_tp_trait = chara.job_trait_total(JobTrait::StoreTp);
     let double_attack_trait = chara.job_trait_total(JobTrait::DoubleAttack);
     // 連携ボーナス: ジョブ特性 + ギフト + 装備の合計
@@ -612,6 +863,171 @@ fn chara_to_status_result(chara: &Chara) -> StatusResult {
         fast_cast_pct: chara.bonus_stats.fast_cast_pct
             + fast_cast_trait
             + chara.main_job.gift_value(Gift::FastCastEffect, total_jp),
+        // デッドエイム 総合 = ジョブ特性 (Rng) のみ
+        dead_aim: dead_aim_trait,
+        // フェンサー 総合 = ジョブ特性ランク + ギフト「フェンサー効果アップ」(War/Bst)
+        fencer: fencer_trait + chara.main_job.gift_value(Gift::FencerEffect, total_jp),
+        // マーシャルアーツ 総合 = ジョブ特性 + ギフト (Mnk/Pup)
+        martial_arts: martial_arts_trait
+            + chara.main_job.gift_value(Gift::MartialArtsEffect, total_jp),
+        // 二刀流 総合 = ジョブ特性 + ギフト (Thf/Dnc)
+        dual_wield: dual_wield_trait
+            + chara.main_job.gift_value(Gift::DualWieldEffect, total_jp),
+        // 残心 総合 = ジョブ特性 + ギフト (Sam)
+        zanshin: zanshin_trait + chara.main_job.gift_value(Gift::ZanshinRate, total_jp),
+        // スマイト 総合 = ジョブ特性 (War/Mnk/Drk/Drg/Pup) のみ
+        smite: smite_trait,
+        // 打剣 総合 = ジョブ特性 (Nin) + ギフト「打剣効果アップ」(Nin)
+        daken: daken_trait + chara.main_job.gift_value(Gift::ShurikenThrowEffect, total_jp),
+        // シールドバリア 総合 = ジョブ特性 (Pld バイナリ) のみ
+        shield_barrier: shield_barrier_trait,
+        // プロテス効果 総合 = ギフト「プロテス効果アップ」(Pld) のみ
+        protes_effect: chara.main_job.gift_value(Gift::ProtesEffect, total_jp),
+        // クリアマインド 総合 = ジョブ特性 (Whm/Blm/Rdm/Smn/Sch/Geo) のみ
+        clear_mind: clear_mind_trait,
+        // コンサーブ MP 総合 = ジョブ特性 (Blm/Sch/Geo) のみ
+        conserve_mp: conserve_mp_trait,
+        // トランキルハート 総合 = ジョブ特性 (Whm/Rdm/Sch) のみ (バイナリ)
+        tranquil_heart: tranquil_heart_trait,
+        // ディバインベニゾン 総合 = ジョブ特性 (Whm) のみ
+        divine_benison: divine_benison_trait,
+        // カーディナルチャント 総合 = ジョブ特性 (Geo) のみ
+        cardinal_chant: cardinal_chant_trait,
+        // ブラッドブーン 総合 = ジョブ特性 (Smn) のみ
+        blood_boon: blood_boon_trait,
+        // ベロシティショット効果 総合 = ギフト「ベロシティショット効果アップ」(Rng) のみ
+        velocity_shot_effect: chara.main_job.gift_value(Gift::VelocityShotEffect, total_jp),
+        // ストレイフ 総合 = ジョブ特性 (Drg) のみ
+        strafe: strafe_trait,
+        // トゥルーショット 総合 = ジョブ特性 (Rng/Cor) + ギフト「トゥルーショット効果アップ」(Rng/Cor)
+        trueshot: trueshot_trait + chara.main_job.gift_value(Gift::TrueshotEffect, total_jp),
+        // 乱れ撃ち 総合 = ギフト「乱れ撃ち効果アップ」(Rng) のみ
+        barrage: chara.main_job.gift_value(Gift::BarrageEffect, total_jp),
+        // スナップショット 総合 = ギフト「スナップショット効果アップ」(Cor) のみ
+        snapshot: chara.main_job.gift_value(Gift::SnapshotEffect, total_jp),
+        // リサイクル 総合 = ジョブ特性 (Rng/Cor) + ギフト「矢弾消費量軽減」(Cor)
+        recycle: recycle_trait + chara.main_job.gift_value(Gift::AmmoCostReduction, total_jp),
+        // シールドマスタリー 総合 = ジョブ特性 (War/Rdm/Pld) のみ
+        shield_mastery: shield_mastery_trait,
+        // シールドマスタリー効果 総合 = ギフト「シールドマスタリー効果アップ」(Pld) のみ
+        shield_mastery_effect: chara.main_job.gift_value(Gift::ShieldMasteryEffect, total_jp),
+        // アサシン 総合 = ジョブ特性 (Thf) のみ (バイナリ)
+        assassin: assassin_trait,
+        // 歌の詠唱時間 総合 = ギフト「歌の詠唱時間短縮」(Brd) のみ (% 短縮の負値)
+        song_cast_time: chara.main_job.gift_value(Gift::SongCastTime, total_jp),
+        // 歌の効果時間 総合 = ギフト「歌の効果時間延長」(Brd) のみ (% 延長)
+        song_effect_duration: chara.main_job.gift_value(Gift::SongEffectDuration, total_jp),
+        // 心眼効果アップ 総合 = ギフト「心眼効果アップ」(Sam) のみ
+        third_eye_effect: chara.main_job.gift_value(Gift::ThirdEyeEffect, total_jp),
+        // タンデムヒット 総合 = ジョブ特性 (Bst) のみ
+        tandem_strike: tandem_strike_trait,
+        // タンデムモクシャ 総合 = ジョブ特性 (Bst) のみ
+        tandem_blow: tandem_blow_trait,
+        // レジスト系 (全 11 種、ジョブ特性のみ)
+        resist_virus: chara.job_trait_total(JobTrait::ResistVirus),
+        resist_petrify: chara.job_trait_total(JobTrait::ResistPetrify),
+        resist_gravity: chara.job_trait_total(JobTrait::ResistGravity),
+        resist_sleep: chara.job_trait_total(JobTrait::ResistSleep),
+        resist_paralyze: chara.job_trait_total(JobTrait::ResistParalyze),
+        resist_slow: chara.job_trait_total(JobTrait::ResistSlow),
+        resist_silence: chara.job_trait_total(JobTrait::ResistSilence),
+        resist_poison: chara.job_trait_total(JobTrait::ResistPoison),
+        resist_blind: chara.job_trait_total(JobTrait::ResistBlind),
+        resist_bind: chara.job_trait_total(JobTrait::ResistBind),
+        resist_amnesia: chara.job_trait_total(JobTrait::ResistAmnesia),
+        // キラー系 (全 11 種、ジョブ特性のみ)
+        undead_killer: chara.job_trait_total(JobTrait::UndeadKiller),
+        arcana_killer: chara.job_trait_total(JobTrait::ArcanaKiller),
+        demon_killer: chara.job_trait_total(JobTrait::DemonKiller),
+        dragon_killer: chara.job_trait_total(JobTrait::DragonKiller),
+        vermin_killer: chara.job_trait_total(JobTrait::VerminKiller),
+        bird_killer: chara.job_trait_total(JobTrait::BirdKiller),
+        amorph_killer: chara.job_trait_total(JobTrait::AmorphKiller),
+        lizard_killer: chara.job_trait_total(JobTrait::LizardKiller),
+        aquan_killer: chara.job_trait_total(JobTrait::AquanKiller),
+        plantoid_killer: chara.job_trait_total(JobTrait::PlantoidKiller),
+        beast_killer: chara.job_trait_total(JobTrait::BeastKiller),
+        // I 系 (その他のジョブ特性、ギフトなし)
+        alertness: chara.job_trait_total(JobTrait::Alertness),
+        stealth: chara.job_trait_total(JobTrait::Stealth),
+        gilfinder: chara.job_trait_total(JobTrait::Gilfinder),
+        tactical_parry: chara.job_trait_total(JobTrait::TacticalParry),
+        tactical_guard: chara.job_trait_total(JobTrait::TacticalGuard),
+        extreme_guard: chara.job_trait_total(JobTrait::ExtremeGuard),
+        desperate_blows: chara.job_trait_total(JobTrait::DesperateBlows),
+        stalwart_soul: chara.job_trait_total(JobTrait::StalwartSoul),
+        tenacity: chara.job_trait_total(JobTrait::Tenacity),
+        max_damage_boost: chara.job_trait_total(JobTrait::MaxDamageBoost),
+        // A: クリティカル系
+        crit_increase: chara.job_trait_total(JobTrait::CritIncrease)
+            + chara.main_job.gift_value(Gift::CritIncreaseEffect, total_jp),
+        crit_reduce: chara.job_trait_total(JobTrait::CritReduce)
+            + chara.main_job.gift_value(Gift::CritReduceEffect, total_jp),
+        critical_hit_rate: chara.main_job.gift_value(Gift::CriticalHitRate, total_jp),
+        // B: 戦闘特性系
+        weapon_skill_damage: chara.job_trait_total(JobTrait::WeaponSkillDamage)
+            + chara.main_job.gift_value(Gift::WeaponSkillDamage, total_jp),
+        counter: chara.job_trait_total(JobTrait::Counter)
+            + chara.main_job.gift_value(Gift::CounterRate, total_jp),
+        counter_damage: chara.main_job.gift_value(Gift::CounterDamage, total_jp),
+        // C: 魔法系
+        cure_amount: chara.main_job.gift_value(Gift::CureAmount, total_jp),
+        healing_magic_cast_time: chara.main_job.gift_value(Gift::HealingMagicCastTime, total_jp),
+        regen_amount: chara.main_job.gift_value(Gift::RegenAmount, total_jp),
+        magic_burst_damage: chara.job_trait_total(JobTrait::MagicBurstBonus)
+            + chara.main_job.gift_value(Gift::MagicBurstDamage, total_jp),
+        magic_damage: chara.job_trait_total(JobTrait::MagicAcumen)
+            + chara.main_job.gift_value(Gift::MagicDamage, total_jp),
+        elemental_celerity: chara.job_trait_total(JobTrait::ElementalCelerity)
+            + chara.main_job.gift_value(Gift::ElementalCelerityEffect, total_jp),
+        enspell_effect: chara.main_job.gift_value(Gift::EnspellEffect, total_jp),
+        enhance_magic_duration_on_self: chara
+            .main_job
+            .gift_value(Gift::EnhanceMagicDurationOnSelf, total_jp),
+        blue_magic_effect: chara.main_job.gift_value(Gift::BlueMagicEffect, total_jp),
+        // D: 狩・コ・盗・盾系 (合算済み以外)
+        conserve_tp: chara.job_trait_total(JobTrait::ConserveTp)
+            + chara.main_job.gift_value(Gift::ConserveTpEffect, total_jp),
+        quick_draw_recast: chara.main_job.gift_value(Gift::QuickDrawRecast, total_jp),
+        treasure_hunter: chara.job_trait_total(JobTrait::TreasureHunter)
+            + chara.main_job.gift_value(Gift::TreasureHunterEffect, total_jp),
+        treasure_hunter_max_level: chara
+            .main_job
+            .gift_value(Gift::TreasureHunterMaxLevel, total_jp),
+        dread_spike_effect: chara.main_job.gift_value(Gift::DreadSpikeEffect, total_jp),
+        inquartata: chara.job_trait_total(JobTrait::Inquartata)
+            + chara.main_job.gift_value(Gift::InquartataEffect, total_jp),
+        // E: 侍・踊系 (合算済み以外)
+        hasso_seigan_effect: chara.main_job.gift_value(Gift::HassoSeiganEffect, total_jp),
+        finishing_move_count: chara.main_job.gift_value(Gift::FinishingMoveCount, total_jp),
+        // F: ペット系
+        pet_physical_atk_def: chara.main_job.gift_value(Gift::PetPhysicalAtkDef, total_jp),
+        pet_physical_acc_eva: chara.main_job.gift_value(Gift::PetPhysicalAccEva, total_jp),
+        pet_status: chara.main_job.gift_value(Gift::PetStatus, total_jp),
+        pet_tp_bonus: chara.main_job.gift_value(Gift::PetTpBonus, total_jp),
+        avatar_physical_atk_def: chara.main_job.gift_value(Gift::AvatarPhysicalAtkDef, total_jp),
+        avatar_physical_acc_eva: chara.main_job.gift_value(Gift::AvatarPhysicalAccEva, total_jp),
+        avatar_magical_atk_def: chara.main_job.gift_value(Gift::AvatarMagicalAtkDef, total_jp),
+        avatar_magical_acc_eva: chara.main_job.gift_value(Gift::AvatarMagicalAccEva, total_jp),
+        avatar_blessing_effect: chara.main_job.gift_value(Gift::AvatarBlessingEffect, total_jp),
+        automaton_physical_atk_def: chara
+            .main_job
+            .gift_value(Gift::AutomatonPhysicalAtkDef, total_jp),
+        automaton_physical_acc_eva: chara
+            .main_job
+            .gift_value(Gift::AutomatonPhysicalAccEva, total_jp),
+        automaton_magical_atk_def: chara
+            .main_job
+            .gift_value(Gift::AutomatonMagicalAtkDef, total_jp),
+        automaton_magical_acc_eva: chara
+            .main_job
+            .gift_value(Gift::AutomatonMagicalAccEva, total_jp),
+        automaton_element_boost: chara.main_job.gift_value(Gift::AutomatonElementBoost, total_jp),
+        wyvern_boost_effect: chara.main_job.gift_value(Gift::WyvernBoostEffect, total_jp),
+        wyvern_physical_acc_eva: chara.main_job.gift_value(Gift::WyvernPhysicalAccEva, total_jp),
+        wyvern_magical_acc_eva: chara.main_job.gift_value(Gift::WyvernMagicalAccEva, total_jp),
+        breath_recast: chara.main_job.gift_value(Gift::BreathRecast, total_jp),
+        stout_servant: chara.job_trait_total(JobTrait::StoutServant),
         total_jp_spent: total_jp,
         effective_skills,
         main_weapon_skill,

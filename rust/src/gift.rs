@@ -115,8 +115,10 @@ pub enum Gift {
     SeiganEffect,
     /// 八双・星眼効果アップ (Sam, 残心/カウンター確率の上限 +N%)
     HassoSeiganEffect,
-    /// トレジャーハンター効果アップ (Thf, ランク +N)
+    /// トレジャーハンター効果アップ (Thf, レベルが上がる確率 %)
     TreasureHunterEffect,
+    /// トレジャーハンター効果最大値アップ (Thf, 上限 +N)
+    TreasureHunterMaxLevel,
     /// シールドマスタリー効果アップ (Pld, TP ボーナス %)
     ShieldMasteryEffect,
     /// C.リデュース効果アップ (Pld, 被クリダメージ % 軽減)
@@ -243,6 +245,7 @@ pub const ALL_GIFTS: &[Gift] = &[
     Gift::SeiganEffect,
     Gift::HassoSeiganEffect,
     Gift::TreasureHunterEffect,
+    Gift::TreasureHunterMaxLevel,
     Gift::ShieldMasteryEffect,
     Gift::CritReduceEffect,
     Gift::ProtesEffect,
@@ -331,14 +334,16 @@ fn gift_tiers_table(job: Job, gift: Gift) -> &'static [(i32, i32)] {
         (PhysicalDefense, Bst) => &[(5, 10), (180, 25), (605, 45), (1280, 70)],
         (PhysicalDefense, Brd) => &[(5, 3), (180, 8), (605, 14), (1280, 22)],
         (PhysicalDefense, Rng) => &[(5, 3), (180, 8), (605, 14), (1280, 22)],
-        (PhysicalDefense, Sam) => &[(5, 6), (180, 15), (605, 27), (1280, 42)],
-        (PhysicalDefense, Nin) => &[(5, 3), (180, 8), (605, 14), (1280, 22)],
-        (PhysicalDefense, Drg) => &[(5, 6), (180, 15), (605, 27), (1280, 42)],
-        (PhysicalDefense, Smn) => &[(5, 3), (180, 8), (605, 14), (1280, 22)],
-        (PhysicalDefense, Blu) => &[(5, 6), (180, 15), (605, 27), (1280, 42)],
+        // Sam の PDEF は 5JP のティアが存在しない (180/605/1280 のみ)
+        (PhysicalDefense, Sam) => &[(180, 15), (605, 35), (1280, 60)],
+        (PhysicalDefense, Nin) => &[(5, 8), (180, 20), (605, 36), (1280, 56)],
+        (PhysicalDefense, Drg) => &[(5, 10), (180, 25), (605, 45), (1280, 70)],
+        // Smn: PDef は slot 2 (20/245/720/1445)
+        (PhysicalDefense, Smn) => &[(20, 3), (245, 8), (720, 14), (1445, 22)],
+        (PhysicalDefense, Blu) => &[(5, 10), (180, 25), (605, 45), (1280, 70)],
         (PhysicalDefense, Cor) => &[(5, 3), (180, 8), (605, 14), (1280, 22)],
         (PhysicalDefense, Dnc) => &[(5, 6), (180, 15), (605, 27), (1280, 42)],
-        (PhysicalDefense, Run) => &[(5, 10), (180, 25), (605, 45), (1280, 70)],
+        (PhysicalDefense, Run) => &[(5, 5), (180, 13), (605, 23), (1280, 36)],
 
         // ============ PhysicalAttack ============
         // 閾値はスロット 1 共通: 10/210/660/1360
@@ -350,13 +355,14 @@ fn gift_tiers_table(job: Job, gift: Gift) -> &'static [(i32, i32)] {
         (PhysicalAttack, Bst) => &[(10, 10), (210, 25), (660, 45), (1360, 70)],
         (PhysicalAttack, Rng) => &[(10, 10), (210, 25), (660, 45), (1360, 70)],
         (PhysicalAttack, Sam) => &[(10, 10), (210, 25), (660, 45), (1360, 70)],
-        (PhysicalAttack, Nin) => &[(10, 8), (210, 20), (660, 36), (1360, 56)],
+        (PhysicalAttack, Nin) => &[(10, 10), (210, 25), (660, 45), (1360, 70)],
         (PhysicalAttack, Drg) => &[(10, 10), (210, 25), (660, 45), (1360, 70)],
-        (PhysicalAttack, Blu) => &[(10, 8), (210, 20), (660, 36), (1360, 56)],
+        (PhysicalAttack, Blu) => &[(10, 10), (210, 25), (660, 45), (1360, 70)],
         (PhysicalAttack, Cor) => &[(10, 5), (210, 13), (660, 23), (1360, 36)],
-        (PhysicalAttack, Pup) => &[(10, 8), (210, 20), (660, 36), (1360, 56)],
-        (PhysicalAttack, Dnc) => &[(10, 8), (210, 20), (660, 36), (1360, 56)],
-        (PhysicalAttack, Run) => &[(10, 8), (210, 20), (660, 36), (1360, 56)],
+        // Pup は PDef がなく PATK が slot 0
+        (PhysicalAttack, Pup) => &[(5, 6), (180, 15), (605, 27), (1280, 42)],
+        (PhysicalAttack, Dnc) => &[(10, 6), (210, 15), (660, 27), (1360, 42)],
+        (PhysicalAttack, Run) => &[(10, 7), (210, 18), (660, 32), (1360, 50)],
 
         // ============ PhysicalEvasion ============
         // 閾値はスロット 2 共通: 20/245/720/1445
@@ -366,48 +372,54 @@ fn gift_tiers_table(job: Job, gift: Gift) -> &'static [(i32, i32)] {
         (PhysicalEvasion, Pld) => &[(20, 3), (245, 8), (720, 14), (1445, 22)],
         (PhysicalEvasion, Drk) => &[(20, 3), (245, 8), (720, 14), (1445, 22)],
         (PhysicalEvasion, Bst) => &[(20, 5), (245, 13), (720, 23), (1445, 36)],
-        (PhysicalEvasion, Brd) => &[(20, 5), (245, 13), (720, 23), (1445, 36)],
-        (PhysicalEvasion, Rng) => &[(20, 5), (245, 13), (720, 23), (1445, 36)],
-        (PhysicalEvasion, Sam) => &[(20, 3), (245, 8), (720, 14), (1445, 22)],
-        (PhysicalEvasion, Nin) => &[(20, 8), (245, 20), (720, 36), (1445, 56)],
-        (PhysicalEvasion, Drg) => &[(20, 3), (245, 8), (720, 14), (1445, 22)],
-        (PhysicalEvasion, Smn) => &[(20, 3), (245, 8), (720, 14), (1445, 22)],
+        // Brd: PEVA は slot 1 (10/210/660/1360)
+        (PhysicalEvasion, Brd) => &[(10, 3), (210, 8), (660, 14), (1360, 22)],
+        (PhysicalEvasion, Rng) => &[(20, 2), (245, 5), (720, 9), (1445, 14)],
+        (PhysicalEvasion, Sam) => &[(20, 5), (245, 13), (720, 23), (1445, 36)],
+        (PhysicalEvasion, Nin) => &[(20, 9), (245, 23), (720, 41), (1445, 64)],
+        (PhysicalEvasion, Drg) => &[(20, 5), (245, 13), (720, 23), (1445, 36)],
+        // Smn: PEva は slot 3 (30/280/780/1530)
+        (PhysicalEvasion, Smn) => &[(30, 3), (280, 8), (780, 14), (1530, 22)],
         (PhysicalEvasion, Blu) => &[(20, 5), (245, 13), (720, 23), (1445, 36)],
         (PhysicalEvasion, Cor) => &[(20, 3), (245, 8), (720, 14), (1445, 22)],
-        (PhysicalEvasion, Pup) => &[(20, 5), (245, 13), (720, 23), (1445, 36)],
-        (PhysicalEvasion, Dnc) => &[(20, 8), (245, 20), (720, 36), (1445, 56)],
-        (PhysicalEvasion, Run) => &[(20, 5), (245, 13), (720, 23), (1445, 36)],
+        // Pup: PEva は slot 1 (10/210/660/1360)
+        (PhysicalEvasion, Pup) => &[(10, 8), (210, 20), (660, 36), (1360, 56)],
+        (PhysicalEvasion, Dnc) => &[(20, 9), (245, 23), (720, 41), (1445, 64)],
+        (PhysicalEvasion, Run) => &[(20, 8), (245, 20), (720, 36), (1445, 56)],
 
         // ============ PhysicalAccuracy ============
         // 閾値はスロット 3 共通: 30/280/780/1530
         (PhysicalAccuracy, War) => &[(30, 5), (280, 13), (780, 23), (1530, 36)],
-        (PhysicalAccuracy, Mnk) => &[(30, 6), (280, 15), (780, 26), (1530, 41)],
-        (PhysicalAccuracy, Whm) => &[(30, 2), (280, 5), (780, 9), (1530, 14)],
-        (PhysicalAccuracy, Rdm) => &[(30, 3), (280, 8), (780, 14), (1530, 22)],
+        (PhysicalAccuracy, Mnk) => &[(30, 6), (280, 15), (780, 27), (1530, 42)],
+        // Whm/Rdm の PACC は slot 4 (45/320/845/1620)
+        (PhysicalAccuracy, Whm) => &[(45, 2), (320, 5), (845, 9), (1620, 14)],
+        (PhysicalAccuracy, Rdm) => &[(45, 3), (320, 8), (845, 14), (1620, 22)],
         (PhysicalAccuracy, Thf) => &[(30, 5), (280, 13), (780, 23), (1530, 36)],
         (PhysicalAccuracy, Pld) => &[(30, 4), (280, 10), (780, 18), (1530, 28)],
         (PhysicalAccuracy, Drk) => &[(30, 3), (280, 8), (780, 14), (1530, 22)],
         (PhysicalAccuracy, Bst) => &[(30, 5), (280, 13), (780, 23), (1530, 36)],
-        (PhysicalAccuracy, Brd) => &[(30, 3), (280, 8), (780, 14), (1530, 22)],
+        // Brd: PACC は slot 2 (20/245/720/1445)
+        (PhysicalAccuracy, Brd) => &[(20, 2), (245, 7), (720, 13), (1445, 21)],
         (PhysicalAccuracy, Rng) => &[(30, 10), (280, 25), (780, 45), (1530, 70)],
-        (PhysicalAccuracy, Sam) => &[(30, 6), (280, 15), (780, 27), (1530, 42)],
-        (PhysicalAccuracy, Nin) => &[(30, 5), (280, 13), (780, 23), (1530, 36)],
-        (PhysicalAccuracy, Drg) => &[(30, 5), (280, 13), (780, 23), (1530, 36)],
+        (PhysicalAccuracy, Sam) => &[(30, 5), (280, 13), (780, 23), (1530, 36)],
+        (PhysicalAccuracy, Nin) => &[(30, 8), (280, 20), (780, 36), (1530, 56)],
+        (PhysicalAccuracy, Drg) => &[(30, 9), (280, 23), (780, 41), (1530, 64)],
         (PhysicalAccuracy, Blu) => &[(30, 5), (280, 13), (780, 23), (1530, 36)],
         (PhysicalAccuracy, Cor) => &[(30, 5), (280, 13), (780, 23), (1530, 36)],
-        (PhysicalAccuracy, Pup) => &[(30, 5), (280, 13), (780, 23), (1530, 36)],
-        (PhysicalAccuracy, Dnc) => &[(30, 6), (280, 15), (780, 27), (1530, 42)],
-        (PhysicalAccuracy, Run) => &[(30, 5), (280, 13), (780, 23), (1530, 36)],
+        // Pup: PACC は slot 2 (20/245/720/1445)
+        (PhysicalAccuracy, Pup) => &[(20, 7), (245, 18), (720, 32), (1445, 50)],
+        (PhysicalAccuracy, Dnc) => &[(30, 9), (280, 23), (780, 41), (1530, 64)],
+        (PhysicalAccuracy, Run) => &[(30, 8), (280, 20), (780, 36), (1530, 56)],
 
         // ============ MagicAttack (主に魔法系ジョブ) ============
         // 閾値はスロット 1 共通 (戦闘ジョブの PATK と同じ): 10/210/660/1360
         (MagicAttack, Whm) => &[(10, 3), (210, 8), (660, 14), (1360, 22)],
         (MagicAttack, Blm) => &[(10, 7), (210, 18), (660, 32), (1360, 50)],
         (MagicAttack, Rdm) => &[(10, 4), (210, 10), (660, 18), (1360, 28)],
-        (MagicAttack, Sch) => &[(10, 7), (210, 18), (660, 32), (1360, 50)],
-        (MagicAttack, Geo) => &[(10, 7), (210, 18), (660, 32), (1360, 50)],
-        // Nin の MATK はスロット 5 (60/360/910/1710) と推測
-        (MagicAttack, Nin) => &[(60, 3), (360, 8), (910, 14), (1710, 22)],
+        (MagicAttack, Sch) => &[(10, 5), (210, 13), (660, 23), (1360, 36)],
+        (MagicAttack, Geo) => &[(10, 6), (210, 15), (660, 27), (1360, 42)],
+        // Nin: MATK は slot 4 (45/320/845/1620)
+        (MagicAttack, Nin) => &[(45, 4), (320, 10), (845, 18), (1620, 28)],
         // Cor の MATK はスロット 4 (45/320/845/1620)
         (MagicAttack, Cor) => &[(45, 2), (320, 5), (845, 9), (1620, 14)],
 
@@ -416,11 +428,13 @@ fn gift_tiers_table(job: Job, gift: Gift) -> &'static [(i32, i32)] {
         (MagicDefense, Whm) => &[(5, 7), (180, 18), (605, 32), (1280, 50)],
         (MagicDefense, Blm) => &[(5, 2), (180, 5), (605, 9), (1280, 14)],
         (MagicDefense, Rdm) => &[(5, 4), (180, 10), (605, 18), (1280, 28)],
-        (MagicDefense, Brd) => &[(5, 5), (180, 13), (605, 23), (1280, 36)],
-        (MagicDefense, Smn) => &[(5, 5), (180, 13), (605, 23), (1280, 36)],
-        (MagicDefense, Sch) => &[(5, 5), (180, 13), (605, 23), (1280, 36)],
-        (MagicDefense, Geo) => &[(5, 5), (180, 13), (605, 23), (1280, 36)],
-        (MagicDefense, Run) => &[(5, 5), (180, 13), (605, 23), (1280, 36)],
+        // Brd: MDEF は slot 3 (30/280/780/1530)
+        (MagicDefense, Brd) => &[(30, 3), (280, 6), (780, 10), (1530, 15)],
+        (MagicDefense, Smn) => &[(5, 3), (180, 8), (605, 14), (1280, 22)],
+        (MagicDefense, Sch) => &[(5, 3), (180, 8), (605, 14), (1280, 22)],
+        (MagicDefense, Geo) => &[(5, 4), (180, 10), (605, 18), (1280, 28)],
+        // Run: MDEF は slot 4 (45/320/845/1620)
+        (MagicDefense, Run) => &[(45, 8), (320, 20), (845, 36), (1620, 56)],
 
         // ============ MagicEvasion ============
         // 閾値はジョブによって異なる:
@@ -440,13 +454,20 @@ fn gift_tiers_table(job: Job, gift: Gift) -> &'static [(i32, i32)] {
         (MagicEvasion, Rng) => &[(45, 5), (320, 13), (845, 23), (1620, 36)],
         (MagicEvasion, Sam) => &[(45, 5), (320, 13), (845, 23), (1620, 36)],
         (MagicEvasion, Drg) => &[(45, 5), (320, 13), (845, 23), (1620, 36)],
-        (MagicEvasion, Smn) => &[(45, 6), (320, 15), (845, 27), (1620, 42)],
+        // Nin: MEva は slot 5 (60/360/910/1710)
+        (MagicEvasion, Nin) => &[(60, 7), (360, 18), (910, 32), (1710, 50)],
+        // Smn: MEva は slot 1 (10/210/660/1360)
+        (MagicEvasion, Smn) => &[(10, 3), (210, 8), (660, 14), (1360, 22)],
         (MagicEvasion, Cor) => &[(60, 5), (360, 13), (910, 23), (1710, 36)],
-        (MagicEvasion, Pup) => &[(45, 5), (320, 13), (845, 23), (1620, 36)],
+        // Pup: MEva は slot 3 (30/280/780/1530)
+        (MagicEvasion, Pup) => &[(30, 5), (280, 13), (780, 23), (1530, 36)],
         (MagicEvasion, Dnc) => &[(45, 5), (320, 13), (845, 23), (1620, 36)],
-        (MagicEvasion, Sch) => &[(45, 6), (320, 15), (845, 27), (1620, 42)],
-        (MagicEvasion, Geo) => &[(45, 6), (320, 15), (845, 27), (1620, 42)],
-        (MagicEvasion, Run) => &[(45, 6), (320, 15), (845, 27), (1620, 42)],
+        // Sch: MEva は slot 2 (20/245/720/1445)
+        (MagicEvasion, Sch) => &[(20, 6), (245, 15), (720, 27), (1445, 42)],
+        // Geo: MEva は slot 2 (20/245/720/1445)
+        (MagicEvasion, Geo) => &[(20, 7), (245, 18), (720, 32), (1445, 50)],
+        // Run: MEva は slot 5 (60/360/910/1710)
+        (MagicEvasion, Run) => &[(60, 10), (360, 25), (910, 45), (1710, 70)],
 
         // ============ MagicAccuracy ============
         // 戦闘系: スロット 5 (60/360/910/1710)
@@ -464,20 +485,24 @@ fn gift_tiers_table(job: Job, gift: Gift) -> &'static [(i32, i32)] {
         (MagicAccuracy, Brd) => &[(60, 5), (360, 13), (910, 23), (1710, 36)],
         (MagicAccuracy, Rng) => &[(60, 5), (360, 13), (910, 23), (1710, 36)],
         (MagicAccuracy, Sam) => &[(60, 5), (360, 13), (910, 23), (1710, 36)],
-        (MagicAccuracy, Nin) => &[(60, 5), (360, 13), (910, 23), (1710, 36)],
+        // Nin: MAcc は slot 6 (80/405/980/1805)
+        (MagicAccuracy, Nin) => &[(80, 7), (405, 18), (980, 32), (1805, 50)],
         (MagicAccuracy, Drg) => &[(60, 5), (360, 13), (910, 23), (1710, 36)],
-        (MagicAccuracy, Blu) => &[(60, 5), (360, 13), (910, 23), (1710, 36)],
+        // Blu MAcc は slot 7 (125/450/1050/1900)
+        (MagicAccuracy, Blu) => &[(125, 5), (450, 13), (1050, 23), (1900, 36)],
         (MagicAccuracy, Cor) => &[(80, 5), (405, 13), (980, 23), (1805, 36)],
-        (MagicAccuracy, Pup) => &[(60, 5), (360, 13), (910, 23), (1710, 36)],
+        // Pup: MAcc は slot 4 (45/320/845/1620)
+        (MagicAccuracy, Pup) => &[(45, 5), (320, 13), (845, 23), (1620, 36)],
         (MagicAccuracy, Dnc) => &[(60, 5), (360, 13), (910, 23), (1710, 36)],
         (MagicAccuracy, Sch) => &[(30, 6), (280, 15), (780, 27), (1530, 42)],
-        (MagicAccuracy, Geo) => &[(30, 6), (280, 15), (780, 27), (1530, 42)],
-        (MagicAccuracy, Run) => &[(60, 5), (360, 13), (910, 23), (1710, 36)],
+        (MagicAccuracy, Geo) => &[(30, 7), (280, 18), (780, 32), (1530, 50)],
+        // Run: MAcc は slot 6 (80/405/980/1805)
+        (MagicAccuracy, Run) => &[(80, 5), (405, 13), (980, 23), (1805, 36)],
 
         // ============ SkillchainBonus (Sam/Dnc) ============
-        // 80/405/980/1805 で +2/+2/+2/+2 (累積 +2/+4/+6/+8) ※暫定要 wiki 確認
-        (SkillchainBonus, Sam) => &[(80, 2), (405, 4), (980, 6), (1805, 8)],
-        (SkillchainBonus, Dnc) => &[(80, 2), (405, 4), (980, 6), (1805, 8)],
+        // 150/500/1125/2000 で +2/+2/+2/+2 (累積 +2/+4/+6/+8)
+        (SkillchainBonus, Sam) => &[(150, 2), (500, 4), (1125, 6), (2000, 8)],
+        (SkillchainBonus, Dnc) => &[(150, 2), (500, 4), (1125, 6), (2000, 8)],
 
         // ============ DoubleAttackRate (戦士) ============
         // 125/450/1050/1900 で +2/+2/+3/+3 (累積 +2/+4/+7/+10)
@@ -502,8 +527,8 @@ fn gift_tiers_table(job: Job, gift: Gift) -> &'static [(i32, i32)] {
         // ============ SubtleBlow (モクシャ効果アップ) ============
         // Mnk: 125/450/1050/1900 で -2/-2/-3/-3% (累積 +2/+4/+7/+10)
         (SubtleBlow, Mnk) => &[(125, 2), (450, 4), (1050, 7), (1900, 10)],
-        // Dnc: 80/360/910/1710 で +3/+3/+3/+4 (累積 +3/+6/+9/+13)
-        (SubtleBlow, Dnc) => &[(80, 3), (360, 6), (910, 9), (1710, 13)],
+        // Dnc: 80/405/980/1805 で +3/+3/+3/+4 (累積 +3/+6/+9/+13)
+        (SubtleBlow, Dnc) => &[(80, 3), (405, 6), (980, 9), (1805, 13)],
 
         // ============ MartialArtsEffect (Mnk のみ) ============
         // 100/1200 で 格闘攻撃間隔 -5/-5 (累積 -5/-10)
@@ -566,9 +591,9 @@ fn gift_tiers_table(job: Job, gift: Gift) -> &'static [(i32, i32)] {
         (JobTraitEffectUp, Blu) => &[(100, 1), (1200, 2)],
 
         // ============ 既存 enum の他ジョブ追加 ============
-        // ダブルアタック効果アップ (戦士 JP=125 で +2%, 1 ティア)
-        (DoubleAttackEffect, War) => &[(125, 2)],
-
+        // 注: 戦士 JP=125 「ダブルアタック効果アップ +2%」 は Wiki 上は別ギフトだが、
+        //     既存の `DoubleAttackRate, War` (125/450/1050/1900 で累積 2/4/7/10) に
+        //     合算した値で保持する (本コードでは個別に分けない)。
         // トリプルアタック確率アップ (Thf)
         (TripleAttackRate, Thf) => &[(125, 2), (450, 4), (1050, 6), (1900, 8)],
 
@@ -654,7 +679,11 @@ fn gift_tiers_table(job: Job, gift: Gift) -> &'static [(i32, i32)] {
         (SeiganEffect, Sam) => &[(550, 1)],
         (HassoSeiganEffect, Sam) => &[(100, 5), (1200, 10)],
 
-        (TreasureHunterEffect, Thf) => &[(80, 1), (405, 2), (980, 3), (1805, 4)],
+        // TreasureHunterEffect: TH レベルが上がる確率 +5%/+5%/+6%/+7% (累積 5/10/16/23)
+        (TreasureHunterEffect, Thf) => &[(80, 5), (405, 10), (980, 16), (1805, 23)],
+
+        // TreasureHunterMaxLevel: TH 上限 +1/+1 (累積 1/2)
+        (TreasureHunterMaxLevel, Thf) => &[(100, 1), (1200, 2)],
 
         (ShieldMasteryEffect, Pld) => &[(125, 3), (450, 6), (1050, 10), (1900, 15)],
         (CritReduceEffect, Pld) => &[(150, 2), (500, 4), (1125, 6), (2000, 8)],
@@ -672,14 +701,14 @@ fn gift_tiers_table(job: Job, gift: Gift) -> &'static [(i32, i32)] {
 
         (SnapshotEffect, Cor) => &[(100, 5), (1200, 10)],
         (AmmoCostReduction, Cor) => &[(125, 2), (450, 4), (1050, 6), (1900, 8)],
-        (QuickDrawRecast, Cor) => &[(550, 10)],
+        (QuickDrawRecast, Cor) => &[(550, -10)],
 
         (DualWieldEffect, Thf) => &[(550, 5)],
         (DualWieldEffect, Dnc) => &[(550, 5)],
 
         (FinishingMoveCount, Dnc) => &[(100, 2), (1200, 4)],
 
-        (SongCastTime, Brd) => &[(550, 5)],
+        (SongCastTime, Brd) => &[(550, -5)],
         (SongEffectDuration, Brd) => &[(1200, 5)],
 
         // ============ 新規 enum: ペット系 ============
@@ -844,14 +873,14 @@ mod tests {
             (PhysicalDefense, Bst) => 70,
             (PhysicalDefense, Brd) => 22,
             (PhysicalDefense, Rng) => 22,
-            (PhysicalDefense, Sam) => 42,
-            (PhysicalDefense, Nin) => 22,
-            (PhysicalDefense, Drg) => 42,
+            (PhysicalDefense, Sam) => 60,
+            (PhysicalDefense, Nin) => 56,
+            (PhysicalDefense, Drg) => 70,
             (PhysicalDefense, Smn) => 22,
-            (PhysicalDefense, Blu) => 42,
+            (PhysicalDefense, Blu) => 70,
             (PhysicalDefense, Cor) => 22,
             (PhysicalDefense, Dnc) => 42,
-            (PhysicalDefense, Run) => 70,
+            (PhysicalDefense, Run) => 36,
 
             // ========= PhysicalAttack (slot1: 10/210/660/1360) =========
             (PhysicalAttack, War) => 70,
@@ -862,13 +891,13 @@ mod tests {
             (PhysicalAttack, Bst) => 70,
             (PhysicalAttack, Rng) => 70,
             (PhysicalAttack, Sam) => 70,
-            (PhysicalAttack, Nin) => 56,
+            (PhysicalAttack, Nin) => 70,
             (PhysicalAttack, Drg) => 70,
-            (PhysicalAttack, Blu) => 56,
+            (PhysicalAttack, Blu) => 70,
             (PhysicalAttack, Cor) => 36,
-            (PhysicalAttack, Pup) => 56,
-            (PhysicalAttack, Dnc) => 56,
-            (PhysicalAttack, Run) => 56,
+            (PhysicalAttack, Pup) => 42,
+            (PhysicalAttack, Dnc) => 42,
+            (PhysicalAttack, Run) => 50,
 
             // ========= PhysicalEvasion (slot2: 20/245/720/1445) =========
             (PhysicalEvasion, War) => 36,
@@ -877,55 +906,55 @@ mod tests {
             (PhysicalEvasion, Pld) => 22,
             (PhysicalEvasion, Drk) => 22,
             (PhysicalEvasion, Bst) => 36,
-            (PhysicalEvasion, Brd) => 36,
-            (PhysicalEvasion, Rng) => 36,
-            (PhysicalEvasion, Sam) => 22,
-            (PhysicalEvasion, Nin) => 56,
-            (PhysicalEvasion, Drg) => 22,
+            (PhysicalEvasion, Brd) => 22,
+            (PhysicalEvasion, Rng) => 14,
+            (PhysicalEvasion, Sam) => 36,
+            (PhysicalEvasion, Nin) => 64,
+            (PhysicalEvasion, Drg) => 36,
             (PhysicalEvasion, Smn) => 22,
             (PhysicalEvasion, Blu) => 36,
             (PhysicalEvasion, Cor) => 22,
-            (PhysicalEvasion, Pup) => 36,
-            (PhysicalEvasion, Dnc) => 56,
-            (PhysicalEvasion, Run) => 36,
+            (PhysicalEvasion, Pup) => 56,
+            (PhysicalEvasion, Dnc) => 64,
+            (PhysicalEvasion, Run) => 56,
 
             // ========= PhysicalAccuracy (slot3: 30/280/780/1530) =========
             (PhysicalAccuracy, War) => 36,
-            (PhysicalAccuracy, Mnk) => 41,
+            (PhysicalAccuracy, Mnk) => 42,
             (PhysicalAccuracy, Whm) => 14,
             (PhysicalAccuracy, Rdm) => 22,
             (PhysicalAccuracy, Thf) => 36,
             (PhysicalAccuracy, Pld) => 28,
             (PhysicalAccuracy, Drk) => 22,
             (PhysicalAccuracy, Bst) => 36,
-            (PhysicalAccuracy, Brd) => 22,
+            (PhysicalAccuracy, Brd) => 21,
             (PhysicalAccuracy, Rng) => 70,
-            (PhysicalAccuracy, Sam) => 42,
-            (PhysicalAccuracy, Nin) => 36,
-            (PhysicalAccuracy, Drg) => 36,
+            (PhysicalAccuracy, Sam) => 36,
+            (PhysicalAccuracy, Nin) => 56,
+            (PhysicalAccuracy, Drg) => 64,
             (PhysicalAccuracy, Blu) => 36,
             (PhysicalAccuracy, Cor) => 36,
-            (PhysicalAccuracy, Pup) => 36,
-            (PhysicalAccuracy, Dnc) => 42,
-            (PhysicalAccuracy, Run) => 36,
+            (PhysicalAccuracy, Pup) => 50,
+            (PhysicalAccuracy, Dnc) => 64,
+            (PhysicalAccuracy, Run) => 56,
 
             // ========= MagicDefense (slot0 for casters: 5/180/605/1280) =========
             (MagicDefense, Whm) => 50,
             (MagicDefense, Blm) => 14,
             (MagicDefense, Rdm) => 28,
-            (MagicDefense, Brd) => 36,
-            (MagicDefense, Smn) => 36,
-            (MagicDefense, Sch) => 36,
-            (MagicDefense, Geo) => 36,
-            (MagicDefense, Run) => 36,
+            (MagicDefense, Brd) => 15,
+            (MagicDefense, Smn) => 22,
+            (MagicDefense, Sch) => 22,
+            (MagicDefense, Geo) => 28,
+            (MagicDefense, Run) => 56,
 
             // ========= MagicAttack =========
             (MagicAttack, Whm) => 22,
             (MagicAttack, Blm) => 50,
             (MagicAttack, Rdm) => 28,
-            (MagicAttack, Sch) => 50,
-            (MagicAttack, Geo) => 50,
-            (MagicAttack, Nin) => 22,
+            (MagicAttack, Sch) => 36,
+            (MagicAttack, Geo) => 42,
+            (MagicAttack, Nin) => 28,
             (MagicAttack, Cor) => 14,
 
             // ========= MagicEvasion =========
@@ -941,14 +970,15 @@ mod tests {
             (MagicEvasion, Brd) => 36,
             (MagicEvasion, Rng) => 36,
             (MagicEvasion, Sam) => 36,
+            (MagicEvasion, Nin) => 50,
             (MagicEvasion, Drg) => 36,
-            (MagicEvasion, Smn) => 42,
+            (MagicEvasion, Smn) => 22,
             (MagicEvasion, Cor) => 36,
             (MagicEvasion, Pup) => 36,
             (MagicEvasion, Dnc) => 36,
             (MagicEvasion, Sch) => 42,
-            (MagicEvasion, Geo) => 42,
-            (MagicEvasion, Run) => 42,
+            (MagicEvasion, Geo) => 50,
+            (MagicEvasion, Run) => 70,
 
             // ========= MagicAccuracy =========
             (MagicAccuracy, War) => 36,
@@ -963,14 +993,14 @@ mod tests {
             (MagicAccuracy, Brd) => 36,
             (MagicAccuracy, Rng) => 36,
             (MagicAccuracy, Sam) => 36,
-            (MagicAccuracy, Nin) => 36,
+            (MagicAccuracy, Nin) => 50,
             (MagicAccuracy, Drg) => 36,
             (MagicAccuracy, Blu) => 36,
             (MagicAccuracy, Cor) => 36,
             (MagicAccuracy, Pup) => 36,
             (MagicAccuracy, Dnc) => 36,
             (MagicAccuracy, Sch) => 42,
-            (MagicAccuracy, Geo) => 42,
+            (MagicAccuracy, Geo) => 50,
             (MagicAccuracy, Run) => 36,
 
             // ========= SkillchainBonus =========
@@ -1012,7 +1042,6 @@ mod tests {
             (JobTraitEffectUp, Blu) => 2,
 
             // ========= 既存 enum 追加分 (新規 (job, gift) ペア) =========
-            (DoubleAttackEffect, War) => 2,
             (TripleAttackRate, Thf) => 8,
             (FencerEffect, Bst) => 230,
             (CritIncreaseEffect, Thf) => 8,
@@ -1061,7 +1090,8 @@ mod tests {
             (ZanshinRate, Sam) => 10,
             (SeiganEffect, Sam) => 1,
             (HassoSeiganEffect, Sam) => 10,
-            (TreasureHunterEffect, Thf) => 4,
+            (TreasureHunterEffect, Thf) => 23,
+            (TreasureHunterMaxLevel, Thf) => 2,
             (ShieldMasteryEffect, Pld) => 15,
             (CritReduceEffect, Pld) => 8,
             (ProtesEffect, Pld) => 10,
@@ -1074,11 +1104,11 @@ mod tests {
             (ShurikenThrowEffect, Nin) => 14,
             (SnapshotEffect, Cor) => 10,
             (AmmoCostReduction, Cor) => 8,
-            (QuickDrawRecast, Cor) => 10,
+            (QuickDrawRecast, Cor) => -10,
             (DualWieldEffect, Thf) => 5,
             (DualWieldEffect, Dnc) => 5,
             (FinishingMoveCount, Dnc) => 4,
-            (SongCastTime, Brd) => 5,
+            (SongCastTime, Brd) => -5,
             (SongEffectDuration, Brd) => 5,
 
             // ========= 新規 enum: ペット系 =========

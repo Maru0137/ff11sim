@@ -7,6 +7,7 @@ use wasm_bindgen::prelude::*;
 
 use crate::chara::Chara;
 use crate::character_profile::CharacterProfile;
+use crate::gift::Gift;
 use crate::job::{Job, JobTrait};
 use crate::job_points::{calc_gift_bonuses, calc_jp_category_bonuses, calc_war_da_gift_bonus};
 use crate::race::Race;
@@ -298,6 +299,31 @@ fn skill_kind_to_key(kind: SkillKind) -> &'static str {
     kind.key()
 }
 
+/// ジョブポイントギフトのスキル系ボーナス (累計 JP に応じた累積値) を返す。
+/// 武器スキル/防御スキルにギフトでの直接加算は無いため魔法・楽器・忍術・風水・歌系のみ対象。
+fn skill_gift_bonus(job: crate::job::Job, skill: SkillKind, total_jp: i32) -> i32 {
+    use crate::gift::Gift;
+    let gift = match skill {
+        SkillKind::Healing => Gift::HealingMagicSkill,
+        SkillKind::Divine => Gift::DivineMagicSkill,
+        SkillKind::Elemental => Gift::ElementalMagicSkill,
+        SkillKind::Dark => Gift::DarkMagicSkill,
+        SkillKind::Enhancing => Gift::EnhancingMagicSkill,
+        SkillKind::Enfeebling => Gift::EnfeeblingMagicSkill,
+        SkillKind::Summoning => Gift::SummoningMagicSkill,
+        SkillKind::BlueMagic => Gift::BlueMagicSkill,
+        SkillKind::Ninjutsu => Gift::NinjutsuSkill,
+        SkillKind::Geomancy => Gift::GeomancySkill,
+        SkillKind::Handbell => Gift::GeomanticBellSkill,
+        SkillKind::Singing => Gift::SingingSkill,
+        SkillKind::StringInstrument => Gift::StringInstrumentSkill,
+        SkillKind::WindInstrument => Gift::WindInstrumentSkill,
+        SkillKind::Guarding => Gift::GuardSkill,
+        _ => return 0,
+    };
+    job.gift_value(gift, total_jp)
+}
+
 fn chara_to_status_result(chara: &Chara) -> StatusResult {
     use crate::status::{
         calc_accuracy, calc_defense, calc_evasion, calc_magic_attack, calc_magic_defense,
@@ -397,12 +423,12 @@ fn chara_to_status_result(chara: &Chara) -> StatusResult {
                 .unwrap_or(false)
     };
 
-    // effective_skills（表示用）: base + global のみ。スロット固有ボーナスは含めない。
+    // effective_skills（表示用）: base + global + ギフトのスキルボーナス
     // ジョブ構成がスキルを持たない場合はボーナスも適用しない（未習得扱い）
     let mut effective_skills: BTreeMap<String, i32> = BTreeMap::new();
     for (skill, base) in base_effective.iter() {
         let v = if job_has_skill(*skill) {
-            base + global_bonus(*skill)
+            base + global_bonus(*skill) + skill_gift_bonus(chara.main_job, *skill, total_jp)
         } else {
             0
         };
@@ -569,15 +595,23 @@ fn chara_to_status_result(chara: &Chara) -> StatusResult {
         skillchain_bonus: chara.bonus_stats.skillchain_bonus
             + skillchain_bonus_trait
             + gift.skillchain_bonus,
-        // Triple Attack 総合 = 装備 + ジョブ特性
-        triple_attack_pct: chara.bonus_stats.triple_attack_pct + triple_attack_trait,
+        // Triple Attack 総合 = 装備 + ジョブ特性 + ギフト (Thf 等)
+        triple_attack_pct: chara.bonus_stats.triple_attack_pct
+            + triple_attack_trait
+            + chara.main_job.gift_value(Gift::TripleAttackRate, total_jp),
         // オートリジェネ/リフレシュ 総合 = 装備 + ジョブ特性
         regen: chara.bonus_stats.regen + auto_regen_trait,
         refresh: chara.bonus_stats.refresh + auto_refresh_trait,
-        // モクシャ / ラピッドショット / ファストキャスト 総合 = 装備 + ジョブ特性
-        subtle_blow: chara.bonus_stats.subtle_blow + subtle_blow_trait,
+        // モクシャ 総合 = 装備 + ジョブ特性 + ギフト (Mnk/Dnc)
+        subtle_blow: chara.bonus_stats.subtle_blow
+            + subtle_blow_trait
+            + chara.main_job.gift_value(Gift::SubtleBlow, total_jp),
+        // ラピッドショット 総合 = 装備 + ジョブ特性
         rapid_shot_pct: chara.bonus_stats.rapid_shot_pct + rapid_shot_trait,
-        fast_cast_pct: chara.bonus_stats.fast_cast_pct + fast_cast_trait,
+        // ファストキャスト 総合 = 装備 + ジョブ特性 + ギフト (Rdm)
+        fast_cast_pct: chara.bonus_stats.fast_cast_pct
+            + fast_cast_trait
+            + chara.main_job.gift_value(Gift::FastCastEffect, total_jp),
         total_jp_spent: total_jp,
         effective_skills,
         main_weapon_skill,

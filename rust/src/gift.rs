@@ -39,6 +39,8 @@ pub enum Gift {
     FencerEffect,
     CritIncreaseEffect,
     SmiteEffect,
+    /// モクシャ効果アップ (相手に与える TP 減少 % 増)
+    SubtleBlow,
     /// BLU 専用: ジョブ特性効果アップ (rank +N)
     JobTraitEffectUp,
 
@@ -64,6 +66,7 @@ pub const ALL_GIFTS: &[Gift] = &[
     Gift::FencerEffect,
     Gift::CritIncreaseEffect,
     Gift::SmiteEffect,
+    Gift::SubtleBlow,
     Gift::JobTraitEffectUp,
     Gift::CriticalHitRate,
     Gift::WeaponSkillDamage,
@@ -288,6 +291,12 @@ fn gift_tiers_table(job: Job, gift: Gift) -> &'static [(i32, i32)] {
         // ============ WeaponSkillDamage (戦士) ============
         // 550 で +3
         (WeaponSkillDamage, War) => &[(550, 3)],
+
+        // ============ SubtleBlow (モクシャ効果アップ) ============
+        // Mnk: 125/445/1050/1805 で -2/-2/-3/-3% (累積 +2/+4/+7/+10)
+        (SubtleBlow, Mnk) => &[(125, 2), (445, 4), (1050, 7), (1805, 10)],
+        // Dnc: 80/360/910/1710 で +3/+3/+3/+4 (累積 +3/+6/+9/+13)
+        (SubtleBlow, Dnc) => &[(80, 3), (360, 6), (910, 9), (1710, 13)],
 
         // ============ JobTraitEffectUp (BLU) ============
         // 100/1200 で +1/+2 rank
@@ -571,6 +580,10 @@ mod tests {
             (CritIncreaseEffect, War) => 10,
             (CriticalHitRate, War) => 10,
             (WeaponSkillDamage, War) => 3,
+
+            // ========= SubtleBlow (モクシャ効果アップ) =========
+            (SubtleBlow, Mnk) => 10,
+            (SubtleBlow, Dnc) => 13,
 
             // ========= BLU JobTraitEffectUp =========
             (JobTraitEffectUp, Blu) => 2,

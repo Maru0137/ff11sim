@@ -416,6 +416,11 @@ export async function updateEquipEditStatus(deps) {
                 ['GeomancyHandbellSkill', 'Handbell'],
             ]},
         ];
+        // タブの可視性: メイン or サポートジョブが該当スキルを習得 (effective_skill > 0) しているもののみ表示
+        const skillKeysOf = (skills) => skills.map(s => typeof s === 'string' ? s : s[1]);
+        const isTabAvailable = (skills) =>
+            skillKeysOf(skills).some(k => (effSkillsForMagic[k] || 0) > 0);
+        let firstVisibleTab = null;
         magicTabs.forEach(({ prefix, skills }) => {
             // スキル値の表示 (単一スキル → "<prefix>Skill"、複数 → 各 ID 指定)
             if (skills.length === 1 && typeof skills[0] === 'string') {
@@ -434,7 +439,31 @@ export async function updateEquipEditStatus(deps) {
             setText(`statMg${prefix}Mnd`, totalStats.mnd || '-');
             setText(`statMg${prefix}Chr`, totalStats.chr || '-');
             setText(`statMg${prefix}Mp`,  totalStats.mp  || '-');
+
+            // ジョブが該当魔法スキルを持たない場合はタブ自体を非表示
+            const subtabId = `subtab-magic-${prefix.toLowerCase()}`;
+            const btn = document.querySelector(`.status-subtab-btn[data-subtab="${subtabId}"]`);
+            const content = document.getElementById(subtabId);
+            const visible = isTabAvailable(skills);
+            if (btn) btn.style.display = visible ? '' : 'none';
+            if (content && !visible) content.classList.remove('active');
+            if (visible && firstVisibleTab === null) firstVisibleTab = subtabId;
         });
+        // 非表示タブが現在 active だった場合、可視の魔法タブ → 既定 (待機/回避/防御) へフォールバック
+        const activeBtn = document.querySelector('.status-subtab-btn.active');
+        if (activeBtn) {
+            const activeId = activeBtn.dataset.subtab;
+            if (activeId && activeId.startsWith('subtab-magic-') &&
+                activeBtn.style.display === 'none') {
+                const fallback = firstVisibleTab || 'subtab-defense';
+                document.querySelectorAll('.status-subtab-btn').forEach(b => b.classList.remove('active'));
+                document.querySelectorAll('.status-subtab-content').forEach(c => c.classList.remove('active'));
+                const newBtn = document.querySelector(`.status-subtab-btn[data-subtab="${fallback}"]`);
+                const newContent = document.getElementById(fallback);
+                if (newBtn) newBtn.classList.add('active');
+                if (newContent) newContent.classList.add('active');
+            }
+        }
 
         // 有効スキル値の表示（値が 0 のスキルは非表示）
         const skillsContainer = document.getElementById('equipEffectiveSkills');

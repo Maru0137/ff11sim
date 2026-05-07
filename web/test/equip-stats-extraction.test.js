@@ -11,7 +11,7 @@ const fs = require('fs');
 const path = require('path');
 const assert = require('assert');
 
-const { extractAllStats } = require('../js/equip-stats.js');
+const { extractAllStats, extractSkillBonuses } = require('../js/equip-stats.js');
 
 const items = JSON.parse(
     fs.readFileSync(path.join(__dirname, '..', 'data', 'items.json'), 'utf8')
@@ -113,6 +113,31 @@ console.log('\n=== Pet/Avatar/Wyvern/Automaton セクション除外 ===');
     check('ＰＩトベ+4 store_tp (Automaton 専用 → 0)', s.store_tp ?? 0, 0);
 }
 
+console.log('\n=== 全魔法スキル一括加算 (Magic skills +N) ===');
+{
+    // インカンタートルク (id=26016): "Magic skills +10" → 14 種すべてに +10
+    const sb = extractSkillBonuses(itemById[26016].description_en);
+    const ALL_MAGIC = ['Divine','Healing','Enhancing','Enfeebling','Elemental','Dark',
+                       'Summoning','Ninjutsu','Singing','StringInstrument','WindInstrument',
+                       'BlueMagic','Geomancy','Handbell'];
+    for (const k of ALL_MAGIC) check(`インカンタートルク ${k} (+10)`, sb[k] ?? 0, 10);
+}
+{
+    // スティキニリング+1 (id=26184): "All magic skills +8" → 14 種すべてに +8
+    const sb = extractSkillBonuses(itemById[26184].description_en);
+    check('スティキニリング+1 Healing (+8)', sb.Healing ?? 0, 8);
+    check('スティキニリング+1 Geomancy (+8)', sb.Geomancy ?? 0, 8);
+    check('スティキニリング+1 BlueMagic (+8)', sb.BlueMagic ?? 0, 8);
+}
+{
+    // ホクスニトルク (id=26043): "Combat skills +30 / Magic skills +30 / Slow+5%"
+    // 戦闘スキル+30 は対象外 (魔法スキル+30 のみ 14 種に加算)
+    const sb = extractSkillBonuses(itemById[26043].description_en);
+    check('ホクスニトルク Divine (+30)', sb.Divine ?? 0, 30);
+    check('ホクスニトルク Ninjutsu (+30)', sb.Ninjutsu ?? 0, 30);
+    check('ホクスニトルク Sword (combat skills は未対応 → 0)', sb.Sword ?? 0, 0);
+}
+
 console.log('\n=== 既存挙動の維持 (回帰チェック) ===');
 {
     // ニビルナイフ (id=20600): 既存の単一ステ抽出が壊れないこと
@@ -122,6 +147,10 @@ console.log('\n=== 既存挙動の維持 (回帰チェック) ===');
     check('ニビルナイフ agi (+5)', s.agi, 5);
     check('ニビルナイフ chr (+5)', s.chr, 5);
     check('ニビルナイフ evasion (+29)', s.evasion, 29);
+    // 単一魔法スキル装備が誤って 14 種にばらまかれないこと
+    const sb = extractSkillBonuses(itemById[20600].description_en);
+    check('ニビルナイフ Dagger skill (+242 既存)', sb.Dagger ?? 0, 242);
+    check('ニビルナイフ Healing (魔法スキル+対象外 → 0)', sb.Healing ?? 0, 0);
 }
 
 console.log('');

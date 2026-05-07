@@ -322,6 +322,23 @@ function extractSkillBonuses(descriptionEn) {
     matchAllRegex(/(?<![A-Za-z])Geomancy(?:\s+skill)?\s*([+-])\s*(\d+)/gi, 'Geomancy');
     matchAllRegex(/(?<![A-Za-z])Handbell(?:\s+skill)?\s*([+-])\s*(\d+)/gi, 'Handbell');
 
+    // 全魔法スキル一括加算: "Magic skills +N" / "All magic skills +N"
+    // 14 種すべての魔法スキルに +N 加算する。
+    // 例: インカンタートルク "Magic skills +10"、スティキニリング "All magic skills +5"
+    // 注: "Healing magic skill +5" 等は単数形 (skill) なのでマッチしない。
+    const ALL_MAGIC_SKILLS = [
+        'Divine', 'Healing', 'Enhancing', 'Enfeebling', 'Elemental', 'Dark',
+        'Summoning', 'Ninjutsu', 'Singing', 'StringInstrument', 'WindInstrument',
+        'BlueMagic', 'Geomancy', 'Handbell',
+    ];
+    for (const m of text.matchAll(/(?<![A-Za-z])(?:All\s+)?Magic\s+skills\s*([+-])\s*(\d+)/gi)) {
+        const sign = m[1] === '-' ? -1 : 1;
+        const v = sign * parseInt(m[2], 10);
+        for (const k of ALL_MAGIC_SKILLS) {
+            add(k, v);
+        }
+    }
+
     return result;
 }
 

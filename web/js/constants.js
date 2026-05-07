@@ -72,6 +72,8 @@ export const AUGMENT_JA_TO_EN = [
     ['モクシャII', '"Subtle Blow II"'],
     ['モクシャ', '"Subtle Blow"'],
     ['魔法ダメージ', 'Magic Damage'],
+    // 全魔法スキル一括加算 (extractSkillBonuses で 14 種に展開される)
+    ['魔法スキル', 'Magic skills'],
     ['被ダメージ', 'Damage taken'],
     ['ストアTP', '"Store TP"'],
     ['TPボーナス', '"TP Bonus"'],

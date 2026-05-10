@@ -138,6 +138,41 @@ console.log('\n=== 全魔法スキル一括加算 (Magic skills +N) ===');
     check('ホクスニトルク Sword (combat skills は未対応 → 0)', sb.Sword ?? 0, 0);
 }
 
+console.log('\n=== 属性耐性: 装備のアイコン (private-use Unicode) → "Fire Resistance" 等の正規化 ===');
+{
+    // フィーバーコラジン (id=10287): description_en に "+30" (耐火+30 を表す)
+    const s = statsOf(10287);
+    check('フィーバーコラジン resist_fire (アイコン正規化 → +30)', s.resist_fire ?? 0, 30);
+}
+{
+    // キャリアーサッシュ (id=10832): 8 属性すべて +15
+    const s = statsOf(10832);
+    for (const e of ['fire','ice','wind','earth','lightning','water','light','dark']) {
+        check(`キャリアーサッシュ resist_${e} (+15)`, s[`resist_${e}`] ?? 0, 15);
+    }
+}
+{
+    // ウェザリンシールド (id=10803): 全属性 -10
+    const s = statsOf(10803);
+    for (const e of ['fire','ice','wind','earth','lightning','water','light','dark']) {
+        check(`ウェザリンシールド resist_${e} (-10)`, s[`resist_${e}`] ?? 0, -10);
+    }
+}
+{
+    // イリダルスタッフ (id=18632): "All elemental resistances +15" → 8 属性すべてに +15
+    const s = statsOf(18632);
+    for (const e of ['fire','ice','wind','earth','lightning','water','light','dark']) {
+        check(`イリダルスタッフ resist_${e} (全属性 +15)`, s[`resist_${e}`] ?? 0, 15);
+    }
+}
+{
+    // 霊亀棍 (id=21152): "Resist all elements +20" → 8 属性すべてに +20
+    const s = statsOf(21152);
+    for (const e of ['fire','ice','wind','earth','lightning','water','light','dark']) {
+        check(`霊亀棍 resist_${e} (全属性 +20)`, s[`resist_${e}`] ?? 0, 20);
+    }
+}
+
 console.log('\n=== JA→EN 変換: 個別魔法スキル名の優先 (regression for #28) ===');
 {
     // 「強化魔法スキル+N」「弱体魔法スキル+N」等の JA を convertAugmentJaToEn で
@@ -193,6 +228,120 @@ console.log('\n=== JA→EN 変換: 個別魔法スキル名の優先 (regression
         const sb = extractSkillBonuses(jaToEn(ja));
         check(`JA→EN ${ja} → ${key} のみ +5`, sb[key] ?? 0, 5);
     }
+}
+
+console.log('\n=== 状態異常レジスト: 個別装備抽出 ===');
+{
+    // 実 items.json データ (id, ailment-key, expected-value)
+    const cases = [
+        [25788, 'sleep', 90],          // Udug Jacket "Resist Sleep"+90
+        [20887, 'paralysis', 50],      // Dacnomania "Resist Paralyze"+50
+        [26202, 'bind', 17],           // Shneddick Ring +1 "Resist Bind"+17
+        [23759, 'silence', 9],         // Agwu's Cap "Resist Silence"+9
+        [23313, 'gravity', 10],        // Pillager's Poulaines +2 "Resist Gravity"+10
+        [21569, 'slow', 90],           // Chocobo Knife "Resist Slow"+90
+        [20606, 'petrification', 15],  // Anathema Harpe "Resist Petrify"+15 (短縮形)
+        [26029, 'stun', 10],           // Anu Torque "Resist Stun"+10
+        [21787, 'poison', 10],         // Poison Axe +1 "Resist Poison"+10
+        [26245, 'charm', 15],          // Solemnity Cape "Resist Charm"+15
+        [21034, 'amnesia', 25],        // Kunimune "Resist Amnesia"+25
+        [20754, 'death', 15],          // Malfeasance: Resistance against "Death" +15
+        [26973, 'death', 15],          // Samnuha Coat: "Death" resistance +15
+        [28330, 'terror', 30],         // Founder's Greaves: Terror resistance +30
+    ];
+    for (const [id, key, expected] of cases) {
+        const s = statsOf(id);
+        check(`id=${id} resist_${key} (+${expected})`, s[`resist_${key}`] ?? 0, expected);
+    }
+}
+{
+    // items.json に該当装備がない 3 種 (blind/curse/virus) は合成 description で確認
+    const synth = '"Resist Blind"+5 "Resist Curse"+8\n"Resist Virus"+12';
+    const s = extractAllStats(synth);
+    check('合成 "Resist Blind"+5', s.resist_blind ?? 0, 5);
+    check('合成 "Resist Curse"+8', s.resist_curse ?? 0, 8);
+    check('合成 "Resist Virus"+12', s.resist_virus ?? 0, 12);
+}
+{
+    // 引用符なし表記 (custom_description で生 augment 文字列を書いた場合のフォールバック)
+    const s = extractAllStats('Resist Slow+45');
+    check('引用符なし Resist Slow+45', s.resist_slow ?? 0, 45);
+}
+
+console.log('\n=== 状態異常レジスト: 全状態異常レジスト+N (デス除く 15 種) ===');
+{
+    // Staunch Tathlum +1 (id=22279): "Resistance to all status ailments +11"
+    const s = statsOf(22279);
+    const expected15 = ['sleep','paralysis','bind','silence','gravity','slow',
+                        'petrification','stun','poison','charm','blind','curse',
+                        'virus','amnesia','terror'];
+    for (const st of expected15) {
+        check(`Staunch Tathlum+1 resist_${st} (+11)`, s[`resist_${st}`] ?? 0, 11);
+    }
+    check('Staunch Tathlum+1 resist_death (除外 → 0)', s.resist_death ?? 0, 0);
+}
+{
+    // Volte Jupon (id=23717): "Resistance to all status ailments +20" (装備に他のステも多数)
+    const s = statsOf(23717);
+    check('Volte Jupon resist_sleep (+20)', s.resist_sleep ?? 0, 20);
+    check('Volte Jupon resist_terror (+20)', s.resist_terror ?? 0, 20);
+    check('Volte Jupon resist_death (除外 → 0)', s.resist_death ?? 0, 0);
+}
+{
+    // 別表記: "All status ailment resistance +5"
+    const s = extractAllStats('All status ailment resistance +5');
+    check('"All status ailment resistance +5" sleep', s.resist_sleep ?? 0, 5);
+    check('"All status ailment resistance +5" death (除外)', s.resist_death ?? 0, 0);
+}
+{
+    // 個別 + 全状態異常 が同居する場合は両方加算される (実装上 result[k] += allStatusResist)
+    const s = extractAllStats('"Resist Sleep"+5 Resistance to all status ailments +10');
+    check('個別+全 sleep (5+10=15)', s.resist_sleep ?? 0, 15);
+    check('個別+全 paralysis (0+10=10)', s.resist_paralysis ?? 0, 10);
+    check('個別+全 death (除外 → 0)', s.resist_death ?? 0, 0);
+}
+
+console.log('\n=== 状態異常レジスト: テナシティ合算 (status-display.combineStatusResist) ===');
+{
+    // status-display.js は ESM なのでファイルを読み込んで該当ロジックを再現
+    const fs = require('fs');
+    const path = require('path');
+    const sd = fs.readFileSync(path.join(__dirname, '..', 'js', 'status-display.js'), 'utf8');
+    // STATUS_RESIST_KEYS と combineStatusResist 関数を抽出
+    const keysM = sd.match(/export const STATUS_RESIST_KEYS\s*=\s*(\[[\s\S]*?\]);/);
+    const fnM   = sd.match(/export function combineStatusResist\(equipResists, tenacity\) \{([\s\S]*?)\n\}/);
+    assert(keysM && fnM, 'status-display.js から combineStatusResist を抽出できない');
+    const STATUS_RESIST_KEYS = eval(keysM[1]);
+    // 関数本体内では STATUS_RESIST_KEYS を参照しているので、ローカル変数として再定義した上で eval する
+    const combineStatusResist = new Function('equipResists', 'tenacity', `
+        const STATUS_RESIST_KEYS = ${keysM[1]};
+        ${fnM[1]}
+    `);
+
+    // (3) テナシティのみ (RUN Lv99 想定 +15)、装備抽出値 0
+    const t = combineStatusResist({}, 15);
+    for (const st of STATUS_RESIST_KEYS) {
+        if (st === 'death') {
+            check(`テナシティのみ resist_death (除外 → 0)`, t.death, 0);
+        } else {
+            check(`テナシティのみ resist_${st} (+15)`, t[st], 15);
+        }
+    }
+
+    // (4) 装備個別 + 装備全状態異常 + テナシティ の 3 つ複合
+    // 装備抽出: "Resist Sleep"+5 + "Resistance to all status ailments +10"
+    const equip = extractAllStats('"Resist Sleep"+5 Resistance to all status ailments +10');
+    const r = combineStatusResist(equip, 15);
+    check('複合 sleep (5+10+15=30)', r.sleep, 30);
+    check('複合 paralysis (0+10+15=25)', r.paralysis, 25);
+    check('複合 terror (0+10+15=25)', r.terror, 25);
+    check('複合 death (装備抽出 0、テナシティ除外 → 0)', r.death, 0);
+
+    // テナシティ 0 (テナシティ未習得) の場合は装備値のみ
+    const r0 = combineStatusResist(equip, 0);
+    check('テナシティ 0 sleep (5+10=15)', r0.sleep, 15);
+    check('テナシティ 0 paralysis (0+10=10)', r0.paralysis, 10);
+    check('テナシティ 0 death (0)', r0.death, 0);
 }
 
 console.log('\n=== 既存挙動の維持 (回帰チェック) ===');

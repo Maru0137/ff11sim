@@ -90,6 +90,40 @@ export const AUGMENT_JA_TO_EN = [
     ['風水鈴スキル', 'Handbell skill'],
     // 全魔法スキル一括加算 (extractSkillBonuses で 14 種に展開される)
     ['魔法スキル', 'Magic skills'],
+    // 状態異常レジスト
+    // 順序重要: 「全状態異常のレジスト」を個別レジストより先に置く (汎用パターン後置)
+    ['全状態異常のレジスト', 'Resistance to all status ailments'],
+    // デス/テラーは items.json で「耐性」表記、EN も独自形式 (引用符 + resistance / 引用符なし)
+    ['デス耐性', '"Death" resistance'],
+    ['テラー耐性', 'Terror resistance'],
+    // 残り 14 種: JA「レジストX」 ↔ EN「"Resist X"」 (引用符付き、X は短縮形)
+    ['レジストアムネジア', '"Resist Amnesia"'],
+    ['レジストペトリ', '"Resist Petrify"'],
+    ['レジストパライズ', '"Resist Paralyze"'],
+    ['レジストグラビデ', '"Resist Gravity"'],
+    ['レジストグラビティ', '"Resist Gravity"'],
+    ['レジストサイレス', '"Resist Silence"'],
+    ['レジストスリープ', '"Resist Sleep"'],
+    ['レジストポイズン', '"Resist Poison"'],
+    ['レジストチャーム', '"Resist Charm"'],
+    ['レジストブライン', '"Resist Blind"'],
+    ['レジストカース', '"Resist Curse"'],
+    ['レジストウィルス', '"Resist Virus"'],
+    ['レジストバインド', '"Resist Bind"'],
+    ['レジストスロウ', '"Resist Slow"'],
+    ['レジストスタン', '"Resist Stun"'],
+    // 属性耐性 (装備の「耐火+15」等を EN 化)
+    // 順序重要: 全耐性 系 → 個別耐性 (個別が「全」の文字列に部分マッチしないが念のため先に置く)
+    ['全属性耐性', 'All elemental resistances'],
+    ['全耐性', 'All elemental resistances'],
+    ['耐火', 'Fire Resistance'],
+    ['耐氷', 'Ice Resistance'],
+    ['耐風', 'Wind Resistance'],
+    ['耐土', 'Earth Resistance'],
+    ['耐雷', 'Lightning Resistance'],
+    ['耐水', 'Water Resistance'],
+    ['耐光', 'Light Resistance'],
+    ['耐闇', 'Dark Resistance'],
     ['被ダメージ', 'Damage taken'],
     ['ストアTP', '"Store TP"'],
     ['TPボーナス', '"TP Bonus"'],

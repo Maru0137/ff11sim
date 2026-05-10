@@ -15,6 +15,25 @@ function extractAllStats(descriptionEn) {
     // Normalize literal \n to actual newlines
     let text = descriptionEn.replace(/\\n/g, '\n');
 
+    // FFXI の属性アイコン (private-use Unicode -) を「Fire Resistance」等の
+    // 正規表記に正規化する。items.json の description_en は耐性表記をアイコンで持っており、
+    // そのままでは regex でマッチしないため。
+    // マッピング: =火 / =氷 / =風 / =土
+    //            =雷 / =水 / =光 / =闇
+    const ELEMENT_ICON_MAP = {
+        '': 'Fire Resistance ',
+        '': 'Ice Resistance ',
+        '': 'Wind Resistance ',
+        '': 'Earth Resistance ',
+        '': 'Lightning Resistance ',
+        '': 'Water Resistance ',
+        '': 'Light Resistance ',
+        '': 'Dark Resistance ',
+    };
+    for (const [icon, name] of Object.entries(ELEMENT_ICON_MAP)) {
+        text = text.split(icon).join(name);
+    }
+
     // Unity Ranking ボーナスは最大値を採用してプレフィックスを外す
     // e.g. "Unity Ranking: Attack+10～15" → " Attack+15"
     text = text.replace(
@@ -197,29 +216,46 @@ function extractAllStats(descriptionEn) {
     }
 
     // === 状態異常レジスト ===
-    // 表記揺れ: "Resist Sleep+5" / "Terror resistance +30" / "Status ailment resistance +N"
-    const statusResistMap = [
-        ['sleep', 'Sleep'],
-        ['paralysis', 'Paralysis'],
-        ['bind', 'Bind'],
-        ['silence', 'Silence'],
-        ['gravity', 'Gravity'],
-        ['slow', 'Slow'],
-        ['petrification', 'Petrification'],
-        ['stun', 'Stun'],
-        ['poison', 'Poison'],
-        ['charm', 'Charm'],
-        ['blind', 'Blind'],
-        ['curse', 'Curse'],
-        ['virus', 'Virus'],
-        ['amnesia', 'Amnesia'],
-        ['terror', 'Terror'],
-        ['death', 'Death'],
+    // items.json 実表記:
+    //   通常 14 種: "Resist X"+N (引用符付き、X は短縮形 — Petrify, Paralyze 等)
+    //   Terror:    Terror resistance +N (引用符なし、語順 reverse)
+    //   Death:     Resistance against "Death" +N または "Death" resistance +N
+    const statusResistPatterns = [
+        ['sleep',         '"?Resist Sleep"?'],
+        ['paralysis',     '"?Resist Paralyze"?'],
+        ['bind',          '"?Resist Bind"?'],
+        ['silence',       '"?Resist Silence"?'],
+        ['gravity',       '"?Resist Gravity"?'],
+        ['slow',          '"?Resist Slow"?'],
+        ['petrification', '"?Resist Petrify"?'],
+        ['stun',          '"?Resist Stun"?'],
+        ['poison',        '"?Resist Poison"?'],
+        ['charm',         '"?Resist Charm"?'],
+        ['blind',         '"?Resist Blind"?'],
+        ['curse',         '"?Resist Curse"?'],
+        ['virus',         '"?Resist Virus"?'],
+        ['amnesia',       '"?Resist Amnesia"?'],
+        ['terror',        '(?:Terror resistance|"?Resist Terror"?)'],
+        ['death',         '(?:Resistance against "Death"|"Death" resistance|"?Resist Death"?)'],
     ];
-    for (const [key, en] of statusResistMap) {
-        set(`resist_${key}`, matchSigned(
-            `(?:Resist ${en}|${en} [Rr]esistance)\\s*([+-])\\s*(\\d+)`
-        ));
+    for (const [key, pattern] of statusResistPatterns) {
+        set(`resist_${key}`, matchSigned(`${pattern}\\s*([+-])\\s*(\\d+)`));
+    }
+
+    // === 全状態異常のレジスト (デス耐性を除く 15 種に一括加算) ===
+    // wiki 795.html: 「全状態異常のレジスト効果アップ」はデス耐性を除く全状態異常に作用
+    // EN 表記想定: "Resistance to all status ailments +N" / "All status ailment resistance +N"
+    const allStatusResist = matchSigned(
+        'Resistance to all status ailments\\s*([+-])\\s*(\\d+)'
+    ) || matchSigned(
+        'All status ailment[s]? [Rr]esistance\\s*([+-])\\s*(\\d+)'
+    );
+    if (allStatusResist !== 0) {
+        for (const [key] of statusResistPatterns) {
+            if (key === 'death') continue;
+            const k = `resist_${key}`;
+            result[k] = (result[k] || 0) + allStatusResist;
+        }
     }
 
     // === Weapon stats (colon format) ===
@@ -231,6 +267,20 @@ function extractAllStats(descriptionEn) {
     if (allbp !== 0) {
         for (const key of ['str', 'dex', 'vit', 'agi', 'int', 'mnd', 'chr']) {
             result[key] = (result[key] || 0) + allbp;
+        }
+    }
+
+    // === 全属性耐性: 8 属性すべてに加減算 ===
+    // 表記: "All elemental resistances +N" (例: イリダルスタッフ)
+    //       "Resist all elements +N" (例: 霊亀棍)
+    // ※ "Set: Increases all elemental resistances" 等の数値なしの記述は対象外 (regex に +-\d 必須)。
+    const allElementResist = matchSigned(
+        '(?:All\\s+elemental\\s+resistances|Resist\\s+all\\s+elements)\\s*([+-])\\s*(\\d+)'
+    );
+    if (allElementResist !== 0) {
+        for (const elem of ['fire','ice','wind','earth','lightning','water','light','dark']) {
+            const k = `resist_${elem}`;
+            result[k] = (result[k] || 0) + allElementResist;
         }
     }
 

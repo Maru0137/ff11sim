@@ -15,6 +15,25 @@ function extractAllStats(descriptionEn) {
     // Normalize literal \n to actual newlines
     let text = descriptionEn.replace(/\\n/g, '\n');
 
+    // FFXI の属性アイコン (private-use Unicode -) を「Fire Resistance」等の
+    // 正規表記に正規化する。items.json の description_en は耐性表記をアイコンで持っており、
+    // そのままでは regex でマッチしないため。
+    // マッピング: =火 / =氷 / =風 / =土
+    //            =雷 / =水 / =光 / =闇
+    const ELEMENT_ICON_MAP = {
+        '': 'Fire Resistance ',
+        '': 'Ice Resistance ',
+        '': 'Wind Resistance ',
+        '': 'Earth Resistance ',
+        '': 'Lightning Resistance ',
+        '': 'Water Resistance ',
+        '': 'Light Resistance ',
+        '': 'Dark Resistance ',
+    };
+    for (const [icon, name] of Object.entries(ELEMENT_ICON_MAP)) {
+        text = text.split(icon).join(name);
+    }
+
     // Unity Ranking ボーナスは最大値を採用してプレフィックスを外す
     // e.g. "Unity Ranking: Attack+10～15" → " Attack+15"
     text = text.replace(

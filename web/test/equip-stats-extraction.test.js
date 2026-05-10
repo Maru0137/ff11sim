@@ -138,6 +138,27 @@ console.log('\n=== 全魔法スキル一括加算 (Magic skills +N) ===');
     check('ホクスニトルク Sword (combat skills は未対応 → 0)', sb.Sword ?? 0, 0);
 }
 
+console.log('\n=== 属性耐性: 装備のアイコン (private-use Unicode) → "Fire Resistance" 等の正規化 ===');
+{
+    // フィーバーコラジン (id=10287): description_en に "+30" (耐火+30 を表す)
+    const s = statsOf(10287);
+    check('フィーバーコラジン resist_fire (アイコン正規化 → +30)', s.resist_fire ?? 0, 30);
+}
+{
+    // キャリアーサッシュ (id=10832): 8 属性すべて +15
+    const s = statsOf(10832);
+    for (const e of ['fire','ice','wind','earth','lightning','water','light','dark']) {
+        check(`キャリアーサッシュ resist_${e} (+15)`, s[`resist_${e}`] ?? 0, 15);
+    }
+}
+{
+    // ウェザリンシールド (id=10803): 全属性 -10
+    const s = statsOf(10803);
+    for (const e of ['fire','ice','wind','earth','lightning','water','light','dark']) {
+        check(`ウェザリンシールド resist_${e} (-10)`, s[`resist_${e}`] ?? 0, -10);
+    }
+}
+
 console.log('\n=== JA→EN 変換: 個別魔法スキル名の優先 (regression for #28) ===');
 {
     // 「強化魔法スキル+N」「弱体魔法スキル+N」等の JA を convertAugmentJaToEn で

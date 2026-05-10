@@ -90,6 +90,15 @@ export const AUGMENT_JA_TO_EN = [
     ['風水鈴スキル', 'Handbell skill'],
     // 全魔法スキル一括加算 (extractSkillBonuses で 14 種に展開される)
     ['魔法スキル', 'Magic skills'],
+    // 属性耐性 (装備の「耐火+15」等を EN 化)
+    ['耐火', 'Fire Resistance'],
+    ['耐氷', 'Ice Resistance'],
+    ['耐風', 'Wind Resistance'],
+    ['耐土', 'Earth Resistance'],
+    ['耐雷', 'Lightning Resistance'],
+    ['耐水', 'Water Resistance'],
+    ['耐光', 'Light Resistance'],
+    ['耐闇', 'Dark Resistance'],
     ['被ダメージ', 'Damage taken'],
     ['ストアTP', '"Store TP"'],
     ['TPボーナス', '"TP Bonus"'],

@@ -216,29 +216,46 @@ function extractAllStats(descriptionEn) {
     }
 
     // === 状態異常レジスト ===
-    // 表記揺れ: "Resist Sleep+5" / "Terror resistance +30" / "Status ailment resistance +N"
-    const statusResistMap = [
-        ['sleep', 'Sleep'],
-        ['paralysis', 'Paralysis'],
-        ['bind', 'Bind'],
-        ['silence', 'Silence'],
-        ['gravity', 'Gravity'],
-        ['slow', 'Slow'],
-        ['petrification', 'Petrification'],
-        ['stun', 'Stun'],
-        ['poison', 'Poison'],
-        ['charm', 'Charm'],
-        ['blind', 'Blind'],
-        ['curse', 'Curse'],
-        ['virus', 'Virus'],
-        ['amnesia', 'Amnesia'],
-        ['terror', 'Terror'],
-        ['death', 'Death'],
+    // items.json 実表記:
+    //   通常 14 種: "Resist X"+N (引用符付き、X は短縮形 — Petrify, Paralyze 等)
+    //   Terror:    Terror resistance +N (引用符なし、語順 reverse)
+    //   Death:     Resistance against "Death" +N または "Death" resistance +N
+    const statusResistPatterns = [
+        ['sleep',         '"?Resist Sleep"?'],
+        ['paralysis',     '"?Resist Paralyze"?'],
+        ['bind',          '"?Resist Bind"?'],
+        ['silence',       '"?Resist Silence"?'],
+        ['gravity',       '"?Resist Gravity"?'],
+        ['slow',          '"?Resist Slow"?'],
+        ['petrification', '"?Resist Petrify"?'],
+        ['stun',          '"?Resist Stun"?'],
+        ['poison',        '"?Resist Poison"?'],
+        ['charm',         '"?Resist Charm"?'],
+        ['blind',         '"?Resist Blind"?'],
+        ['curse',         '"?Resist Curse"?'],
+        ['virus',         '"?Resist Virus"?'],
+        ['amnesia',       '"?Resist Amnesia"?'],
+        ['terror',        '(?:Terror resistance|"?Resist Terror"?)'],
+        ['death',         '(?:Resistance against "Death"|"Death" resistance|"?Resist Death"?)'],
     ];
-    for (const [key, en] of statusResistMap) {
-        set(`resist_${key}`, matchSigned(
-            `(?:Resist ${en}|${en} [Rr]esistance)\\s*([+-])\\s*(\\d+)`
-        ));
+    for (const [key, pattern] of statusResistPatterns) {
+        set(`resist_${key}`, matchSigned(`${pattern}\\s*([+-])\\s*(\\d+)`));
+    }
+
+    // === 全状態異常のレジスト (デス耐性を除く 15 種に一括加算) ===
+    // wiki 795.html: 「全状態異常のレジスト効果アップ」はデス耐性を除く全状態異常に作用
+    // EN 表記想定: "Resistance to all status ailments +N" / "All status ailment resistance +N"
+    const allStatusResist = matchSigned(
+        'Resistance to all status ailments\\s*([+-])\\s*(\\d+)'
+    ) || matchSigned(
+        'All status ailment[s]? [Rr]esistance\\s*([+-])\\s*(\\d+)'
+    );
+    if (allStatusResist !== 0) {
+        for (const [key] of statusResistPatterns) {
+            if (key === 'death') continue;
+            const k = `resist_${key}`;
+            result[k] = (result[k] || 0) + allStatusResist;
+        }
     }
 
     // === Weapon stats (colon format) ===

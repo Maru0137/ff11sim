@@ -22,6 +22,25 @@ function setText(id, v) {
     if (el) el.textContent = v;
 }
 
+// 状態異常レジストのキー (HTML id `statDefRes*` の小文字 suffix と対応)
+export const STATUS_RESIST_KEYS = [
+    'sleep', 'paralysis', 'bind', 'silence', 'gravity', 'slow',
+    'petrification', 'stun', 'poison', 'charm', 'blind', 'curse',
+    'virus', 'amnesia', 'terror', 'death',
+];
+
+// 装備抽出値 + テナシティ (デス以外) の合算。
+// テナシティ = RUN ジョブ特性。wiki 795.html により「全状態異常のレジスト効果アップ」と同等で
+// デス耐性を除く 15 種に作用。tenacity は 0 を渡せば装備値のみ返る。
+export function combineStatusResist(equipResists, tenacity) {
+    const out = {};
+    for (const st of STATUS_RESIST_KEYS) {
+        const equipVal = equipResists['resist_' + st] || 0;
+        out[st] = st === 'death' ? equipVal : equipVal + (tenacity || 0);
+    }
+    return out;
+}
+
 /**
  * キャラクター + 装備セットの合計ステータスを編集パネルに反映。
  * @param {object} deps
@@ -241,12 +260,13 @@ export async function updateEquipEditStatus(deps) {
             const id = 'statDefRes' + elem.charAt(0).toUpperCase() + elem.slice(1);
             setText(id, numOrDash(equip['resist_' + elem]));
         }
-        // 状態異常レジスト
-        for (const st of ['sleep', 'paralysis', 'bind', 'silence', 'gravity', 'slow',
-                          'petrification', 'stun', 'poison', 'charm', 'blind', 'curse',
-                          'virus', 'amnesia', 'terror', 'death']) {
+        // 状態異常レジスト = 装備抽出 + テナシティ (デス以外 15 種)
+        // テナシティ (RUN ジョブ特性) は wiki 795.html により「全状態異常のレジスト」と同等で
+        // デス耐性を除く 15 種に作用する。
+        const statusResistTotals = combineStatusResist(equip, totalStats.tenacity || 0);
+        for (const [st, total] of Object.entries(statusResistTotals)) {
             const id = 'statDefRes' + st.charAt(0).toUpperCase() + st.slice(1);
-            setText(id, numOrDash(equip['resist_' + st]));
+            setText(id, numOrDash(total));
         }
 
         // ----- Tab 2: オートアタック (近接) -----

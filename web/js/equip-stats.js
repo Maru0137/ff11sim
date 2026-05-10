@@ -253,6 +253,20 @@ function extractAllStats(descriptionEn) {
         }
     }
 
+    // === 全属性耐性: 8 属性すべてに加減算 ===
+    // 表記: "All elemental resistances +N" (例: イリダルスタッフ)
+    //       "Resist all elements +N" (例: 霊亀棍)
+    // ※ "Set: Increases all elemental resistances" 等の数値なしの記述は対象外 (regex に +-\d 必須)。
+    const allElementResist = matchSigned(
+        '(?:All\\s+elemental\\s+resistances|Resist\\s+all\\s+elements)\\s*([+-])\\s*(\\d+)'
+    );
+    if (allElementResist !== 0) {
+        for (const elem of ['fire','ice','wind','earth','lightning','water','light','dark']) {
+            const k = `resist_${elem}`;
+            result[k] = (result[k] || 0) + allElementResist;
+        }
+    }
+
     return result;
 }
 

@@ -91,6 +91,9 @@ export const AUGMENT_JA_TO_EN = [
     // 全魔法スキル一括加算 (extractSkillBonuses で 14 種に展開される)
     ['魔法スキル', 'Magic skills'],
     // 属性耐性 (装備の「耐火+15」等を EN 化)
+    // 順序重要: 全耐性 系 → 個別耐性 (個別が「全」の文字列に部分マッチしないが念のため先に置く)
+    ['全属性耐性', 'All elemental resistances'],
+    ['全耐性', 'All elemental resistances'],
     ['耐火', 'Fire Resistance'],
     ['耐氷', 'Ice Resistance'],
     ['耐風', 'Wind Resistance'],

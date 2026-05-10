@@ -158,6 +158,20 @@ console.log('\n=== 属性耐性: 装備のアイコン (private-use Unicode) →
         check(`ウェザリンシールド resist_${e} (-10)`, s[`resist_${e}`] ?? 0, -10);
     }
 }
+{
+    // イリダルスタッフ (id=18632): "All elemental resistances +15" → 8 属性すべてに +15
+    const s = statsOf(18632);
+    for (const e of ['fire','ice','wind','earth','lightning','water','light','dark']) {
+        check(`イリダルスタッフ resist_${e} (全属性 +15)`, s[`resist_${e}`] ?? 0, 15);
+    }
+}
+{
+    // 霊亀棍 (id=21152): "Resist all elements +20" → 8 属性すべてに +20
+    const s = statsOf(21152);
+    for (const e of ['fire','ice','wind','earth','lightning','water','light','dark']) {
+        check(`霊亀棍 resist_${e} (全属性 +20)`, s[`resist_${e}`] ?? 0, 20);
+    }
+}
 
 console.log('\n=== JA→EN 変換: 個別魔法スキル名の優先 (regression for #28) ===');
 {

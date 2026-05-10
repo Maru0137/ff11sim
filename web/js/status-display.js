@@ -449,6 +449,14 @@ export async function updateEquipEditStatus(deps) {
             if (content && !visible) content.classList.remove('active');
             if (visible && firstVisibleTab === null) firstVisibleTab = subtabId;
         });
+        // 強化魔法タブ専用: 1 段目を魔攻/魔命/魔回避/魔法ダメ → ファストキャスト等に差し替え
+        // (HTML の subtab-magic-enhancing 1 段目に対応)
+        setText('statMgEnhancingFastCast',     pctOrDash(totalStats.fast_cast_pct));
+        setText('statMgEnhancingCastTime',     pctOrDash(equip.enhancing_casting_time_pct));
+        setText('statMgEnhancingDurationAlt',  pctOrDash(equip.enhancing_duration_alt_pct));
+        setText('statMgEnhancingDuration',     pctOrDash(equip.enhancing_duration_pct));
+        setText('statMgEnhancingConserveMp',   numOrDash(equip.conserve_mp));
+
         // 非表示タブが現在 active だった場合、可視の魔法タブ → 既定 (待機/回避/防御) へフォールバック
         const activeBtn = document.querySelector('.status-subtab-btn.active');
         if (activeBtn) {
@@ -539,12 +547,18 @@ export function clearAllEquipStats() {
         'statRewsStp', 'statRewsSb', 'statRewsSb2', 'statRewsCrit', 'statRewsCritDmg',
         'statRewsWsdmg', 'statRewsTpb', 'statRewsScb', 'statRewsPdl', 'statRewsTs',
         // Tab 9-19: 魔法 (11 種別)
-        ...['Divine', 'Healing', 'Enhancing', 'Enfeebling', 'Elemental', 'Dark',
+        // 強化魔法は専用フィールド構成のため別扱い
+        ...['Divine', 'Healing', 'Enfeebling', 'Elemental', 'Dark',
             'Summoning', 'Ninjutsu', 'Blue'].flatMap(p => [
             `statMg${p}Skill`,
             `statMg${p}Matk`, `statMg${p}Macc`, `statMg${p}Meva`, `statMg${p}Mdmg`,
             `statMg${p}Int`, `statMg${p}Mnd`, `statMg${p}Chr`, `statMg${p}Mp`,
         ]),
+        // 強化魔法 (専用フィールド構成: 1 段のみ)
+        'statMgEnhancingSkill',
+        'statMgEnhancingFastCast', 'statMgEnhancingCastTime',
+        'statMgEnhancingDurationAlt', 'statMgEnhancingDuration',
+        'statMgEnhancingConserveMp',
         // 呪歌 (3 スキル別表示)
         'statMgSongSingingSkill', 'statMgSongStringSkill', 'statMgSongWindSkill',
         'statMgSongMatk', 'statMgSongMacc', 'statMgSongMeva', 'statMgSongMdmg',

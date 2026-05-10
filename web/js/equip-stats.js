@@ -186,6 +186,15 @@ function extractAllStats(descriptionEn) {
     set('quick_magic_pct', matchOptionalSign('"?Quick Magic"?\\s*([+-]?)\\s*(\\d+)%?'));
     set('snapshot_pct', matchOptionalSign('"?Snapshot"?\\s*([+-]?)\\s*(\\d+)%?'));
     set('rapid_shot_pct', matchOptionalSign('"?Rapid Shot"?\\s*([+-]?)\\s*(\\d+)%?'));
+    // コンサーブMP (例: "Conserve MP"+4)
+    set('conserve_mp', matchSigned('"?Conserve MP"?\\s*([+-])\\s*(\\d+)'));
+    // 強化魔法系特殊効果
+    // - 強化魔法の効果時間 +N% (items.json 標準: "Enhancing magic duration +25%")
+    // - 強化魔法効果時間 +N% (no の。custom_description で稀に使われる別表記)
+    //   → AUGMENT_JA_TO_EN で別マーカー "Enhancing magic effect duration" に変換し区別表示する
+    set('enhancing_duration_pct', matchSigned('Enhancing magic duration\\s*([+-])\\s*(\\d+)%?'));
+    set('enhancing_duration_alt_pct', matchSigned('Enhancing magic effect duration\\s*([+-])\\s*(\\d+)%?'));
+    set('enhancing_casting_time_pct', matchSigned('Enhancing magic casting time\\s*([+-])\\s*(\\d+)%?'));
 
     // === 属性レジスト (Fire/Ice/Wind/Earth/Lightning/Water/Light/Dark) ===
     // 注意: items.json には "Fire Resistance +N" 形式の装備は現状存在しない。
@@ -375,6 +384,8 @@ function getEmptyStats() {
         // 待機/回避/防御 タブ表示用
         regen: 0, refresh: 0, regain: 0,
         fast_cast_pct: 0, quick_magic_pct: 0, snapshot_pct: 0, rapid_shot_pct: 0,
+        conserve_mp: 0,
+        enhancing_duration_pct: 0, enhancing_duration_alt_pct: 0, enhancing_casting_time_pct: 0,
         resist_fire: 0, resist_ice: 0, resist_wind: 0, resist_earth: 0,
         resist_lightning: 0, resist_water: 0, resist_light: 0, resist_dark: 0,
         resist_sleep: 0, resist_paralysis: 0, resist_bind: 0, resist_silence: 0,

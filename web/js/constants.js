@@ -90,6 +90,11 @@ export const AUGMENT_JA_TO_EN = [
     ['風水鈴スキル', 'Handbell skill'],
     // 全魔法スキル一括加算 (extractSkillBonuses で 14 種に展開される)
     ['魔法スキル', 'Magic skills'],
+    // 強化魔法系特殊効果 (順序重要: の付き → の無し で部分マッチを回避)
+    ['強化魔法の効果時間', 'Enhancing magic duration'],
+    ['強化魔法効果時間', 'Enhancing magic effect duration'],
+    ['強化魔法の詠唱時間', 'Enhancing magic casting time'],
+    ['コンサーブMP', '"Conserve MP"'],
     ['被ダメージ', 'Damage taken'],
     ['ストアTP', '"Store TP"'],
     ['TPボーナス', '"TP Bonus"'],

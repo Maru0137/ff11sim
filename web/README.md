@@ -65,6 +65,26 @@ wasm-pack build --target web --out-dir ../web/pkg
 
 ビルド成功後、`web/pkg/`ディレクトリにWASMファイルが生成されます。
 
+## 装備データの生成
+
+`web/data/items.json` は上流 ([Windower/Resources](https://github.com/Windower/Resources)) から
+生成する派生物で、git 管理外です (`docs/adr/0003`)。チェックアウト直後は存在しないため、
+装備検索・装備セットを動かす前に生成してください。
+
+```bash
+scripts/build_web_data.sh
+```
+
+CI と同じコマンドで、以下を一括で行います。
+
+- 上流 Lua のダウンロード (`temp_resources/` にキャッシュ。2 回目以降は内容が同じならスキップ)
+- `web/data/items.json` の生成
+- 件数の検証
+- `web/data/_build_metadata.json` (ビルドのメタ情報) の出力
+
+`scripts/scrape_augments.py` も `items.json` を装備名の逆引きに使うため、
+先にこのコマンドを実行しておく必要があります。
+
 ## Supabase 連携 (ユーザー登録 + クラウド保存)
 
 ログインすると、キャラクターと装備セットを Supabase (Postgres) に保存できる。
@@ -114,7 +134,7 @@ web/
 │   ├── item-search.js  # アイテム検索エンジン
 │   └── equip-stats.js  # 装備ステータス抽出
 ├── data/
-│   └── items.json      # 装備データベース（14,921アイテム）
+│   └── items.json      # 装備データベース（CI/スクリプトで生成、git 管理外）
 └── pkg/                # WASMモジュール（ビルド後生成）
     ├── ff11sim.js
     ├── ff11sim_bg.wasm
@@ -126,7 +146,7 @@ web/
 - **Character Management**: キャラクター作成（種族、ジョブレベル、メリットポイント）
 - **Equipment Set**: 装備セット管理（16スロット、ジョブ別グループ化）
 - **Status Calculation**: リアルタイムステータス計算（Base + Equipment）
-- **Item Search**: 14,921アイテムの高速検索・フィルタリング
+- **Item Search**: 全装備アイテムの高速検索・フィルタリング
 
 ## トラブルシューティング
 

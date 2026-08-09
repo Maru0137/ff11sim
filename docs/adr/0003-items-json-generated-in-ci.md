@@ -39,49 +39,118 @@ FFXI のバージョンアップで装備が追加・変更されるたびに Wi
 一次データは上流の Lua であり、変換スクリプトはリポジトリにある。
 したがってリポジトリに保持すべきは「生成方法」であって「生成物」ではない。
 
-- 変換は `scripts/parse_lua_to_json.py` が担う。ジョブ・スロット・種族のビットマスクを
-  展開し、説明文を結合して JSON 化する。
-- **上流ファイルの取得・変換・検証・メタデータ出力は `scripts/build_web_data.sh` に集約し、
-  `web/data/` を作る処理を 1 コマンドにする。** `.github/workflows/deploy.yml` はこれを
-  呼ぶだけで、`web/` 全体を Pages にアップロードする。CI とローカルで同じコマンドを使えるため、
-  手元で配信物を再現できる。
-- 上流ファイルは `temp_resources/` にキャッシュし、ローカルの再実行を速くする。
-  GitHub の blob SHA は git のオブジェクト ID そのものなので、`git hash-object` で
-  ローカルファイルのハッシュを計算すれば鮮度を正確に判定でき、一致すればダウンロードを省ける。
-- **上流の更新をこちらの push と無関係に取り込むため、`deploy.yml` は
-  `push` に加えて `schedule`（毎日 15:00 UTC = 00:00 JST）と `workflow_dispatch` で起動する。**
-  上流リポジトリから push 型の通知（`repository_dispatch` / webhook）を受け取るには
-  送信側の設定が必要で、他人のリポジトリには行えない。polling が唯一の手段である。
-- **毎日フルビルドするのは無駄が大きいため、`detect-resource-changes` ジョブが先に
-  上流リソースの内容を確認し、変化がなければ `schedule` 実行のビルドをスキップする。**
-  上流の更新は FFXI のバージョンアップに追随して概ね月次であり、
-  日次フルビルドでは実データ変更 1 回あたり約 30 回が空振りになる。
-- **変化の判定には commit SHA ではなく blob SHA（ファイル内容のハッシュ）を使う。**
-  commit SHA は内容の代理でしかなく、過去日付のコミットを含むブランチが後から
-  マージされた場合や、異なる 2 コミットの committer date が同秒だった場合に
-  変化を取りこぼす。blob SHA は内容が変わったときだけ変わるため、取りこぼしも、
-  内容不変な no-op コミットによる空振りビルドも起きない。日付比較も不要になる。
-  取得はディレクトリ一覧エンドポイント (`contents/resources_data?ref=master`) を使い、
-  ファイル内容を転送せずメタデータのみ・API 1 回で済ませる。
-- **前回ビルド時の上流 blob SHA は `web/data/_build_metadata.json` に記録し、
-  配信サイト経由で次回の `detect-resource-changes` が読む。**
-  `web/` 配下なので Pages にそのまま公開され、外部ストレージを用意せずに状態を持てる。
-  このファイルはビルド全般のメタ情報を入れる器とし、上流の blob SHA のほかに
-  ビルド時刻と ff11sim 自身の commit も記録する。実データと区別するため `_` を前置する。
-  取得に失敗した場合は「変化あり」とみなしてビルドする（安全側に倒す）。
-- **定期実行は無人であり、壊れた生成物が差分レビューを経ずに配信されうる。
-  これを防ぐため、生成後に件数の下限を検査する `scripts/validate_items.sh` を通す。**
-  検査は変換スクリプトに入れず独立させる。`parse_lua_to_json.py` の責務は
-  Lua → JSON の変換であり、どの件数を許容するかは上流データの性質ではなく
-  運用ポリシーだからである。生成物の `item_count` を読むだけで済む。
-  **具体的な下限値は ADR ではなくスクリプト側に置く。** 上流の更新で件数は増えていくため、
-  ドキュメントに数値を書くと必ず陳腐化する。
-- `web/data/items.json` と `web/data/_build_metadata.json`、および `temp_resources/` は
-  `.gitignore` に登録する。
-- ローカルで装備検索を動かす場合も `scripts/build_web_data.sh` を実行するだけでよい。
+以下は、この決定を成立させるために付随して決めたことである。
 
-`items` テーブルは `supabase/schema.sql` に「CI でのインポート用」として定義されているが、
-現在 CI はここへインポートしていない。選択肢 3 の検討痕跡であり、実際には使われていない。
+**生成の入口を 1 つにする**
+
+- 上流ファイルの取得・変換・検証・メタデータ出力は `scripts/build_web_data.sh` に集約し、
+  `web/data/` を作る処理を 1 コマンドにする。`.github/workflows/deploy.yml` はこれを呼ぶだけで、
+  `web/` 全体を Pages にアップロードする。
+- 変換自体は `scripts/parse_lua_to_json.py` が担う。ジョブ・スロット・種族のビットマスクを
+  展開し、説明文を結合して JSON 化する。
+- 生成物 (`web/data/items.json` / `web/data/_build_metadata.json`) と
+  ダウンロードキャッシュ (`temp_resources/`) は `.gitignore` に登録する。
+
+**上流の更新に自動で追随する**
+
+- `deploy.yml` は `push` に加えて `schedule`（毎日 15:00 UTC = 00:00 JST）と
+  `workflow_dispatch` で起動する。上流リポジトリから push 型の通知
+  （`repository_dispatch` / webhook）を受け取るには送信側の設定が必要で、
+  他人のリポジトリには行えない。polling が唯一の手段である。
+- ただし日次フルビルドは無駄が大きい。上流の更新は FFXI のバージョンアップに追随して
+  概ね月次であり、実データ変更 1 回あたり約 30 回が空振りになる。そこで
+  `detect-resource-changes` ジョブを前段に置き、変化がなければ `schedule` 実行のビルドを
+  スキップする。
+- 変化の判定には commit SHA ではなく blob SHA（ファイル内容のハッシュ）を使う。
+  commit SHA は内容の代理でしかなく、過去日付のコミットを含むブランチが後からマージされた
+  場合や、異なる 2 コミットの committer date が同秒だった場合に変化を取りこぼす。
+  blob SHA は内容が変わったときだけ変わるため、取りこぼしも、内容不変な no-op コミットによる
+  空振りビルドも起きない。日付比較も不要になる。取得はディレクトリ一覧エンドポイント
+  (`contents/resources_data?ref=master`) を使い、ファイル内容を転送せずメタデータのみ・
+  API 1 回で済ませる。
+- 前回ビルド時の blob SHA は `web/data/_build_metadata.json` に記録し、配信サイト経由で
+  次回の `detect-resource-changes` が読む。`web/` 配下なので Pages にそのまま公開され、
+  外部ストレージを用意せずに状態を持てる。このファイルはビルド全般のメタ情報を入れる器とし、
+  blob SHA のほかにビルド時刻と ff11sim 自身の commit も記録する。実データと区別するため
+  `_` を前置する。取得に失敗した場合は「変化あり」とみなしてビルドする（安全側に倒す）。
+
+**壊れた生成物を配信しない**
+
+- 定期実行は無人であり、生成物は git 管理外で差分レビューも効かない。上流の構造変更で
+  パースが空振りしても変換スクリプトは例外を投げずに「0 件生成して正常終了」しうるため、
+  `scripts/validate_items.sh` で件数の下限を検査し、下回れば CI を止める。
+- 検査は変換スクリプトに入れず独立させる。`parse_lua_to_json.py` の責務は Lua → JSON の
+  変換であり、どの件数を許容するかは上流データの性質ではなく運用ポリシーだからである。
+- 具体的な下限値は ADR ではなくスクリプト側に置く。上流の更新で件数は増えていくため、
+  ドキュメントに数値を書くと必ず陳腐化する。
+
+**ローカル開発を CI と同じ手順にする**
+
+- チェックアウト直後は `items.json` が存在しないため、`scripts/build_web_data.sh` を一度
+  実行する必要がある。CI と同じコマンドなので手元で配信物をそのまま再現できる。
+  `web/test/*.test.js` と `scripts/scrape_augments.py` もこれを前提とする。
+- 上流ファイルは `temp_resources/` にキャッシュし、再実行を速くする。GitHub の blob SHA は
+  git のオブジェクト ID そのものなので、`git hash-object` でローカルファイルのハッシュを
+  計算すれば鮮度を正確に判定でき、一致すればダウンロードを省ける。
+
+### ワークフロー全体
+
+`detect-resource-changes` はトリガーによらず必ず走る。`build` がその `blobs` 出力を
+メタデータ生成に使うためであり、変化判定はその副産物として得られる。
+判定結果を採否に使うのは `schedule` のときだけで、`push` と `workflow_dispatch` は
+変化の有無に関わらずビルドする。`deploy` は `needs: build` なので連動して止まる。
+
+```mermaid
+flowchart TD
+    push["push to main"] --> detect
+    dispatch["workflow_dispatch"] --> detect
+    sched["schedule (毎日 00:00 JST)"] --> detect
+
+    detect["detect-resource-changes<br/>上流の blob SHA を取得し<br/>配信済みメタデータと比較<br/>→ blobs / changed を出力"]
+    detect --> gate{"schedule かつ<br/>changed = false か"}
+    gate -->|"はい"| skip["build / deploy をスキップ"]
+    gate -->|"いいえ"| build
+
+    build["build<br/>cargo test / WASM ビルド<br/>build_web_data.sh (blobs を受け取る)<br/>Supabase config"]
+    build --> deploy["deploy<br/>GitHub Pages へ配信"]
+    deploy -.->|"_build_metadata.json を配信<br/>= 次回の判定材料になる"| detect
+```
+
+### 変化判定
+
+前回値の保存先は配信済みサイト自身であり、外部ストレージを使わない。
+取得できない場合（初回・Pages 未到達・旧形式）はすべて「変化あり」に倒す。
+
+```mermaid
+flowchart TD
+    A["GitHub API<br/>contents/resources_data?ref=master"] --> B["追跡対象 2 ファイルの<br/>blob SHA を取り出す"]
+    B --> C{"2 件揃ったか"}
+    C -->|"いいえ"| E["エラー終了<br/>上流でリネーム/削除された"]
+    C -->|"はい"| D["配信済み _build_metadata.json を取得"]
+
+    D --> F{"取得できたか"}
+    F -->|"いいえ"| T["changed = true"]
+    F -->|"はい"| G{"blob SHA が一致するか<br/>(キー順を正規化して比較)"}
+    G -->|"一致"| N["changed = false"]
+    G -->|"不一致"| T
+```
+
+### build_web_data.sh
+
+取得・変換・検証・メタデータ出力を 1 コマンドにまとめる。
+検証を通らなければメタデータを書かずに止まるため、壊れた状態が次回の判定材料にならない。
+
+```mermaid
+flowchart TD
+    S["開始"] --> B["上流 blob SHA を確定<br/>(CI は detect の結果を再利用)"]
+    B --> C{"temp_resources/ のファイルは最新か<br/>git hash-object で照合"}
+    C -->|"一致"| P
+    C -->|"不一致 / 未取得"| D["上流から取得"]
+    D --> P["parse_lua_to_json.py<br/>items.json を生成"]
+    P --> V{"validate_items.sh<br/>件数が下限以上か"}
+    V -->|"いいえ"| X["エラー終了<br/>壊れたデータを配信しない"]
+    V -->|"はい"| M["_build_metadata.json を出力<br/>built_at / commit / blob SHA"]
+```
 
 ### Consequences
 
@@ -108,7 +177,9 @@ FFXI のバージョンアップで装備が追加・変更されるたびに Wi
   厳密な変化検出を優先し、コミットレベルの可読性は捨てている。
 * Neutral: GitHub は 60 日間アクティビティのないリポジトリの `schedule` を自動停止する。
   開発が長期間止まると定期実行も止まるため、再開時は有効化の確認が要る。
-* Neutral: `supabase/schema.sql` の `items` テーブルは未使用のまま残っている。
+* Neutral: `supabase/schema.sql` の `items` テーブルは「CI でのインポート用」として
+  定義されているが、CI はここへインポートしていない。選択肢 3 の検討痕跡であり、
+  実際には使われていない。
 
 ### Confirmation
 

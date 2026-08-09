@@ -81,6 +81,34 @@ anon key は設計上公開される値であり、漏洩自体が直接の被�
 * secrets が未設定のまま deploy した場合、`config.js` は空文字で生成され、
   ビルドは成功するが実行時に失敗する。これを止めるチェックはない。
 
+## Pros and Cons of the Options
+
+### 1. `web/js/config.js` に実値を書いてコミットする
+
+* Good: セットアップが不要。チェックアウトすればそのまま動く。
+* Good: CI に secrets を設定する手間がない。
+* Bad: 鍵が git 履歴に永久に残る。ローテーションしても過去の値は消せない。
+* Bad: 開発用と本番用で異なる Supabase プロジェクトを使いたくなったとき、切り替え手段がない。
+* Bad: 一度コミットすると、後から「置かない」方針に戻しても履歴からは消えない。
+
+### 2. CI が secrets から `config.js` を生成する（採用）
+
+* Good: git 履歴に鍵が残らず、ローテーションが secrets の更新だけで済む。
+* Good: 環境ごとに異なる値を注入できる。
+* Bad: ローカル開発では `config.example.js` をコピーする手順が増える。
+  生成しないと `supabase-client.js` の import が失敗する。
+* Bad: secrets が未設定でもビルドは成功し、実行時に初めて失敗する。
+* Bad: 生成された `config.js` の中身は結局配信されて公開されるため、
+  秘匿の効果は「履歴汚染の回避」に限られる。安全性そのものは RLS 頼みで変わらない。
+
+### 3. 認証機能を使わない
+
+* Good: 鍵の管理という問題自体が消える。
+  [ADR 0001](0001-rust-wasm-static-site.md) のサーバーレス志向とも最も整合する。
+* Good: 攻撃面が存在しない。ユーザーデータの漏洩リスクがゼロになる。
+* Bad: 端末間共有と装備セット共有 ([ADR 0008](0008-equipset-sharing.md)) が実現できず、
+  [ADR 0005](0005-localstorage-default-supabase-optin.md) の判断をやり直すことになる。
+
 ## More Information
 
 * 保存先の切り替え: [ADR 0005](0005-localstorage-default-supabase-optin.md)

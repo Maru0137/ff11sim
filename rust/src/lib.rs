@@ -2,6 +2,7 @@ pub mod chara;
 pub mod character_profile;
 pub mod data_loader;
 pub mod gift;
+pub mod items;
 pub mod job;
 pub mod job_points;
 pub mod race;

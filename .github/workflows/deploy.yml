@@ -59,6 +59,24 @@ jobs:
       - name: Setup Rust
         run: rustup show active-toolchain
 
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      # Rust より先に実行する必要がある。装備データは include_str! でバイナリに
+      # 埋め込まれるため (docs/adr/0009)、items.json が無いとコンパイルが通らない。
+      # 上流ファイルの取得 / items.json 生成 / 検証 / _build_metadata.json 出力を
+      # 1 コマンドで行う。ローカルでも同じコマンドで再現できる。
+      - name: Build web data
+        env:
+          GH_TOKEN: ${{ github.token }}
+          # ${{ }} を直接シェルに展開せず env 経由で渡す (上流由来の値のため)。
+          # detect ジョブが取得済みなので、ここで API を引き直さない。
+          UPSTREAM_BLOBS: ${{ needs.detect-resource-changes.outputs.blobs }}
+          COMMIT: ${{ github.sha }}
+        run: scripts/build_web_data.sh
+
       - name: Run tests
         run: cargo test
         working-directory: rust
@@ -76,22 +94,6 @@ jobs:
         run: |
           cd rust
           wasm-pack build --target web --out-dir ../web/pkg
-
-      - name: Setup Python
-        uses: actions/setup-python@v5
-        with:
-          python-version: '3.11'
-
-      # 上流ファイルの取得 / items.json 生成 / 検証 / _build_metadata.json 出力を
-      # 1 コマンドで行う。ローカルでも同じコマンドで web/data/ を再現できる。
-      - name: Build web data
-        env:
-          GH_TOKEN: ${{ github.token }}
-          # ${{ }} を直接シェルに展開せず env 経由で渡す (上流由来の値のため)。
-          # detect ジョブが取得済みなので、ここで API を引き直さない。
-          UPSTREAM_BLOBS: ${{ needs.detect-resource-changes.outputs.blobs }}
-          COMMIT: ${{ github.sha }}
-        run: scripts/build_web_data.sh
 
       - name: Generate Supabase config
         env:

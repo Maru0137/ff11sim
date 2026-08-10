@@ -49,27 +49,11 @@ basic-http-server
 2. `web/index.html`を開く
 3. 右下の「Go Live」をクリック
 
-## WebAssemblyのビルド
-
-初回起動時やRustコードを変更した場合、WASMを再ビルドする必要があります。
-
-```bash
-cd rust
-
-# wasm-packインストール（初回のみ）
-cargo install wasm-pack
-
-# WASMビルド
-wasm-pack build --target web --out-dir ../web/pkg
-```
-
-ビルド成功後、`web/pkg/`ディレクトリにWASMファイルが生成されます。
-
-## 装備データの生成
+## 装備データの生成（最初に必要）
 
 `web/data/items.json` は上流 ([Windower/Resources](https://github.com/Windower/Resources)) から
-生成する派生物で、git 管理外です (`docs/adr/0003`)。チェックアウト直後は存在しないため、
-装備検索・装備セットを動かす前に生成してください。
+生成する派生物で、git 管理外です (`docs/adr/0003`)。**チェックアウト直後は存在しないため、
+まずこれを生成してください。**
 
 ```bash
 scripts/build_web_data.sh
@@ -82,8 +66,27 @@ CI と同じコマンドで、以下を一括で行います。
 - 件数の検証
 - `web/data/_build_metadata.json` (ビルドのメタ情報) の出力
 
-`scripts/scrape_augments.py` も `items.json` を装備名の逆引きに使うため、
-先にこのコマンドを実行しておく必要があります。
+> **`cargo build` / `cargo test` より先に実行する必要があります。**
+> 装備データは `include_str!` で Rust のバイナリに埋め込まれるため (`docs/adr/0009`)、
+> `items.json` が無いとコンパイルが通りません。
+> `scripts/scrape_augments.py` も `items.json` を装備名の逆引きに使います。
+
+## WebAssemblyのビルド
+
+初回起動時やRustコードを変更した場合、WASMを再ビルドする必要があります。
+上記の装備データ生成を先に済ませておいてください。
+
+```bash
+cd rust
+
+# wasm-packインストール（初回のみ）
+cargo install wasm-pack
+
+# WASMビルド
+wasm-pack build --target web --out-dir ../web/pkg
+```
+
+ビルド成功後、`web/pkg/`ディレクトリにWASMファイルが生成されます。
 
 ## Supabase 連携 (ユーザー登録 + クラウド保存)
 

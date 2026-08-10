@@ -4,6 +4,13 @@ on:
   push:
     branches:
       - main
+  # 上流 (Windower/Resources) の更新をこちらの push と無関係に取り込むための定期実行。
+  # items.json はビルド時に上流から生成するため (docs/adr/0003)、再デプロイしない限り
+  # 配信中のデータが古いままになる。cron は UTC 指定: 15:00 UTC = 00:00 JST。
+  schedule:
+    - cron: '0 15 * * *'
+  # 上流更新を即座に取り込みたいときの手動トリガー。
+  workflow_dispatch:
 
 permissions:
   contents: read
@@ -15,7 +22,30 @@ concurrency:
   cancel-in-progress: false
 
 jobs:
+  # 上流 (Windower/Resources) のリソースに変化があるかだけを先に判定する軽量ジョブ。
+  # 前回ビルド時の blob SHA は、配信済みサイトの data/_build_metadata.json に
+  # 記録してある (docs/adr/0003)。取得に失敗した場合は changed=true に倒し、
+  # 「判定できないならビルドする」安全側の挙動にする。
+  detect-resource-changes:
+    runs-on: ubuntu-latest
+    outputs:
+      changed: ${{ steps.detect.outputs.changed }}
+      blobs: ${{ steps.detect.outputs.blobs }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Detect changes in upstream resources
+        id: detect
+        env:
+          GH_TOKEN: ${{ github.token }}
+          METADATA_URL: https://${{ github.repository_owner }}.github.io/${{ github.event.repository.name }}/data/_build_metadata.json
+        run: scripts/detect_resource_changes.sh >> "$GITHUB_OUTPUT"
+
   build:
+    needs: detect-resource-changes
+    # push / workflow_dispatch は無条件、schedule は上流に変化があるときだけビルドする。
+    if: github.event_name != 'schedule' || needs.detect-resource-changes.outputs.changed == 'true'
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
@@ -41,20 +71,16 @@ jobs:
         with:
           python-version: '3.11'
 
-      - name: Download Windower Resources
-        run: |
-          mkdir -p temp_resources
-          curl -o temp_resources/items.lua \
-            "https://raw.githubusercontent.com/Windower/Resources/master/resources_data/items.lua"
-          curl -o temp_resources/item_descriptions.lua \
-            "https://raw.githubusercontent.com/Windower/Resources/master/resources_data/item_descriptions.lua"
-
-      - name: Generate items JSON
-        run: |
-          python scripts/parse_lua_to_json.py \
-            --items temp_resources/items.lua \
-            --descriptions temp_resources/item_descriptions.lua \
-            --output web/data/items.json
+      # 上流ファイルの取得 / items.json 生成 / 検証 / _build_metadata.json 出力を
+      # 1 コマンドで行う。ローカルでも同じコマンドで web/data/ を再現できる。
+      - name: Build web data
+        env:
+          GH_TOKEN: ${{ github.token }}
+          # ${{ }} を直接シェルに展開せず env 経由で渡す (上流由来の値のため)。
+          # detect ジョブが取得済みなので、ここで API を引き直さない。
+          UPSTREAM_BLOBS: ${{ needs.detect-resource-changes.outputs.blobs }}
+          COMMIT: ${{ github.sha }}
+        run: scripts/build_web_data.sh
 
       - name: Generate Supabase config
         env:

@@ -1121,6 +1121,36 @@ pub fn calculate_status_from_profile(
         .map_err(|e| JsValue::from_str(&e.to_string()))
 }
 
+// ---------------------------------------------------------------------------
+// 装備解釈 (docs/adr/0010)
+//
+// JS の equip-stats.js を置き換えるための境界。ロジックは持たず、
+// crate::equip_stats へ委譲して結果を JS のオブジェクト形式に変換するだけ。
+// 返す形は JS 実装に合わせ、値が 0 のキーは含めない。
+// ---------------------------------------------------------------------------
+
+/// 装備説明文からステータスを抽出する。JS の `extractAllStats` 互換。
+#[wasm_bindgen]
+pub fn extract_all_stats(description_en: &str) -> Result<JsValue, JsValue> {
+    let stats = crate::equip_stats::extract_all_stats(description_en);
+    let map: BTreeMap<&str, i32> = stats
+        .entries()
+        .into_iter()
+        .filter(|(_, v)| *v != 0)
+        .collect();
+    map.serialize(&object_serializer())
+        .map_err(|e| JsValue::from_str(&e.to_string()))
+}
+
+/// 装備説明文からスキルボーナスを抽出する。JS の `extractSkillBonuses` 互換。
+#[wasm_bindgen]
+pub fn extract_skill_bonuses(description_en: &str) -> Result<JsValue, JsValue> {
+    let skills = crate::equip_stats::extract_skill_bonuses(description_en);
+    skills
+        .serialize(&object_serializer())
+        .map_err(|e| JsValue::from_str(&e.to_string()))
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;

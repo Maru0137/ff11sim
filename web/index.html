@@ -2165,7 +2165,13 @@
     <script src="js/item-search.js"></script>
     <script src="js/equip-stats.js"></script>
     <script type="module">
-        import init, { calculate_status_from_profile, calculate_default_skills } from './pkg/ff11sim.js';
+        // 装備の解釈 (extract_all_stats / extract_skill_bonuses) は Rust 側に移した (docs/adr/0010)。
+        // js/equip-stats.js の同名関数はもうブラウザからは使わない。
+        // 同ファイルの sumStats / getEmptyStats は集計用なのでそのまま使う。
+        import init, {
+            calculate_status_from_profile, calculate_default_skills,
+            extract_all_stats, extract_skill_bonuses,
+        } from './pkg/ff11sim.js';
         import {
             JOBS, RACE_NAMES, JP_CATEGORIES, JP_MAX_TOTAL, JP_CATEGORY_COUNT, JP_MAX_RANK,
             JOB_MERIT_GROUP_SIZE, JOB_MERIT_MAX_RANK, JOB_MERIT_GROUP_MAX_TOTAL,
@@ -3626,29 +3632,29 @@
                 const isWeaponSlot = (slotKey === 'main' || slotKey === 'sub' || slotKey === 'range');
 
                 if (item && item.description_en) {
-                    const stats = extractAllStats(item.description_en);
+                    const stats = extract_all_stats(item.description_en);
                     console.log('[DEBUG] Extracted stats:', stats);
                     statsArray.push(stats);
                     if (isWeaponSlot) slotStatsBuckets[targetWeaponBucket].push(stats);
-                    addSkillBonuses(slotKey, extractSkillBonuses(item.description_en));
+                    addSkillBonuses(slotKey, extract_skill_bonuses(item.description_en));
                 }
 
                 const augText = getAugmentText(slotData);
                 if (augText) {
                     const augEn = convertAugmentJaToEn(augText);
-                    const augStats = extractAllStats(augEn);
+                    const augStats = extract_all_stats(augEn);
                     statsArray.push(augStats);
                     if (isWeaponSlot) slotStatsBuckets[targetWeaponBucket].push(augStats);
-                    addSkillBonuses(slotKey, extractSkillBonuses(augEn));
+                    addSkillBonuses(slotKey, extract_skill_bonuses(augEn));
                 }
 
                 if (slotData.custom_description) {
                     const customEn = convertAugmentJaToEn(slotData.custom_description);
-                    const customStats = extractAllStats(customEn);
+                    const customStats = extract_all_stats(customEn);
                     console.log('[DEBUG] Custom stats:', customStats);
                     statsArray.push(customStats);
                     if (isWeaponSlot) slotStatsBuckets[targetWeaponBucket].push(customStats);
-                    addSkillBonuses(slotKey, extractSkillBonuses(customEn));
+                    addSkillBonuses(slotKey, extract_skill_bonuses(customEn));
                 }
             }
 

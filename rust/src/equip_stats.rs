@@ -226,7 +226,8 @@ pub struct EquipStats {
 
 impl EquipStats {
     /// JS 側の出力と突き合わせるための `(キー名, 値)` 一覧。
-    /// キー名は `web/js/equip-stats.js` の返すオブジェクトと一致させる。
+    /// キー名は移植元の JS 実装が返していたオブジェクトと一致させてある
+    /// (JS との全件突き合わせに使うため。移植元は削除済み)。
     pub fn entries(&self) -> Vec<(&'static str, i32)> {
         vec![
             ("hp", self.hp),
@@ -1137,14 +1138,15 @@ mod tests {
     // =====================================================================
     // 基本ステータス
     //
-    // 期待値は `node scripts/dump_equip_stats.js` の出力から取っている。
-    // 思い込みで書くと移植の検証にならないため、JS をリファレンスとする。
+    // 期待値は移植時に JS 実装を実際に動かして得た値。思い込みで書くと
+    // 移植の検証にならないため、当時は JS をリファレンス実装として扱った
+    // (取得に使ったハーネス scripts/dump_equip_stats.js は移植完了後に削除済み)。
     // =====================================================================
 
     #[test]
     fn basic_stats_from_real_item() {
         // ヒポメネソックス+1
-        // node scripts/dump_equip_stats.js --id 27410
+        // 対象: id 27410
         let s = extract_all_stats(&desc(27410));
         assert_eq!(s.hp, 13);
         assert_eq!(s.mp, 14);
@@ -1159,13 +1161,13 @@ mod tests {
 
     #[test]
     fn signed_values_are_summed() {
-        // node --text 'HP+10 HP+20' -> {"hp": 30}
+        // JS: 'HP+10 HP+20' -> {"hp": 30}
         assert_eq!(extract_all_stats("HP+10 HP+20").hp, 30);
     }
 
     #[test]
     fn negative_values() {
-        // node --text 'STR-3' -> {"str": -3}
+        // JS: 'STR-3' -> {"str": -3}
         assert_eq!(extract_all_stats("STR-3").str_, -3);
     }
 
@@ -1173,7 +1175,7 @@ mod tests {
 
     #[test]
     fn percent_does_not_leak_into_flat_stat() {
-        // node --text 'HP+10%' -> {"hp_pct": 10}  (hp は付かない)
+        // JS: 'HP+10%' -> {"hp_pct": 10}  (hp は付かない)
         let s = extract_all_stats("HP+10%");
         assert_eq!(s.hp, 0, "パーセント表記が flat hp に混入している");
         assert_eq!(s.hp_pct, 10);
@@ -1181,7 +1183,7 @@ mod tests {
 
     #[test]
     fn flat_and_percent_coexist() {
-        // node --text 'HP+50 HP+10%' -> {"hp": 50, "hp_pct": 10}
+        // JS: 'HP+50 HP+10%' -> {"hp": 50, "hp_pct": 10}
         let s = extract_all_stats("HP+50 HP+10%");
         assert_eq!(s.hp, 50);
         assert_eq!(s.hp_pct, 10);
@@ -1190,7 +1192,7 @@ mod tests {
     #[test]
     fn percent_from_real_item() {
         // マタンサハーネス: DEF:77 HP+8% STR+15 DEX+15 VIT+15 ...
-        // node scripts/dump_equip_stats.js --id 10255
+        // 対象: id 10255
         let s = extract_all_stats(&desc(10255));
         assert_eq!(s.hp_pct, 8);
         assert_eq!(s.hp, 0);
@@ -1203,7 +1205,7 @@ mod tests {
 
     #[test]
     fn all_bp_applies_to_seven_base_params() {
-        // node --text 'ALL BP+10'
+        // JS: 'ALL BP+10'
         let s = extract_all_stats("ALL BP+10");
         assert_eq!(
             (s.str_, s.dex, s.vit, s.agi, s.int, s.mnd, s.chr),
@@ -1215,7 +1217,7 @@ mod tests {
 
     #[test]
     fn all_bp_adds_to_individual_stat() {
-        // node --text 'STR+5 ALL BP+10' -> str 15, 他は 10
+        // JS: 'STR+5 ALL BP+10' -> str 15, 他は 10
         let s = extract_all_stats("STR+5 ALL BP+10");
         assert_eq!(s.str_, 15);
         assert_eq!(s.dex, 10);
@@ -1226,7 +1228,7 @@ mod tests {
         // ホクスニピアス: "Mastery Rank: All BP -30 to +30"
         // JS は最初の符号付き値 (-30) を採用する。"to +30" は "All BP" が
         // 直前に無いためマッチしない。Unity Ranking のような最大値採用は行わない。
-        // node scripts/dump_equip_stats.js --id 26120 -> すべて -30
+        // 対象: id 26120 (JS でも全項目 -30 になる)
         // 挙動を変えない方針 (docs/adr/0010) によりそのまま再現する。
         let s = extract_all_stats(&desc(26120));
         assert_eq!(
@@ -1366,17 +1368,21 @@ mod tests {
     }
 
     // =====================================================================
-    // 全件突き合わせ
+    // 全件突き合わせ (移植の完了判定に使ったもの)
     //
-    // JS 実装との一致を全 items.json に対して検証する。手書きのアサーションより
-    // 遥かに広い範囲を押さえられるので、移植の完了判定はこれで行う
-    // (docs/adr/0010 の Confirmation)。
+    // 移植時に JS 実装との一致を全 items.json に対して検証した。手書きの
+    // アサーションより遥かに広い範囲を押さえられるため、移植の完了判定は
+    // これで行った (docs/adr/0010 の Confirmation)。全 15,504 件で不一致 0。
+    //
+    // **移植元の JS 実装と期待値生成ハーネスは削除済みなので、現在この比較は
+    // 実行できない。** 期待値 JSON を別途用意すれば動く形で残してある。
+    // 抽出ロジックを大きく変えるときに、変更前後の出力を突き合わせる用途で使える。
     //
     // 実行方法:
-    //   node scripts/dump_equip_stats.js --all > /tmp/js-stats.json
-    //   JS_STATS=/tmp/js-stats.json cargo test --lib conformance -- --nocapture
+    //   JS_STATS=<期待値JSON> cargo test --lib conformance -- --nocapture
     //
-    // 環境変数が無い場合はスキップする (CI では JS を動かさないため)。
+    // 期待値 JSON の形式: { "<item_id>": { "stats": {...}, "skills": {...} } }
+    // 環境変数が無い場合はスキップする。
     // =====================================================================
 
     #[test]

@@ -106,10 +106,11 @@ JavaScript の数値は f64 のみで、整数と実数の区別が言語に存�
 
 検証されていないもの:
 
-* WASM 境界（`rust/src/wasm.rs`）を JS 側から呼ぶ結合テストは自動化されていない。
-  `web/test/*.test.js` は `node` で手動実行する前提で書かれており、CI には含まれていない
-  （加えて `web/data/items.json` に依存するため、
-  [ADR 0003](0003-items-json-generated-in-ci.md) の都合で CI では素直に走らない）。
+* WASM 境界（`rust/src/wasm.rs`）を JS 側から呼ぶ結合テストは CI で自動化されていない。
+  移植時（[ADR 0010](0010-equipment-interpretation-in-rust.md)）に `--target nodejs`
+  でビルドして JS から呼び、全 15,504 件を JS 実装と突き合わせて一致を確認したが、
+  これは手動実行であり CI には入っていない。境界より内側は `cargo test` が押さえている。
+  なお `web/test/*.test.js` は Rust へ移植して削除済みで、移植先は `cargo test` で走る。
 * CLI 経路が実際に機能するかは未確認。`main.rs` に中身がなく、
   `rust/examples/status_calculator.rs` は存在しない `ff11sim::prelude` を import しているため、
   `examples` を含むフルビルド（`cargo test`）はローカルで失敗する。

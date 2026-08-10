@@ -133,16 +133,26 @@ wasm-bindgen 処理前で既存 export すら含まないため、測定は `was
 * 8.6MB を埋め込んだネイティブのクリーンビルド: 0.68 秒。コンパイル時間は問題にならない。
 * 現状の配信量: `items.json` gzip 1,133,303 バイト + `ff11sim_bg.wasm` gzip 49,441 バイト。
 
-未実装:
+**実装完了時の確認 (2026-08-10)**
 
-* `items.json` は現在も `web/data/` に生成され、Pages に配信されている。
-* CI のステップ順はデータ生成が `cargo test` より後のままである。
+* `items.json` の出力先を `build/` に移し、Pages の配信物から外した。
+  `deploy.yml` の `upload-pages-artifact` は `path: './web'` なので `build/` は入らない。
+  実測で配信量が gzip 約 2,750,000 → 1,633,087 バイトに減り、
+  `items.json` ぶん (gzip 約 1,133,000) が消えたことを確認した。
+* CI のステップ順を「データ生成 → `cargo test` → `wasm-pack build`」に入れ替えた。
+* `web/README.md` にチェックアウト直後の手順を明記した。
+* `items.json` は配信されないが、CI が `items-json` という artifact として
+  実行ごとに残す (保持 30 日)。公開後に中身を確認したいときはここから取得する。
+  `_build_metadata.json` の `commit` で該当の実行を特定できる。
+* 上流に変化が無いときは生成をやり直さない。生成元の指紋 (上流 blob SHA +
+  変換スクリプトのハッシュ) を `build/.items-signature` に記録し、CI では
+  `actions/cache` のキーにも使う。`workflow_dispatch` では必ず作り直す。
 
-実装時に満たすべき検証:
+未確認:
 
-* `items.json` が Pages の配信物に含まれていないこと。含まれていると同じデータを
-  二重に配ることになり、この決定の前提が崩れる。
-* チェックアウト直後の手順（データ生成 → `cargo test`）が README のとおりに通ること。
+* CI 上でのキャッシュヒットは未確認。`actions/cache` の挙動はローカルで再現できない。
+  初回実行は必ずミスし、2 回目以降のログで `Build web data` が
+  「items.json は最新のため再生成をスキップ」と出れば期待どおり。
 
 ## Pros and Cons of the Options
 

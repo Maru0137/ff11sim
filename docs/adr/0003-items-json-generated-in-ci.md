@@ -44,12 +44,15 @@ FFXI のバージョンアップで装備が追加・変更されるたびに Wi
 **生成の入口を 1 つにする**
 
 - 上流ファイルの取得・変換・検証・メタデータ出力は `scripts/build_web_data.sh` に集約し、
-  `web/data/` を作る処理を 1 コマンドにする。`.github/workflows/deploy.yml` はこれを呼ぶだけで、
+  配信に必要なデータを作る処理を 1 コマンドにする。`.github/workflows/deploy.yml` はこれを呼ぶだけで、
   `web/` 全体を Pages にアップロードする。
 - 変換自体は `scripts/parse_lua_to_json.py` が担う。ジョブ・スロット・種族のビットマスクを
   展開し、説明文を結合して JSON 化する。
-- 生成物 (`web/data/items.json` / `web/data/_build_metadata.json`) と
-  ダウンロードキャッシュ (`temp_resources/`) は `.gitignore` に登録する。
+- 生成物 (`build/` 配下) とダウンロードキャッシュ (`temp_resources/`) は
+  `.gitignore` に登録する。`items.json` を `web/` の外に出すのは、ブラウザが
+  これを読まなくなったため ([ADR 0010](0010-equipment-interpretation-in-rust.md))。
+  `web/data/_build_metadata.json` だけは配信サイト経由で次回の変化判定が読むので
+  `web/` に残す。
 
 **上流の更新に自動で追随する**
 
@@ -88,10 +91,16 @@ FFXI のバージョンアップで装備が追加・変更されるたびに Wi
 
 - チェックアウト直後は `items.json` が存在しないため、`scripts/build_web_data.sh` を一度
   実行する必要がある。CI と同じコマンドなので手元で配信物をそのまま再現できる。
-  `web/test/*.test.js` と `scripts/scrape_augments.py` もこれを前提とする。
+  `scripts/scrape_augments.py` もこれを前提とする。
 - 上流ファイルは `temp_resources/` にキャッシュし、再実行を速くする。GitHub の blob SHA は
   git のオブジェクト ID そのものなので、`git hash-object` でローカルファイルのハッシュを
   計算すれば鮮度を正確に判定でき、一致すればダウンロードを省ける。
+- さらに生成物そのものの再作成も省く。生成元の指紋 (上流 blob SHA + 変換スクリプトの
+  ハッシュ) を `build/.items-signature` に記録し、一致すれば取得もパースも行わない。
+  `FORCE_REBUILD=1` で無効化できる。
+- CI は使い捨てランナーなので `temp_resources/` のキャッシュが効かない。
+  `actions/cache` で同じ指紋をキーに `build/items.json` を保存・復元する。
+  手動実行 (`workflow_dispatch`) では復元せず必ず作り直す。
 
 ### ワークフロー全体
 
@@ -138,18 +147,28 @@ flowchart TD
 ### build_web_data.sh
 
 取得・変換・検証・メタデータ出力を 1 コマンドにまとめる。
-検証を通らなければメタデータを書かずに止まるため、壊れた状態が次回の判定材料にならない。
+検証を通らなければ指紋を残さないため、壊れた生成物を「最新」と誤認しない。
+メタデータは再生成の有無に関わらず毎回書く (次回の変化判定に使うため)。
+
+生成元が同じなら結果も同じなので、指紋が一致すれば取得もパースも省く。
+指紋に変換スクリプトのハッシュを含めるのは、上流が同じでもパース結果が
+変わりうるため。
 
 ```mermaid
 flowchart TD
     S["開始"] --> B["上流 blob SHA を確定<br/>(CI は detect の結果を再利用)"]
-    B --> C{"temp_resources/ のファイルは最新か<br/>git hash-object で照合"}
+    B --> SIG{"指紋が一致するか<br/>blob SHA + 変換スクリプトのハッシュ<br/>build/.items-signature と照合"}
+    SIG -->|"一致 かつ FORCE_REBUILD でない"| M
+    SIG -->|"不一致 / 初回 / 強制"| C
+
+    C{"temp_resources/ のファイルは最新か<br/>git hash-object で照合"}
     C -->|"一致"| P
     C -->|"不一致 / 未取得"| D["上流から取得"]
-    D --> P["parse_lua_to_json.py<br/>items.json を生成"]
+    D --> P["parse_lua_to_json.py<br/>build/items.json を生成"]
     P --> V{"validate_items.sh<br/>件数が下限以上か"}
-    V -->|"いいえ"| X["エラー終了<br/>壊れたデータを配信しない"]
-    V -->|"はい"| M["_build_metadata.json を出力<br/>built_at / commit / blob SHA"]
+    V -->|"いいえ"| X["エラー終了<br/>指紋を残さない"]
+    V -->|"はい"| W["指紋を記録"]
+    W --> M["_build_metadata.json を出力<br/>built_at / commit / blob SHA"]
 ```
 
 ### Consequences
@@ -160,9 +179,9 @@ flowchart TD
   外部リポジトリがビルドの必須依存になっている。
 * Bad: ローカル開発では生成が必要で、実行しないと装備検索・装備セットが動かない
   （`scripts/build_web_data.sh` 一発で済むが、チェックアウト直後は必ず要る）。
-* Bad: `web/test/*.test.js` は実際の `items.json` を読んで抽出結果を検証する作りのため、
-  データが git にない以上そのままでは CI で走らせられない
-  （現に CI に含まれていない — [ADR 0001](0001-rust-wasm-static-site.md) の Confirmation 参照）。
+* ~~Bad: `web/test/*.test.js` は実際の `items.json` を読む作りのため CI で走らせられない。~~
+  → 解消済み。テストは Rust へ移し (docs/adr/0010)、`items.json` は
+  `include_str!` で埋め込まれるため `cargo test` で走るようになった。
 * Good: `schedule` により、こちらに push がなくても 1 日 1 回は上流の更新が取り込まれる。
   配信データの陳腐化は最大 1 日程度に収まる。
 * Bad: 定期実行は無人のため、上流が壊れていても気付かずに配信しうる。件数の下限検査は
@@ -183,13 +202,17 @@ flowchart TD
 
 ### Confirmation
 
-* `.gitignore` に `web/data/items.json` が登録されており、生成物がコミットされない。
+* `.gitignore` に `build/` が登録されており、生成物がコミットされない。
 * `.github/workflows/deploy.yml` の "Build web data" ステップが
   `scripts/build_web_data.sh` を実行し、毎回のデプロイで上流取得・変換・検証・
   メタデータ出力を行う。ここで失敗すれば deploy ジョブに進まない。
   ローカルで通しの実行を確認済み: 初回はダウンロードして生成、2 回目は
   `git hash-object` の一致によりダウンロードをスキップ、キャッシュを改変すると
   そのファイルだけ再ダウンロードされること。
+* 指紋による再生成スキップも確認済み (4 分岐): 指紋一致でスキップ (1.75s → 0.60s)、
+  変換スクリプトを変えると再生成、`FORCE_REBUILD=1` で強制再生成、
+  検証に失敗したときは指紋を更新しないこと。
+* CI 上でのキャッシュヒットは未確認。`actions/cache` の挙動はローカルで再現できない。
 * `deploy.yml` の `on:` に `push` / `schedule` / `workflow_dispatch` の 3 つが設定されており、
   push がなくても定期実行で上流を取り込む。
 * `detect-resource-changes` ジョブが `scripts/detect_resource_changes.sh` を実行する。
@@ -226,7 +249,8 @@ flowchart TD
 
 フォローアップ候補: 件数だけでなく内容の健全性（例: `description_en` が空でない
 アイテムの割合が一定を下回ったら落とす）まで検査したくなった時点で、`jq` の
-ワンライナーではなく `scripts/validate_items.py` として独立させる。変換と検証を
+ワンライナーではなく `scripts/validate_items.py` などの専用スクリプトに移す
+（現在の `scripts/validate_items.sh` は件数チェックのみ）。変換と検証を
 分けたまま育てられ、変換スクリプトに検証責務を戻さずに済む。
 
 ## Pros and Cons of the Options
@@ -251,7 +275,9 @@ flowchart TD
 * Bad: 上流 (Windower/Resources) がビルドの必須依存になる。
   URL 変更やフォーマット変更でデプロイが壊れる。
 * Bad: ローカル開発で手動生成が要る。生成しないと装備検索と装備セットが動かない。
-* Bad: 生成物が git にないため、それを読むテスト (`web/test/*.test.js`) を CI に組み込みにくい。
+* ~~Bad: 生成物が git にないため、それを読むテストを CI に組み込みにくい。~~
+  → 解消済み。テストを Rust へ移し、生成物は `include_str!` で埋め込まれるため
+  `cargo test` で走る (docs/adr/0010)。
 * Bad: どの時点のデータで配信されていたかが、そのままでは追跡できない
   （`_build_metadata.json` を別途出力することで補っている）。
 

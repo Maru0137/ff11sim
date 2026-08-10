@@ -86,11 +86,17 @@ JS 側の `items.json` 読み込みを廃止すると決めた。JS はもとデ
 * Good: `rust/src/wasm.rs` の手書き転記を実データ参照に置き換えられる。
 * Good: 既存の `web/test/equip-stats-extraction.test.js`（76 アサーション）を
   移植の適合性テストとして使える。移行が「動くかどうか分からない」状態にならない。
-* Bad: 移植量が大きい。合計 960 行超に加え、Rust へ `regex` crate の依存が増える。
+* Bad: 移植量が大きい。合計 960 行超に加え、Rust へ `fancy-regex` の依存が増える。
+  JS 側が後読み/先読みを 91 箇所で使っており `regex` crate では移植できないため。
+  unicode 機能は切っている (日本語リテラルと文字クラス範囲は扱えることを実測で確認)。
+  この依存で WASM が gzip 約 +339KB 増えた ([ADR 0009](0009-embed-item-data-in-binary.md)
+  の Confirmation 参照)。
 * Bad: 移行期間中は 2 実装が並存し、食い違いが起こりうる。
 * Bad: 検索がキーストロークごとに WASM 境界を越えるようになる。
   現時点で問題になる材料はないが、未計測である。
-* Bad: `web/test/*.test.js` は `items.json` を直接読む作りのため、書き換えが要る。
+* Bad: `web/test/*.test.js` は `items.json` を直接読む作りのため書き換えが要った。
+  → 3 本とも Rust へ移植 (2 本) または削除 (1 本、全件突き合わせが上位互換) して解消。
+  結果として JS 時代 CI に入っていなかったこれらが `cargo test` で走るようになった。
 * Neutral: ブラウザでの解釈は WASM の初期化完了を待つことになる。
   ステータス計算自体が既に WASM に依存しているため、新しい制約ではない。
 
@@ -110,10 +116,13 @@ JS 側の `items.json` 読み込みを廃止すると決めた。JS はもとデ
 `extract_all_stats` / `extract_skill_bonuses` は WASM 境界を JS から呼ぶ形でも
 全件一致を確認しており、`wasm-bindgen` を跨いだ戻り値の形まで含めて等価である。
 
-**継続的に走る検証**
+**移植後に残した検証**
 
-* `equip_stats::tests::conformance_with_js_over_all_items` — 環境変数
-  `JS_STATS` に JS の出力を渡すと全件突き合わせが走る。未設定ならスキップ。
+* `equip_stats::tests::conformance_with_js_over_all_items` および
+  `augment_ja_to_en` の全件比較 — 移植の判定に使ったが、**移植元の JS 実装と
+  期待値生成ハーネスを削除したため現在は実行できない**。期待値 JSON を用意すれば
+  動く形で残してあり、抽出ロジックを大きく変えるときに変更前後を突き合わせる用途で使える。
+  環境変数 (`JS_STATS` / `AUG_CONVERTED`) 未設定ならスキップする。
 * `add_covers_every_field_without_omission` / `set_from_map_roundtrips_every_field` —
   78 項目の加算・キー対応の漏れを検出する。実際に 1 項目外して落ちることを確認済み。
 * `rust/tests/` の 3 本（連携ボーナス / WS ダメージ / JA→EN 変換）。
@@ -170,6 +179,10 @@ JS 側の `items.json` 読み込みを廃止すると決めた。JS はもとデ
 
 * この決定の前提となるデータ配置: [ADR 0009](0009-embed-item-data-in-binary.md)
 * 全体構成と型による厳密さのドライバ: [ADR 0001](0001-rust-wasm-static-site.md)
-* 移植対象: `web/js/equip-stats.js`、`web/js/item-search.js`、
-  `web/js/constants.js` の `AUGMENT_JA_TO_EN`、`web/js/utils.js` の `convertAugmentJaToEn`
-* 適合性テストとして使う資産: `web/test/equip-stats-extraction.test.js`
+* 移植対象だったもの (いずれも削除済み): `web/js/equip-stats.js`、`web/js/item-search.js`、
+  `web/js/constants.js` の `AUGMENT_JA_TO_EN`、`web/js/utils.js` の `convertAugmentJaToEn`、
+  `web/test/*.test.js`
+* 移植先: `rust/src/equip_stats.rs`、`rust/src/item_search.rs`、`rust/tests/`
+* 移植中に見つかった JS 実装の癖と、意図的に受け入れた非互換:
+  `docs/tech-debt/equip-stats-js-quirks.md`
+* テストが実装の定数をミラーしていた問題: `docs/tech-debt/mirrored-constants-in-tests.md`

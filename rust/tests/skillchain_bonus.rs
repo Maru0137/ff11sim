@@ -55,10 +55,7 @@ fn source1_augment_skillchain_damage() {
     // 現状は無い。ここでは英語表記に直したテキストで抽出を確認する
     // (JA→EN 変換自体の移植は docs/adr/0010 手順 5 の残作業)。
     let text = augment_text(23758, "Default", 30);
-    assert!(
-        text.contains("連携ダメージ"),
-        "想定した表記が無い: {text}"
-    );
+    assert!(text.contains("連携ダメージ"), "想定した表記が無い: {text}");
 
     let en = "Skillchain bonus+15%";
     assert_eq!(extract_all_stats(en).skillchain_bonus, 15);

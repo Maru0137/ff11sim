@@ -733,6 +733,116 @@ pub fn extract_skill_bonuses(description_en: &str) -> BTreeMap<&'static str, i32
     result
 }
 
+// ---------------------------------------------------------------------------
+// オーグメントの日本語表記 → 英語表記
+// ---------------------------------------------------------------------------
+
+/// 日本語のオーグメント表記を、抽出可能な英語表記へ置き換える対応表。
+///
+/// **並び順に意味がある。** 単純な順次置換なので、長い表記を先に置かないと
+/// 部分一致で壊れる (例: 「魔法クリティカルヒットII」を「魔法クリティカルヒット率」
+/// より先に、「攻」を最後に置く)。`web/js/constants.js` の順序をそのまま保つこと。
+static AUGMENT_JA_TO_EN: [(&str, &str); 76] = [
+    ("ウェポンスキルのダメージ", "Weapon skill damage"),
+    ("マジックバーストダメージ", "Magic burst damage"),
+    ("魔法クリティカルヒットII", "Magic Crit. Hit Rate II"),
+    ("魔法クリティカルヒット率", "Magic Critical hit rate"),
+    ("物理ダメージ上限", "Physical damage limit"),
+    ("被物理ダメージ", "Physical damage taken"),
+    ("被魔法ダメージ", "Magic damage taken"),
+    ("クリティカルヒットダメージ", "Critical hit damage"),
+    ("クリティカルヒット率", "Critical hit rate"),
+    ("トリプルアタックダメージ", "Triple Attack damage"),
+    ("トリプルアタック", "\"Triple Attack\""),
+    ("ダブルアタックダメージ", "Double Attack damage"),
+    ("ダブルアタック", "\"Double Attack\""),
+    ("クワッドアタック", "\"Quadruple Attack\""),
+    ("モクシャII", "\"Subtle Blow II\""),
+    ("モクシャ", "\"Subtle Blow\""),
+    ("魔法ダメージ", "Magic Damage"),
+    // 個別魔法スキル名 (「魔法スキル」より先に置換しないと「強化魔法スキル」→「強化Magic skills」になり
+    //                   汎用パターンで全 14 スキルに加算される regression が発生する)
+    ("神聖魔法スキル", "Divine magic skill"),
+    ("回復魔法スキル", "Healing magic skill"),
+    ("強化魔法スキル", "Enhancing magic skill"),
+    ("弱体魔法スキル", "Enfeebling magic skill"),
+    ("精霊魔法スキル", "Elemental magic skill"),
+    ("暗黒魔法スキル", "Dark magic skill"),
+    ("召喚魔法スキル", "Summoning magic skill"),
+    ("青魔法スキル", "Blue magic skill"),
+    ("風水魔法スキル", "Geomancy skill"),
+    ("忍術スキル", "Ninjutsu skill"),
+    ("歌唱スキル", "Singing skill"),
+    ("弦楽器スキル", "String instrument skill"),
+    ("管楽器スキル", "Wind instrument skill"),
+    ("風水鈴スキル", "Handbell skill"),
+    // 全魔法スキル一括加算 (extractSkillBonuses で 14 種に展開される)
+    ("魔法スキル", "Magic skills"),
+    // 状態異常レジスト
+    // 順序重要: 「全状態異常のレジスト」を個別レジストより先に置く (汎用パターン後置)
+    ("全状態異常のレジスト", "Resistance to all status ailments"),
+    // デス/テラーは items.json で「耐性」表記、EN も独自形式 (引用符 + resistance / 引用符なし)
+    ("デス耐性", "\"Death\" resistance"),
+    ("テラー耐性", "Terror resistance"),
+    // 残り 14 種: JA「レジストX」 ↔ EN「"Resist X"」 (引用符付き、X は短縮形)
+    ("レジストアムネジア", "\"Resist Amnesia\""),
+    ("レジストペトリ", "\"Resist Petrify\""),
+    ("レジストパライズ", "\"Resist Paralyze\""),
+    ("レジストグラビデ", "\"Resist Gravity\""),
+    ("レジストグラビティ", "\"Resist Gravity\""),
+    ("レジストサイレス", "\"Resist Silence\""),
+    ("レジストスリープ", "\"Resist Sleep\""),
+    ("レジストポイズン", "\"Resist Poison\""),
+    ("レジストチャーム", "\"Resist Charm\""),
+    ("レジストブライン", "\"Resist Blind\""),
+    ("レジストカース", "\"Resist Curse\""),
+    ("レジストウィルス", "\"Resist Virus\""),
+    ("レジストバインド", "\"Resist Bind\""),
+    ("レジストスロウ", "\"Resist Slow\""),
+    ("レジストスタン", "\"Resist Stun\""),
+    // 属性耐性 (装備の「耐火+15」等を EN 化)
+    // 順序重要: 全耐性 系 → 個別耐性 (個別が「全」の文字列に部分マッチしないが念のため先に置く)
+    ("全属性耐性", "All elemental resistances"),
+    ("全耐性", "All elemental resistances"),
+    ("耐火", "Fire Resistance"),
+    ("耐氷", "Ice Resistance"),
+    ("耐風", "Wind Resistance"),
+    ("耐土", "Earth Resistance"),
+    ("耐雷", "Lightning Resistance"),
+    ("耐水", "Water Resistance"),
+    ("耐光", "Light Resistance"),
+    ("耐闇", "Dark Resistance"),
+    ("被ダメージ", "Damage taken"),
+    ("ストアTP", "\"Store TP\""),
+    ("TPボーナス", "\"TP Bonus\""),
+    ("連携ボーナス", "\"Skillchain Bonus\""),
+    // 連携ダメージ +N% (Mpaca 系オーグメント等) は内部的に Skillchain Bonus と同種扱い
+    ("連携ダメージ", "\"Skillchain Bonus\""),
+    ("トゥルーショット", "\"True Shot\""),
+    ("アフィニティ", "Affinity"),
+    ("ヘイスト", "Haste"),
+    ("魔回避", "Magic Evasion"),
+    ("飛攻", "Ranged Attack"),
+    ("飛命", "Ranged Accuracy"),
+    ("魔命", "Magic Accuracy"),
+    ("魔攻", "\"Magic Atk. Bonus\""),
+    ("回避", "Evasion"),
+    ("命中", "Accuracy"),
+    ("攻", "Attack"),
+];
+
+/// 日本語のオーグメント表記を英語表記に変換する。
+/// JS の `convertAugmentJaToEn` (web/js/utils.js) に対応。
+pub fn convert_augment_ja_to_en(text: &str) -> String {
+    let mut result = text.to_string();
+    for (ja, en) in AUGMENT_JA_TO_EN {
+        if result.contains(ja) {
+            result = result.replace(ja, en);
+        }
+    }
+    result
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;

@@ -2162,7 +2162,6 @@
         </div>
     </div>
 
-    <script src="js/item-search.js"></script>
     <script src="js/equip-stats.js"></script>
     <script type="module">
         // 装備の解釈 (extract_all_stats / extract_skill_bonuses) は Rust 側に移した (docs/adr/0010)。
@@ -2171,6 +2170,7 @@
         import init, {
             calculate_status_from_profile, calculate_default_skills,
             extract_all_stats, extract_skill_bonuses,
+            search_items, get_item_by_id, item_count,
         } from './pkg/ff11sim.js';
         import {
             JOBS, RACE_NAMES, JP_CATEGORIES, JP_MAX_TOTAL, JP_CATEGORY_COUNT, JP_MAX_RANK,
@@ -2209,7 +2209,9 @@
         let _sharedCharacterOverride = null;
 
         let wasmReady = false;
-        const itemSearch = new ItemSearch();
+        // 装備データと検索は Rust 側に移した (docs/adr/0009, docs/adr/0010)。
+        // items.json は WASM に埋め込まれているので JS からは読まない。
+        const itemSearch = { search: (o) => search_items(o) };
         let itemsLoaded = false;
         let augmentData = {};
 
@@ -3160,8 +3162,8 @@
                 // 旧データは skill フィールドを持たないので item_id から補完
                 Object.keys(currentEquipSlots).forEach(k => {
                     const d = currentEquipSlots[k];
-                    if (d && d.skill == null && d.item_id != null && itemSearch.items) {
-                        const item = itemSearch.items.find(it => it.id === d.item_id);
+                    if (d && d.skill == null && d.item_id != null) {
+                        const item = get_item_by_id(d.item_id);
                         if (item && item.skill != null) d.skill = item.skill;
                     }
                 });
@@ -3625,7 +3627,7 @@
                 const slotData = slots[slotKey];
                 if (!slotData) continue;
 
-                const item = itemSearch.items.find(i => i.id === slotData.item_id);
+                const item = get_item_by_id(slotData.item_id);
                 console.log('[DEBUG] Slot:', slotKey, 'Item:', item?.en, 'Has description_en:', !!item?.description_en);
 
                 const targetWeaponBucket = slotKey === 'range' ? 'ranged' : slotKey;
@@ -3698,13 +3700,16 @@
         async function initWasm() {
             await Promise.all([
                 init(),
-                itemSearch.load('./data/items.json').then(() => { itemsLoaded = true; }),
+                // items.json の fetch は廃止。WASM に埋め込まれている (docs/adr/0009)。
                 fetch('./data/augments.json')
                     .then(r => r.json())
                     .then(d => { augmentData = d.augments || {}; })
                     .catch(() => { augmentData = {}; }),
             ]);
             wasmReady = true;
+            // 装備データは WASM の初期化と同時に使えるようになる。
+            // 以前は items.json の fetch 完了で立てていたフラグ (docs/adr/0009)。
+            itemsLoaded = item_count() > 0;
             buildJobLevelTable();
             buildEquipSlotsUI();
 

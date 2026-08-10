@@ -14,13 +14,13 @@
 use std::collections::HashMap;
 use std::sync::LazyLock;
 
-use serde::Deserialize;
+use serde::{Deserialize, Serialize};
 
 // ---------------------------------------------------------------------------
 // items.json
 // ---------------------------------------------------------------------------
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Deserialize)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Deserialize, Serialize)]
 pub enum ItemCategory {
     Weapon,
     Armor,
@@ -32,7 +32,7 @@ pub enum ItemCategory {
 /// 綴りや粒度が一致しないため。`jobs` は `"WAR"` 形式で `Job::War` と綴りが違い、
 /// `races` は `"Hum_M"` / `"Hum_F"` と性別まで分かれていて `Race` (5 種) に写せない。
 /// 型付けは解釈の移植 (docs/adr/0010) で扱う。
-#[derive(Debug, Clone, Deserialize)]
+#[derive(Debug, Clone, Deserialize, Serialize)]
 pub struct Item {
     pub id: u32,
     /// 英語名
@@ -106,21 +106,21 @@ pub fn item_by_id(id: u32) -> Option<&'static Item> {
 
 /// オーグメントのランク 1 段階。`text` は日本語表記のまま保持する
 /// (解釈は docs/adr/0010 の移植対象)。
-#[derive(Debug, Clone, Deserialize)]
+#[derive(Debug, Clone, Deserialize, Serialize)]
 pub struct AugmentRank {
     pub rank: i32,
     pub text: String,
 }
 
 /// オーグメントの経路。`path_type` は `"Default"` / `"Type:A"` など。
-#[derive(Debug, Clone, Deserialize)]
+#[derive(Debug, Clone, Deserialize, Serialize)]
 pub struct AugmentPath {
     #[serde(rename = "type")]
     pub path_type: String,
     pub ranks: Vec<AugmentRank>,
 }
 
-#[derive(Debug, Clone, Deserialize)]
+#[derive(Debug, Clone, Deserialize, Serialize)]
 pub struct ItemAugments {
     pub paths: Vec<AugmentPath>,
 }

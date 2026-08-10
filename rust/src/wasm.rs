@@ -1151,6 +1151,49 @@ pub fn extract_skill_bonuses(description_en: &str) -> Result<JsValue, JsValue> {
         .map_err(|e| JsValue::from_str(&e.to_string()))
 }
 
+// ---------------------------------------------------------------------------
+// 装備検索 (docs/adr/0010)
+//
+// JS の item-search.js を置き換えるための境界。データは Rust 側が持つため、
+// JS は items.json を読まなくてよくなる (docs/adr/0009)。
+//
+// なお getFilterableProperties() / getOperators() は移していない。items.json を
+// 参照せずフィルタ UI の <select> を組み立てるだけの静的メタデータであり、
+// DOM を作る JS 側に置く方が自然なため。
+// ---------------------------------------------------------------------------
+
+/// 装備を検索する。JS の `itemSearch.search(options)` 互換。
+/// options は camelCase のキー (`sortBy` / `ilv119Only` など) を受け付ける。
+#[wasm_bindgen]
+pub fn search_items(options: JsValue) -> Result<JsValue, JsValue> {
+    let opts: crate::item_search::SearchOptions = if options.is_undefined() || options.is_null() {
+        Default::default()
+    } else {
+        serde_wasm_bindgen::from_value(options)
+            .map_err(|e| JsValue::from_str(&format!("invalid search options: {e}")))?
+    };
+    crate::item_search::search(&opts)
+        .serialize(&object_serializer())
+        .map_err(|e| JsValue::from_str(&e.to_string()))
+}
+
+/// アイテム ID で 1 件引く。JS 側が `itemSearch.items.find(...)` していた用途の置き換え。
+#[wasm_bindgen]
+pub fn get_item_by_id(id: u32) -> Result<JsValue, JsValue> {
+    match crate::items::item_by_id(id) {
+        Some(item) => item
+            .serialize(&object_serializer())
+            .map_err(|e| JsValue::from_str(&e.to_string())),
+        None => Ok(JsValue::NULL),
+    }
+}
+
+/// 埋め込まれている装備の総数。JS 側のロード完了表示に使う。
+#[wasm_bindgen]
+pub fn item_count() -> usize {
+    crate::items::ITEMS.len()
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;

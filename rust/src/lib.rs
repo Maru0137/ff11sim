@@ -3,6 +3,7 @@ pub mod character_profile;
 pub mod data_loader;
 pub mod equip_stats;
 pub mod gift;
+pub mod item_search;
 pub mod items;
 pub mod job;
 pub mod job_points;

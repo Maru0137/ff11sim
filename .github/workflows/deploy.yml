@@ -31,6 +31,7 @@ jobs:
     outputs:
       changed: ${{ steps.detect.outputs.changed }}
       blobs: ${{ steps.detect.outputs.blobs }}
+      digest: ${{ steps.detect.outputs.digest }}
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -64,6 +65,21 @@ jobs:
         with:
           python-version: '3.11'
 
+      # items.json は上流の blob SHA と変換スクリプトが同じなら必ず同じ内容になるので、
+      # 生成結果をキャッシュして上流への再ダウンロードとパースを省く。
+      # CI は使い捨てランナーなので、build_web_data.sh 自身のキャッシュ判定
+      # (temp_resources/ の鮮度チェック) はここでは効かない。
+      # workflow_dispatch のときは復元せず必ず作り直す。
+      - name: Restore items.json cache
+        id: items-cache
+        if: github.event_name != 'workflow_dispatch'
+        uses: actions/cache/restore@v4
+        with:
+          path: |
+            build/items.json
+            build/.items-signature
+          key: items-json-${{ needs.detect-resource-changes.outputs.digest }}-${{ hashFiles('scripts/parse_lua_to_json.py') }}
+
       # Rust より先に実行する必要がある。装備データは include_str! でバイナリに
       # 埋め込まれるため (docs/adr/0009)、items.json が無いとコンパイルが通らない。
       # 上流ファイルの取得 / items.json 生成 / 検証 / _build_metadata.json 出力を
@@ -75,7 +91,27 @@ jobs:
           # detect ジョブが取得済みなので、ここで API を引き直さない。
           UPSTREAM_BLOBS: ${{ needs.detect-resource-changes.outputs.blobs }}
           COMMIT: ${{ github.sha }}
+          # 手動実行では必ず作り直す
+          FORCE_REBUILD: ${{ github.event_name == 'workflow_dispatch' && '1' || '0' }}
         run: scripts/build_web_data.sh
+
+      # 配信物には含めないので (docs/adr/0010)、公開後に中身を確認したいときは
+      # ここから取得する。_build_metadata.json の commit で該当の実行を特定できる。
+      - name: Upload items.json for debugging
+        uses: actions/upload-artifact@v4
+        with:
+          name: items-json
+          path: build/items.json
+          retention-days: 30
+
+      - name: Save items.json cache
+        if: steps.items-cache.outputs.cache-hit != 'true'
+        uses: actions/cache/save@v4
+        with:
+          path: |
+            build/items.json
+            build/.items-signature
+          key: items-json-${{ needs.detect-resource-changes.outputs.digest }}-${{ hashFiles('scripts/parse_lua_to_json.py') }}
 
       - name: Run tests
         run: cargo test

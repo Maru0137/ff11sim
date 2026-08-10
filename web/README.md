@@ -170,6 +170,20 @@ scripts/build_web_data.sh                                   # データ生成
 cd rust && wasm-pack build --target web --out-dir ../web/pkg  # WASM 再ビルド
 ```
 
+### 公開サイトの装備データを確認したい
+
+`items.json` は配信物に含まれない (`docs/adr/0010`) ため、URL では取得できない。
+CI が実行ごとに artifact として残しているので、そこから取得する。
+
+1. 公開サイトの `data/_build_metadata.json` を開き、`commit` を確認する
+   - 例: https://maru0137.github.io/ff11sim/data/_build_metadata.json
+2. GitHub の Actions から、その commit の実行を開く
+3. `items-json` という artifact をダウンロードする（保持期間 30 日）
+
+ローカルで同じものを作りたい場合は `scripts/build_web_data.sh` を実行すると
+`build/items.json` に生成される。`_build_metadata.json` の
+`upstream_sources.windower_resources.blobs` が一致していれば内容も同じになる。
+
 ### ステータスが表示されない
 
 - キャラクターとジョブを選択しているか確認

@@ -37,6 +37,10 @@ CACHE_DIR="${CACHE_DIR:-$REPO_ROOT/temp_resources}"
 BUILD_DIR="$REPO_ROOT/build"
 WEB_DATA_DIR="$REPO_ROOT/web/data"
 ITEMS_JSON="$BUILD_DIR/items.json"
+# items.json の生成元を記録する指紋。上流の blob SHA と変換スクリプトのハッシュから作る。
+# 一致していれば再生成を省ける。変換スクリプトを入れたのは、上流が同じでも
+# パース結果が変わりうるため。
+ITEMS_SIGNATURE="$BUILD_DIR/.items-signature"
 METADATA_JSON="$WEB_DATA_DIR/_build_metadata.json"
 
 mkdir -p "$CACHE_DIR" "$BUILD_DIR" "$WEB_DATA_DIR"
@@ -51,9 +55,25 @@ else
 fi
 jq . <<<"$blobs"
 
-# --- 2. 上流ファイルを取得 (キャッシュが最新ならスキップ) -----------------------
+# --- 2. items.json の再生成が必要か判定 ----------------------------------------
+# 上流が変わらず変換スクリプトも同じなら、生成物は必ず同じになるので作り直さない。
+# FORCE_REBUILD=1 で常に再生成する (CI の手動実行で使う)。
+signature="$(printf '%s\n%s\n' "$blobs" "$(git hash-object "$SCRIPT_DIR/parse_lua_to_json.py")")"
+if [ "${FORCE_REBUILD:-}" != "1" ] \
+  && [ -f "$ITEMS_JSON" ] \
+  && [ -f "$ITEMS_SIGNATURE" ] \
+  && [ "$(cat "$ITEMS_SIGNATURE")" = "$signature" ]; then
+  echo "==> items.json は最新のため再生成をスキップ"
+  echo "    ($(jq -r '.item_count' "$ITEMS_JSON") 件)"
+  skip_generate=1
+else
+  skip_generate=0
+fi
+
+# --- 3. 上流ファイルを取得 (キャッシュが最新ならスキップ) -----------------------
 # GitHub の blob SHA は git のオブジェクト ID そのものなので、
 # git hash-object でローカルファイルのハッシュを計算すれば一致判定ができる。
+if [ "$skip_generate" = "0" ]; then
 echo "==> 上流ファイルを取得"
 for name in "${TRACKED_FILES[@]}"; do
   dest="$CACHE_DIR/$name"
@@ -66,18 +86,22 @@ for name in "${TRACKED_FILES[@]}"; do
   curl -fsSL --max-time 300 -o "$dest" "$(upstream_raw_url "$name")"
 done
 
-# --- 3. items.json を生成 ------------------------------------------------------
+# --- 4. items.json を生成 ------------------------------------------------------
 echo "==> items.json を生成"
 python3 "$SCRIPT_DIR/parse_lua_to_json.py" \
   --items "$CACHE_DIR/items.lua" \
   --descriptions "$CACHE_DIR/item_descriptions.lua" \
   --output "$ITEMS_JSON"
 
-# --- 4. 検証 -------------------------------------------------------------------
+# --- 5. 検証 -------------------------------------------------------------------
 echo "==> items.json を検証"
 "$SCRIPT_DIR/validate_items.sh" "$ITEMS_JSON"
 
-# --- 5. ビルドメタデータを書き出す ---------------------------------------------
+# 検証を通ったものだけ指紋を残す。落ちた生成物を「最新」と誤認しないため。
+printf '%s' "$signature" > "$ITEMS_SIGNATURE"
+fi
+
+# --- 6. ビルドメタデータを書き出す (再生成の有無に関わらず毎回作る) -------------
 echo "==> _build_metadata.json を生成"
 commit="${COMMIT:-$(git -C "$REPO_ROOT" rev-parse HEAD)}"
 jq -n \

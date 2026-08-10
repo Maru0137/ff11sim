@@ -10,6 +10,7 @@
 #   GitHub Actions からは `scripts/detect_resource_changes.sh >> "$GITHUB_OUTPUT"` で使う。
 #     blobs=<{"<path>": "<blob sha>", ...}>
 #     changed=<true|false>
+#     digest=<blobs の sha256 先頭 16 桁。CI のキャッシュキーに使う>
 #
 # 判定方法:
 #   上流の代表値には blob SHA を使う (理由は upstream_common.sh を参照)。
@@ -51,5 +52,10 @@ else
   changed=true
 fi
 
+# キャッシュキー用の短い指紋。blobs は JSON なのでそのままキーに使えない。
+digest=$(printf '%s' "$current" | shasum -a 256 2>/dev/null | cut -c1-16 \
+  || printf '%s' "$current" | sha256sum | cut -c1-16)
+
 echo "blobs=$current"
 echo "changed=$changed"
+echo "digest=$digest"

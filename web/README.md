@@ -51,7 +51,7 @@ basic-http-server
 
 ## 装備データの生成（最初に必要）
 
-`web/data/items.json` は上流 ([Windower/Resources](https://github.com/Windower/Resources)) から
+`build/items.json` は上流 ([Windower/Resources](https://github.com/Windower/Resources)) から
 生成する派生物で、git 管理外です (`docs/adr/0003`)。**チェックアウト直後は存在しないため、
 まずこれを生成してください。**
 
@@ -62,14 +62,18 @@ scripts/build_web_data.sh
 CI と同じコマンドで、以下を一括で行います。
 
 - 上流 Lua のダウンロード (`temp_resources/` にキャッシュ。2 回目以降は内容が同じならスキップ)
-- `web/data/items.json` の生成
+- `build/items.json` の生成 (Rust が `include_str!` で埋め込む)
 - 件数の検証
 - `web/data/_build_metadata.json` (ビルドのメタ情報) の出力
 
 > **`cargo build` / `cargo test` より先に実行する必要があります。**
 > 装備データは `include_str!` で Rust のバイナリに埋め込まれるため (`docs/adr/0009`)、
-> `items.json` が無いとコンパイルが通りません。
-> `scripts/scrape_augments.py` も `items.json` を装備名の逆引きに使います。
+> `build/items.json` が無いとコンパイルが通りません。
+> `scripts/scrape_augments.py` も装備名の逆引きに使います。
+>
+> `web/` の外に置くのは、ブラウザがこれを読まないためです (`docs/adr/0010`)。
+> `web/` に置くと Pages に配信され、WASM に埋め込んだものと合わせて
+> 同じデータを二重に配ることになります。
 
 ## WebAssemblyのビルド
 
@@ -133,11 +137,9 @@ CI (`.github/workflows/deploy.yml`) が deploy 時に `web/js/config.js` を生�
 web/
 ├── index.html          # メインページ（Character/Equipment Set/Status）
 ├── search.html         # 装備検索ページ
-├── js/
-│   ├── item-search.js  # アイテム検索エンジン
-│   └── equip-stats.js  # 装備ステータス抽出
+├── js/                 # UI・永続化・認証（装備ロジックは Rust 側にある）
 ├── data/
-│   └── items.json      # 装備データベース（CI/スクリプトで生成、git 管理外）
+│   └── augments.json   # オーグメント定義
 └── pkg/                # WASMモジュール（ビルド後生成）
     ├── ff11sim.js
     ├── ff11sim_bg.wasm
@@ -158,10 +160,15 @@ web/
 - `web/pkg/`ディレクトリが存在するか確認
 - Rustコードをビルドしたか確認（上記「WebAssemblyのビルド」参照）
 
-### items.jsonが読み込めない
+### 装備が検索できない・装備セットのステータスが 0 になる
 
-- HTTPサーバーが`web/`ディレクトリで起動しているか確認
-- ブラウザのコンソールでCORSエラーが出ていないか確認
+装備データは WASM に埋め込まれている (`docs/adr/0009`) ため、ブラウザは
+`items.json` を読まない。データが古い/無い場合は Rust の再ビルドが必要。
+
+```bash
+scripts/build_web_data.sh                                   # データ生成
+cd rust && wasm-pack build --target web --out-dir ../web/pkg  # WASM 再ビルド
+```
 
 ### ステータスが表示されない
 

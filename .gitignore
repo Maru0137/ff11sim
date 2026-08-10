@@ -1,7 +1,7 @@
 Cargo.lock
 rust/target
 web/pkg/
-web/data/items.json
+build/
 web/data/_build_metadata.json
 web/js/config.js
 temp_resources/

@@ -6,9 +6,14 @@
 #   scripts/build_web_data.sh
 #
 # 生成物:
-#   web/data/items.json            装備データ本体 (約 8.5MB, .gitignore 済み)
+#   build/items.json               装備データ本体 (約 8.5MB, .gitignore 済み)
 #   web/data/_build_metadata.json  ビルドのメタ情報 (.gitignore 済み)
 #   temp_resources/*.lua           上流からのダウンロードキャッシュ (.gitignore 済み)
+#
+# items.json を web/ の外に置くのは、ブラウザがこれを読まなくなったため
+# (docs/adr/0009 / docs/adr/0010)。Rust が include_str! で埋め込むので、
+# web/ に置くと同じデータを二重に配ることになる。
+# _build_metadata.json は次回の変化判定で配信サイト経由で読むので web/ に残す。
 #
 # 環境変数:
 #   UPSTREAM_BLOBS  detect_resource_changes.sh が出力した blobs (JSON)。
@@ -29,11 +34,12 @@ source "$SCRIPT_DIR/upstream_common.sh"
 
 REPO_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
 CACHE_DIR="${CACHE_DIR:-$REPO_ROOT/temp_resources}"
-OUT_DIR="$REPO_ROOT/web/data"
-ITEMS_JSON="$OUT_DIR/items.json"
-METADATA_JSON="$OUT_DIR/_build_metadata.json"
+BUILD_DIR="$REPO_ROOT/build"
+WEB_DATA_DIR="$REPO_ROOT/web/data"
+ITEMS_JSON="$BUILD_DIR/items.json"
+METADATA_JSON="$WEB_DATA_DIR/_build_metadata.json"
 
-mkdir -p "$CACHE_DIR" "$OUT_DIR"
+mkdir -p "$CACHE_DIR" "$BUILD_DIR" "$WEB_DATA_DIR"
 
 # --- 1. 上流の blob SHA を確定 -------------------------------------------------
 if [ -n "${UPSTREAM_BLOBS:-}" ]; then

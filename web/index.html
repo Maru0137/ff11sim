@@ -2162,15 +2162,14 @@
         </div>
     </div>
 
-    <script src="js/equip-stats.js"></script>
     <script type="module">
-        // 装備の解釈 (extract_all_stats / extract_skill_bonuses) は Rust 側に移した (docs/adr/0010)。
-        // js/equip-stats.js の同名関数はもうブラウザからは使わない。
-        // 同ファイルの sumStats / getEmptyStats は集計用なのでそのまま使う。
+        // 装備データ・解釈・検索・合算はすべて Rust 側に移した (docs/adr/0009, docs/adr/0010)。
+        // js/equip-stats.js と js/item-search.js は削除済み。
         import init, {
             calculate_status_from_profile, calculate_default_skills,
             extract_all_stats, extract_skill_bonuses,
             search_items, get_item_by_id, item_count,
+            sum_stats, empty_stats,
         } from './pkg/ff11sim.js';
         import {
             JOBS, RACE_NAMES, JP_CATEGORIES, JP_MAX_TOTAL, JP_CATEGORY_COUNT, JP_MAX_RANK,
@@ -3593,7 +3592,7 @@
 
         function calculateEquipSetBonuses(equipSet) {
             if (!equipSet || !equipSet.slots || !itemsLoaded) {
-                return getEmptyStats();
+                return empty_stats();
             }
             const slots = equipSet.slots;
 
@@ -3660,16 +3659,16 @@
                 }
             }
 
-            const result = sumStats(statsArray);
+            const result = sum_stats(statsArray);
             result.skill_bonus_main = skillBonusBuckets.main;
             result.skill_bonus_sub = skillBonusBuckets.sub;
             result.skill_bonus_ranged = skillBonusBuckets.ranged;
             result.skill_bonus_global = skillBonusBuckets.global;
             // 武器スロット別装備合計 (魔命スキルなどスロット依存表示用)
             result.slot_stats = {
-                main: sumStats(slotStatsBuckets.main),
-                sub: sumStats(slotStatsBuckets.sub),
-                ranged: sumStats(slotStatsBuckets.ranged),
+                main: sum_stats(slotStatsBuckets.main),
+                sub: sum_stats(slotStatsBuckets.sub),
+                ranged: sum_stats(slotStatsBuckets.ranged),
             };
             console.log('[DEBUG] Total stats:', result);
             return result;

@@ -658,7 +658,7 @@ def parse_limbus_set_page(html):
 
 def load_items_json():
     """Load items.json and build a name -> id lookup."""
-    items_path = Path(__file__).parent.parent / "web" / "data" / "items.json"
+    items_path = Path(__file__).parent.parent / "build" / "items.json"
     with open(items_path) as f:
         data = json.load(f)
     name_to_id = {}

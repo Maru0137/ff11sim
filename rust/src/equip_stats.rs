@@ -310,6 +310,182 @@ impl EquipStats {
         ]
     }
 
+    /// キー名 → 値のマップから値を取り込む。`entries()` と対になる操作で、
+    /// WASM 境界で JS から受け取ったオブジェクトを構造体に戻すのに使う。
+    /// 未知のキーは無視する。
+    pub fn set_from_map(&mut self, map: &BTreeMap<String, i32>) {
+        for (key, value) in map {
+            self.set_by_key(key, *value);
+        }
+    }
+
+    /// キー名を指定して値を設定する。`entries()` のキーと対応する。
+    fn set_by_key(&mut self, key: &str, v: i32) {
+        match key {
+            "hp" => self.hp = v,
+            "mp" => self.mp = v,
+            "str" => self.str_ = v,
+            "dex" => self.dex = v,
+            "vit" => self.vit = v,
+            "agi" => self.agi = v,
+            "int" => self.int = v,
+            "mnd" => self.mnd = v,
+            "chr" => self.chr = v,
+            "hp_pct" => self.hp_pct = v,
+            "mp_pct" => self.mp_pct = v,
+            "def" => self.def = v,
+            "attack" => self.attack = v,
+            "accuracy" => self.accuracy = v,
+            "evasion" => self.evasion = v,
+            "attack_pct" => self.attack_pct = v,
+            "ranged_attack" => self.ranged_attack = v,
+            "ranged_accuracy" => self.ranged_accuracy = v,
+            "magic_attack" => self.magic_attack = v,
+            "magic_accuracy" => self.magic_accuracy = v,
+            "magic_accuracy_skill" => self.magic_accuracy_skill = v,
+            "magic_evasion" => self.magic_evasion = v,
+            "magic_damage" => self.magic_damage = v,
+            "haste_pct" => self.haste_pct = v,
+            "store_tp" => self.store_tp = v,
+            "double_attack_pct" => self.double_attack_pct = v,
+            "triple_attack_pct" => self.triple_attack_pct = v,
+            "quad_attack_pct" => self.quad_attack_pct = v,
+            "double_attack_damage_pct" => self.double_attack_damage_pct = v,
+            "triple_attack_damage_pct" => self.triple_attack_damage_pct = v,
+            "critical_hit_rate_pct" => self.critical_hit_rate_pct = v,
+            "critical_hit_damage_pct" => self.critical_hit_damage_pct = v,
+            "weapon_skill_damage_pct" => self.weapon_skill_damage_pct = v,
+            "subtle_blow" => self.subtle_blow = v,
+            "subtle_blow_2" => self.subtle_blow_2 = v,
+            "tp_bonus" => self.tp_bonus = v,
+            "skillchain_bonus" => self.skillchain_bonus = v,
+            "physical_damage_limit_pct" => self.physical_damage_limit_pct = v,
+            "true_shot" => self.true_shot = v,
+            "magic_critical_hit_2_pct" => self.magic_critical_hit_2_pct = v,
+            "magic_affinity" => self.magic_affinity = v,
+            "damage_taken_pct" => self.damage_taken_pct = v,
+            "physical_damage_taken_pct" => self.physical_damage_taken_pct = v,
+            "magic_damage_taken_pct" => self.magic_damage_taken_pct = v,
+            "magic_def_bonus" => self.magic_def_bonus = v,
+            "dmg" => self.dmg = v,
+            "delay" => self.delay = v,
+            "regen" => self.regen = v,
+            "refresh" => self.refresh = v,
+            "regain" => self.regain = v,
+            "fast_cast_pct" => self.fast_cast_pct = v,
+            "quick_magic_pct" => self.quick_magic_pct = v,
+            "snapshot_pct" => self.snapshot_pct = v,
+            "rapid_shot_pct" => self.rapid_shot_pct = v,
+            "resist_fire" => self.resist_fire = v,
+            "resist_ice" => self.resist_ice = v,
+            "resist_wind" => self.resist_wind = v,
+            "resist_earth" => self.resist_earth = v,
+            "resist_lightning" => self.resist_lightning = v,
+            "resist_water" => self.resist_water = v,
+            "resist_light" => self.resist_light = v,
+            "resist_dark" => self.resist_dark = v,
+            "resist_sleep" => self.resist_sleep = v,
+            "resist_paralysis" => self.resist_paralysis = v,
+            "resist_bind" => self.resist_bind = v,
+            "resist_silence" => self.resist_silence = v,
+            "resist_gravity" => self.resist_gravity = v,
+            "resist_slow" => self.resist_slow = v,
+            "resist_petrification" => self.resist_petrification = v,
+            "resist_stun" => self.resist_stun = v,
+            "resist_poison" => self.resist_poison = v,
+            "resist_charm" => self.resist_charm = v,
+            "resist_blind" => self.resist_blind = v,
+            "resist_curse" => self.resist_curse = v,
+            "resist_virus" => self.resist_virus = v,
+            "resist_amnesia" => self.resist_amnesia = v,
+            "resist_terror" => self.resist_terror = v,
+            "resist_death" => self.resist_death = v,
+            _ => {}
+        }
+    }
+
+    /// 別の `EquipStats` を項目ごとに加算する。JS の `sumStats` に対応。
+    pub fn add(&mut self, other: &EquipStats) {
+        self.hp += other.hp;
+        self.mp += other.mp;
+        self.str_ += other.str_;
+        self.dex += other.dex;
+        self.vit += other.vit;
+        self.agi += other.agi;
+        self.int += other.int;
+        self.mnd += other.mnd;
+        self.chr += other.chr;
+        self.hp_pct += other.hp_pct;
+        self.mp_pct += other.mp_pct;
+        self.def += other.def;
+        self.attack += other.attack;
+        self.accuracy += other.accuracy;
+        self.evasion += other.evasion;
+        self.attack_pct += other.attack_pct;
+        self.ranged_attack += other.ranged_attack;
+        self.ranged_accuracy += other.ranged_accuracy;
+        self.magic_attack += other.magic_attack;
+        self.magic_accuracy += other.magic_accuracy;
+        self.magic_accuracy_skill += other.magic_accuracy_skill;
+        self.magic_evasion += other.magic_evasion;
+        self.magic_damage += other.magic_damage;
+        self.haste_pct += other.haste_pct;
+        self.store_tp += other.store_tp;
+        self.double_attack_pct += other.double_attack_pct;
+        self.triple_attack_pct += other.triple_attack_pct;
+        self.quad_attack_pct += other.quad_attack_pct;
+        self.double_attack_damage_pct += other.double_attack_damage_pct;
+        self.triple_attack_damage_pct += other.triple_attack_damage_pct;
+        self.critical_hit_rate_pct += other.critical_hit_rate_pct;
+        self.critical_hit_damage_pct += other.critical_hit_damage_pct;
+        self.weapon_skill_damage_pct += other.weapon_skill_damage_pct;
+        self.subtle_blow += other.subtle_blow;
+        self.subtle_blow_2 += other.subtle_blow_2;
+        self.tp_bonus += other.tp_bonus;
+        self.skillchain_bonus += other.skillchain_bonus;
+        self.physical_damage_limit_pct += other.physical_damage_limit_pct;
+        self.true_shot += other.true_shot;
+        self.magic_critical_hit_2_pct += other.magic_critical_hit_2_pct;
+        self.magic_affinity += other.magic_affinity;
+        self.damage_taken_pct += other.damage_taken_pct;
+        self.physical_damage_taken_pct += other.physical_damage_taken_pct;
+        self.magic_damage_taken_pct += other.magic_damage_taken_pct;
+        self.magic_def_bonus += other.magic_def_bonus;
+        self.dmg += other.dmg;
+        self.delay += other.delay;
+        self.regen += other.regen;
+        self.refresh += other.refresh;
+        self.regain += other.regain;
+        self.fast_cast_pct += other.fast_cast_pct;
+        self.quick_magic_pct += other.quick_magic_pct;
+        self.snapshot_pct += other.snapshot_pct;
+        self.rapid_shot_pct += other.rapid_shot_pct;
+        self.resist_fire += other.resist_fire;
+        self.resist_ice += other.resist_ice;
+        self.resist_wind += other.resist_wind;
+        self.resist_earth += other.resist_earth;
+        self.resist_lightning += other.resist_lightning;
+        self.resist_water += other.resist_water;
+        self.resist_light += other.resist_light;
+        self.resist_dark += other.resist_dark;
+        self.resist_sleep += other.resist_sleep;
+        self.resist_paralysis += other.resist_paralysis;
+        self.resist_bind += other.resist_bind;
+        self.resist_silence += other.resist_silence;
+        self.resist_gravity += other.resist_gravity;
+        self.resist_slow += other.resist_slow;
+        self.resist_petrification += other.resist_petrification;
+        self.resist_stun += other.resist_stun;
+        self.resist_poison += other.resist_poison;
+        self.resist_charm += other.resist_charm;
+        self.resist_blind += other.resist_blind;
+        self.resist_curse += other.resist_curse;
+        self.resist_virus += other.resist_virus;
+        self.resist_amnesia += other.resist_amnesia;
+        self.resist_terror += other.resist_terror;
+        self.resist_death += other.resist_death;
+    }
+
     /// 7 つの基本パラメータ (STR〜CHR) に一括加算する。
     fn add_all_base_params(&mut self, v: i32) {
         self.str_ += v;
@@ -1064,6 +1240,129 @@ mod tests {
     #[test]
     fn empty_description_yields_default() {
         assert_eq!(extract_all_stats(""), EquipStats::default());
+    }
+
+    // --- 合算 (JS の sumStats 相当) ---------------------------------------
+
+    #[test]
+    fn add_sums_every_field() {
+        // 全フィールドの加算漏れを検出する。
+        // entries() が全項目を列挙していることを利用し、
+        // 「1 を足したものを 2 つ足すと全項目が 2 になる」ことで確認する。
+        let mut one = EquipStats::default();
+        // 各フィールドに 1 を入れる方法が無いので、加算の可換性で代用する:
+        // a に b を足した結果が、項目ごとの和になっているかを見る。
+        let a = extract_all_stats("HP+1 MP+2 STR+3 DEF:4 Attack+5");
+        let b = extract_all_stats("HP+10 MP+20 STR+30 Accuracy+40");
+        one.add(&a);
+        one.add(&b);
+        assert_eq!(one.hp, 11);
+        assert_eq!(one.mp, 22);
+        assert_eq!(one.str_, 33);
+        assert_eq!(one.def, 4, "b 側が 0 の項目も保持される");
+        assert_eq!(one.attack, 5);
+        assert_eq!(one.accuracy, 40, "a 側が 0 の項目も加算される");
+    }
+
+    #[test]
+    fn add_covers_every_field_without_omission() {
+        // add() の加算漏れを機械的に検出する。
+        //
+        // 全項目に値が入った EquipStats を作り、自分自身を足す。加算漏れがあると
+        // その項目だけ倍にならないので、entries() を突き合わせれば漏れが分かる。
+        // 全項目に値を入れるには、各項目を 1 にした状態を作る必要がある。
+        // 直接フィールドを触らずに済ませるため、ここでは entries() の値を見て
+        // 「倍になっていない項目」を洗い出す方式にする。
+        let base = all_fields_nonzero();
+        let mut doubled = base.clone();
+        doubled.add(&base);
+
+        let missed: Vec<&str> = base
+            .entries()
+            .iter()
+            .zip(doubled.entries().iter())
+            .filter(|((k, v), (k2, v2))| {
+                debug_assert_eq!(k, k2);
+                *v != 0 && *v2 != v * 2
+            })
+            .map(|((k, _), _)| *k)
+            .collect();
+
+        assert!(
+            missed.is_empty(),
+            "add() で加算されていない項目がある: {missed:?}"
+        );
+        // 全項目に値が入っていることも確認する (テスト自体が空振りしないように)
+        assert!(
+            base.entries().iter().all(|(_, v)| *v != 0),
+            "テスト用の値が全項目に入っていない"
+        );
+    }
+
+    #[test]
+    fn set_from_map_roundtrips_every_field() {
+        // entries() と set_by_key() の対応漏れを検出する。
+        // 全項目に値を入れた状態を entries() でマップ化し、set_from_map() で
+        // 復元して一致するかを見る。片方に無いキーがあると値が落ちる。
+        let original = all_fields_nonzero();
+        let map: BTreeMap<String, i32> = original
+            .entries()
+            .into_iter()
+            .map(|(k, v)| (k.to_string(), v))
+            .collect();
+
+        let mut restored = EquipStats::default();
+        restored.set_from_map(&map);
+
+        let dropped: Vec<&str> = original
+            .entries()
+            .iter()
+            .zip(restored.entries().iter())
+            .filter(|((_, v), (_, v2))| v != v2)
+            .map(|((k, _), _)| *k)
+            .collect();
+        assert!(
+            dropped.is_empty(),
+            "set_by_key() が対応していない項目がある: {dropped:?}"
+        );
+    }
+
+    #[test]
+    fn set_from_map_ignores_unknown_keys() {
+        let mut s = EquipStats::default();
+        let map: BTreeMap<String, i32> =
+            [("hp".to_string(), 5), ("no_such_key".to_string(), 99)].into();
+        s.set_from_map(&map);
+        assert_eq!(s.hp, 5);
+    }
+
+    /// 全項目が非ゼロの `EquipStats` を作る。`add()` の網羅性検証に使う。
+    fn all_fields_nonzero() -> EquipStats {
+        let mut s = EquipStats::default();
+        let mut n = 1;
+        // entries() と同じ順序でフィールドを埋める。項目を増やしたらここも足す。
+        macro_rules! fill {
+            ($($f:ident),* $(,)?) => {
+                $( s.$f = { n += 1; n }; )*
+            };
+        }
+        fill!(
+            hp, mp, str_, dex, vit, agi, int, mnd, chr, hp_pct, mp_pct, def, attack, accuracy,
+            evasion, attack_pct, ranged_attack, ranged_accuracy, magic_attack, magic_accuracy,
+            magic_accuracy_skill, magic_evasion, magic_damage, haste_pct, store_tp,
+            double_attack_pct, triple_attack_pct, quad_attack_pct, double_attack_damage_pct,
+            triple_attack_damage_pct, critical_hit_rate_pct, critical_hit_damage_pct,
+            weapon_skill_damage_pct, subtle_blow, subtle_blow_2, tp_bonus, skillchain_bonus,
+            physical_damage_limit_pct, true_shot, magic_critical_hit_2_pct, magic_affinity,
+            damage_taken_pct, physical_damage_taken_pct, magic_damage_taken_pct, magic_def_bonus,
+            dmg, delay, regen, refresh, regain, fast_cast_pct, quick_magic_pct, snapshot_pct,
+            rapid_shot_pct, resist_fire, resist_ice, resist_wind, resist_earth, resist_lightning,
+            resist_water, resist_light, resist_dark, resist_sleep, resist_paralysis, resist_bind,
+            resist_silence, resist_gravity, resist_slow, resist_petrification, resist_stun,
+            resist_poison, resist_charm, resist_blind, resist_curse, resist_virus, resist_amnesia,
+            resist_terror, resist_death,
+        );
+        s
     }
 
     // =====================================================================

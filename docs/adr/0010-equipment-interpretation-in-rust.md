@@ -71,6 +71,8 @@ JS 側の `items.json` 読み込みを廃止すると決めた。JS はもとデ
 `web/test/*.test.js` を突き合わせに使う。手順 5 が完了するまで
 [ADR 0009](0009-embed-item-data-in-binary.md) の「二重に配らない」前提は満たされない。
 
+**2026-08-10 時点で手順 1〜5 はすべて完了した。** 実績は Confirmation を参照。
+
 ### この決定を見直す条件
 
 - 検索の応答性が実測で問題になったとき。選択肢 2（検索用インデックスを別途配信）へ移る
@@ -94,19 +96,42 @@ JS 側の `items.json` 読み込みを廃止すると決めた。JS はもとデ
 
 ### Confirmation
 
-決定は accepted だが、実装は未着手である。
+手順 1〜5 は完了済み。実施した検証は次のとおり。
 
-* `web/js/equip-stats.js` と `web/js/item-search.js` が現役であり、
-  `rust/src/wasm.rs` のテストは今も装備の数値を doc comment のテーブルとして
-  手書きしている。
-* Rust 側に装備データの参照 API は存在しない。
+**JS 実装との全件突き合わせ** (移植の完了判定に使った)
 
-実装時に満たすべき検証:
+| 対象 | 件数 | 結果 |
+|---|---|---|
+| `extract_all_stats` | 15,504 | 不一致 0 |
+| `extract_skill_bonuses` | 15,504（うち非空 2,576 / 4,056 エントリ） | 不一致 0 |
+| 検索（14 ケース） | クエリ / 絞り込み / ソート / フィルタ / ページング | 件数・並び順とも一致 |
+| JA→EN 変換 | 1,646 | 不一致 0 |
 
-* `web/test/equip-stats-extraction.test.js` の 76 アサーションが、移植後の Rust 実装でも
-  同じ結果を返すこと。移植の完了条件はこれを満たすこととする。
-* 手順 3 の完了時点で、JS 経由と WASM 経由の抽出結果が一致すること。
-* 手順 5 の完了時点で、`items.json` への fetch がコード上に残っていないこと。
+`extract_all_stats` / `extract_skill_bonuses` は WASM 境界を JS から呼ぶ形でも
+全件一致を確認しており、`wasm-bindgen` を跨いだ戻り値の形まで含めて等価である。
+
+**継続的に走る検証**
+
+* `equip_stats::tests::conformance_with_js_over_all_items` — 環境変数
+  `JS_STATS` に JS の出力を渡すと全件突き合わせが走る。未設定ならスキップ。
+* `add_covers_every_field_without_omission` / `set_from_map_roundtrips_every_field` —
+  78 項目の加算・キー対応の漏れを検出する。実際に 1 項目外して落ちることを確認済み。
+* `rust/tests/` の 3 本（連携ボーナス / WS ダメージ / JA→EN 変換）。
+  JS 時代は CI に入っていなかったが、`cargo test` で走るようになった。
+
+**手順の完了確認**
+
+* `items.json` への fetch はコード上に残っていない。`web/js/equip-stats.js` と
+  `web/js/item-search.js` は削除済み。
+* `items.json` の出力先を `build/` に移し、Pages の配信対象から外した。
+  これで [ADR 0009](0009-embed-item-data-in-binary.md) の「二重に配らない」前提を満たす。
+
+**未検証のもの**
+
+* 検索の応答性は実測していない。キーストロークごとに WASM 境界を越えて最大 50 件を
+  返す設計のままで、体感で問題が出たら選択肢 2 に退避する。
+* 名前ソートは JS の `localeCompare` に対しコードポイント順としたため一致しない。
+  意図的な非互換として `docs/tech-debt/equip-stats-js-quirks.md` に記録している。
 
 ## Pros and Cons of the Options
 

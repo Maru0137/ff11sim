@@ -7,9 +7,9 @@
 //! - gzip 後の転送量は配信物として別に配る場合とほぼ変わらない (差 1KB 未満) ため、
 //!   Rust 側にデータを寄せても利用者の負担は増えない。
 //!
-//! 移行中の注意: 現時点では JS 側も `web/data/items.json` を fetch しており、
-//! ブラウザは同じデータを二重に取得する。JS 側の読み込み廃止は docs/adr/0010 の
-//! 手順 5 で行う。そのとき `items.json` の出力先も配信対象外へ移す。
+//! `items.json` は `build/` に生成する。`web/` の外に置くのは、ブラウザが
+//! これを読まなくなったため (docs/adr/0010 手順 5 完了)。`web/` に置いたままだと
+//! Pages に配信され、WASM に埋め込んだものと合わせて同じデータを二重に配ることになる。
 
 use std::collections::HashMap;
 use std::sync::LazyLock;
@@ -87,7 +87,7 @@ struct ItemsFile {
 }
 
 pub static ITEMS: LazyLock<Vec<Item>> = LazyLock::new(|| {
-    serde_json::from_str::<ItemsFile>(include_str!("../../web/data/items.json"))
+    serde_json::from_str::<ItemsFile>(include_str!("../../build/items.json"))
         .expect("items.json parse failed")
         .items
 });

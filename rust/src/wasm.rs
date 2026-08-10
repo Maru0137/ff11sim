@@ -1194,6 +1194,37 @@ pub fn item_count() -> usize {
     crate::items::ITEMS.len()
 }
 
+/// 複数の抽出結果を合算する。JS の `sumStats` 互換。
+/// 引数は `extract_all_stats` が返したオブジェクトの配列。
+/// 戻り値は **全項目を含む** (値 0 のキーも持つ)。JS 側が
+/// `result.hp` のように直接参照するため、欠けたキーがあると undefined になるので。
+#[wasm_bindgen]
+pub fn sum_stats(stats_list: JsValue) -> Result<JsValue, JsValue> {
+    let items: Vec<BTreeMap<String, i32>> = serde_wasm_bindgen::from_value(stats_list)
+        .map_err(|e| JsValue::from_str(&format!("invalid stats list: {e}")))?;
+
+    let mut total = crate::equip_stats::EquipStats::default();
+    for map in &items {
+        let mut one = crate::equip_stats::EquipStats::default();
+        one.set_from_map(map);
+        total.add(&one);
+    }
+    let out: BTreeMap<&str, i32> = total.entries().into_iter().collect();
+    out.serialize(&object_serializer())
+        .map_err(|e| JsValue::from_str(&e.to_string()))
+}
+
+/// 全項目が 0 の抽出結果を返す。JS の `getEmptyStats` 互換。
+#[wasm_bindgen]
+pub fn empty_stats() -> Result<JsValue, JsValue> {
+    let out: BTreeMap<&str, i32> = crate::equip_stats::EquipStats::default()
+        .entries()
+        .into_iter()
+        .collect();
+    out.serialize(&object_serializer())
+        .map_err(|e| JsValue::from_str(&e.to_string()))
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;

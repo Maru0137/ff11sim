@@ -8,9 +8,10 @@
 //! 説明文に含まれる条件付きセグメント (`In Dynamis:` / `Unity Ranking:` /
 //! `Right ear:` / `Set:` など 30 種以上) を JS は体系的に扱っておらず、
 //! Unity Ranking は無条件に加算され、`In Dynamis:` は無視されない。
-//! これを直すのは条件セグメント対応として別途扱う。ここで挙動を変えると、
-//! `web/test/equip-stats-extraction.test.js` の 71 アサーションが
-//! 「移植が正しいか」の判定に使えなくなるため。
+//! これを直すのは条件セグメント対応として別途扱う。移植時に挙動を変えると、
+//! JS 実装との全件突き合わせが「移植が正しいか」の判定に使えなくなるため。
+//! 突き合わせは `conformance_with_js_over_all_items` テストで行う
+//! (移植元だった `web/test/equip-stats-extraction.test.js` は役目を終えて削除済み)。
 //!
 //! # 正規表現エンジン
 //!

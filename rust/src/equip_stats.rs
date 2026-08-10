@@ -381,7 +381,7 @@ fn match_signed(text: &str, pattern: &str) -> i32 {
 ///
 /// 非グローバルなので、`In Dynamis: DEF:22` のような条件付きの値は
 /// 先に書かれた無条件の値があれば拾われない。これは条件を解釈した結果ではなく
-/// 偶然そうなっているだけである (docs/knowledge/equip_stats_js_quirks.md)。
+/// 偶然そうなっているだけである (docs/tech-debt/equip-stats-js-quirks.md)。
 fn match_colon(text: &str, pattern: &str) -> i32 {
     re(pattern)
         .captures(text)

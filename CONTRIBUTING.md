@@ -47,6 +47,16 @@ uv run pre-commit install
 **git は clone 時にフックを自動で有効化しません**（任意のコードが実行されてしまうため）。
 そのためこの 1 行は各自で実行する必要があります。
 
+Supabase の接続設定を用意します（`config.js` は git 管理外）。
+
+```bash
+cp web/js/config.example.js web/js/config.js
+```
+
+これが無いと import が 404 になり**ページ自体が読み込めません**。プレースホルダの
+ままで、ログイン以外の全機能（ステータス計算・装備検索など）が動きます。
+ログイン機能を試す場合のみ実値が必要です（[web/README.md](web/README.md) 参照）。
+
 ### 2. ビルド手順
 
 装備データを生成します。
@@ -211,6 +221,7 @@ CI では実行しています。
 |---|---|
 | Rust のビルドが `include_str!` で失敗する / 装備検索が空になる | `scripts/build_data.sh` を実行して `build/items.json` を生成する |
 | WASM が読み込めない | `web/pkg/` があるか確認。無ければ `wasm-pack build` を実行する |
+| ページが真っ白 / `config.js` の 404 | `cp web/js/config.example.js web/js/config.js` を実行する |
 | Rust を直したのにブラウザに反映されない | WASM の再ビルドが必要。ブラウザのキャッシュも確認する |
 | commit が `cargo fmt --check` で止まる | `cargo fmt --manifest-path rust/Cargo.toml` して `git add` し直す |
 | `pre-commit: command not found` | `uv sync` を実行して `.venv/` を作り直す |

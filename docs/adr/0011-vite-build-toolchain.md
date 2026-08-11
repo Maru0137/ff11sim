@@ -144,4 +144,5 @@ dev サーバ・TypeScript・ユニットテストといった将来の改善が
   （データ JSON のシンボリックリンク）、
   [ADR 0007](0007-supabase-anon-key-ci-injection.md)（config.js の CI 注入）
 * 先行するモジュール化の背景: [docs/tech-debt/inline-script-monolith.md](../tech-debt/inline-script-monolith.md)
-* UI フレームワークの採用は別決定。検討する時点で別 ADR を作成する
+* UI フレームワークの採用は別決定として
+  [ADR 0012](0012-react-ui-framework.md) で React を採用した

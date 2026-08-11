@@ -2,7 +2,7 @@ import { describe, it, expect, vi } from 'vitest';
 
 // constants.js は top-level await で data/*.json を fetch するため
 // node 環境ではそのまま import できない。utils が参照する定数のみモックする。
-vi.mock('../js/constants.js', () => ({
+vi.mock('./constants', () => ({
     JP_CATEGORY_COUNT: 10,
     JP_MAX_RANK: 20,
     JOB_MERIT_GROUP_SIZE: 5,

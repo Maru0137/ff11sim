@@ -1,11 +1,28 @@
 // プロジェクトの純粋データ定数。状態 / 副作用を持たない。
 // すべての参照は ES module の named import で行う。
+// (旧 web/js/constants.js の TS 化)
 //
 // Tier 1 (共有メタデータ: JOBS / RACE_NAMES / SKILL_KEYS_* / EQUIPMENT_SLOTS) は
 // `/data/*.json` から top-level await で取得し、Rust 側 (data_loader.rs) と
 // 同一のソースを参照する。詳細は ADR/Plan: テーブルデータの JSON 外出し。
+//
+// 注意: top-level await の fetch は node (Vitest) では動かない。ユニット
+// テストからは vi.mock で必要な定数のみ差し替えること (web/src/utils.test.ts 参照)。
 
-const fetchData = async (name) =>
+export interface JobDef {
+    key: string;
+    name: string;
+}
+
+export interface SlotDef {
+    key: string;
+    label: string;
+}
+
+/** [key, name_ja] のタプル。既存 UI コードがこの形式に依存している */
+export type SkillKeyPair = [string, string];
+
+const fetchData = async (name: string): Promise<any[]> =>
     (await (await fetch(`./data/${name}.json`)).json()).data;
 
 const [_jobs, _races, _skills, _slots, _jpCats, _meritCats] = await Promise.all([
@@ -18,12 +35,13 @@ const [_jobs, _races, _skills, _slots, _jpCats, _meritCats] = await Promise.all(
 ]);
 
 // 既存コードとの互換のため、JS 側では `name` プロパティで参照
-export const JOBS = _jobs.map((j) => ({ key: j.key, name: j.name_ja }));
+export const JOBS: JobDef[] = _jobs.map((j) => ({ key: j.key, name: j.name_ja }));
 
-export const RACE_NAMES = Object.fromEntries(_races.map((r) => [r.key, r.name_ja]));
+export const RACE_NAMES: Record<string, string> =
+    Object.fromEntries(_races.map((r) => [r.key, r.name_ja]));
 
 // ジョブポイントのカテゴリ名 (各ジョブ 10 カテゴリ)。data/job_categories.json から読み込み。
-export const JP_CATEGORIES = _jpCats;
+export const JP_CATEGORIES: Record<string, string[]> = _jpCats as never;
 
 export const JP_MAX_TOTAL = 2100;
 export const JP_CATEGORY_COUNT = 10;
@@ -34,12 +52,11 @@ export const JP_MAX_RANK = 20;
 export const JOB_MERIT_GROUP_SIZE = 8;
 export const JOB_MERIT_MAX_RANK = 5;
 export const JOB_MERIT_GROUP_MAX_TOTAL = 10;
-export const JOB_MERIT_CATEGORIES = _meritCats;
+export const JOB_MERIT_CATEGORIES: Record<string, Record<string, string[]>> = _meritCats as never;
 export const JOB_MERIT_PLACEHOLDER_RE = /^カテゴリ\s*\d+$/;
 
 // WASM の SkillKind と対応するキー順 (Rust 側 SkillKind enum の宣言順)
-// `[key, name_ja]` のタプル配列形式は既存 UI コードに依存しているため維持
-const _toSkillTuples = (cat) =>
+const _toSkillTuples = (cat: string): SkillKeyPair[] =>
     _skills.filter((s) => s.category === cat).map((s) => [s.key, s.name_ja]);
 export const SKILL_KEYS_WEAPON = _toSkillTuples('Weapon');
 export const SKILL_KEYS_DEFENSE = _toSkillTuples('Defense');
@@ -48,13 +65,13 @@ export const ALL_SKILL_KEYS = [...SKILL_KEYS_WEAPON, ...SKILL_KEYS_DEFENSE, ...S
 export const COMBAT_SKILL_KEYS = [...SKILL_KEYS_WEAPON, ...SKILL_KEYS_DEFENSE];
 export const MAGIC_SKILL_KEYS = SKILL_KEYS_MAGIC;
 
-export const EQUIPMENT_SLOTS = _slots.map((s) => ({ key: s.key, label: s.label_ja }));
+export const EQUIPMENT_SLOTS: SlotDef[] = _slots.map((s) => ({ key: s.key, label: s.label_ja }));
 
 export const STORAGE_KEY = 'ff11sim_characters';
 export const EQUIP_STORAGE_KEY = 'ff11sim_equipsets';
 
 // オーグメント JA→EN 変換テーブル。長いパターンを先に置くこと（部分一致回避）。
-export const AUGMENT_JA_TO_EN = [
+export const AUGMENT_JA_TO_EN: [string, string][] = [
     ['ウェポンスキルのダメージ', 'Weapon skill damage'],
     ['マジックバーストダメージ', 'Magic burst damage'],
     ['魔法クリティカルヒットII', 'Magic Crit. Hit Rate II'],

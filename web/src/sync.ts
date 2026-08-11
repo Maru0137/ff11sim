@@ -1,4 +1,5 @@
 // ログイン時に localStorage の characters / equipsets を Supabase へマージ。
+// (旧 web/js/sync.js の TS 化)
 //
 // 競合解決: Supabase に同名行が既にあればスキップ (Supabase 優先)。
 // 同期完了後 `ff11sim_synced_<user.id>` フラグを localStorage に立て、
@@ -7,12 +8,25 @@
 // 同期完了後は `window.dispatchEvent(new Event('ff11sim:synced'))` を発火。
 // index.html / search.html はこれを listen して画面を再描画する。
 
-import { STORAGE_KEY, EQUIP_STORAGE_KEY } from './constants.js';
-import { supabase, onAuthChange } from './supabase-client.js';
+import type { User } from '@supabase/supabase-js';
+import { STORAGE_KEY, EQUIP_STORAGE_KEY } from './constants';
+import { supabase, onAuthChange } from './supabase-client';
 
-const syncFlagKey = (userId) => `ff11sim_synced_${userId}`;
+const syncFlagKey = (userId: string) => `ff11sim_synced_${userId}`;
 
-function readLocalCharacters() {
+interface LocalCharacter {
+    name: string;
+    [key: string]: unknown;
+}
+
+interface LocalEquipSet {
+    name: string;
+    character?: string;
+    job?: string;
+    [key: string]: unknown;
+}
+
+function readLocalCharacters(): LocalCharacter[] {
     try {
         return JSON.parse(localStorage.getItem(STORAGE_KEY) || '[]');
     } catch {
@@ -20,16 +34,16 @@ function readLocalCharacters() {
     }
 }
 
-function readLocalEquipSets() {
+function readLocalEquipSets(): LocalEquipSet[] {
     try {
         const sets = JSON.parse(localStorage.getItem(EQUIP_STORAGE_KEY) || '[]');
-        return sets.map((s) => ({ job: '', character: '', ...s }));
+        return sets.map((s: LocalEquipSet) => ({ job: '', character: '', ...s }));
     } catch {
         return [];
     }
 }
 
-async function syncLocalToSupabase(user) {
+async function syncLocalToSupabase(user: User): Promise<{ uploaded: number }> {
     const flagKey = syncFlagKey(user.id);
     if (localStorage.getItem(flagKey)) return { uploaded: 0 };
 
@@ -71,7 +85,7 @@ async function syncLocalToSupabase(user) {
 
     // 衝突しない equipsets を insert
     // position は (character, job) 内で「Supabase 既存件数からの続き」を割り当て
-    const supaPositionByGroup = new Map();
+    const supaPositionByGroup = new Map<string, number>();
     for (const r of existingSets ?? []) {
         const k = `${r.character_name ?? ''}|${r.job ?? ''}`;
         supaPositionByGroup.set(k, (supaPositionByGroup.get(k) ?? 0) + 1);

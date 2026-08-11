@@ -1,29 +1,42 @@
 // EquipSet の永続化を抽象化する repository。
 // 識別キー: (character, job, name) — Supabase 側 unique 制約 (user_id, name, character_name, job)
+//
+// データ形状の型は any のまま (character-repo.ts と同じ理由)。
 
-import { EQUIP_STORAGE_KEY } from '../constants.js';
-import { supabase, getCurrentUser } from '../supabase-client.js';
+import { EQUIP_STORAGE_KEY } from '../constants';
+import { supabase, getCurrentUser } from '../supabase-client';
 
-class LocalEquipSetRepo {
+interface EquipSetLike {
+    name: string;
+    character?: string;
+    job?: string;
+}
+
+export interface EquipSetRepo {
+    list(): Promise<any[]>;
+    save(sets: EquipSetLike[]): Promise<void>;
+}
+
+class LocalEquipSetRepo implements EquipSetRepo {
     async list() {
         try {
             const data = localStorage.getItem(EQUIP_STORAGE_KEY);
             const sets = data ? JSON.parse(data) : [];
             // 後方互換: 旧データに job/character が無い場合のデフォルト
-            return sets.map((s) => ({ job: '', character: '', ...s }));
+            return sets.map((s: EquipSetLike) => ({ job: '', character: '', ...s }));
         } catch {
             return [];
         }
     }
 
-    async save(sets) {
+    async save(sets: EquipSetLike[]) {
         localStorage.setItem(EQUIP_STORAGE_KEY, JSON.stringify(sets));
     }
 }
 
-const setKey = (s) => `${s.character ?? ''}|${s.job ?? ''}|${s.name}`;
+const setKey = (s: EquipSetLike) => `${s.character ?? ''}|${s.job ?? ''}|${s.name}`;
 
-class SupabaseEquipSetRepo {
+class SupabaseEquipSetRepo implements EquipSetRepo {
     async list() {
         const user = getCurrentUser();
         if (!user) return [];
@@ -46,11 +59,11 @@ class SupabaseEquipSetRepo {
         }));
     }
 
-    async save(sets) {
+    async save(sets: EquipSetLike[]) {
         const user = getCurrentUser();
         if (!user) throw new Error('not signed in');
 
-        const existing = await this.list();
+        const existing: EquipSetLike[] = await this.list();
         const existingKeys = new Map(existing.map((s) => [setKey(s), s]));
         const newKeys = new Set(sets.map(setKey));
 
@@ -71,7 +84,7 @@ class SupabaseEquipSetRepo {
         }
 
         // upsert: 同じ (character, job) 内のインデックスを position として保存
-        const positionByGroup = new Map();
+        const positionByGroup = new Map<string, number>();
         const rows = sets.map((s) => {
             const { name, character, job, ...rest } = s;
             const groupKey = `${character ?? ''}|${job ?? ''}`;
@@ -95,6 +108,6 @@ class SupabaseEquipSetRepo {
     }
 }
 
-export function getEquipSetRepo() {
+export function getEquipSetRepo(): EquipSetRepo {
     return getCurrentUser() ? new SupabaseEquipSetRepo() : new LocalEquipSetRepo();
 }

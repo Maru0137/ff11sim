@@ -8,7 +8,7 @@ import {
     JOB_MERIT_CATEGORIES,
     JOB_MERIT_PLACEHOLDER_RE,
     AUGMENT_JA_TO_EN,
-} from '../js/constants.js';
+} from './constants';
 
 // === ジョブポイント (JP) ===
 // 三角数: ランク r まで振るために必要な JP は r*(r+1)/2

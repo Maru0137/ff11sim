@@ -5,11 +5,19 @@
 // 既存の loadCharacters/saveCharacters のシグネチャ互換を保つため
 // list() / save(arr) の 2 関数のみを公開。Supabase 側は save 時に
 // 既存と差分を取って upsert / delete する。
+//
+// データ形状の型は any のまま (UI 層の CharacterRecord とデータ由来 jsonb の
+// 突き合わせは tsify 等での型自動生成時にまとめて行う)。
 
-import { STORAGE_KEY } from '../constants.js';
-import { supabase, getCurrentUser } from '../supabase-client.js';
+import { STORAGE_KEY } from '../constants';
+import { supabase, getCurrentUser } from '../supabase-client';
 
-class LocalCharacterRepo {
+export interface CharacterRepo {
+    list(): Promise<any[]>;
+    save(characters: { name: string }[]): Promise<void>;
+}
+
+class LocalCharacterRepo implements CharacterRepo {
     async list() {
         try {
             const data = localStorage.getItem(STORAGE_KEY);
@@ -19,12 +27,12 @@ class LocalCharacterRepo {
         }
     }
 
-    async save(characters) {
+    async save(characters: { name: string }[]) {
         localStorage.setItem(STORAGE_KEY, JSON.stringify(characters));
     }
 }
 
-class SupabaseCharacterRepo {
+class SupabaseCharacterRepo implements CharacterRepo {
     async list() {
         const user = getCurrentUser();
         if (!user) return [];
@@ -40,12 +48,12 @@ class SupabaseCharacterRepo {
         return data.map((row) => ({ name: row.name, ...row.data }));
     }
 
-    async save(characters) {
+    async save(characters: { name: string }[]) {
         const user = getCurrentUser();
         if (!user) throw new Error('not signed in');
 
         const existing = await this.list();
-        const existingNames = new Set(existing.map((c) => c.name));
+        const existingNames = new Set<string>(existing.map((c: { name: string }) => c.name));
         const newNames = new Set(characters.map((c) => c.name));
 
         // 削除: existing にあって new にないもの
@@ -73,6 +81,6 @@ class SupabaseCharacterRepo {
     }
 }
 
-export function getCharacterRepo() {
+export function getCharacterRepo(): CharacterRepo {
     return getCurrentUser() ? new SupabaseCharacterRepo() : new LocalCharacterRepo();
 }

@@ -4,7 +4,7 @@
 // 読み書きする可変オブジェクト。React 側はバージョン番号を購読し、
 // notifyEquipState() (updateEquipEditStatus 経由で全変更点から呼ばれる)
 // で再描画される。
-import { EQUIPMENT_SLOTS } from '../../js/constants.js';
+import { EQUIPMENT_SLOTS } from '../constants';
 import { createStore } from '../store-utils';
 
 /** 装備スロット 1 枠の保存データ (equipState.currentEquipSlots の値) */

@@ -2,17 +2,17 @@
 // 旧実装は計算結果を setText(id, v) で DOM へ直接書いていたが、ここでは
 // 「id → 表示値」のレコード (StatusView.values) を組み立てて返し、描画は
 // StatusPanel (React) が行う。id は旧実装の DOM id と同一に保っている。
-import { JOBS, JP_CATEGORY_COUNT, ALL_SKILL_KEYS } from '../../js/constants.js';
+import { JOBS, JP_CATEGORY_COUNT, ALL_SKILL_KEYS } from '../constants';
 import { jpDefaultRanks } from '../utils';
-import { loadCharacters } from '../../js/storage.js';
+import { loadCharacters } from '../storage';
 import {
     calculate_status_from_profile,
     calculate_default_skills,
     isWasmReady,
     isItemsLoaded,
-} from '../../js/wasm.js';
+} from '../wasm';
 import { equipState } from '../equip/equip-store';
-import { calculateEquipSetBonuses } from '../../js/equip-bonuses.js';
+import { calculateEquipSetBonuses } from '../equip/equip-bonuses';
 
 // === 表示用ヘルパー (純粋) ===
 const numOrDash = (v: number | null | undefined) => (v != null && v !== 0 ? v : '-');
@@ -75,9 +75,7 @@ export async function computeStatusView(): Promise<StatusView | null> {
     const charName = equipState.currentEquipChar;
     const jobKey = equipState.currentEquipJob;
     const supportJob = equipState.currentEquipSupportJob || null;
-    // equip-state.js の初期値 {} から型が {} と推論されるため、明示的に注釈する
-    const currentEquipSlots: Record<string, { skill?: number | null } | null | undefined> =
-        equipState.currentEquipSlots;
+    const currentEquipSlots = equipState.currentEquipSlots;
     // 共有閲覧モードでは元キャラの snapshot を使う (閲覧者は所有していない)
     const characterOverride = equipState.sharedCharacterOverride;
 

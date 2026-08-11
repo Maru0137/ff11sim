@@ -1,7 +1,7 @@
 // キャラクター一覧のストア。
 // 一覧の再読込は main.js (認証変化・同期完了) とフォーム保存の両方から
 // 呼ばれるため、imperative な関数として公開する。
-import { loadCharacters } from '../../js/storage.js';
+import { loadCharacters } from '../storage';
 import { reloadCharacters } from '../equip/equip-sets-store';
 import { createStore } from '../store-utils';
 

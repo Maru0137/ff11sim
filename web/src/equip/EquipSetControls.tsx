@@ -1,7 +1,7 @@
 // 装備セットタブのセレクタ (キャラ/ジョブ/サポ) とタブバー
 // (旧 web/js/equip-sets.js の描画部分)。状態は equip-sets-store。
 import { useState, useSyncExternalStore } from 'react';
-import { JOBS, RACE_NAMES } from '../../js/constants.js';
+import { JOBS, RACE_NAMES } from '../constants';
 import { equipState, subscribeEquipState, getEquipStateVersion } from './equip-store';
 import {
     equipSetsStore,

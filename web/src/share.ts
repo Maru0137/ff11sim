@@ -12,7 +12,7 @@
 //   - SELECT: 全員許可 (URL を知っていれば閲覧可)
 //   - INSERT: 認証ユーザーのみ (auth.uid() = user_id)
 
-import { supabase, getCurrentUser } from '../js/supabase-client.js';
+import { supabase, getCurrentUser } from './supabase-client';
 
 const SHARE_PARAM = 'share';
 

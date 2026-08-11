@@ -2,7 +2,7 @@
 // メインタブの状態はここが持つ。共有閲覧モード (?share=) では装備セット
 // タブを初期表示し、CSS (body.share-mode) が編集系 UI を隠す。
 import { useState, useSyncExternalStore } from 'react';
-import { isShareMode } from '../js/share-ui.js';
+import { isShareMode } from './share-ui';
 import { AuthWidget } from './auth-ui';
 import { Modals } from './modals/Modals';
 import { StatusPanel } from './status/StatusPanel';

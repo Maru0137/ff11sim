@@ -9,8 +9,26 @@
 //
 // 不変条件: web/src/ から ../pkg/ を直接 import しない。CI では typecheck が
 // wasm-pack のビルドより先に走り、その時点で web/pkg が存在しないため。
-// (web/js/wasm.js は checkJs: false で型検査対象外なので解決失敗にならない)
+// (web/js/wasm.js は checkJs: false で型検査対象外なので解決失敗にならない。
+//  同ファイルはこの制約のために意図的に JS のまま残している)
 import { search_items, item_count, initWasmRuntime } from '../js/wasm.js';
+
+// 検索以外の WASM 関数の再エクスポート。web/src/ からの WASM 参照は
+// すべてこのファイルを経由する。シグネチャは pkg の .d.ts 由来で実質 any —
+// 型付けは Rust 側での型自動生成 (tsify 等) 導入時にまとめて行う
+// (docs/roadmap/react-migration.md の残課題)。
+export {
+    calculate_status_from_profile,
+    calculate_default_skills,
+    get_item_by_id,
+    extract_all_stats,
+    extract_skill_bonuses,
+    sum_stats,
+    empty_stats,
+    isWasmReady,
+    isItemsLoaded,
+    initWasmRuntime,
+} from '../js/wasm.js';
 
 export interface SearchFilter {
     property: string;

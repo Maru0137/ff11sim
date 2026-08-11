@@ -13,7 +13,7 @@ import {
     onAuthChange,
     signInWithGoogle,
     signOut,
-} from '../js/supabase-client.js';
+} from './supabase-client';
 
 const subscribe = (callback: () => void): (() => void) => onAuthChange(callback);
 const getSnapshot = (): User | null => getCurrentUser();

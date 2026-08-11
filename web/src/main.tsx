@@ -7,15 +7,15 @@
 //   3. ?share= 付きなら共有閲覧モードへ分岐し、通常初期化はスキップする
 import { StrictMode } from 'react';
 import { createRoot } from 'react-dom/client';
-import { initWasmRuntime } from '../js/wasm.js';
+import { initWasmRuntime } from './wasm';
 import { loadAugmentData } from './augments';
-import { isShareMode, enterShareMode } from '../js/share-ui.js';
-import { onAuthChange } from '../js/supabase-client.js';
+import { isShareMode, enterShareMode } from './share-ui';
+import { onAuthChange } from './supabase-client';
 import { initEquipSetPanel, refreshEquipSetPanel } from './equip/equip-sets-store';
 import { reloadCharacterList } from './character/character-store';
 import { App } from './App';
 // ログイン時の localStorage → Supabase 同期 (import の副作用で登録)
-import '../js/sync.js';
+import './sync';
 
 export async function startApp() {
     // 共有閲覧モードの CSS (編集系 UI の非表示) は描画前に効かせる

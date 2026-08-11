@@ -41,11 +41,23 @@ jobs:
       - name: Install npm dependencies
         run: npm ci
 
+      # config.js は .gitignore 済みで、本物は deploy.yml が Secrets から生成する。
+      # 無いと import が 404 になりページ全体が読み込めないため、テンプレを流用する。
+      # typecheck の import 解決とスモークテストの両方で使う。
+      # スモークはログイン機能を検証しないので値はプレースホルダで足りる。
+      - name: Generate placeholder config
+        run: cp web/js/config.example.js web/js/config.js
+
       # 未定義識別子 (no-undef) の検出が主目的。削除した JS モジュールの識別子を
       # index.html が参照し続け、本番でステータスが全て 0 になる事故があった。
       # インライン <script> も検査対象 (eslint-plugin-html)。
       - name: Lint JS
         run: npm run lint
+
+      # React / TS 層 (web/src/) の型検査。未定義識別子の検出もここが担う
+      # (eslint の no-undef は TS には適用しない)。
+      - name: Typecheck
+        run: npm run typecheck
 
       - name: Setup Python
         uses: actions/setup-python@v7
@@ -110,12 +122,6 @@ jobs:
 
       - name: Build WASM
         run: wasm-pack build rust --target web --out-dir ../web/pkg
-
-      # config.js は .gitignore 済みで、本物は deploy.yml が Secrets から生成する。
-      # 無いと import が 404 になりページ全体が読み込めないため、テンプレを流用する。
-      # スモークはログイン機能を検証しないので値はプレースホルダで足りる。
-      - name: Generate placeholder config
-        run: cp web/js/config.example.js web/js/config.js
 
       - name: Install Playwright browser
         run: npx playwright install --with-deps chromium

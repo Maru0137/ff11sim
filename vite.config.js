@@ -8,9 +8,13 @@
 //   バンドルされ、.wasm は new URL(..., import.meta.url) 経由でアセット化される。
 import { defineConfig } from 'vite';
 import { resolve } from 'node:path';
+import react from '@vitejs/plugin-react';
 
 export default defineConfig({
     root: 'web',
+    // React コンポーネント (web/src/ の .tsx) の変換 (docs/adr/0012)。
+    // 既存の web/js/*.js には作用しない。
+    plugins: [react()],
     // GitHub Pages のプロジェクトサイトは /<repo>/ 配下で配信されるため、
     // アセット参照をルート絶対パス (デフォルト '/') にすると 404 になる。
     // 配信パスに依存しない相対参照にする。

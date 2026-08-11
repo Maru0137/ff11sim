@@ -34,7 +34,7 @@ jobs:
       digest: ${{ steps.detect.outputs.digest }}
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
 
       - name: Detect changes in upstream resources
         id: detect
@@ -60,7 +60,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
 
       # rust-toolchain.toml に固定したツールチェーンを取得する。rustup はこの
       # ファイルをディレクトリ override として読むため、バージョンをワークフロー側に
@@ -71,7 +71,7 @@ jobs:
         run: rustup show active-toolchain
 
       - name: Setup Python
-        uses: actions/setup-python@v5
+        uses: actions/setup-python@v7
         with:
           python-version: '3.11'
 
@@ -83,7 +83,7 @@ jobs:
       - name: Restore items.json cache
         id: items-cache
         if: github.event_name != 'workflow_dispatch'
-        uses: actions/cache/restore@v4
+        uses: actions/cache/restore@v6
         with:
           path: |
             build/items.json
@@ -108,7 +108,7 @@ jobs:
       # 配信物には含めないので (docs/adr/0010)、公開後に中身を確認したいときは
       # ここから取得する。_build_metadata.json の commit で該当の実行を特定できる。
       - name: Upload items.json for debugging
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: items-json
           path: build/items.json
@@ -116,7 +116,7 @@ jobs:
 
       - name: Save items.json cache
         if: steps.items-cache.outputs.cache-hit != 'true'
-        uses: actions/cache/save@v4
+        uses: actions/cache/save@v6
         with:
           path: |
             build/items.json
@@ -149,7 +149,7 @@ jobs:
           EOF
 
       - name: Setup Node
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@v7
         with:
           node-version: 24
           cache: npm
@@ -163,10 +163,10 @@ jobs:
         run: npm run build
 
       - name: Setup Pages
-        uses: actions/configure-pages@v4
+        uses: actions/configure-pages@v6
 
       - name: Upload artifact
-        uses: actions/upload-pages-artifact@v3
+        uses: actions/upload-pages-artifact@v5
         with:
           path: './dist'
 
@@ -179,4 +179,4 @@ jobs:
     steps:
       - name: Deploy to GitHub Pages
         id: deployment
-        uses: actions/deploy-pages@v4
+        uses: actions/deploy-pages@v5

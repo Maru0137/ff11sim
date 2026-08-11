@@ -50,25 +50,23 @@
 6. **index.html の畳み込み** — 済。ページ全体が App.tsx の単一 root。
    main.js / tabs.js を削除し、共有閲覧モードの DOM 操作も store 化。
    インライン CSS は web/styles/index.css へ抽出
-7. **仕上げ** — 一部済:
-   - TS 化済み: utils / share / augments / equip-state (equip-store へ統合)
+7. **仕上げ** — 済:
+   - TS 化済み: レガシー JS 層すべて (constants / storage / repositories /
+     supabase-client / sync / share-ui / equip-bonuses / utils / share /
+     augments / equip-state)。web/js/ に残るのは wasm.js (下記) と
+     config.js のみ
    - Vitest 導入済み (`npm run test:unit`、CI にステップ追加)。
-     format / utils / store-utils の純関数テスト
+     純関数テストに加え、equip-bonuses は実 WASM 込みでテスト
+     (バイト列を initWasmRuntime に渡して node で初期化)
    - StrictMode 導入済み (両ページ)
 
 ## 残課題
 
-- **レガシー JS 層の TS 化**: `web/js/` に残るのは constants.js /
-  storage.js / repositories / supabase-client.js / sync.js / share-ui.js /
-  equip-bonuses.js / wasm.js / config.js。いずれも DOM 非依存で、
-  変換は機械的。wasm.js を web/src/wasm.ts に統合する場合は、CI の
-  typecheck が wasm-pack より先に走る前提 (web/pkg 不在) を崩さない工夫が要る
-- **equip-bonuses のユニットテスト**: WASM 関数 (extract_all_stats 等) に
-  依存するため、node での WASM 初期化 (バイト列を渡す init) か
-  ブラウザモードの導入が必要。constants.js の top-level await fetch も
-  node では動かないため、モックか読み込み方法の変更が要る
-  ([docs/tech-debt/inline-script-monolith.md](../tech-debt/inline-script-monolith.md) の残課題)
-- **search.html のインライン CSS 抽出** (index.html は抽出済み)
-- **サポートジョブ選択肢からメインジョブを除外する条件の修正**: 旧実装から
-  大文字小文字の不一致で機能しておらず、挙動維持のまま移植した
-  (web/src/equip/EquipSetControls.tsx のコメント参照)。直すなら独立した修正として
+- **wasm.js の TS 化**: 生成物 ../pkg を import する唯一のブリッジとして
+  意図的に JS のまま残している (CI では typecheck が wasm-pack より先に走り
+  web/pkg が存在しないため、checkJs: false の JS でだけ解決失敗を無害化
+  できる)。TS 化するなら CI の実行順の見直しとセット
+- **データ形状と WASM シグネチャの型付け**: repositories / storage の
+  jsonb 由来データと WASM 関数の入出力は any のまま。Rust 側での型自動生成
+  (tsify + #[wasm_bindgen(typescript_custom_section)] 等) の導入時に
+  まとめて行うのが二重管理にならない

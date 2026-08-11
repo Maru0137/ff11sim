@@ -392,14 +392,60 @@
         </div>
     </div>
 
-    <script src="js/item-search.js"></script>
     <script type="module">
         import { mountAuthUI } from './js/auth-ui.js';
         import './js/sync.js';
         mountAuthUI(document.getElementById('auth-ui'));
     </script>
-    <script>
-        const itemSearch = new ItemSearch();
+    <script type="module">
+        // 装備データと検索は Rust 側に移した (docs/adr/0009, docs/adr/0010)。
+        // items.json は WASM に埋め込まれているので JS からは読まない。
+        // フィルタ UI のメタデータ (プロパティ一覧 / 演算子一覧) だけは
+        // items.json を参照しない UI 文言なので、この場に置いたままにする。
+        // このファイルには既存の init() があるため、WASM の既定 export は別名で受ける。
+        import initWasm, { search_items, item_count } from './pkg/ff11sim.js';
+
+        const FILTERABLE_PROPERTIES = [
+            { name: 'id', type: 'number', label: 'ID' },
+            { name: 'en', type: 'string', label: 'Name (EN)' },
+            { name: 'ja', type: 'string', label: 'Name (JA)' },
+            { name: 'category', type: 'string', label: 'Category' },
+            { name: 'level', type: 'number', label: 'Level' },
+            { name: 'item_level', type: 'number', label: 'Item Level' },
+            { name: 'damage', type: 'number', label: 'Damage' },
+            { name: 'delay', type: 'number', label: 'Delay' },
+            { name: 'skill', type: 'number', label: 'Skill' },
+            { name: 'jobs', type: 'array', label: 'Jobs' },
+            { name: 'slots', type: 'array', label: 'Slots' },
+            { name: 'races', type: 'array', label: 'Races' },
+        ];
+        const OPERATORS_BY_TYPE = {
+            number: [
+                { value: '=', label: '=' }, { value: '!=', label: '!=' },
+                { value: '>=', label: '>=' }, { value: '<=', label: '<=' },
+                { value: '>', label: '>' }, { value: '<', label: '<' },
+            ],
+            string: [
+                { value: 'contains', label: 'contains' }, { value: '=', label: '=' },
+                { value: '!=', label: '!=' }, { value: 'starts', label: 'starts with' },
+                { value: 'ends', label: 'ends with' },
+            ],
+            array: [
+                { value: 'contains', label: 'contains' },
+                { value: 'not_contains', label: 'not contains' },
+            ],
+        };
+
+        // 旧 ItemSearch と同じ呼び出し形を保つための薄いアダプタ。
+        const itemSearch = {
+            search: (options) => search_items(options),
+            getFilterableProperties: () => FILTERABLE_PROPERTIES,
+            getOperators: (type) => OPERATORS_BY_TYPE[type] ?? [{ value: '=', label: '=' }],
+            load: async () => {
+                await initWasm();
+                return item_count();
+            },
+        };
         let currentOffset = 0;
         const pageSize = 50;
         let currentResults = null;

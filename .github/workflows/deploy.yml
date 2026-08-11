@@ -31,6 +31,7 @@ jobs:
     outputs:
       changed: ${{ steps.detect.outputs.changed }}
       blobs: ${{ steps.detect.outputs.blobs }}
+      digest: ${{ steps.detect.outputs.digest }}
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -42,8 +43,18 @@ jobs:
           METADATA_URL: https://${{ github.repository_owner }}.github.io/${{ github.event.repository.name }}/data/_build_metadata.json
         run: scripts/detect_resource_changes.sh >> "$GITHUB_OUTPUT"
 
-  build:
+  # 検証は test.yml に集約している。ここから呼ぶことで、テストが落ちたら
+  # build に進まない。PR では test.yml が単独で走る。
+  #
+  # build と同じ条件を付ける。schedule で上流に変化が無いときは build ごと
+  # スキップされるので、テストだけ走らせても無駄になるため。
+  test:
     needs: detect-resource-changes
+    if: github.event_name != 'schedule' || needs.detect-resource-changes.outputs.changed == 'true'
+    uses: ./.github/workflows/test.yml
+
+  build:
+    needs: [detect-resource-changes, test]
     # push / workflow_dispatch は無条件、schedule は上流に変化があるときだけビルドする。
     if: github.event_name != 'schedule' || needs.detect-resource-changes.outputs.changed == 'true'
     runs-on: ubuntu-latest
@@ -59,9 +70,58 @@ jobs:
       - name: Setup Rust
         run: rustup show active-toolchain
 
-      - name: Run tests
-        run: cargo test
-        working-directory: rust
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      # items.json は上流の blob SHA と変換スクリプトが同じなら必ず同じ内容になるので、
+      # 生成結果をキャッシュして上流への再ダウンロードとパースを省く。
+      # CI は使い捨てランナーなので、build_data.sh 自身のキャッシュ判定
+      # (temp_resources/ の鮮度チェック) はここでは効かない。
+      # workflow_dispatch のときは復元せず必ず作り直す。
+      - name: Restore items.json cache
+        id: items-cache
+        if: github.event_name != 'workflow_dispatch'
+        uses: actions/cache/restore@v4
+        with:
+          path: |
+            build/items.json
+            build/.items-signature
+          key: items-json-${{ needs.detect-resource-changes.outputs.digest }}-${{ hashFiles('scripts/parse_lua_to_json.py') }}
+
+      # Rust より先に実行する必要がある。装備データは include_str! でバイナリに
+      # 埋め込まれるため (docs/adr/0009)、items.json が無いとコンパイルが通らない。
+      # 上流ファイルの取得 / items.json 生成 / 検証 / _build_metadata.json 出力を
+      # 1 コマンドで行う。ローカルでも同じコマンドで再現できる。
+      - name: Build data
+        env:
+          GH_TOKEN: ${{ github.token }}
+          # ${{ }} を直接シェルに展開せず env 経由で渡す (上流由来の値のため)。
+          # detect ジョブが取得済みなので、ここで API を引き直さない。
+          UPSTREAM_BLOBS: ${{ needs.detect-resource-changes.outputs.blobs }}
+          COMMIT: ${{ github.sha }}
+        # 手動実行では必ず作り直す。ここで展開する ${{ }} は event_name から決まる
+        # 固定の文字列で、上流由来の値ではない。
+        run: scripts/build_data.sh ${{ github.event_name == 'workflow_dispatch' && '--force' || '' }}
+
+      # 配信物には含めないので (docs/adr/0010)、公開後に中身を確認したいときは
+      # ここから取得する。_build_metadata.json の commit で該当の実行を特定できる。
+      - name: Upload items.json for debugging
+        uses: actions/upload-artifact@v4
+        with:
+          name: items-json
+          path: build/items.json
+          retention-days: 30
+
+      - name: Save items.json cache
+        if: steps.items-cache.outputs.cache-hit != 'true'
+        uses: actions/cache/save@v4
+        with:
+          path: |
+            build/items.json
+            build/.items-signature
+          key: items-json-${{ needs.detect-resource-changes.outputs.digest }}-${{ hashFiles('scripts/parse_lua_to_json.py') }}
 
       # 版を固定する。以前の init.sh は常に最新を取得するため、開発者の手元
       # (CONTRIBUTING.md で 0.14.0 を指定) と CI で別バージョンになりえた。
@@ -76,22 +136,6 @@ jobs:
         run: |
           cd rust
           wasm-pack build --target web --out-dir ../web/pkg
-
-      - name: Setup Python
-        uses: actions/setup-python@v5
-        with:
-          python-version: '3.11'
-
-      # 上流ファイルの取得 / items.json 生成 / 検証 / _build_metadata.json 出力を
-      # 1 コマンドで行う。ローカルでも同じコマンドで web/data/ を再現できる。
-      - name: Build web data
-        env:
-          GH_TOKEN: ${{ github.token }}
-          # ${{ }} を直接シェルに展開せず env 経由で渡す (上流由来の値のため)。
-          # detect ジョブが取得済みなので、ここで API を引き直さない。
-          UPSTREAM_BLOBS: ${{ needs.detect-resource-changes.outputs.blobs }}
-          COMMIT: ${{ github.sha }}
-        run: scripts/build_web_data.sh
 
       - name: Generate Supabase config
         env:

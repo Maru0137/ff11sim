@@ -1,8 +1,10 @@
 Cargo.lock
 rust/target
 web/pkg/
+build/
+# 旧構成の残骸。生成先は build/items.json に移したが (docs/adr/0009)、
+# 移行前に生成した作業ツリーには 8MB 超のファイルがこのパスに残る。誤コミットを防ぐ。
 web/data/items.json
-web/data/_build_metadata.json
 web/js/config.js
 temp_resources/
 .venv/

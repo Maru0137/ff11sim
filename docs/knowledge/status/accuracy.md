@@ -158,7 +158,7 @@ ranged_accuracy_extra = ギフト ranged_accuracy + JPカテゴリ ranged_accura
 ## 未対応項目
 
 - 装備の "Weapon Skill Accuracy+X" は通常命中扱いしない（WS 専用、メイン命中に含めない）
-  - 実装: `web/js/equip-stats.js` の Accuracy regex に `(?<![Ss]kill )` lookbehind あり
+  - 実装: `rust/src/equip_stats.rs` の accuracy 抽出に `(?<!skill )` の後読みあり
 - 食事による命中ブースト
 - ジョブアビリティ系（フォーカス・ダンスサンバ等）の一時補正
 - 連携状態・ウェポンスキル中の補正

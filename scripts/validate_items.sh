@@ -4,7 +4,7 @@
 #
 # 使い方:
 #   scripts/validate_items.sh [items.json のパス]
-#   MIN_ITEMS=14000 scripts/validate_items.sh web/data/items.json
+#   MIN_ITEMS=14000 scripts/validate_items.sh build/items.json
 #
 # なぜ変換スクリプトと分けるか:
 #   parse_lua_to_json.py の責務は Lua → JSON の変換であり、
@@ -18,7 +18,7 @@
 #
 set -euo pipefail
 
-ITEMS_JSON="${1:-web/data/items.json}"
+ITEMS_JSON="${1:-build/items.json}"
 MIN_ITEMS="${MIN_ITEMS:-14000}"
 
 if [ ! -f "$ITEMS_JSON" ]; then

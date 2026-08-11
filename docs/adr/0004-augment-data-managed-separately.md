@@ -41,9 +41,13 @@ CI での毎回スクレイピング（2.1）は、外部サイトへの依存�
 - `scripts/scrape_augments.py` で生成し、結果を `web/data/augments.json` にコミットする。
   このスクリプトは CI では実行しない。
 - データ形式は `{"version": 1, "augments": {"<item_id>": {"paths": [{"type", "ranks": [{"rank", "text"}]}]}}}`。
-  効果は日本語のテキストとして保持し、抽出は装備説明文と同じパーサ (`web/js/equip-stats.js`) に通す。
-- `augments.json` は Web 専用データであり、`web/data/` 直下の実ファイルとして置く
-  （[ADR 0002](0002-shared-table-data-json.md) の symlink 共有の対象外）。Rust 側は参照しない。
+  効果は日本語のテキストとして保持し、JA→EN 変換を経て装備説明文と同じパーサに通す
+  (現在は `rust/src/equip_stats.rs`。移植の経緯は [ADR 0010](0010-equipment-interpretation-in-rust.md))。
+- `augments.json` は `web/data/` 直下の実ファイルとして置く
+  （[ADR 0002](0002-shared-table-data-json.md) の symlink 共有の対象外）。
+  当初は Web 専用データで Rust 側は参照しない想定だったが、
+  [ADR 0009](0009-embed-item-data-in-binary.md) により Rust が `include_str!` で
+  埋め込むようになった。`items.json` と違いリポジトリ管理下なのでビルド順の制約は受けない。
 - オーグメント定義がない装備は、ドロップダウンを disabled にして選べないようにする。
   ユーザーはカスタム欄に自分で記述できる。
 
@@ -61,18 +65,29 @@ CI での毎回スクレイピング（2.1）は、外部サイトへの依存�
 
 ### Confirmation
 
-自動チェックは存在しない。具体的には以下がいずれも検証されていない:
+[ADR 0009](0009-embed-item-data-in-binary.md) で `augments.json` を Rust に
+埋め込んだ際に、いくつか自動チェックが入った。
 
-* `augments.json` が最新の `items.json` に対して十分な網羅率を持つか。
-* `augments.json` の `text` フィールドが `equip-stats.js` のパーサで解釈可能な表記か
+* `items::tests::augments_are_loaded` — 読み込めること。
+* `items::tests::augments_by_item_id_resolves_known_item` — 経路とランクを引けること。
+  ランクが昇順で `text` が空でないことも見る。
+* `items::tests::augment_target_items_exist_in_items` — **`augments.json` が参照する
+  アイテム ID がすべて `items.json` に存在すること。** 「`augments.json` が古くなる」
+  という本 ADR の弱点を検出する。現状は全件一致。
+* `rust/tests/augment_ja_to_en.rs` — 日本語表記が英語表記へ正しく変換されること。
+  移植時に全 1,646 件で JS 実装と一致を確認した（現在は期待値 JSON を用意しないと走らない）。
+
+検証されていないもの:
+
+* `augments.json` が最新の `items.json` に対して十分な網羅率を持つか
+  （参照先が存在することは見ているが、逆に「あるべき装備の定義が無い」ことは見ていない）。
+* `augments.json` の `text` が抽出パーサで解釈可能な表記か
   （解釈できない表記は黙って 0 として無視される）。
 * `scripts/scrape_augments.py` が現在のスクレイピング対象サイトに対して動作するか。
 
-`web/test/equip-stats-extraction.test.js` は装備の `description_en` からの抽出を
-検証しているが、`augments.json` の内容そのものは対象にしていない。
-
-フォローアップ候補: `augments.json` の全 `text` を `equip-stats.js` に通し、
-1 つも stat を抽出できないエントリを検出するテストを追加する。
+フォローアップ候補: `augments.json` の全 `text` を JA→EN 変換と抽出に通し、
+1 つも stat を取り出せないエントリを検出するテストを追加する。
+`rust/src/equip_stats.rs` の関数を直接呼べるので、移植後は書きやすくなっている。
 
 ## Pros and Cons of the Options
 

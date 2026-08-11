@@ -2162,10 +2162,15 @@
         </div>
     </div>
 
-    <script src="js/item-search.js"></script>
-    <script src="js/equip-stats.js"></script>
     <script type="module">
-        import init, { calculate_status_from_profile, calculate_default_skills } from './pkg/ff11sim.js';
+        // 装備データ・解釈・検索・合算はすべて Rust 側に移した (docs/adr/0009, docs/adr/0010)。
+        // js/equip-stats.js と js/item-search.js は削除済み。
+        import init, {
+            calculate_status_from_profile, calculate_default_skills,
+            extract_all_stats, extract_skill_bonuses,
+            search_items, get_item_by_id, item_count,
+            sum_stats, empty_stats,
+        } from './pkg/ff11sim.js';
         import {
             JOBS, RACE_NAMES, JP_CATEGORIES, JP_MAX_TOTAL, JP_CATEGORY_COUNT, JP_MAX_RANK,
             JOB_MERIT_GROUP_SIZE, JOB_MERIT_MAX_RANK, JOB_MERIT_GROUP_MAX_TOTAL,
@@ -2203,7 +2208,9 @@
         let _sharedCharacterOverride = null;
 
         let wasmReady = false;
-        const itemSearch = new ItemSearch();
+        // 装備データと検索は Rust 側に移した (docs/adr/0009, docs/adr/0010)。
+        // items.json は WASM に埋め込まれているので JS からは読まない。
+        const itemSearch = { search: (o) => search_items(o) };
         let itemsLoaded = false;
         let augmentData = {};
 
@@ -3154,8 +3161,8 @@
                 // 旧データは skill フィールドを持たないので item_id から補完
                 Object.keys(currentEquipSlots).forEach(k => {
                     const d = currentEquipSlots[k];
-                    if (d && d.skill == null && d.item_id != null && itemSearch.items) {
-                        const item = itemSearch.items.find(it => it.id === d.item_id);
+                    if (d && d.skill == null && d.item_id != null) {
+                        const item = get_item_by_id(d.item_id);
                         if (item && item.skill != null) d.skill = item.skill;
                     }
                 });
@@ -3585,7 +3592,7 @@
 
         function calculateEquipSetBonuses(equipSet) {
             if (!equipSet || !equipSet.slots || !itemsLoaded) {
-                return getEmptyStats();
+                return empty_stats();
             }
             const slots = equipSet.slots;
 
@@ -3619,49 +3626,49 @@
                 const slotData = slots[slotKey];
                 if (!slotData) continue;
 
-                const item = itemSearch.items.find(i => i.id === slotData.item_id);
+                const item = get_item_by_id(slotData.item_id);
                 console.log('[DEBUG] Slot:', slotKey, 'Item:', item?.en, 'Has description_en:', !!item?.description_en);
 
                 const targetWeaponBucket = slotKey === 'range' ? 'ranged' : slotKey;
                 const isWeaponSlot = (slotKey === 'main' || slotKey === 'sub' || slotKey === 'range');
 
                 if (item && item.description_en) {
-                    const stats = extractAllStats(item.description_en);
+                    const stats = extract_all_stats(item.description_en);
                     console.log('[DEBUG] Extracted stats:', stats);
                     statsArray.push(stats);
                     if (isWeaponSlot) slotStatsBuckets[targetWeaponBucket].push(stats);
-                    addSkillBonuses(slotKey, extractSkillBonuses(item.description_en));
+                    addSkillBonuses(slotKey, extract_skill_bonuses(item.description_en));
                 }
 
                 const augText = getAugmentText(slotData);
                 if (augText) {
                     const augEn = convertAugmentJaToEn(augText);
-                    const augStats = extractAllStats(augEn);
+                    const augStats = extract_all_stats(augEn);
                     statsArray.push(augStats);
                     if (isWeaponSlot) slotStatsBuckets[targetWeaponBucket].push(augStats);
-                    addSkillBonuses(slotKey, extractSkillBonuses(augEn));
+                    addSkillBonuses(slotKey, extract_skill_bonuses(augEn));
                 }
 
                 if (slotData.custom_description) {
                     const customEn = convertAugmentJaToEn(slotData.custom_description);
-                    const customStats = extractAllStats(customEn);
+                    const customStats = extract_all_stats(customEn);
                     console.log('[DEBUG] Custom stats:', customStats);
                     statsArray.push(customStats);
                     if (isWeaponSlot) slotStatsBuckets[targetWeaponBucket].push(customStats);
-                    addSkillBonuses(slotKey, extractSkillBonuses(customEn));
+                    addSkillBonuses(slotKey, extract_skill_bonuses(customEn));
                 }
             }
 
-            const result = sumStats(statsArray);
+            const result = sum_stats(statsArray);
             result.skill_bonus_main = skillBonusBuckets.main;
             result.skill_bonus_sub = skillBonusBuckets.sub;
             result.skill_bonus_ranged = skillBonusBuckets.ranged;
             result.skill_bonus_global = skillBonusBuckets.global;
             // 武器スロット別装備合計 (魔命スキルなどスロット依存表示用)
             result.slot_stats = {
-                main: sumStats(slotStatsBuckets.main),
-                sub: sumStats(slotStatsBuckets.sub),
-                ranged: sumStats(slotStatsBuckets.ranged),
+                main: sum_stats(slotStatsBuckets.main),
+                sub: sum_stats(slotStatsBuckets.sub),
+                ranged: sum_stats(slotStatsBuckets.ranged),
             };
             console.log('[DEBUG] Total stats:', result);
             return result;
@@ -3692,13 +3699,16 @@
         async function initWasm() {
             await Promise.all([
                 init(),
-                itemSearch.load('./data/items.json').then(() => { itemsLoaded = true; }),
+                // items.json の fetch は廃止。WASM に埋め込まれている (docs/adr/0009)。
                 fetch('./data/augments.json')
                     .then(r => r.json())
                     .then(d => { augmentData = d.augments || {}; })
                     .catch(() => { augmentData = {}; }),
             ]);
             wasmReady = true;
+            // 装備データは WASM の初期化と同時に使えるようになる。
+            // 以前は items.json の fetch 完了で立てていたフラグ (docs/adr/0009)。
+            itemsLoaded = item_count() > 0;
             buildJobLevelTable();
             buildEquipSlotsUI();
 

@@ -21,7 +21,7 @@ uv run pre-commit install
 装備データを生成します（git 管理外のため clone 直後は存在しません）。
 
 ```bash
-scripts/build_web_data.sh
+scripts/build_data.sh
 ```
 
 WASM をビルドします。

@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 #
 # 上流 (Windower/Resources) に関する定数と共通処理。
-# detect_resource_changes.sh と build_web_data.sh の両方から source する。
+# detect_resource_changes.sh と build_data.sh の両方から source する。
 #
 # 定数をここに集約するのは、追跡対象や ref が両スクリプトに分散して
 # 片方だけ更新される事故を防ぐため。
@@ -42,6 +42,13 @@ resolve_upstream_blobs() {
   fi
 
   echo "$blobs"
+}
+
+# blobs から短い指紋を作る。CI のキャッシュキーに使う。
+# blobs は JSON なのでそのままキーに使えない。
+upstream_digest() {
+  local blobs="${1:-$(resolve_upstream_blobs)}"
+  printf '%s' "$blobs" | { shasum -a 256 2>/dev/null || sha256sum; } | cut -c1-16
 }
 
 # 追跡対象ファイルの raw ダウンロード URL を返す。

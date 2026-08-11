@@ -1,10 +1,8 @@
 # CONTRIBUTING
 
-clone してから変更を push するまでの流れをまとめます。
+## 動作手順
 
-**コマンドはすべてリポジトリのルートで実行します。** `cd` は不要です。
-
-## 0. Prerequisite
+### 0. prerequisite
 
 | ツール | 用途 | 備考 |
 |---|---|---|
@@ -21,7 +19,7 @@ CI も同じ版を使っています。上げるときは両方を揃えて変�
 cargo install --locked wasm-pack@0.14.0
 ```
 
-## 1. 初回セットアップ
+### 1. 初回セットアップ
 
 ```bash
 git clone https://github.com/Maru0137/ff11sim.git && cd ff11sim
@@ -42,29 +40,31 @@ uv run pre-commit install
 **git は clone 時にフックを自動で有効化しません**（任意のコードが実行されてしまうため）。
 そのためこの 1 行は各自で実行する必要があります。
 
+### 2. ビルド手順
+
 装備データを生成します。
 
 ```bash
-scripts/build_web_data.sh
+scripts/build_data.sh
 ```
 
-`web/data/items.json` は上流の [Windower/Resources](https://github.com/Windower/Resources) から
+`build/items.json` は上流の [Windower/Resources](https://github.com/Windower/Resources) から
 生成する派生物で、git では管理していません（[ADR 0003](docs/adr/0003-items-json-generated-in-ci.md)）。
-**装備検索・装備セット・後述の JS テストはこれが無いと動きません。**
+**Rust のビルドより先に実行する必要があります。** 装備データは `include_str!` でバイナリに
+埋め込むため（[ADR 0009](docs/adr/0009-embed-item-data-in-binary.md)）、これが無いとコンパイルが通りません。
 
 生成物は 3 つです。
 
 | 出力 | 内容 |
 |---|---|
-| `web/data/items.json` | 装備データ本体（約 8.6MB） |
-| `web/data/_build_metadata.json` | 何から作られたかの記録（上流の blob SHA・commit・時刻） |
+| `build/items.json` | 装備データ本体（約 8.6MB） |
+| `build/_build_metadata.json` | 何から作られたかの記録（上流の blob SHA・commit・時刻） |
 | `temp_resources/*.lua` | 上流からのダウンロードキャッシュ |
 
-スキップされるのは**上流のダウンロードだけ**です。ローカルファイルの `git hash-object` が
-上流の blob SHA と一致すれば取得を省きます。`items.json` の生成・検証・メタデータ出力は
-毎回実行されますが、キャッシュがあれば全体で数秒で終わります。
+上流の内容と変換スクリプトが前回と同じなら、ダウンロードと `items.json` の生成を
+どちらもスキップします。作り直したいときは `--force` を付けてください。
 
-WASM をビルドします。
+WASM をビルドします。Rust を変更したら、そのつど実行が必要です。
 
 ```bash
 wasm-pack build rust --target web --out-dir ../web/pkg
@@ -72,41 +72,15 @@ wasm-pack build rust --target web --out-dir ../web/pkg
 
 `--out-dir` はクレート (`rust/`) からの相対パスです。生成先は `web/pkg/` になります。
 
-## 2. ブランチを切る
-
-`main` に直接コミットせず、用途を接頭辞にしたブランチを切ります。
+### 3. テスト手順
 
 ```bash
-git switch -c feature/skillchain-bonus
+cargo test --manifest-path rust/Cargo.toml
 ```
 
-実績のある接頭辞: `feature/` / `fix/` / `docs/` / `chore/`
+`build/items.json` の生成が前提になります。
 
-## 3. 変更する
-
-| 変更対象 | 主な場所 |
-|---|---|
-| ステータス・ダメージ計算 | `rust/src/` |
-| ブラウザ UI | `web/` |
-| 装備データ生成 | `scripts/` |
-| FF11 のゲーム仕様メモ | `docs/knowledge/` |
-
-計算式を実装・修正したときは、根拠（wiki の URL など）と具体的な計算例を
-`docs/knowledge/` に残してください。後から式の妥当性を検証できなくなるためです。
-
-### 設計判断を伴う場合は ADR を書く
-
-アーキテクチャの選択、依存関係の追加、横断的な規約など、**非自明でトレードオフのある決定**は
-[docs/adr/](docs/adr/) に記録します。既存の ADR と矛盾する変更を入れる場合は、
-先に該当 ADR を読み、必要なら supersede してください。
-
-## 4. 動かして確かめる
-
-Rust を変更したら WASM を再ビルドします。
-
-```bash
-wasm-pack build rust --target web --out-dir ../web/pkg
-```
+### 4. ローカルでの Web ページ確認
 
 `web/` を静的配信します。
 
@@ -120,37 +94,43 @@ http://localhost:8000 を開きます。ポートは 8000 を推奨します
 ログイン機能を試す場合のみ、追加で `web/js/config.js` の用意が必要です。
 詳細は [web/README.md](web/README.md) を参照してください。
 
-## 5. テストを通す
+## ディレクトリ構成
 
-Rust のテストです。
-
-```bash
-cargo test --manifest-path rust/Cargo.toml
+```
+.
+├── rust/                  コア実装
+│   ├── src/               ステータス計算・ダメージ計算・装備解釈・WASM バインディング
+│   └── tests/             統合テスト
+├── web/                   ブラウザ UI (静的サイト。GitHub Pages で配信)
+│   ├── index.html         キャラクター・装備セット・ステータス
+│   ├── search.html        装備検索
+│   ├── js/                UI・保存・Supabase 連携
+│   └── data/              UI が読むデータ (大半は data/ への symlink)
+├── data/                  Rust と Web が共有するテーブルデータ (ADR 0002)
+├── scripts/               装備データの生成・検証
+├── docs/
+│   ├── adr/               設計判断の記録
+│   ├── knowledge/         FF11 のゲーム仕様と計算式などのナレッジベース
+│   └── tech-debt/         既知の負債・意図的に残した非互換
+├── supabase/              スキーマ定義
+└── .github/workflows/     CI (test.yml / deploy.yml)
 ```
 
-JS のテストです（`items.json` の生成が前提）。
+git 管理外の生成物です。
 
-```bash
-node web/test/equip-stats-extraction.test.js
-```
+| ディレクトリ | 中身 | 作られ方 |
+|---|---|---|
+| `build/` | `items.json` | `scripts/build_data.sh` |
+| `web/pkg/` | WASM モジュール | `wasm-pack build` |
+| `temp_resources/` | 上流 Lua のキャッシュ | `scripts/build_data.sh` |
+| `rust/target/` | Rust のビルド成果物 | `cargo build` |
+| `.venv/` | pre-commit | `uv sync` |
 
-```bash
-node web/test/skillchain-bonus.test.js
-```
+## 開発での注意点
 
-```bash
-node web/test/ws-damage-sam-elemental.test.js
-```
+### フォーマッティング
 
-**PR を出しても自動テストは走りません。** 手元で通してから出してください。
-
-方針は次のとおりです。
-
-- **機能追加**: 対応するテストを先に追加し、それが通ることを完了条件とする
-- **バグ修正**: まず既存テストで検出できなかった理由を調べ、バグを再現するテストを
-  追加してから直す
-
-## 6. 整形する
+clippy を先、fmt を後に実行してください。
 
 ```bash
 cargo clippy --manifest-path rust/Cargo.toml --lib --tests
@@ -160,38 +140,15 @@ cargo clippy --manifest-path rust/Cargo.toml --lib --tests
 cargo fmt --manifest-path rust/Cargo.toml
 ```
 
-**この順序で実行してください。** `cargo clippy --fix` や手直しは整形を崩すことがあり
+**この順序が必要です。** `cargo clippy --fix` や手直しは整形を崩すことがあり
 （derive の分割、行長の変化、コメント位置のずれ）、fmt を先にかけると取りこぼします。
 
-## 7. コミットする
-
-```bash
-git add -A
-```
-
-```bash
-git commit
-```
-
 commit すると pre-commit が走り、`.rs` の変更が含まれていれば `cargo fmt --check` が実行されます。
+整形されていないと commit が中断されるので、上記を実行して `git add` し直してください。
+急ぎで迂回する場合は `git commit --no-verify` が使えます。
 
-```
-cargo fmt --check........................................................Passed
-```
-
-整形されていないと commit が中断されます。その場合は次を実行して `git add` し直してください。
-
-```bash
-cargo fmt --manifest-path rust/Cargo.toml
-```
-
-急ぎで迂回する場合は次が使えます。
-
-```bash
-git commit --no-verify
-```
-
-clippy は検査に含めていません。ビルドを伴い commit のたびに待たされるためです。
+clippy は pre-commit に含めていません。ビルドを伴い commit のたびに待たされるためです。
+CI では実行しています。
 
 ### コミットメッセージ
 
@@ -205,31 +162,27 @@ clippy は検査に含めていません。ビルドを伴い commit のたび�
 - 本文では、なぜその方法を選んだか・他の案を採らなかった理由を残してください
 - よく使われるカテゴリ: `[Feature]` `[Fix]` `[Refactor]` `[Web]` `[Docs]` `[Test]` `[CI]` `[Chore]`
 
-## 8. push して PR を出す
+### ADRの運用
 
-```bash
-git push -u origin feature/skillchain-bonus
-```
+アーキテクチャの選択、依存関係の追加、横断的な規約など、**非自明でトレードオフのある決定**は
+[docs/adr/](docs/adr/) に記録します。既存の ADR と矛盾する変更を入れる場合は、
+先に該当 ADR を読み、必要なら supersede してください。
 
-```bash
-gh pr create --base main
-```
+### ナレッジベースの運用
 
-PR には**何をなぜ変えたか**と、**どう検証したか**（実行したテスト、確認した挙動）を書いてください。
+計算式を実装・修正したときは、根拠（wiki の URL など）と具体的な計算例を
+[docs/knowledge/](docs/knowledge/) に残してください。後から式の妥当性を検証できなくなるためです。
 
-## 9. マージ後
+### CI/CD
 
-`main` への push で [deploy.yml](.github/workflows/deploy.yml) が走り、GitHub Pages へ自動デプロイされます。
-このとき装備データも上流から再生成されます。
-
-なお上流の更新を取り込むため、同ワークフローは毎日 00:00 (JST) にも実行されます。
-即座に取り込みたい場合は Actions から手動実行できます。
+`main` への push で [deploy.yml](.github/workflows/deploy.yml) が走り、GitHub Pages へ
+自動デプロイされます。同ワークフローは上流の更新を取り込むため毎日 00:00 (JST) にも実行されます。
 
 ## トラブルシューティング
 
 | 症状 | 対処 |
 |---|---|
-| 装備検索が空になる / JS テストが落ちる | `scripts/build_web_data.sh` を実行して `web/data/items.json` を生成する |
+| Rust のビルドが `include_str!` で失敗する / 装備検索が空になる | `scripts/build_data.sh` を実行して `build/items.json` を生成する |
 | WASM が読み込めない | `web/pkg/` があるか確認。無ければ `wasm-pack build` を実行する |
 | Rust を直したのにブラウザに反映されない | WASM の再ビルドが必要。ブラウザのキャッシュも確認する |
 | commit が `cargo fmt --check` で止まる | `cargo fmt --manifest-path rust/Cargo.toml` して `git add` し直す |

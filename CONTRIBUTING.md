@@ -4,17 +4,14 @@ clone してから変更を push するまでの流れをまとめます。
 
 **コマンドはすべてリポジトリのルートで実行します。** `cd` は不要です。
 
-## 0. 必要なツール
+## 0. Prerequisite
 
 | ツール | 用途 | 備考 |
 |---|---|---|
 | Rust | コア実装のビルド・テスト | [rustup](https://rustup.rs/) で導入。版は `rust-toolchain.toml` で固定 |
-| wasm-pack | ブラウザ向け WASM のビルド | 次のコマンドで導入 |
+| wasm-pack@0.14.0 | ブラウザ向け WASM のビルド | 次のコマンドで導入 |
 | Python 3 | 装備データ生成スクリプト | 標準ライブラリのみ使用 |
 | [uv](https://docs.astral.sh/uv/) | 開発ツール (pre-commit) の導入 | `pyproject.toml` / `uv.lock` で版を固定 |
-
-pre-commit は各自で入れるのではなく、`pyproject.toml` の依存として宣言してあります。
-`uv.lock` で版が固定されるため、全員が同じバージョンを使うことになります。
 
 wasm-pack は Cargo の依存としては管理できません（`[dependencies]` はライブラリ用で、
 依存クレートの実行ファイルはビルドされないため）。版を明示して導入してください。
@@ -24,20 +21,10 @@ CI も同じ版を使っています。上げるときは両方を揃えて変�
 cargo install --locked wasm-pack@0.14.0
 ```
 
-Rust も同様に `rust-toolchain.toml` で版を固定しています。リポジトリ内で
-`cargo` / `rustfmt` を実行すると rustup がこのファイルを読んで該当バージョンに切り替え、
-未導入ならその場で取得します。**rustfmt の整形結果は Rust の版によって変わりうる**ため、
-固定しないと「手元では通るのに CI で `cargo fmt --check` が落ちる」が起きます。
-更新するときは `channel` を書き換えてコミットすれば、全員と CI が同時に追随します。
-
 ## 1. 初回セットアップ
 
 ```bash
-git clone https://github.com/Maru0137/ff11sim.git
-```
-
-```bash
-cd ff11sim
+git clone https://github.com/Maru0137/ff11sim.git && cd ff11sim
 ```
 
 開発ツールを取得します（`.venv/` が作られます）。
@@ -46,7 +33,7 @@ cd ff11sim
 uv sync
 ```
 
-commit 前の検査を有効化します（1 度だけ）。
+pre-commit を有効化します。
 
 ```bash
 uv run pre-commit install
@@ -54,40 +41,6 @@ uv run pre-commit install
 
 **git は clone 時にフックを自動で有効化しません**（任意のコードが実行されてしまうため）。
 そのためこの 1 行は各自で実行する必要があります。
-
-一度実行すれば、以降の `git commit` は `uv run` を付けなくてもフックが走ります
-（`.git/hooks/pre-commit` に `.venv` の Python が埋め込まれるため）。
-`pre-commit` を直接叩きたい場合のみ `uv run pre-commit ...` を使ってください。
-
-<details>
-<summary>毎回 <code>pre-commit install</code> したくない場合</summary>
-
-git の**テンプレートディレクトリ**を設定しておくと、以後 clone するリポジトリでは
-フックが最初から入った状態になります。マシンごとに 1 度だけの設定です。
-
-```bash
-uv tool install pre-commit
-```
-
-```bash
-pre-commit init-templatedir ~/.git-template
-```
-
-```bash
-git config --global init.templateDir ~/.git-template
-```
-
-git は `git init` / `git clone` の際にテンプレートディレクトリの中身を新しい `.git/` へ
-コピーします。それを利用してフックスクリプトをあらかじめ仕込んでおく仕組みです。
-
-- **ここでは `uv run` を使わず、グローバルに入れた pre-commit で実行してください。**
-  `init-templatedir` は実行に使った Python のパスをフックに埋め込むため、
-  `uv run` で実行するとこのリポジトリの `.venv` を指すテンプレートができてしまいます
-- `.pre-commit-config.yaml` を持たないリポジトリでは何もせず通過するため、他のリポジトリに影響しません
-- **設定後に clone したリポジトリにのみ効きます。** 既存の clone では `uv run pre-commit install` が必要です
-- これは各自のグローバル設定であり、リポジトリ側からは強制できません
-
-</details>
 
 装備データを生成します。
 
@@ -98,7 +51,18 @@ scripts/build_web_data.sh
 `web/data/items.json` は上流の [Windower/Resources](https://github.com/Windower/Resources) から
 生成する派生物で、git では管理していません（[ADR 0003](docs/adr/0003-items-json-generated-in-ci.md)）。
 **装備検索・装備セット・後述の JS テストはこれが無いと動きません。**
-2 回目以降は、上流の内容が変わっていなければスキップされます。
+
+生成物は 3 つです。
+
+| 出力 | 内容 |
+|---|---|
+| `web/data/items.json` | 装備データ本体（約 8.6MB） |
+| `web/data/_build_metadata.json` | 何から作られたかの記録（上流の blob SHA・commit・時刻） |
+| `temp_resources/*.lua` | 上流からのダウンロードキャッシュ |
+
+スキップされるのは**上流のダウンロードだけ**です。ローカルファイルの `git hash-object` が
+上流の blob SHA と一致すれば取得を省きます。`items.json` の生成・検証・メタデータ出力は
+毎回実行されますが、キャッシュがあれば全体で数秒で終わります。
 
 WASM をビルドします。
 

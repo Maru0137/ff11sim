@@ -46,6 +46,29 @@ pre-commit install
 **git は clone 時にフックを自動で有効化しません**（任意のコードが実行されてしまうため）。
 そのためこの 1 行は各自で実行する必要があります。
 
+<details>
+<summary>毎回 <code>pre-commit install</code> したくない場合</summary>
+
+git の**テンプレートディレクトリ**を設定しておくと、以後 clone するリポジトリでは
+フックが最初から入った状態になります。マシンごとに 1 度だけの設定です。
+
+```bash
+pre-commit init-templatedir ~/.git-template
+```
+
+```bash
+git config --global init.templateDir ~/.git-template
+```
+
+git は `git init` / `git clone` の際にテンプレートディレクトリの中身を新しい `.git/` へ
+コピーします。それを利用してフックスクリプトをあらかじめ仕込んでおく仕組みです。
+
+- `.pre-commit-config.yaml` を持たないリポジトリでは何もせず通過するため、他のリポジトリに影響しません
+- **設定後に clone したリポジトリにのみ効きます。** 既存の clone では `pre-commit install` が必要です
+- これは各自のグローバル設定であり、リポジトリ側からは強制できません
+
+</details>
+
 装備データを生成します。
 
 ```bash

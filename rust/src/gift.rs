@@ -304,7 +304,10 @@ impl Job {
         if tiers.is_empty() {
             return 0;
         }
-        let count = tiers.iter().filter(|&&(req_jp, _)| total_jp >= req_jp).count();
+        let count = tiers
+            .iter()
+            .filter(|&&(req_jp, _)| total_jp >= req_jp)
+            .count();
         if count == 0 {
             return 0;
         }

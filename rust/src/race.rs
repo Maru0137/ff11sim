@@ -6,7 +6,21 @@ use enum_map::Enum;
 use serde::{Deserialize, Serialize};
 use strum::{EnumCount, EnumIter, VariantArray};
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, EnumCount, EnumIter, VariantArray, ValueEnum, Enum, Serialize, Deserialize)]
+#[derive(
+    Debug,
+    Clone,
+    Copy,
+    PartialEq,
+    Eq,
+    Hash,
+    EnumCount,
+    EnumIter,
+    VariantArray,
+    ValueEnum,
+    Enum,
+    Serialize,
+    Deserialize,
+)]
 pub enum Race {
     Hum,
     Elv,

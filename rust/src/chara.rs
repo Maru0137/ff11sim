@@ -5,7 +5,7 @@ use crate::job::{Job, JobTrait};
 use crate::job_points::JobPointCategories;
 use crate::race::Race;
 use crate::skills::CharacterSkills;
-use crate::status::{calc_master_lv_bonus, calc_status, BonusStats, MeritPoints, StatusKind};
+use crate::status::{BonusStats, MeritPoints, StatusKind, calc_master_lv_bonus, calc_status};
 
 #[derive(Debug, Clone)]
 pub struct Chara {
@@ -152,7 +152,7 @@ impl CharaBuilder {
 
     pub fn master_lv(mut self, master_lv: i32) -> Self {
         assert!(
-            master_lv >= 0 && master_lv <= 50,
+            (0..=50).contains(&master_lv),
             "master_lv must be between 0 and 50"
         );
         self.master_lv = Some(master_lv);
@@ -277,8 +277,6 @@ mod tests {
         assert_eq!(chara.status(StatusKind::Mnd), 132);
         assert_eq!(chara.status(StatusKind::Chr), 127);
     }
-
-
 
     #[test]
     fn test_chara_status_blm_with_mp() {

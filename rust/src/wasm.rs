@@ -12,7 +12,7 @@ use crate::job::{Job, JobTrait};
 use crate::job_points::{calc_gift_bonuses, calc_jp_category_bonuses, calc_war_da_gift_bonus};
 use crate::race::Race;
 use crate::skills::{
-    default_skills, effective_skill, job_skill_rank, weapon_skill_from_item_id, SkillKind,
+    SkillKind, default_skills, effective_skill, job_skill_rank, weapon_skill_from_item_id,
 };
 use crate::status::{BonusStats, MeritPoints, StatusKind};
 
@@ -435,6 +435,9 @@ impl From<MeritPointsInput> for MeritPoints {
 }
 
 #[wasm_bindgen]
+/// JS から呼ぶ境界なので、引数は JS 側の呼び出し形に合わせている。
+/// 構造体に束ねると JS 側でオブジェクトを組む手間が増える。
+#[allow(clippy::too_many_arguments)]
 pub fn calculate_status(
     race: &str,
     main_job: &str,
@@ -471,13 +474,12 @@ pub fn calculate_status(
         .bonus_stats(bonus_stats);
 
     if let (Some(sj), Some(sl)) = (support_job, support_lv) {
-        let support_job = str_to_job(&sj).ok_or_else(|| JsValue::from_str("Invalid support job"))?;
+        let support_job =
+            str_to_job(&sj).ok_or_else(|| JsValue::from_str("Invalid support job"))?;
         builder = builder.support_job(support_job, sl);
     }
 
-    let chara = builder
-        .build()
-        .map_err(|e| JsValue::from_str(e))?;
+    let chara = builder.build().map_err(JsValue::from_str)?;
 
     let result = chara_to_status_result(&chara);
     result
@@ -653,14 +655,11 @@ fn chara_to_status_result(chara: &Chara) -> StatusResult {
 
     // 装備ボーナスを引いた上で effective_skills マップを組み立てる
     // 非武器スロットのスキルボーナスは全スロット共通(global)として加算される
-    let get_bonus =
-        |map: &std::collections::BTreeMap<String, i32>, kind: SkillKind| -> i32 {
-            *map.get(skill_kind_to_key(kind)).unwrap_or(&0)
-        };
-    let global_bonus =
-        |kind: SkillKind| get_bonus(&chara.bonus_stats.skill_bonus_global, kind);
-    let main_slot_bonus =
-        |kind: SkillKind| get_bonus(&chara.bonus_stats.skill_bonus_main, kind);
+    let get_bonus = |map: &std::collections::BTreeMap<String, i32>, kind: SkillKind| -> i32 {
+        *map.get(skill_kind_to_key(kind)).unwrap_or(&0)
+    };
+    let global_bonus = |kind: SkillKind| get_bonus(&chara.bonus_stats.skill_bonus_global, kind);
+    let main_slot_bonus = |kind: SkillKind| get_bonus(&chara.bonus_stats.skill_bonus_main, kind);
     let sub_slot_bonus = |kind: SkillKind| get_bonus(&chara.bonus_stats.skill_bonus_sub, kind);
     let ranged_slot_bonus =
         |kind: SkillKind| get_bonus(&chara.bonus_stats.skill_bonus_ranged, kind);
@@ -741,8 +740,7 @@ fn chara_to_status_result(chara: &Chara) -> StatusResult {
     let magic_attack_bonus = magic_attack_bonus_trait + gift.magic_attack + jp_cat.magic_attack;
     let magic_accuracy_bonus =
         magic_accuracy_bonus_trait + gift.magic_accuracy + jp_cat.magic_accuracy;
-    let magic_evasion_bonus =
-        magic_evasion_bonus_trait + gift.magic_evasion + jp_cat.magic_evasion;
+    let magic_evasion_bonus = magic_evasion_bonus_trait + gift.magic_evasion + jp_cat.magic_evasion;
     let store_tp_total = chara.bonus_stats.store_tp
         + store_tp_trait
         + store_tp_merit
@@ -761,8 +759,7 @@ fn chara_to_status_result(chara: &Chara) -> StatusResult {
         + jp_cat.magic_defense;
     let evasion_total =
         calc_evasion(agi, eff_evasion_skill, chara.bonus_stats.evasion) + evasion_bonus;
-    let magic_attack_total =
-        calc_magic_attack(chara.bonus_stats.magic_attack) + magic_attack_bonus;
+    let magic_attack_total = calc_magic_attack(chara.bonus_stats.magic_attack) + magic_attack_bonus;
 
     // メイン攻撃/命中
     // メイン武器未装備時は H2H 扱いで H2H スキル値を使う
@@ -775,22 +772,17 @@ fn chara_to_status_result(chara: &Chara) -> StatusResult {
             + global_bonus(SkillKind::HandToHand);
         (h2h_v, true)
     };
-    let main_attack_total = calc_main_attack(
-        str_val,
-        main_skill_value,
-        is_h2h,
-        chara.bonus_stats.attack,
-    ) + attack_bonus;
+    let main_attack_total =
+        calc_main_attack(str_val, main_skill_value, is_h2h, chara.bonus_stats.attack)
+            + attack_bonus;
     let main_accuracy_total =
         calc_accuracy(dex, main_skill_value, chara.bonus_stats.accuracy) + accuracy_bonus;
 
     // サブ攻撃/命中 (サブ武器装備時のみ)
     let (sub_attack_total, sub_accuracy_total) = match sub_weapon {
         Some((_, skill_v)) => {
-            let atk =
-                calc_sub_attack(str_val, skill_v, chara.bonus_stats.attack) + attack_bonus;
-            let acc =
-                calc_accuracy(dex, skill_v, chara.bonus_stats.accuracy) + accuracy_bonus;
+            let atk = calc_sub_attack(str_val, skill_v, chara.bonus_stats.attack) + attack_bonus;
+            let acc = calc_accuracy(dex, skill_v, chara.bonus_stats.accuracy) + accuracy_bonus;
             (Some(atk), Some(acc))
         }
         None => (None, None),
@@ -871,14 +863,16 @@ fn chara_to_status_result(chara: &Chara) -> StatusResult {
         martial_arts: martial_arts_trait
             + chara.main_job.gift_value(Gift::MartialArtsEffect, total_jp),
         // 二刀流 総合 = ジョブ特性 + ギフト (Thf/Dnc)
-        dual_wield: dual_wield_trait
-            + chara.main_job.gift_value(Gift::DualWieldEffect, total_jp),
+        dual_wield: dual_wield_trait + chara.main_job.gift_value(Gift::DualWieldEffect, total_jp),
         // 残心 総合 = ジョブ特性 + ギフト (Sam)
         zanshin: zanshin_trait + chara.main_job.gift_value(Gift::ZanshinRate, total_jp),
         // スマイト 総合 = ジョブ特性 (War/Mnk/Drk/Drg/Pup) のみ
         smite: smite_trait,
         // 打剣 総合 = ジョブ特性 (Nin) + ギフト「打剣効果アップ」(Nin)
-        daken: daken_trait + chara.main_job.gift_value(Gift::ShurikenThrowEffect, total_jp),
+        daken: daken_trait
+            + chara
+                .main_job
+                .gift_value(Gift::ShurikenThrowEffect, total_jp),
         // シールドバリア 総合 = ジョブ特性 (Pld バイナリ) のみ
         shield_barrier: shield_barrier_trait,
         // プロテス効果 総合 = ギフト「プロテス効果アップ」(Pld) のみ
@@ -896,7 +890,9 @@ fn chara_to_status_result(chara: &Chara) -> StatusResult {
         // ブラッドブーン 総合 = ジョブ特性 (Smn) のみ
         blood_boon: blood_boon_trait,
         // ベロシティショット効果 総合 = ギフト「ベロシティショット効果アップ」(Rng) のみ
-        velocity_shot_effect: chara.main_job.gift_value(Gift::VelocityShotEffect, total_jp),
+        velocity_shot_effect: chara
+            .main_job
+            .gift_value(Gift::VelocityShotEffect, total_jp),
         // ストレイフ 総合 = ジョブ特性 (Drg) のみ
         strafe: strafe_trait,
         // トゥルーショット 総合 = ジョブ特性 (Rng/Cor) + ギフト「トゥルーショット効果アップ」(Rng/Cor)
@@ -910,13 +906,17 @@ fn chara_to_status_result(chara: &Chara) -> StatusResult {
         // シールドマスタリー 総合 = ジョブ特性 (War/Rdm/Pld) のみ
         shield_mastery: shield_mastery_trait,
         // シールドマスタリー効果 総合 = ギフト「シールドマスタリー効果アップ」(Pld) のみ
-        shield_mastery_effect: chara.main_job.gift_value(Gift::ShieldMasteryEffect, total_jp),
+        shield_mastery_effect: chara
+            .main_job
+            .gift_value(Gift::ShieldMasteryEffect, total_jp),
         // アサシン 総合 = ジョブ特性 (Thf) のみ (バイナリ)
         assassin: assassin_trait,
         // 歌の詠唱時間 総合 = ギフト「歌の詠唱時間短縮」(Brd) のみ (% 短縮の負値)
         song_cast_time: chara.main_job.gift_value(Gift::SongCastTime, total_jp),
         // 歌の効果時間 総合 = ギフト「歌の効果時間延長」(Brd) のみ (% 延長)
-        song_effect_duration: chara.main_job.gift_value(Gift::SongEffectDuration, total_jp),
+        song_effect_duration: chara
+            .main_job
+            .gift_value(Gift::SongEffectDuration, total_jp),
         // 心眼効果アップ 総合 = ギフト「心眼効果アップ」(Sam) のみ
         third_eye_effect: chara.main_job.gift_value(Gift::ThirdEyeEffect, total_jp),
         // タンデムヒット 総合 = ジョブ特性 (Bst) のみ
@@ -960,7 +960,9 @@ fn chara_to_status_result(chara: &Chara) -> StatusResult {
         max_damage_boost: chara.job_trait_total(JobTrait::MaxDamageBoost),
         // A: クリティカル系
         crit_increase: chara.job_trait_total(JobTrait::CritIncrease)
-            + chara.main_job.gift_value(Gift::CritIncreaseEffect, total_jp),
+            + chara
+                .main_job
+                .gift_value(Gift::CritIncreaseEffect, total_jp),
         crit_reduce: chara.job_trait_total(JobTrait::CritReduce)
             + chara.main_job.gift_value(Gift::CritReduceEffect, total_jp),
         critical_hit_rate: chara.main_job.gift_value(Gift::CriticalHitRate, total_jp),
@@ -972,14 +974,18 @@ fn chara_to_status_result(chara: &Chara) -> StatusResult {
         counter_damage: chara.main_job.gift_value(Gift::CounterDamage, total_jp),
         // C: 魔法系
         cure_amount: chara.main_job.gift_value(Gift::CureAmount, total_jp),
-        healing_magic_cast_time: chara.main_job.gift_value(Gift::HealingMagicCastTime, total_jp),
+        healing_magic_cast_time: chara
+            .main_job
+            .gift_value(Gift::HealingMagicCastTime, total_jp),
         regen_amount: chara.main_job.gift_value(Gift::RegenAmount, total_jp),
         magic_burst_damage: chara.job_trait_total(JobTrait::MagicBurstBonus)
             + chara.main_job.gift_value(Gift::MagicBurstDamage, total_jp),
         magic_damage: chara.job_trait_total(JobTrait::MagicAcumen)
             + chara.main_job.gift_value(Gift::MagicDamage, total_jp),
         elemental_celerity: chara.job_trait_total(JobTrait::ElementalCelerity)
-            + chara.main_job.gift_value(Gift::ElementalCelerityEffect, total_jp),
+            + chara
+                .main_job
+                .gift_value(Gift::ElementalCelerityEffect, total_jp),
         enspell_effect: chara.main_job.gift_value(Gift::EnspellEffect, total_jp),
         enhance_magic_duration_on_self: chara
             .main_job
@@ -990,7 +996,9 @@ fn chara_to_status_result(chara: &Chara) -> StatusResult {
             + chara.main_job.gift_value(Gift::ConserveTpEffect, total_jp),
         quick_draw_recast: chara.main_job.gift_value(Gift::QuickDrawRecast, total_jp),
         treasure_hunter: chara.job_trait_total(JobTrait::TreasureHunter)
-            + chara.main_job.gift_value(Gift::TreasureHunterEffect, total_jp),
+            + chara
+                .main_job
+                .gift_value(Gift::TreasureHunterEffect, total_jp),
         treasure_hunter_max_level: chara
             .main_job
             .gift_value(Gift::TreasureHunterMaxLevel, total_jp),
@@ -999,17 +1007,29 @@ fn chara_to_status_result(chara: &Chara) -> StatusResult {
             + chara.main_job.gift_value(Gift::InquartataEffect, total_jp),
         // E: 侍・踊系 (合算済み以外)
         hasso_seigan_effect: chara.main_job.gift_value(Gift::HassoSeiganEffect, total_jp),
-        finishing_move_count: chara.main_job.gift_value(Gift::FinishingMoveCount, total_jp),
+        finishing_move_count: chara
+            .main_job
+            .gift_value(Gift::FinishingMoveCount, total_jp),
         // F: ペット系
         pet_physical_atk_def: chara.main_job.gift_value(Gift::PetPhysicalAtkDef, total_jp),
         pet_physical_acc_eva: chara.main_job.gift_value(Gift::PetPhysicalAccEva, total_jp),
         pet_status: chara.main_job.gift_value(Gift::PetStatus, total_jp),
         pet_tp_bonus: chara.main_job.gift_value(Gift::PetTpBonus, total_jp),
-        avatar_physical_atk_def: chara.main_job.gift_value(Gift::AvatarPhysicalAtkDef, total_jp),
-        avatar_physical_acc_eva: chara.main_job.gift_value(Gift::AvatarPhysicalAccEva, total_jp),
-        avatar_magical_atk_def: chara.main_job.gift_value(Gift::AvatarMagicalAtkDef, total_jp),
-        avatar_magical_acc_eva: chara.main_job.gift_value(Gift::AvatarMagicalAccEva, total_jp),
-        avatar_blessing_effect: chara.main_job.gift_value(Gift::AvatarBlessingEffect, total_jp),
+        avatar_physical_atk_def: chara
+            .main_job
+            .gift_value(Gift::AvatarPhysicalAtkDef, total_jp),
+        avatar_physical_acc_eva: chara
+            .main_job
+            .gift_value(Gift::AvatarPhysicalAccEva, total_jp),
+        avatar_magical_atk_def: chara
+            .main_job
+            .gift_value(Gift::AvatarMagicalAtkDef, total_jp),
+        avatar_magical_acc_eva: chara
+            .main_job
+            .gift_value(Gift::AvatarMagicalAccEva, total_jp),
+        avatar_blessing_effect: chara
+            .main_job
+            .gift_value(Gift::AvatarBlessingEffect, total_jp),
         automaton_physical_atk_def: chara
             .main_job
             .gift_value(Gift::AutomatonPhysicalAtkDef, total_jp),
@@ -1022,10 +1042,16 @@ fn chara_to_status_result(chara: &Chara) -> StatusResult {
         automaton_magical_acc_eva: chara
             .main_job
             .gift_value(Gift::AutomatonMagicalAccEva, total_jp),
-        automaton_element_boost: chara.main_job.gift_value(Gift::AutomatonElementBoost, total_jp),
+        automaton_element_boost: chara
+            .main_job
+            .gift_value(Gift::AutomatonElementBoost, total_jp),
         wyvern_boost_effect: chara.main_job.gift_value(Gift::WyvernBoostEffect, total_jp),
-        wyvern_physical_acc_eva: chara.main_job.gift_value(Gift::WyvernPhysicalAccEva, total_jp),
-        wyvern_magical_acc_eva: chara.main_job.gift_value(Gift::WyvernMagicalAccEva, total_jp),
+        wyvern_physical_acc_eva: chara
+            .main_job
+            .gift_value(Gift::WyvernPhysicalAccEva, total_jp),
+        wyvern_magical_acc_eva: chara
+            .main_job
+            .gift_value(Gift::WyvernMagicalAccEva, total_jp),
         breath_recast: chara.main_job.gift_value(Gift::BreathRecast, total_jp),
         stout_servant: chara.job_trait_total(JobTrait::StoutServant),
         total_jp_spent: total_jp,
@@ -1048,10 +1074,7 @@ pub fn calculate_default_skills(profile_js: JsValue) -> Result<JsValue, JsValue>
     let skills = default_skills(&profile.job_levels, &profile.merit_points);
     let mut map: BTreeMap<String, i32> = BTreeMap::new();
     for skill in <SkillKind as VariantArray>::VARIANTS {
-        map.insert(
-            skill_kind_to_key(*skill).to_string(),
-            skills.values[*skill],
-        );
+        map.insert(skill_kind_to_key(*skill).to_string(), skills.values[*skill]);
     }
     map.serialize(&object_serializer())
         .map_err(|e| JsValue::from_str(&e.to_string()))
@@ -1071,13 +1094,12 @@ pub fn calculate_status_from_profile(
     let profile: CharacterProfile = serde_wasm_bindgen::from_value(profile_js)
         .map_err(|e| JsValue::from_str(&format!("Invalid profile: {}", e)))?;
 
-    let main_job = str_to_job(main_job)
-        .ok_or_else(|| JsValue::from_str("Invalid main job"))?;
+    let main_job = str_to_job(main_job).ok_or_else(|| JsValue::from_str("Invalid main job"))?;
 
     let support_job = match support_job {
-        Some(ref sj) => Some(
-            str_to_job(sj).ok_or_else(|| JsValue::from_str("Invalid support job"))?,
-        ),
+        Some(ref sj) => {
+            Some(str_to_job(sj).ok_or_else(|| JsValue::from_str("Invalid support job"))?)
+        }
         None => None,
     };
 
@@ -1185,17 +1207,43 @@ mod tests {
             ..Default::default()
         };
         for &key in &[
-            "HandToHand", "Dagger", "Sword", "GreatSword", "Axe", "GreatAxe",
-            "Scythe", "Polearm", "Katana", "GreatKatana", "Club", "Staff",
-            "Archery", "Marksmanship", "Throwing", "Guarding", "Evasion",
-            "Shield", "Parrying",
+            "HandToHand",
+            "Dagger",
+            "Sword",
+            "GreatSword",
+            "Axe",
+            "GreatAxe",
+            "Scythe",
+            "Polearm",
+            "Katana",
+            "GreatKatana",
+            "Club",
+            "Staff",
+            "Archery",
+            "Marksmanship",
+            "Throwing",
+            "Guarding",
+            "Evasion",
+            "Shield",
+            "Parrying",
         ] {
             merit.combat_skill_merits.insert(key.to_string(), 8);
         }
         for &key in &[
-            "Divine", "Healing", "Enhancing", "Enfeebling", "Elemental",
-            "Dark", "Summoning", "Ninjutsu", "Singing", "StringInstrument",
-            "WindInstrument", "BlueMagic", "Geomancy", "Handbell",
+            "Divine",
+            "Healing",
+            "Enhancing",
+            "Enfeebling",
+            "Elemental",
+            "Dark",
+            "Summoning",
+            "Ninjutsu",
+            "Singing",
+            "StringInstrument",
+            "WindInstrument",
+            "BlueMagic",
+            "Geomancy",
+            "Handbell",
         ] {
             merit.magic_skill_merits.insert(key.to_string(), 8);
         }
@@ -1216,15 +1264,15 @@ mod tests {
 
         // 装備ボーナス（アスプロピアスA30 ALL BP+10、戦士の数珠+2A25 オグメ STR/DEX+15 を反映）
         let bonus = BonusStats {
-            hp: 200,       // アスプロ HP+100 + 数珠+2A25 オグメ HP+100
-            str_: 247,     // 装備 STR 合計 (222 + アスプロ +10 + 数珠オグメ +15)
-            dex: 179,      // 装備 DEX 合計 (154 + アスプロ +10 + 数珠オグメ +15)
-            vit: 10,       // アスプロ ALL BP +10
-            agi: 10,       // アスプロ ALL BP +10
-            int: 10,       // アスプロ ALL BP +10
-            mnd: 10,       // アスプロ ALL BP +10
-            chr: 10,       // アスプロ ALL BP +10
-            attack: 448,   // 装備 Attack 合計
+            hp: 200,                       // アスプロ HP+100 + 数珠+2A25 オグメ HP+100
+            str_: 247,                     // 装備 STR 合計 (222 + アスプロ +10 + 数珠オグメ +15)
+            dex: 179,                      // 装備 DEX 合計 (154 + アスプロ +10 + 数珠オグメ +15)
+            vit: 10,                       // アスプロ ALL BP +10
+            agi: 10,                       // アスプロ ALL BP +10
+            int: 10,                       // アスプロ ALL BP +10
+            mnd: 10,                       // アスプロ ALL BP +10
+            chr: 10,                       // アスプロ ALL BP +10
+            attack: 448,                   // 装備 Attack 合計
             accuracy: 448, // 装備 Accuracy 合計 (431 + アスプロ ACC+15 + ボイイ +2 補正)
             main_weapon_skill_id: Some(6), // 両手斧 skill ID
             skill_bonus_main,
@@ -1318,17 +1366,43 @@ mod tests {
             ..Default::default()
         };
         for &key in &[
-            "HandToHand", "Dagger", "Sword", "GreatSword", "Axe", "GreatAxe",
-            "Scythe", "Polearm", "Katana", "GreatKatana", "Club", "Staff",
-            "Archery", "Marksmanship", "Throwing", "Guarding", "Evasion",
-            "Shield", "Parrying",
+            "HandToHand",
+            "Dagger",
+            "Sword",
+            "GreatSword",
+            "Axe",
+            "GreatAxe",
+            "Scythe",
+            "Polearm",
+            "Katana",
+            "GreatKatana",
+            "Club",
+            "Staff",
+            "Archery",
+            "Marksmanship",
+            "Throwing",
+            "Guarding",
+            "Evasion",
+            "Shield",
+            "Parrying",
         ] {
             merit.combat_skill_merits.insert(key.to_string(), 8);
         }
         for &key in &[
-            "Divine", "Healing", "Enhancing", "Enfeebling", "Elemental",
-            "Dark", "Summoning", "Ninjutsu", "Singing", "StringInstrument",
-            "WindInstrument", "BlueMagic", "Geomancy", "Handbell",
+            "Divine",
+            "Healing",
+            "Enhancing",
+            "Enfeebling",
+            "Elemental",
+            "Dark",
+            "Summoning",
+            "Ninjutsu",
+            "Singing",
+            "StringInstrument",
+            "WindInstrument",
+            "BlueMagic",
+            "Geomancy",
+            "Handbell",
         ] {
             merit.magic_skill_merits.insert(key.to_string(), 8);
         }
@@ -1397,8 +1471,10 @@ mod tests {
     /// ジョブ特性 Store TP V (Lv90)=+30, メリット +5, 装備 +30 → 合計 +65
     #[test]
     fn test_sam_store_tp_total() {
-        let mut merit = MeritPoints::default();
-        merit.store_tp = 5;
+        let merit = MeritPoints {
+            store_tp: 5,
+            ..MeritPoints::default()
+        };
         let bonus = BonusStats {
             store_tp: 30,
             ..BonusStats::default()
@@ -1423,8 +1499,10 @@ mod tests {
     /// 装備 +20 のみ反映され、トレイト/メリットは 0。
     #[test]
     fn test_war_store_tp_no_trait() {
-        let mut merit = MeritPoints::default();
-        merit.store_tp = 5; // WAR には適用されない
+        let merit = MeritPoints {
+            store_tp: 5,
+            ..MeritPoints::default()
+        }; // WAR には適用されない
         let bonus = BonusStats {
             store_tp: 20,
             ..BonusStats::default()
@@ -1491,7 +1569,10 @@ mod tests {
             job_points: crate::job_points::JobPoints::default(),
             skills: CharacterSkills::default(),
         };
-        profile.job_levels[Job::Sam] = JobLevel { level: 99, master_lv: 0 };
+        profile.job_levels[Job::Sam] = JobLevel {
+            level: 99,
+            master_lv: 0,
+        };
 
         let chara = profile.to_chara(Job::Sam, None).unwrap();
         let result = chara_to_status_result(&chara);
@@ -1542,7 +1623,10 @@ mod tests {
     /// NIN91 → SubtleBlow rank 6 = 27、装備 +10 とで合計 37
     #[test]
     fn test_nin_subtle_blow_with_equip() {
-        let bonus = BonusStats { subtle_blow: 10, ..BonusStats::default() };
+        let bonus = BonusStats {
+            subtle_blow: 10,
+            ..BonusStats::default()
+        };
         let chara = Chara::builder()
             .race(Race::Hum)
             .main_job(Job::Nin, 99)
@@ -1557,7 +1641,10 @@ mod tests {
     /// (RDM は Lv15 で rank 2 を直接習得し、最大は Lv90 で rank 6)
     #[test]
     fn test_rdm_fast_cast_with_equip() {
-        let bonus = BonusStats { fast_cast_pct: 10, ..BonusStats::default() };
+        let bonus = BonusStats {
+            fast_cast_pct: 10,
+            ..BonusStats::default()
+        };
         let chara = Chara::builder()
             .race(Race::Hum)
             .main_job(Job::Rdm, 99)
@@ -1867,22 +1954,55 @@ mod tests {
 
         // メリット: ステータス全て 15、戦闘/魔法スキルメリット 8（既存テストと同条件）
         let mut merit = MeritPoints {
-            hp: 15, mp: 15,
-            str_: 15, dex: 15, vit: 15, agi: 15, int: 15, mnd: 15, chr: 15,
+            hp: 15,
+            mp: 15,
+            str_: 15,
+            dex: 15,
+            vit: 15,
+            agi: 15,
+            int: 15,
+            mnd: 15,
+            chr: 15,
             ..Default::default()
         };
         for &key in &[
-            "HandToHand", "Dagger", "Sword", "GreatSword", "Axe", "GreatAxe",
-            "Scythe", "Polearm", "Katana", "GreatKatana", "Club", "Staff",
-            "Archery", "Marksmanship", "Throwing", "Guarding", "Evasion",
-            "Shield", "Parrying",
+            "HandToHand",
+            "Dagger",
+            "Sword",
+            "GreatSword",
+            "Axe",
+            "GreatAxe",
+            "Scythe",
+            "Polearm",
+            "Katana",
+            "GreatKatana",
+            "Club",
+            "Staff",
+            "Archery",
+            "Marksmanship",
+            "Throwing",
+            "Guarding",
+            "Evasion",
+            "Shield",
+            "Parrying",
         ] {
             merit.combat_skill_merits.insert(key.to_string(), 8);
         }
         for &key in &[
-            "Divine", "Healing", "Enhancing", "Enfeebling", "Elemental",
-            "Dark", "Summoning", "Ninjutsu", "Singing", "StringInstrument",
-            "WindInstrument", "BlueMagic", "Geomancy", "Handbell",
+            "Divine",
+            "Healing",
+            "Enhancing",
+            "Enfeebling",
+            "Elemental",
+            "Dark",
+            "Summoning",
+            "Ninjutsu",
+            "Singing",
+            "StringInstrument",
+            "WindInstrument",
+            "BlueMagic",
+            "Geomancy",
+            "Handbell",
         ] {
             merit.magic_skill_merits.insert(key.to_string(), 8);
         }
@@ -1892,8 +2012,14 @@ mod tests {
 
         // 全ジョブ最大の cap でスキルをデフォルト化（シミュレータと同じ挙動）
         let mut job_levels: EnumMap<Job, JobLevel> = EnumMap::default();
-        job_levels[Job::Cor] = JobLevel { level: 99, master_lv: 50 };
-        job_levels[Job::Nin] = JobLevel { level: 59, master_lv: 0 };
+        job_levels[Job::Cor] = JobLevel {
+            level: 99,
+            master_lv: 50,
+        };
+        job_levels[Job::Nin] = JobLevel {
+            level: 59,
+            master_lv: 0,
+        };
         let skills = default_skills(&job_levels, &merit);
 
         let mut skill_bonus_main: BTreeMap<String, i32> = BTreeMap::new();
@@ -1963,11 +2089,25 @@ mod tests {
         assert_eq!(result.int, 308, "INT mismatch");
         assert_eq!(result.mnd, 306, "MND mismatch");
         assert_eq!(result.chr, 293, "CHR mismatch");
-        assert_eq!(result.ranged_weapon_skill_value, Some(733), "ranged skill value mismatch");
-        assert_eq!(result.attack_bonus, 36, "attack_bonus mismatch (gift COR slot1)");
-        assert_eq!(result.accuracy_bonus, 36, "accuracy_bonus mismatch (gift COR slot3)");
+        assert_eq!(
+            result.ranged_weapon_skill_value,
+            Some(733),
+            "ranged skill value mismatch"
+        );
+        assert_eq!(
+            result.attack_bonus, 36,
+            "attack_bonus mismatch (gift COR slot1)"
+        );
+        assert_eq!(
+            result.accuracy_bonus, 36,
+            "accuracy_bonus mismatch (gift COR slot3)"
+        );
         assert_eq!(result.ranged_attack, Some(1538), "ranged_attack mismatch");
-        assert_eq!(result.ranged_accuracy, Some(1478), "ranged_accuracy mismatch (incl COR JP idx7 +20)");
+        assert_eq!(
+            result.ranged_accuracy,
+            Some(1478),
+            "ranged_accuracy mismatch (incl COR JP idx7 +20)"
+        );
     }
 
     /// 属性WS 用のテストケース。COR99/NIN59 ML50 ML50、メリット全 +15、JP 全カテゴリ最大。
@@ -2004,22 +2144,55 @@ mod tests {
         use enum_map::EnumMap;
 
         let mut merit = MeritPoints {
-            hp: 15, mp: 15,
-            str_: 15, dex: 15, vit: 15, agi: 15, int: 15, mnd: 15, chr: 15,
+            hp: 15,
+            mp: 15,
+            str_: 15,
+            dex: 15,
+            vit: 15,
+            agi: 15,
+            int: 15,
+            mnd: 15,
+            chr: 15,
             ..Default::default()
         };
         for &key in &[
-            "HandToHand", "Dagger", "Sword", "GreatSword", "Axe", "GreatAxe",
-            "Scythe", "Polearm", "Katana", "GreatKatana", "Club", "Staff",
-            "Archery", "Marksmanship", "Throwing", "Guarding", "Evasion",
-            "Shield", "Parrying",
+            "HandToHand",
+            "Dagger",
+            "Sword",
+            "GreatSword",
+            "Axe",
+            "GreatAxe",
+            "Scythe",
+            "Polearm",
+            "Katana",
+            "GreatKatana",
+            "Club",
+            "Staff",
+            "Archery",
+            "Marksmanship",
+            "Throwing",
+            "Guarding",
+            "Evasion",
+            "Shield",
+            "Parrying",
         ] {
             merit.combat_skill_merits.insert(key.to_string(), 8);
         }
         for &key in &[
-            "Divine", "Healing", "Enhancing", "Enfeebling", "Elemental",
-            "Dark", "Summoning", "Ninjutsu", "Singing", "StringInstrument",
-            "WindInstrument", "BlueMagic", "Geomancy", "Handbell",
+            "Divine",
+            "Healing",
+            "Enhancing",
+            "Enfeebling",
+            "Elemental",
+            "Dark",
+            "Summoning",
+            "Ninjutsu",
+            "Singing",
+            "StringInstrument",
+            "WindInstrument",
+            "BlueMagic",
+            "Geomancy",
+            "Handbell",
         ] {
             merit.magic_skill_merits.insert(key.to_string(), 8);
         }
@@ -2028,8 +2201,14 @@ mod tests {
         let jp = crate::job_points::JobPointCategories::all_maxed();
 
         let mut job_levels: EnumMap<Job, JobLevel> = EnumMap::default();
-        job_levels[Job::Cor] = JobLevel { level: 99, master_lv: 50 };
-        job_levels[Job::Nin] = JobLevel { level: 59, master_lv: 0 };
+        job_levels[Job::Cor] = JobLevel {
+            level: 99,
+            master_lv: 50,
+        };
+        job_levels[Job::Nin] = JobLevel {
+            level: 59,
+            master_lv: 0,
+        };
         let skills = default_skills(&job_levels, &merit);
 
         let mut skill_bonus_main: BTreeMap<String, i32> = BTreeMap::new();
@@ -2099,28 +2278,44 @@ mod tests {
         // CORの短剣スキル cap は default_skills(...) 経由で取得する。
         // 想定: cap 348 + 装備 269 + メリット 8 ≈ 625 程度（WAR/SAM のロスタム例 659 と同様の式）
         // 実装の詳細値はテスト実行時に確認する（assertion は緩めに）。
-        assert!(result.main_weapon_skill_value >= 600,
-                "main_weapon_skill_value mismatch: got {}", result.main_weapon_skill_value);
+        assert!(
+            result.main_weapon_skill_value >= 600,
+            "main_weapon_skill_value mismatch: got {}",
+            result.main_weapon_skill_value
+        );
 
         // === 魔攻総合値 = 100 + equip.magic_attack + magic_attack_bonus ===
         // 期待: 100 + 装備264 + ボーナス14 = 378
-        assert_eq!(result.magic_attack, 378,
-                   "magic_attack mismatch: 100 + equip 264 + bonus 14 = 378");
-        assert_eq!(result.magic_attack_bonus, 14,
-                   "magic_attack_bonus mismatch (COR ギフト由来)");
+        assert_eq!(
+            result.magic_attack, 378,
+            "magic_attack mismatch: 100 + equip 264 + bonus 14 = 378"
+        );
+        assert_eq!(
+            result.magic_attack_bonus, 14,
+            "magic_attack_bonus mismatch (COR ギフト由来)"
+        );
 
         // === デバッグ用: 食い違いがあった場合に内訳を確認できるよう出力 ===
         // 値が期待と異なる場合は cargo test -- --nocapture で詳細を確認:
-        eprintln!("[debug] str={} dex={} vit={} agi={} int={} mnd={} chr={}",
-                  result.str_, result.dex, result.vit, result.agi,
-                  result.int, result.mnd, result.chr);
-        eprintln!("[debug] main_weapon_skill={:?} value={} ranged_weapon_skill={:?} value={:?}",
-                  result.main_weapon_skill, result.main_weapon_skill_value,
-                  result.ranged_weapon_skill, result.ranged_weapon_skill_value);
-        eprintln!("[debug] magic_attack={} magic_attack_bonus={} magic_accuracy_bonus={}",
-                  result.magic_attack, result.magic_attack_bonus, result.magic_accuracy_bonus);
-        eprintln!("[debug] main_attack={} main_accuracy={} double_attack_pct={}",
-                  result.main_attack, result.main_accuracy, result.double_attack_pct);
+        eprintln!(
+            "[debug] str={} dex={} vit={} agi={} int={} mnd={} chr={}",
+            result.str_, result.dex, result.vit, result.agi, result.int, result.mnd, result.chr
+        );
+        eprintln!(
+            "[debug] main_weapon_skill={:?} value={} ranged_weapon_skill={:?} value={:?}",
+            result.main_weapon_skill,
+            result.main_weapon_skill_value,
+            result.ranged_weapon_skill,
+            result.ranged_weapon_skill_value
+        );
+        eprintln!(
+            "[debug] magic_attack={} magic_attack_bonus={} magic_accuracy_bonus={}",
+            result.magic_attack, result.magic_attack_bonus, result.magic_accuracy_bonus
+        );
+        eprintln!(
+            "[debug] main_attack={} main_accuracy={} double_attack_pct={}",
+            result.main_attack, result.main_accuracy, result.double_attack_pct
+        );
         if let Some(elem) = result.effective_skills.get("Elemental") {
             eprintln!("[debug] effective Elemental skill={}", elem);
         }
@@ -2173,22 +2368,55 @@ mod tests {
 
         // メリット: ステータス全 15、戦闘/魔法スキル 8 (既存テストと同条件)
         let mut merit = MeritPoints {
-            hp: 15, mp: 15,
-            str_: 15, dex: 15, vit: 15, agi: 15, int: 15, mnd: 15, chr: 15,
+            hp: 15,
+            mp: 15,
+            str_: 15,
+            dex: 15,
+            vit: 15,
+            agi: 15,
+            int: 15,
+            mnd: 15,
+            chr: 15,
             ..Default::default()
         };
         for &key in &[
-            "HandToHand", "Dagger", "Sword", "GreatSword", "Axe", "GreatAxe",
-            "Scythe", "Polearm", "Katana", "GreatKatana", "Club", "Staff",
-            "Archery", "Marksmanship", "Throwing", "Guarding", "Evasion",
-            "Shield", "Parrying",
+            "HandToHand",
+            "Dagger",
+            "Sword",
+            "GreatSword",
+            "Axe",
+            "GreatAxe",
+            "Scythe",
+            "Polearm",
+            "Katana",
+            "GreatKatana",
+            "Club",
+            "Staff",
+            "Archery",
+            "Marksmanship",
+            "Throwing",
+            "Guarding",
+            "Evasion",
+            "Shield",
+            "Parrying",
         ] {
             merit.combat_skill_merits.insert(key.to_string(), 8);
         }
         for &key in &[
-            "Divine", "Healing", "Enhancing", "Enfeebling", "Elemental",
-            "Dark", "Summoning", "Ninjutsu", "Singing", "StringInstrument",
-            "WindInstrument", "BlueMagic", "Geomancy", "Handbell",
+            "Divine",
+            "Healing",
+            "Enhancing",
+            "Enfeebling",
+            "Elemental",
+            "Dark",
+            "Summoning",
+            "Ninjutsu",
+            "Singing",
+            "StringInstrument",
+            "WindInstrument",
+            "BlueMagic",
+            "Geomancy",
+            "Handbell",
         ] {
             merit.magic_skill_merits.insert(key.to_string(), 8);
         }
@@ -2197,8 +2425,14 @@ mod tests {
         let jp = crate::job_points::JobPointCategories::all_maxed();
 
         let mut job_levels: EnumMap<Job, JobLevel> = EnumMap::default();
-        job_levels[Job::Brd] = JobLevel { level: 99, master_lv: 50 };
-        job_levels[Job::Pld] = JobLevel { level: 59, master_lv: 0 };
+        job_levels[Job::Brd] = JobLevel {
+            level: 99,
+            master_lv: 50,
+        };
+        job_levels[Job::Pld] = JobLevel {
+            level: 59,
+            master_lv: 0,
+        };
         let skills = default_skills(&job_levels, &merit);
 
         // 装備のスキル+ ボーナス (短剣/受流/盾、global slot として加算)
@@ -2227,21 +2461,21 @@ mod tests {
             evasion: 677,
             // 他のステータス (DEX/STR/etc.) は装備ベースを集計するが、回避テストでは AGI/回避値が主
             // 必要に応じて他装備分も追加すべし
-            str_: 47 + 0 + 17 + 57 + 10, // body + nyame + legs + feet (近似)
-            dex: 5 + 45 + 42 + 0 + 11, // Nibiru + body + nyame + Hipomenes
-            vit: 0 + 37 + 39 + 35 + 10,
-            int: 0 + 39 + 28 + 43 + 17,
-            mnd: 0 + 28 + 40 + 22 + 19,
+            str_: 47 + 17 + 57 + 10, // body + nyame + legs + feet (近似)
+            dex: (5 + 45 + 42) + 11, // Nibiru + body + nyame + Hipomenes
+            vit: 37 + 39 + 35 + 10,
+            int: 39 + 28 + 43 + 17,
+            mnd: 28 + 40 + 22 + 19,
             chr: 5 + 37 + 24 + 28 + 34, // Nibiru + body + nyame + legs + Hipomenes
             // HP も忘れずに加算
             hp: 130 + 91 + 119 + 13 + 100, // body + nyame + legs + Hipomenes + アスプロピアス
-            mp: 73 + 14 + 50, // nyame + Hipomenes + フォテファイリング
+            mp: 73 + 14 + 50,              // nyame + Hipomenes + フォテファイリング
             // 命中・攻撃: ニビル aug + 玄冥盾 + Reverence A path + Nyame B path 等
             accuracy: 20 + 15 + 30 + 30 + 30 + 5, // Nibiru aug + 玄冥 + body Apath + nyame Bpath + legs Apath + フォテ
-            attack: 15 + 15 + 30 + 30 + 30, // Nibiru aug + 玄冥 + body + nyame + legs
-            main_weapon_skill_id: Some(2),    // ニビルナイフ = 短剣
-            sub_weapon_skill_id: None,        // 玄冥盾 = サブだが武器スキルではない
-            ranged_weapon_skill_id: Some(42), // リノス
+            attack: 15 + 15 + 30 + 30 + 30,       // Nibiru aug + 玄冥 + body + nyame + legs
+            main_weapon_skill_id: Some(2),        // ニビルナイフ = 短剣
+            sub_weapon_skill_id: None,            // 玄冥盾 = サブだが武器スキルではない
+            ranged_weapon_skill_id: Some(42),     // リノス
             skill_bonus_main,
             skill_bonus_global,
             ..BonusStats::default()
@@ -2263,9 +2497,14 @@ mod tests {
 
         // === デバッグ出力: cargo test -- --nocapture で確認 ===
         eprintln!("[evasion] AGI total = {}", result.agi);
-        eprintln!("[evasion] effective Evasion skill = {:?}",
-                  result.effective_skills.get("Evasion"));
-        eprintln!("[evasion] evasion_bonus (trait+gift+jpcat) = {}", result.evasion_bonus);
+        eprintln!(
+            "[evasion] effective Evasion skill = {:?}",
+            result.effective_skills.get("Evasion")
+        );
+        eprintln!(
+            "[evasion] evasion_bonus (trait+gift+jpcat) = {}",
+            result.evasion_bonus
+        );
         eprintln!("[evasion] evasion total = {}", result.evasion);
 
         // 期待値:
@@ -2274,10 +2513,15 @@ mod tests {
         //   skill_term = 200 + (400-200)*0.9 = 380
         //   evasion = floor(317/2) + 380 + 677 + 22 = 158 + 380 + 677 + 22 = 1237
         assert_eq!(result.agi, 317, "AGI mismatch");
-        assert_eq!(result.effective_skills.get("Evasion").copied(), Some(400),
-                   "Evasion skill mismatch");
-        assert_eq!(result.evasion_bonus, 22,
-                   "evasion_bonus mismatch (Brd 2100JP gift PhysicalEvasion=22)");
+        assert_eq!(
+            result.effective_skills.get("Evasion").copied(),
+            Some(400),
+            "Evasion skill mismatch"
+        );
+        assert_eq!(
+            result.evasion_bonus, 22,
+            "evasion_bonus mismatch (Brd 2100JP gift PhysicalEvasion=22)"
+        );
         assert_eq!(result.evasion, 1237, "evasion total mismatch");
     }
 }

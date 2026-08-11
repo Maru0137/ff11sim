@@ -101,9 +101,9 @@ jobs:
           # detect ジョブが取得済みなので、ここで API を引き直さない。
           UPSTREAM_BLOBS: ${{ needs.detect-resource-changes.outputs.blobs }}
           COMMIT: ${{ github.sha }}
-          # 手動実行では必ず作り直す
-          FORCE_REBUILD: ${{ github.event_name == 'workflow_dispatch' && '1' || '0' }}
-        run: scripts/build_data.sh
+        # 手動実行では必ず作り直す。ここで展開する ${{ }} は event_name から決まる
+        # 固定の文字列で、上流由来の値ではない。
+        run: scripts/build_data.sh ${{ github.event_name == 'workflow_dispatch' && '--force' || '' }}
 
       # 配信物には含めないので (docs/adr/0010)、公開後に中身を確認したいときは
       # ここから取得する。_build_metadata.json の commit で該当の実行を特定できる。

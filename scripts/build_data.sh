@@ -6,7 +6,8 @@
 # cargo build / cargo test より前に実行する必要がある。
 #
 # 使い方:
-#   scripts/build_data.sh
+#   scripts/build_data.sh            上流に変化が無ければ items.json の生成を省く
+#   scripts/build_data.sh --force    変化の有無に関わらず必ず作り直す
 #
 # 生成物:
 #   build/items.json               装備データ本体 (約 8.5MB, .gitignore 済み)
@@ -26,11 +27,31 @@
 #                   既定は git rev-parse HEAD。
 #   MIN_ITEMS       items.json の件数下限 (validate_items.sh へ渡す)。
 #
+# 再生成を強制するかは環境変数ではなく引数にしている。呼び出し側の意図であって
+# 実行環境の設定ではないため、コマンドを見ただけで分かる形にする。
+#
 # メタデータをこのスクリプトで書く理由:
 #   _build_metadata.json は「この生成物が何から作られたか」の記録である。
 #   データを作る処理と同じ場所で書けば、生成物とメタデータがずれない (docs/adr/0003)。
 #
 set -euo pipefail
+
+force=0
+while [ $# -gt 0 ]; do
+  case "$1" in
+    -f | --force)
+      force=1
+      shift
+      ;;
+    # 黙って無視すると、綴りを間違えたときに強制再生成されたつもりで
+    # スキップされる。気付けないので落とす。
+    *)
+      echo "不明な引数: $1" >&2
+      echo "使い方: $(basename "$0") [--force]" >&2
+      exit 2
+      ;;
+  esac
+done
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 source "$SCRIPT_DIR/upstream_common.sh"
@@ -60,9 +81,9 @@ jq . <<<"$blobs"
 
 # --- 2. items.json の再生成が必要か判定 ----------------------------------------
 # 上流が変わらず変換スクリプトも同じなら、生成物は必ず同じになるので作り直さない。
-# FORCE_REBUILD=1 で常に再生成する (CI の手動実行で使う)。
+# --force で常に再生成する (CI の手動実行で使う)。
 signature="$(printf '%s\n%s\n' "$blobs" "$(git hash-object "$SCRIPT_DIR/parse_lua_to_json.py")")"
-if [ "${FORCE_REBUILD:-}" != "1" ] \
+if [ "$force" != "1" ] \
   && [ -f "$ITEMS_JSON" ] \
   && [ -f "$ITEMS_SIGNATURE" ] \
   && [ "$(cat "$ITEMS_SIGNATURE")" = "$signature" ]; then

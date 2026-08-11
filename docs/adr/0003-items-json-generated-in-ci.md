@@ -97,7 +97,7 @@ FFXI のバージョンアップで装備が追加・変更されるたびに Wi
   計算すれば鮮度を正確に判定でき、一致すればダウンロードを省ける。
 - さらに生成物そのものの再作成も省く。生成元の指紋 (上流 blob SHA + 変換スクリプトの
   ハッシュ) を `build/.items-signature` に記録し、一致すれば取得もパースも行わない。
-  `FORCE_REBUILD=1` で無効化できる。
+  `--force` で無効化できる。
 - CI は使い捨てランナーなので `temp_resources/` のキャッシュが効かない。
   `actions/cache` で同じ指紋をキーに `build/items.json` を保存・復元する。
   手動実行 (`workflow_dispatch`) では復元せず必ず作り直す。
@@ -166,7 +166,7 @@ flowchart TD
 flowchart TD
     S["開始"] --> B["上流 blob SHA を確定<br/>(CI は detect の結果を再利用)"]
     B --> SIG{"指紋が一致するか<br/>blob SHA + 変換スクリプトのハッシュ<br/>build/.items-signature と照合"}
-    SIG -->|"一致 かつ FORCE_REBUILD でない"| M
+    SIG -->|"一致 かつ --force でない"| M
     SIG -->|"不一致 / 初回 / 強制"| C
 
     C{"temp_resources/ のファイルは最新か<br/>git hash-object で照合"}
@@ -223,7 +223,7 @@ flowchart TD
   `git hash-object` の一致によりダウンロードをスキップ、キャッシュを改変すると
   そのファイルだけ再ダウンロードされること。
 * 指紋による再生成スキップも確認済み (4 分岐): 指紋一致でスキップ (1.75s → 0.60s)、
-  変換スクリプトを変えると再生成、`FORCE_REBUILD=1` で強制再生成、
+  変換スクリプトを変えると再生成、`--force` で強制再生成、
   検証に失敗したときは指紋を更新しないこと。
 * CI 上でのキャッシュヒットは未確認。`actions/cache` の挙動はローカルで再現できない。
 * `deploy.yml` の `on:` に `push` / `schedule` / `workflow_dispatch` の 3 つが設定されており、

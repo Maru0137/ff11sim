@@ -1,5 +1,7 @@
 // Supabase クライアントの初期化と認証ユーティリティ。
 // SDK は npm 依存 (lockfile でバージョン固定) を Vite がバンドルする (docs/adr/0011)。
+// (旧 web/js/supabase-client.js の TS 化。config.js は CI が生成するため
+//  web/js/ に残る — .github/workflows/*.yml のパスと合わせること)
 //
 // 公開 API:
 //   - supabase: createClient のインスタンス (DB クエリに使用)
@@ -9,7 +11,8 @@
 //   - onAuthChange(callback): 認証状態変化通知 (signed_in / signed_out)
 
 import { createClient } from '@supabase/supabase-js';
-import { SUPABASE_URL, SUPABASE_ANON_KEY } from './config.js';
+import type { User } from '@supabase/supabase-js';
+import { SUPABASE_URL, SUPABASE_ANON_KEY } from '../js/config.js';
 
 export const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
     auth: {
@@ -19,8 +22,10 @@ export const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
     },
 });
 
-let _currentUser = null;
-const _listeners = new Set();
+export type AuthChangeCallback = (user: User | null, event: string) => void;
+
+let _currentUser: User | null = null;
+const _listeners = new Set<AuthChangeCallback>();
 
 // 初期 session 復元 (リロード後も localStorage に保存された session で復元される)
 const { data: { session: _initialSession } } = await supabase.auth.getSession();
@@ -38,15 +43,17 @@ supabase.auth.onAuthStateChange((event, session) => {
     }
 });
 
-export function getCurrentUser() {
+export function getCurrentUser(): User | null {
     return _currentUser;
 }
 
-export function onAuthChange(callback) {
+export function onAuthChange(callback: AuthChangeCallback): () => void {
     _listeners.add(callback);
     // 登録直後に現状を 1 度通知
     try { callback(_currentUser, 'INITIAL'); } catch (e) { console.error(e); }
-    return () => _listeners.delete(callback);
+    return () => {
+        _listeners.delete(callback);
+    };
 }
 
 export async function signInWithGoogle() {

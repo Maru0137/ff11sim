@@ -59,11 +59,6 @@ jobs:
       - name: Typecheck
         run: npm run typecheck
 
-      # 純関数のユニットテスト (Vitest)。ブラウザ API / WASM に依存しないため
-      # WASM ビルドより前に置いて早く落とす。
-      - name: Unit tests
-        run: npm run test:unit
-
       - name: Setup Python
         uses: actions/setup-python@v7
         with:
@@ -127,6 +122,11 @@ jobs:
 
       - name: Build WASM
         run: wasm-pack build rust --target web --out-dir ../web/pkg
+
+      # ユニットテスト (Vitest)。equip-bonuses のテストが実 WASM を使うため
+      # Build WASM の後に置く (web/pkg のバイト列を node から読み込む)。
+      - name: Unit tests
+        run: npm run test:unit
 
       - name: Install Playwright browser
         run: npx playwright install --with-deps chromium

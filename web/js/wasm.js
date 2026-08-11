@@ -29,8 +29,11 @@ export function isItemsLoaded() {
     return itemsLoaded;
 }
 
-export async function initWasmRuntime() {
-    await init();
+// wasmBytes: 通常 (ブラウザ) は未指定で、glue が new URL(..., import.meta.url) から
+// fetch する。node (Vitest) では file URL を fetch できないため、テスト側が
+// .wasm のバイト列を読んで渡す (web/src/equip/equip-bonuses.test.ts)。
+export async function initWasmRuntime(wasmBytes) {
+    await init(wasmBytes ? { module_or_path: wasmBytes } : undefined);
     wasmReady = true;
     // 装備データは WASM の初期化と同時に使えるようになる。
     // 以前は items.json の fetch 完了で立てていたフラグ (docs/adr/0009)。

@@ -5,7 +5,7 @@ import { createRoot } from 'react-dom/client';
 import { mountAuthUI } from '../auth-ui';
 import { SearchPage } from './SearchPage';
 // ログイン時の localStorage → Supabase 同期 (import の副作用で登録)
-import '../../js/sync.js';
+import '../sync';
 
 export function startSearchPage() {
     mountAuthUI(document.getElementById('auth-ui')!);

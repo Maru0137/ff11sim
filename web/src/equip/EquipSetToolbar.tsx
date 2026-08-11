@@ -10,7 +10,7 @@ import {
     copyEquipSet,
     deleteEquipSet,
 } from './equip-sets-store';
-import { shareCurrentEquipSet, beginImportShare } from '../../js/share-ui.js';
+import { shareCurrentEquipSet, beginImportShare } from '../share-ui';
 
 export function EquipSetToolbar() {
     const state = useSyncExternalStore(equipSetsStore.subscribe, equipSetsStore.get);

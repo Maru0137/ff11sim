@@ -2,8 +2,8 @@
 // 開閉は modal-store 経由 (開くきっかけがレガシー JS 側にもあるため)。
 // 旧実装との対応: 背景クリックで閉じるのはカスタムオーグヘルプのみ。
 import { useRef, useState, useSyncExternalStore } from 'react';
-import { JOBS, RACE_NAMES } from '../../js/constants.js';
-import { loadEquipSets, saveEquipSets } from '../../js/storage.js';
+import { JOBS, RACE_NAMES } from '../constants';
+import { loadEquipSets, saveEquipSets } from '../storage';
 import {
     modalsStore,
     closeCustomAugHelp,

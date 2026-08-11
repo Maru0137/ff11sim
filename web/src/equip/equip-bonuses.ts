@@ -1,4 +1,5 @@
 // 装備セットのステータス・スキルボーナス集計。DOM に依存しない純関数。
+// (旧 web/js/equip-bonuses.js の TS 化)
 //
 // 抽出・合算の実体は Rust 側 (docs/adr/0009, docs/adr/0010)。この層は
 // アイテム説明文・オーグメント・カスタム説明の 3 入力を WASM の抽出に流し、
@@ -7,35 +8,43 @@
 import {
     get_item_by_id, extract_all_stats, extract_skill_bonuses,
     sum_stats, empty_stats, isItemsLoaded,
-} from './wasm.js';
-import { SKILL_KEYS_WEAPON } from './constants.js';
-import { convertAugmentJaToEn } from '../src/utils';
-import { getAugmentText } from '../src/augments';
+} from '../wasm';
+import { SKILL_KEYS_WEAPON } from '../constants';
+import { convertAugmentJaToEn } from '../utils';
+import { getAugmentText } from '../augments';
+import type { EquipSlotData } from './equip-store';
 
 // 武器スキルのキー集合。以前は equip-stats.js が同じ一覧を自前で持っていたが、
 // 二重管理になるので data/skills.json (category: Weapon) 由来の定義から作る。
 const WEAPON_SKILL_KEYS = new Set(SKILL_KEYS_WEAPON.map(([key]) => key));
 
-export function calculateEquipSetBonuses(equipSet) {
+interface EquipSetLike {
+    slots?: Record<string, EquipSlotData | null | undefined>;
+}
+
+type SkillBonuses = Record<string, number>;
+type WeaponBucket = 'main' | 'sub' | 'ranged';
+
+export function calculateEquipSetBonuses(equipSet: EquipSetLike | null | undefined) {
     if (!equipSet || !equipSet.slots || !isItemsLoaded()) {
         return empty_stats();
     }
     const slots = equipSet.slots;
 
-    const statsArray = [];
+    const statsArray: unknown[] = [];
     // 武器スロット (main/sub/range) ごとの装備合計を別途保持。
     // 一部の装備ステ (例: 魔命スキル) は装備中スロットに依存して扱いが変わるため、
     // UI で「メイン枠のみ表示」のような出し分けに使う。
-    const slotStatsBuckets = { main: [], sub: [], ranged: [] };
+    const slotStatsBuckets: Record<WeaponBucket, unknown[]> = { main: [], sub: [], ranged: [] };
     // スキルボーナスをスロット別に集計:
     // 武器スロット(main/sub/range)装備の「武器スキル」ボーナスはそのスロット専用。
     // それ以外（非武器スロット装備すべて、武器スロット装備の非武器スキル）は全スロット共通。
-    const skillBonusBuckets = {
-        main: {}, sub: {}, ranged: {}, global: {}
+    const skillBonusBuckets: Record<WeaponBucket | 'global', SkillBonuses> = {
+        main: {}, sub: {}, ranged: {}, global: {},
     };
-    const addSkillBonuses = (slotKey, bonuses) => {
+    const addSkillBonuses = (slotKey: string, bonuses: SkillBonuses | null | undefined) => {
         if (!bonuses) return;
-        const targetSlot = slotKey === 'range' ? 'ranged' : slotKey;
+        const targetSlot = (slotKey === 'range' ? 'ranged' : slotKey) as WeaponBucket;
         const isWeaponSlot = (slotKey === 'main' || slotKey === 'sub' || slotKey === 'range');
         for (const [k, v] of Object.entries(bonuses)) {
             if (!v) continue;
@@ -53,7 +62,7 @@ export function calculateEquipSetBonuses(equipSet) {
 
         const item = get_item_by_id(slotData.item_id);
 
-        const targetWeaponBucket = slotKey === 'range' ? 'ranged' : slotKey;
+        const targetWeaponBucket = (slotKey === 'range' ? 'ranged' : slotKey) as WeaponBucket;
         const isWeaponSlot = (slotKey === 'main' || slotKey === 'sub' || slotKey === 'range');
 
         if (item && item.description_en) {

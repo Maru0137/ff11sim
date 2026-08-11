@@ -5,8 +5,8 @@
 // またがるため状態はこのストアに置く。
 // equipState (選択キャラ・ジョブ・スロット) への書き込みは従来どおりで、
 // compute.ts / share-ui.js などの読み手には影響しない。
-import { get_item_by_id } from '../../js/wasm.js';
-import { loadCharacters, loadEquipSets, saveEquipSets } from '../../js/storage.js';
+import { get_item_by_id } from '../wasm';
+import { loadCharacters, loadEquipSets, saveEquipSets } from '../storage';
 import { equipState, createEmptySlots, notifySlotsLoaded, notifyEquipState } from './equip-store';
 import type { EquipSlotData } from './equip-store';
 import { updateEquipEditStatus } from '../status/status-store';

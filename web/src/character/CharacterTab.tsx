@@ -6,14 +6,14 @@
 // スキル上限の追従 (ジョブレベル・スキルメリット変更時に、未カスタムの
 // スキル値だけ新デフォルトへ更新する) などの挙動は旧実装を踏襲。
 import { useState, useSyncExternalStore } from 'react';
-import { calculate_default_skills } from '../../js/wasm.js';
-import { loadCharacters, saveCharacters } from '../../js/storage.js';
+import { calculate_default_skills } from '../wasm';
+import { loadCharacters, saveCharacters } from '../storage';
 import {
     JOBS, RACE_NAMES, JP_CATEGORIES, JP_CATEGORY_COUNT, JP_MAX_RANK,
     JOB_MERIT_GROUP_SIZE, JOB_MERIT_MAX_RANK, JOB_MERIT_GROUP_MAX_TOTAL,
     SKILL_KEYS_WEAPON, SKILL_KEYS_DEFENSE, SKILL_KEYS_MAGIC,
     ALL_SKILL_KEYS, COMBAT_SKILL_KEYS, MAGIC_SKILL_KEYS,
-} from '../../js/constants.js';
+} from '../constants';
 import {
     jpJobTotal, jpDefaultRanks,
     jobMeritDefaultRanks, jobMeritCategoryName, isJobMeritPlaceholder, samStoreTpIndex,

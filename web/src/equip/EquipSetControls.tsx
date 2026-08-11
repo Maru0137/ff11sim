@@ -1,7 +1,7 @@
 // 装備セットタブのセレクタ (キャラ/ジョブ/サポ) とタブバー
 // (旧 web/js/equip-sets.js の描画部分)。状態は equip-sets-store。
 import { useState, useSyncExternalStore } from 'react';
-import { JOBS, RACE_NAMES } from '../../js/constants.js';
+import { JOBS, RACE_NAMES } from '../constants';
 import { equipState, subscribeEquipState, getEquipStateVersion } from './equip-store';
 import {
     equipSetsStore,
@@ -70,12 +70,13 @@ export function EquipSetControls() {
                         onChange={(e) => selectSupportJob(e.target.value)}
                     >
                         <option value="">-- なし --</option>
-                        {/* 旧実装踏襲: value は小文字。メインジョブの除外条件
-                            (key.toLowerCase() === currentEquipJob) は大文字小文字の
-                            不一致で実質機能していなかったため、そのまま全ジョブを出す */}
-                        {jobs.map((j) => (
-                            <option key={j.key} value={j.key.toLowerCase()}>{j.name}</option>
-                        ))}
+                        {/* value は小文字 (保存データ・共有データの support_job 形式に合わせる)。
+                            メインジョブは選択肢から除外する */}
+                        {jobs
+                            .filter((j) => j.key !== equipState.currentEquipJob)
+                            .map((j) => (
+                                <option key={j.key} value={j.key.toLowerCase()}>{j.name}</option>
+                            ))}
                     </select>
                 </div>
             </div>

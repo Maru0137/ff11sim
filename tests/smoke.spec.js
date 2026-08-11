@@ -119,6 +119,11 @@ test('保存済みキャラクターのステータスが 0 でなく表示さ�
   await page.selectOption('#equipSelectJob', 'War');
   await page.waitForTimeout(2000);
 
+  // サポートジョブ選択肢にメインジョブ (War) が含まれないこと。
+  // 旧実装は除外条件が大文字小文字の不一致で機能していなかった (value は小文字)。
+  await expect(page.locator('#equipSelectSupportJob option[value="war"]')).toHaveCount(0);
+  await expect(page.locator('#equipSelectSupportJob option[value="sam"]')).toHaveCount(1);
+
   // ベース HP が表示され、0 でないこと。
   // WEAPON_SKILL_KEYS 事故では例外で表示処理が中断し、ここが 0 のままだった。
   const hpText = await page.locator('#equipBaseHp').innerText();

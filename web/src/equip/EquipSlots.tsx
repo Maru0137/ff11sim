@@ -9,7 +9,7 @@
 import { useRef, useState, useSyncExternalStore } from 'react';
 import { searchItems } from '../wasm';
 import type { SearchResultItem } from '../wasm';
-import { isItemsLoaded } from '../../js/wasm.js';
+import { isItemsLoaded } from '../wasm';
 import { getItemAugments, getAugmentText } from '../augments';
 import { updateEquipEditStatus } from '../status/status-store';
 import { openCustomAugHelp } from '../modals/modal-store';

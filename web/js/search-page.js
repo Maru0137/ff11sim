@@ -345,7 +345,8 @@ export function startSearchPage() {
         pageInfo.textContent = `Page ${currentPage} of ${totalPages}`;
 
         prevBtn.disabled = currentOffset === 0;
-        nextBtn.disabled = !results.hasMore;
+        // SearchResult は Rust 側で rename されず snake_case で返る
+        nextBtn.disabled = !results.has_more;
     }
 
     // Event Listeners

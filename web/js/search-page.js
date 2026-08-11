@@ -6,7 +6,7 @@
 // フィルタ UI のメタデータ (プロパティ一覧 / 演算子一覧) だけは
 // items.json を参照しない UI 文言なので、このモジュールに置いたままにする。
 import { search_items, item_count, initWasmRuntime } from './wasm.js';
-import { mountAuthUI } from './auth-ui.js';
+import { mountAuthUI } from '../src/auth-ui';
 import './sync.js';
 
 const FILTERABLE_PROPERTIES = [

@@ -7,7 +7,7 @@
 import { initWasmRuntime } from './wasm.js';
 import { JOBS } from './constants.js';
 import { buildJobLevelTable, renderCharList, initCharacterTab } from './character-list.js';
-import { mountAuthUI } from './auth-ui.js';
+import { mountAuthUI } from '../src/auth-ui';
 import { initTabs } from './tabs.js';
 import { loadAugmentData } from './augments.js';
 import { buildEquipSlotsUI, initCustomAugHelpModal } from './equip-slots.js';

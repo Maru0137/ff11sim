@@ -10,7 +10,7 @@ import { loadCharacters, loadEquipSets, saveEquipSets } from './storage.js';
 import { equipState } from './equip-state.js';
 import { createEmptySlots } from './equip-slots.js';
 import { updateAugPathOptions } from './augments.js';
-import { updateEquipEditStatus } from './equip-status.js';
+import { updateEquipEditStatus } from '../src/status/status-store';
 
 // Render equipment set tabs for selected character+job
 export async function renderEquipSetTabs() {

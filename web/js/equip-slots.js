@@ -5,7 +5,7 @@ import { search_items, isItemsLoaded } from './wasm.js';
 import { EQUIPMENT_SLOTS } from './constants.js';
 import { equipState } from './equip-state.js';
 import { updateAugPathOptions, updateAugTextDisplay } from './augments.js';
-import { updateEquipEditStatus } from './equip-status.js';
+import { updateEquipEditStatus } from '../src/status/status-store';
 import { openCustomAugHelp } from '../src/modals/modal-store';
 
 // 装備データと検索は Rust 側に移した (docs/adr/0009, docs/adr/0010)。

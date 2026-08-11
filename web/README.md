@@ -56,7 +56,7 @@ basic-http-server
 まずこれを生成してください。**
 
 ```bash
-scripts/build_web_data.sh
+scripts/build_data.sh
 ```
 
 CI と同じコマンドで、以下を一括で行います。
@@ -166,7 +166,7 @@ web/
 `items.json` を読まない。データが古い/無い場合は Rust の再ビルドが必要。
 
 ```bash
-scripts/build_web_data.sh                                   # データ生成
+scripts/build_data.sh                                   # データ生成
 cd rust && wasm-pack build --target web --out-dir ../web/pkg  # WASM 再ビルド
 ```
 
@@ -180,7 +180,7 @@ CI が実行ごとに artifact として残しているので、そこから取�
 2. GitHub の Actions から、その commit の実行を開く
 3. `items-json` という artifact をダウンロードする（保持期間 30 日）
 
-ローカルで同じものを作りたい場合は `scripts/build_web_data.sh` を実行すると
+ローカルで同じものを作りたい場合は `scripts/build_data.sh` を実行すると
 `build/items.json` に生成される。`_build_metadata.json` の
 `upstream_sources.windower_resources.blobs` が一致していれば内容も同じになる。
 

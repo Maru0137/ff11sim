@@ -51,7 +51,7 @@ gzip 473 バイトしかない。現状（`items.json` gzip 1,133,303 + `ff11sim
 49,441 = 1,182,744）との差は 1KB 未満である。利用者の体感コストが増えないなら、
 Rust が装備データを直接扱える利益を取れる。
 
-- `items.json` は `scripts/build_web_data.sh` が生成し、`include_str!` で埋め込む。
+- `items.json` は `scripts/build_data.sh` が生成し、`include_str!` で埋め込む。
   ビルド順は **データ生成 → `cargo test` → `wasm-pack build`** となる。
   CI のステップ順を入れ替え、README にもローカルでの前提として明記する。
 - **`items.json` の位置づけを「Web の配信物」から「ビルドの中間生成物」に変える。**
@@ -151,7 +151,7 @@ wasm-bindgen 処理前で既存 export すら含まないため、測定は `was
 未確認:
 
 * CI 上でのキャッシュヒットは未確認。`actions/cache` の挙動はローカルで再現できない。
-  初回実行は必ずミスし、2 回目以降のログで `Build web data` が
+  初回実行は必ずミスし、2 回目以降のログで `Build data` が
   「items.json は最新のため再生成をスキップ」と出れば期待どおり。
 
 ## Pros and Cons of the Options
@@ -189,7 +189,7 @@ wasm-bindgen 処理前で既存 export すら含まないため、測定は `was
 ### 2. WASM バイナリに埋め込む（採用）
 
 `items.json` がリポジトリに無くても、`include_str!` はコンパイル時に存在すればよい。
-`scripts/build_web_data.sh` を `cargo build` より前に走らせれば成立し、
+`scripts/build_data.sh` を `cargo build` より前に走らせれば成立し、
 [ADR 0003](0003-items-json-generated-in-ci.md) の git 管理外方針とは矛盾しない。
 
 * Good: Rust が単体で完結し、呼び出し側の準備が要らない。

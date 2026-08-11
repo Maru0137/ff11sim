@@ -1,9 +1,12 @@
 #!/usr/bin/env bash
 #
-# web/data/ 配下の生成物を一括で作る。CI とローカルで同じ結果になる。
+# 上流由来のデータを一括で作る。CI とローカルで同じ結果になる。
+#
+# 主生成物の items.json は Rust が include_str! で埋め込むため、Web 専用ではなく
+# cargo build / cargo test より前に実行する必要がある。
 #
 # 使い方:
-#   scripts/build_web_data.sh
+#   scripts/build_data.sh
 #
 # 生成物:
 #   build/items.json               装備データ本体 (約 8.5MB, .gitignore 済み)
@@ -24,7 +27,7 @@
 #   MIN_ITEMS       items.json の件数下限 (validate_items.sh へ渡す)。
 #
 # メタデータをこのスクリプトで書く理由:
-#   _build_metadata.json は「この web/data/ が何から作られたか」の記録である。
+#   _build_metadata.json は「この生成物が何から作られたか」の記録である。
 #   データを作る処理と同じ場所で書けば、生成物とメタデータがずれない (docs/adr/0003)。
 #
 set -euo pipefail

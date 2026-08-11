@@ -59,10 +59,10 @@ jobs:
             build/.items-signature
           key: items-json-${{ steps.upstream.outputs.digest }}-${{ hashFiles('scripts/parse_lua_to_json.py') }}
 
-      - name: Build web data
+      - name: Build data
         env:
           GH_TOKEN: ${{ github.token }}
-        run: scripts/build_web_data.sh
+        run: scripts/build_data.sh
 
       - name: Save items.json cache
         if: steps.items-cache.outputs.cache-hit != 'true'

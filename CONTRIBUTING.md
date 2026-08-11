@@ -45,7 +45,7 @@ uv run pre-commit install
 装備データを生成します。
 
 ```bash
-scripts/build_web_data.sh
+scripts/build_data.sh
 ```
 
 `build/items.json` は上流の [Windower/Resources](https://github.com/Windower/Resources) から
@@ -217,7 +217,7 @@ PR には**何をなぜ変えたか**と、**どう検証したか**（実行し
 
 | 症状 | 対処 |
 |---|---|
-| Rust のビルドが `include_str!` で失敗する / 装備検索が空になる | `scripts/build_web_data.sh` を実行して `build/items.json` を生成する |
+| Rust のビルドが `include_str!` で失敗する / 装備検索が空になる | `scripts/build_data.sh` を実行して `build/items.json` を生成する |
 | WASM が読み込めない | `web/pkg/` があるか確認。無ければ `wasm-pack build` を実行する |
 | Rust を直したのにブラウザに反映されない | WASM の再ビルドが必要。ブラウザのキャッシュも確認する |
 | commit が `cargo fmt --check` で止まる | `cargo fmt --manifest-path rust/Cargo.toml` して `git add` し直す |

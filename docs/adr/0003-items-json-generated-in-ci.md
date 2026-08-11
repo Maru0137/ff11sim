@@ -43,7 +43,7 @@ FFXI のバージョンアップで装備が追加・変更されるたびに Wi
 
 **生成の入口を 1 つにする**
 
-- 上流ファイルの取得・変換・検証・メタデータ出力は `scripts/build_web_data.sh` に集約し、
+- 上流ファイルの取得・変換・検証・メタデータ出力は `scripts/build_data.sh` に集約し、
   配信に必要なデータを作る処理を 1 コマンドにする。`.github/workflows/deploy.yml` はこれを呼ぶだけで、
   `web/` 全体を Pages にアップロードする。
 - 変換自体は `scripts/parse_lua_to_json.py` が担う。ジョブ・スロット・種族のビットマスクを
@@ -89,7 +89,7 @@ FFXI のバージョンアップで装備が追加・変更されるたびに Wi
 
 **ローカル開発を CI と同じ手順にする**
 
-- チェックアウト直後は `items.json` が存在しないため、`scripts/build_web_data.sh` を一度
+- チェックアウト直後は `items.json` が存在しないため、`scripts/build_data.sh` を一度
   実行する必要がある。CI と同じコマンドなので手元で配信物をそのまま再現できる。
   `scripts/scrape_augments.py` もこれを前提とする。
 - 上流ファイルは `temp_resources/` にキャッシュし、再実行を速くする。GitHub の blob SHA は
@@ -127,8 +127,8 @@ flowchart TD
     gate -->|"はい"| skip["test / build / deploy をスキップ"]
     gate -->|"いいえ"| test
 
-    test["test<br/>test.yml を workflow_call で呼ぶ<br/>build_web_data.sh → cargo test"]
-    test --> build["build<br/>build_web_data.sh / WASM ビルド<br/>Supabase config"]
+    test["test<br/>test.yml を workflow_call で呼ぶ<br/>build_data.sh → cargo test"]
+    test --> build["build<br/>build_data.sh / WASM ビルド<br/>Supabase config"]
     build --> deploy["deploy<br/>GitHub Pages へ配信"]
     deploy -.->|"_build_metadata.json を配信<br/>= 次回の判定材料になる"| detect
 ```
@@ -152,7 +152,7 @@ flowchart TD
     G -->|"不一致"| T
 ```
 
-### build_web_data.sh
+### build_data.sh
 
 取得・変換・検証・メタデータ出力を 1 コマンドにまとめる。
 検証を通らなければ指紋を残さないため、壊れた生成物を「最新」と誤認しない。
@@ -186,7 +186,7 @@ flowchart TD
 * Bad: 上流 (Windower/Resources) の URL 変更やフォーマット変更でビルドが壊れる。
   外部リポジトリがビルドの必須依存になっている。
 * Bad: ローカル開発では生成が必要で、実行しないと装備検索・装備セットが動かない
-  （`scripts/build_web_data.sh` 一発で済むが、チェックアウト直後は必ず要る）。
+  （`scripts/build_data.sh` 一発で済むが、チェックアウト直後は必ず要る）。
 * ~~Bad: `web/test/*.test.js` は実際の `items.json` を読む作りのため CI で走らせられない。~~
   → 解消済み。テストは Rust へ移し (docs/adr/0010)、`items.json` は
   `include_str!` で埋め込まれるため `cargo test` で走るようになった。
@@ -216,8 +216,8 @@ flowchart TD
   受けるため、テストが落ちたら配信されない。PR でもマージ前に検証できる。
   なお `cargo fmt --check` と `cargo clippy` は入れていない。既存コードに
   それぞれ 69 件・14 件の指摘があり、入れると変更内容と無関係に落ちるため。
-* `.github/workflows/deploy.yml` の "Build web data" ステップが
-  `scripts/build_web_data.sh` を実行し、毎回のデプロイで上流取得・変換・検証・
+* `.github/workflows/deploy.yml` の "Build data" ステップが
+  `scripts/build_data.sh` を実行し、毎回のデプロイで上流取得・変換・検証・
   メタデータ出力を行う。ここで失敗すれば deploy ジョブに進まない。
   ローカルで通しの実行を確認済み: 初回はダウンロードして生成、2 回目は
   `git hash-object` の一致によりダウンロードをスキップ、キャッシュを改変すると
@@ -246,7 +246,7 @@ flowchart TD
 * `.gitignore` に `web/data/_build_metadata.json` が登録されており、生成物がコミットされない。
 * `scripts/validate_items.sh` が生成物の `item_count` を読み、下限を下回ると
   stderr に理由を出して終了コード 1 で停止する。下限の既定値はこのスクリプトが持ち、
-  `MIN_ITEMS` で上書きできる。呼び出し元の `build_web_data.sh` は
+  `MIN_ITEMS` で上書きできる。呼び出し元の `build_data.sh` は
   メタデータ出力より前にこれを通すため、検査に落ちたビルドは Pages に到達しない。
   ローカルで以下を確認済み: 下限を下回れば失敗、上回れば通過、境界値ちょうどで通過、
   対象ファイルが無ければ失敗、`MIN_ITEMS` の上書きが効くこと。

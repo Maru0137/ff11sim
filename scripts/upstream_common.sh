@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 #
 # 上流 (Windower/Resources) に関する定数と共通処理。
-# detect_resource_changes.sh と build_web_data.sh の両方から source する。
+# detect_resource_changes.sh と build_data.sh の両方から source する。
 #
 # 定数をここに集約するのは、追跡対象や ref が両スクリプトに分散して
 # 片方だけ更新される事故を防ぐため。

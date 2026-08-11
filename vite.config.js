@@ -11,6 +11,10 @@ import { resolve } from 'node:path';
 
 export default defineConfig({
     root: 'web',
+    // GitHub Pages のプロジェクトサイトは /<repo>/ 配下で配信されるため、
+    // アセット参照をルート絶対パス (デフォルト '/') にすると 404 になる。
+    // 配信パスに依存しない相対参照にする。
+    base: './',
     // 8000 は Supabase のリダイレクト許可リストに登録済みのポート
     // (web/README.md)。dev / preview とも同じポートに揃える。
     server: {

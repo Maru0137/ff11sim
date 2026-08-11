@@ -1,24 +1,17 @@
 # ff11sim
 A simulator of FINAL FANTASY XI
 
-## 開発環境のセットアップ
+## セットアップ
 
-[pre-commit](https://pre-commit.com/) を使い、commit 前に Rust コードの整形を検査します。
-クローン後に 1 度だけ、次を実行してください。
+clone してから変更を push するまでの流れは [CONTRIBUTING.md](CONTRIBUTING.md) にまとめています。
+最低限、次の 3 つが必要です。
 
 ```bash
-# pre-commit 本体 (いずれか 1 つ)
-uv tool install pre-commit    # または: pipx install pre-commit / brew install pre-commit
-
-# このリポジトリでフックを有効化
-pre-commit install
+pre-commit install                 # commit 前の検査を有効化 (1 度だけ)
+scripts/build_web_data.sh          # 装備データを生成 (git 管理外)
+cd rust && wasm-pack build --target web --out-dir ../web/pkg
 ```
 
-整形されていないと commit が中断されるので、`cd rust && cargo fmt` して `git add` し直してください。
-急ぎで迂回したい場合は `git commit --no-verify` が使えます。
-
-git は clone 時にフックを自動で有効化しません（任意のコードが実行されてしまうため）。
-そのため `pre-commit install` は各自で実行する必要があります。
-
-- Web フロントエンドと WASM のビルド: [web/README.md](web/README.md)
+- 開発の流れ全般: [CONTRIBUTING.md](CONTRIBUTING.md)
+- Web フロントエンドの詳細: [web/README.md](web/README.md)
 - 設計判断の記録: [docs/adr/](docs/adr/)

@@ -9,7 +9,7 @@
 | Rust | コア実装のビルド・テスト | [rustup](https://rustup.rs/) で導入。版は `rust-toolchain.toml` で固定 |
 | wasm-pack@0.14.0 | ブラウザ向け WASM のビルド | 次のコマンドで導入 |
 | Python 3 | 装備データ生成スクリプト | 標準ライブラリのみ使用 |
-| Node.js + npm | JS の lint・スモークテスト・ローカル配信 | `package.json` / `package-lock.json` で版を固定 |
+| Node.js + npm | JS の lint・スモークテスト・Vite でのビルドと開発サーバ | `package.json` / `package-lock.json` で版を固定 |
 | [uv](https://docs.astral.sh/uv/) | 開発ツール (pre-commit) の導入 | `pyproject.toml` / `uv.lock` で版を固定 |
 
 wasm-pack は Cargo の依存としては管理できません（`[dependencies]` はライブラリ用で、
@@ -119,14 +119,15 @@ npm run test:smoke
 
 ### 4. ローカルでの Web ページ確認
 
-`web/` を静的配信します。
+Vite の dev サーバを起動します (`docs/adr/0011`)。
 
 ```bash
-npm run serve
+npm run dev
 ```
 
-http://localhost:8000 を開きます。ポートは 8000 を推奨します
-（Supabase のリダイレクト許可リストに登録済みで、ログイン機能を試せるため）。
+http://localhost:8000 を開きます（Supabase のリダイレクト許可リストに
+登録済みのポートで、ログイン機能も試せます）。配信物そのものを確認する
+場合は `npm run build && npm run preview` を使います。
 
 ログイン機能を試す場合のみ、追加で `web/js/config.js` の用意が必要です。
 詳細は [web/README.md](web/README.md) を参照してください。
@@ -138,11 +139,11 @@ http://localhost:8000 を開きます。ポートは 8000 を推奨します
 ├── rust/                  コア実装
 │   ├── src/               ステータス計算・ダメージ計算・装備解釈・WASM バインディング
 │   └── tests/             統合テスト
-├── web/                   ブラウザ UI (静的サイト。GitHub Pages で配信)
+├── web/                   ブラウザ UI (vite build した dist/ を GitHub Pages で配信)
 │   ├── index.html         キャラクター・装備セット・ステータス
 │   ├── search.html        装備検索
 │   ├── js/                UI・保存・Supabase 連携
-│   └── data/              UI が読むデータ (大半は data/ への symlink)
+│   └── public/data/       UI が実行時に読むデータ (大半は data/ への symlink)
 ├── data/                  Rust と Web が共有するテーブルデータ (ADR 0002)
 ├── scripts/               装備データの生成・検証
 ├── docs/

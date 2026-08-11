@@ -4,50 +4,24 @@ FINAL FANTASY XI character, equipment and damage simulator - Web UI
 
 ## ローカル開発サーバーの起動方法
 
-このプロジェクトは静的HTML + WebAssemblyで動作するため、シンプルなHTTPサーバーで実行できます。
-
-### 方法1: Python（推奨）
-
-最も手軽な方法です。Python 3がインストール済みであれば追加のインストール不要。
+ビルドツールチェーンは Vite です (`docs/adr/0011`)。事前に「装備データの生成」
+「WebAssembly のビルド」(後述) と `npm ci` を済ませてください。
 
 ```bash
-cd web
-python3 -m http.server 8000
+npm run dev
 ```
 
-ブラウザで http://localhost:8000 にアクセス
+ブラウザで http://localhost:8000 にアクセス（ファイル変更は自動リロード）。
 
-### 方法2: Node.js http-server
+配信物 (バンドル済み) の動作を確認したい場合:
 
 ```bash
-# 初回のみインストール
-npm install -g http-server
-
-# サーバー起動
-cd web
-http-server -p 8000
+npm run build    # dist/ に生成
+npm run preview  # dist/ を http://localhost:8000 で配信
 ```
 
-ブラウザで http://localhost:8000 にアクセス
-
-### 方法3: Rust basic-http-server
-
-```bash
-# 初回のみインストール
-cargo install basic-http-server
-
-# サーバー起動
-cd web
-basic-http-server
-```
-
-ブラウザで http://localhost:4000 にアクセス（デフォルトポート）
-
-### 方法4: VSCode Live Server
-
-1. VSCode拡張機能「Live Server」をインストール
-2. `web/index.html`を開く
-3. 右下の「Go Live」をクリック
+> Vite を経由しない素の静的配信 (`python3 -m http.server` 等) では
+> npm 依存 (supabase-js) の import が解決できず動作しません。
 
 ## 装備データの生成（最初に必要）
 
@@ -64,7 +38,7 @@ CI と同じコマンドで、以下を一括で行います。
 - 上流 Lua のダウンロード (`temp_resources/` にキャッシュ。2 回目以降は内容が同じならスキップ)
 - `build/items.json` の生成 (Rust が `include_str!` で埋め込む)
 - 件数の検証
-- `build/_build_metadata.json` (ビルドのメタ情報) の出力。`web/data/` の symlink 経由で配信される
+- `build/_build_metadata.json` (ビルドのメタ情報) の出力。`web/public/data/` の symlink 経由で配信される
 
 > **`cargo build` / `cargo test` より先に実行する必要があります。**
 > 装備データは `include_str!` で Rust のバイナリに埋め込まれるため (`docs/adr/0009`)、
@@ -138,13 +112,17 @@ web/
 ├── index.html          # メインページ（Character/Equipment Set/Status）
 ├── search.html         # 装備検索ページ
 ├── js/                 # UI・永続化・認証（装備ロジックは Rust 側にある）
-├── data/
-│   └── augments.json   # オーグメント定義
+├── public/
+│   └── data/           # 実行時 fetch されるデータ (大半は data/ への symlink)
+│       └── augments.json   # オーグメント定義
 └── pkg/                # WASMモジュール（ビルド後生成）
     ├── ff11sim.js
     ├── ff11sim_bg.wasm
     └── ...
 ```
+
+配信物は `npm run build` が生成する `dist/` で、CI がこれを GitHub Pages に
+アップロードします (`.github/workflows/deploy.yml`)。
 
 ## 機能
 

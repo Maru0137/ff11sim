@@ -2164,13 +2164,14 @@
 
     <script type="module">
         // 装備データ・解釈・検索・合算はすべて Rust 側に移した (docs/adr/0009, docs/adr/0010)。
-        // js/equip-stats.js と js/item-search.js は削除済み。
-        import init, {
+        // WASM エクスポートは js/wasm.js のファサード経由で参照する。
+        import {
             calculate_status_from_profile, calculate_default_skills,
             extract_all_stats, extract_skill_bonuses,
-            search_items, get_item_by_id, item_count,
+            search_items, get_item_by_id,
             sum_stats, empty_stats,
-        } from './pkg/ff11sim.js';
+            initWasmRuntime, isWasmReady, isItemsLoaded,
+        } from './js/wasm.js';
         import {
             JOBS, RACE_NAMES, JP_CATEGORIES, JP_MAX_TOTAL, JP_CATEGORY_COUNT, JP_MAX_RANK,
             JOB_MERIT_GROUP_SIZE, JOB_MERIT_MAX_RANK, JOB_MERIT_GROUP_MAX_TOTAL,
@@ -2211,11 +2212,9 @@
         // 共有モード時のキャラクター snapshot (loadCharacters() に存在しないため)
         let _sharedCharacterOverride = null;
 
-        let wasmReady = false;
         // 装備データと検索は Rust 側に移した (docs/adr/0009, docs/adr/0010)。
         // items.json は WASM に埋め込まれているので JS からは読まない。
         const itemSearch = { search: (o) => search_items(o) };
-        let itemsLoaded = false;
         let augmentData = {};
 
         /// 現在編集中キャラクターのジョブ別メリット
@@ -2962,7 +2961,7 @@
             let debounceTimer = null;
 
             function doSearch() {
-                if (!itemsLoaded) {
+                if (!isItemsLoaded()) {
                     dropdown.classList.add('hidden');
                     return;
                 }
@@ -3305,8 +3304,8 @@
         // モジュール側は状態を持たないため呼び出し時に依存を全て注入する。
         function updateEquipEditStatus() {
             return _updateEquipEditStatus({
-                wasmReady,
-                itemsLoaded,
+                wasmReady: isWasmReady(),
+                itemsLoaded: isItemsLoaded(),
                 charName: currentEquipChar,
                 jobKey: currentEquipJob,
                 supportJob: currentEquipSupportJob || null,
@@ -3578,7 +3577,7 @@
         }
 
         function calculateEquipSetBonuses(equipSet) {
-            if (!equipSet || !equipSet.slots || !itemsLoaded) {
+            if (!equipSet || !equipSet.slots || !isItemsLoaded()) {
                 return empty_stats();
             }
             const slots = equipSet.slots;
@@ -3680,17 +3679,13 @@
 
         async function initWasm() {
             await Promise.all([
-                init(),
                 // items.json の fetch は廃止。WASM に埋め込まれている (docs/adr/0009)。
+                initWasmRuntime(),
                 fetch('./data/augments.json')
                     .then(r => r.json())
                     .then(d => { augmentData = d.augments || {}; })
                     .catch(() => { augmentData = {}; }),
             ]);
-            wasmReady = true;
-            // 装備データは WASM の初期化と同時に使えるようになる。
-            // 以前は items.json の fetch 完了で立てていたフラグ (docs/adr/0009)。
-            itemsLoaded = item_count() > 0;
             buildJobLevelTable();
             buildEquipSlotsUI();
 

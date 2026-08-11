@@ -44,6 +44,13 @@ resolve_upstream_blobs() {
   echo "$blobs"
 }
 
+# blobs から短い指紋を作る。CI のキャッシュキーに使う。
+# blobs は JSON なのでそのままキーに使えない。
+upstream_digest() {
+  local blobs="${1:-$(resolve_upstream_blobs)}"
+  printf '%s' "$blobs" | { shasum -a 256 2>/dev/null || sha256sum; } | cut -c1-16
+}
+
 # 追跡対象ファイルの raw ダウンロード URL を返す。
 upstream_raw_url() {
   echo "https://raw.githubusercontent.com/${UPSTREAM_REPO}/${UPSTREAM_REF}/${UPSTREAM_DIR}/$1"

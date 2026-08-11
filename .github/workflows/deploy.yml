@@ -43,8 +43,18 @@ jobs:
           METADATA_URL: https://${{ github.repository_owner }}.github.io/${{ github.event.repository.name }}/data/_build_metadata.json
         run: scripts/detect_resource_changes.sh >> "$GITHUB_OUTPUT"
 
-  build:
+  # 検証は test.yml に集約している。ここから呼ぶことで、テストが落ちたら
+  # build に進まない。PR では test.yml が単独で走る。
+  #
+  # build と同じ条件を付ける。schedule で上流に変化が無いときは build ごと
+  # スキップされるので、テストだけ走らせても無駄になるため。
+  test:
     needs: detect-resource-changes
+    if: github.event_name != 'schedule' || needs.detect-resource-changes.outputs.changed == 'true'
+    uses: ./.github/workflows/test.yml
+
+  build:
+    needs: [detect-resource-changes, test]
     # push / workflow_dispatch は無条件、schedule は上流に変化があるときだけビルドする。
     if: github.event_name != 'schedule' || needs.detect-resource-changes.outputs.changed == 'true'
     runs-on: ubuntu-latest
@@ -112,10 +122,6 @@ jobs:
             build/items.json
             build/.items-signature
           key: items-json-${{ needs.detect-resource-changes.outputs.digest }}-${{ hashFiles('scripts/parse_lua_to_json.py') }}
-
-      - name: Run tests
-        run: cargo test
-        working-directory: rust
 
       # 版を固定する。以前の init.sh は常に最新を取得するため、開発者の手元
       # (CONTRIBUTING.md で 0.14.0 を指定) と CI で別バージョンになりえた。

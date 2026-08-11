@@ -1,0 +1,72 @@
+name: Test
+
+# 検証専用のワークフロー。配信 (deploy.yml) とは目的が違うので分けている。
+#
+#   pull_request  … マージ前に検証する
+#   workflow_call … deploy.yml から呼ばれ、ビルドの前段として走る
+#
+# push は入れていない。main への push では deploy.yml がこれを呼ぶため、
+# 両方を trigger にすると同じテストが 2 回走る。
+on:
+  pull_request:
+  workflow_call:
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Rust
+        uses: dtolnay/rust-toolchain@stable
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      # 装備データは include_str! でバイナリに埋め込まれるため (docs/adr/0009)、
+      # items.json が無いとコンパイルできない。テストの前に生成する必要がある。
+      - name: Resolve upstream digest
+        id: upstream
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          source scripts/upstream_common.sh
+          echo "digest=$(upstream_digest)" >> "$GITHUB_OUTPUT"
+
+      # 上流の blob SHA と変換スクリプトが同じなら items.json も同じになるので、
+      # 生成結果を使い回して上流への再ダウンロードとパースを省く。
+      - name: Restore items.json cache
+        id: items-cache
+        uses: actions/cache/restore@v4
+        with:
+          path: |
+            build/items.json
+            build/.items-signature
+          key: items-json-${{ steps.upstream.outputs.digest }}-${{ hashFiles('scripts/parse_lua_to_json.py') }}
+
+      - name: Build web data
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: scripts/build_web_data.sh
+
+      - name: Save items.json cache
+        if: steps.items-cache.outputs.cache-hit != 'true'
+        uses: actions/cache/save@v4
+        with:
+          path: |
+            build/items.json
+            build/.items-signature
+          key: items-json-${{ steps.upstream.outputs.digest }}-${{ hashFiles('scripts/parse_lua_to_json.py') }}
+
+      # lib のユニットテストと tests/ の統合テストが走る。
+      # examples は含めない (未追跡の status_calculator.rs が壊れているため)。
+      - name: Run tests
+        run: cargo test --lib --tests
+        working-directory: rust

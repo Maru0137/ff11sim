@@ -109,18 +109,26 @@ FFXI のバージョンアップで装備が追加・変更されるたびに Wi
 判定結果を採否に使うのは `schedule` のときだけで、`push` と `workflow_dispatch` は
 変化の有無に関わらずビルドする。`deploy` は `needs: build` なので連動して止まる。
 
+検証は `test.yml` に分けてある。`deploy.yml` は `workflow_call` でこれを呼び、
+`build` が `needs: test` で受けるため、テストが落ちたら配信に進まない。
+PR では `test.yml` が単独で走る (`deploy.yml` は `pull_request` を trigger に
+持たないため、PR で配信ワークフローは動かない)。
+
 ```mermaid
 flowchart TD
+    pr["pull_request"] --> testonly["test.yml<br/>(単独で実行)"]
+
     push["push to main"] --> detect
     dispatch["workflow_dispatch"] --> detect
     sched["schedule (毎日 00:00 JST)"] --> detect
 
-    detect["detect-resource-changes<br/>上流の blob SHA を取得し<br/>配信済みメタデータと比較<br/>→ blobs / changed を出力"]
+    detect["detect-resource-changes<br/>上流の blob SHA を取得し<br/>配信済みメタデータと比較<br/>→ blobs / changed / digest を出力"]
     detect --> gate{"schedule かつ<br/>changed = false か"}
-    gate -->|"はい"| skip["build / deploy をスキップ"]
-    gate -->|"いいえ"| build
+    gate -->|"はい"| skip["test / build / deploy をスキップ"]
+    gate -->|"いいえ"| test
 
-    build["build<br/>cargo test / WASM ビルド<br/>build_web_data.sh (blobs を受け取る)<br/>Supabase config"]
+    test["test<br/>test.yml を workflow_call で呼ぶ<br/>build_web_data.sh → cargo test"]
+    test --> build["build<br/>build_web_data.sh / WASM ビルド<br/>Supabase config"]
     build --> deploy["deploy<br/>GitHub Pages へ配信"]
     deploy -.->|"_build_metadata.json を配信<br/>= 次回の判定材料になる"| detect
 ```
@@ -203,6 +211,11 @@ flowchart TD
 ### Confirmation
 
 * `.gitignore` に `build/` が登録されており、生成物がコミットされない。
+* テストは `.github/workflows/test.yml` に分離し、`pull_request` と
+  `workflow_call` で走る。`deploy.yml` の `build` ジョブが `needs: test` で
+  受けるため、テストが落ちたら配信されない。PR でもマージ前に検証できる。
+  なお `cargo fmt --check` と `cargo clippy` は入れていない。既存コードに
+  それぞれ 69 件・14 件の指摘があり、入れると変更内容と無関係に落ちるため。
 * `.github/workflows/deploy.yml` の "Build web data" ステップが
   `scripts/build_web_data.sh` を実行し、毎回のデプロイで上流取得・変換・検証・
   メタデータ出力を行う。ここで失敗すれば deploy ジョブに進まない。

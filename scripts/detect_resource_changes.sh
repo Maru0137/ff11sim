@@ -52,9 +52,7 @@ else
   changed=true
 fi
 
-# キャッシュキー用の短い指紋。blobs は JSON なのでそのままキーに使えない。
-digest=$(printf '%s' "$current" | shasum -a 256 2>/dev/null | cut -c1-16 \
-  || printf '%s' "$current" | sha256sum | cut -c1-16)
+digest=$(upstream_digest "$current")
 
 echo "blobs=$current"
 echo "changed=$changed"

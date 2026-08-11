@@ -75,8 +75,8 @@ JavaScript の数値は f64 のみで、整数と実数の区別が言語に存�
   `status.rs` の `calc_status` が `f32` を返し、`chara.rs:72` が
   `(status_race + status_main_job + status_support_job).floor() as i32` と
   一度だけ丸める構造が、型として読み取れる。
-* Good: 計算ロジックを `cargo test` で固定できる。lib テスト 122 件が
-  ジョブ特性・ギフト・攻撃/命中・WS ダメージなどの期待値を検証している。
+* Good: 計算ロジックを `cargo test` で固定できる。ジョブ特性・ギフト・攻撃/命中・
+  WS ダメージ・装備解釈・装備検索などの期待値を検証している。
 * Good: 同じコアを WASM・CLI・`cargo test`・`examples` の 4 経路から利用できる。
   ブラウザを起動せずに計算を検証できる。
 * Good: `enum` と `EnumMap` でジョブ・種族・スキルを表現でき、網羅漏れが型で落ちる
@@ -96,9 +96,10 @@ JavaScript の数値は f64 のみで、整数と実数の区別が言語に存�
 
 ### Confirmation
 
-* `.github/workflows/deploy.yml` の build ジョブが、WASM ビルドより前に
-  `working-directory: rust` で `cargo test` を実行する。ここで失敗すると後続の
-  `wasm-pack build` および deploy ジョブに進まないため、計算ロジックの回帰は配信前に止まる。
+* `.github/workflows/test.yml` が `cargo test --lib --tests` を実行する。
+  `pull_request` で単独に走るほか、`deploy.yml` が `workflow_call` で呼び
+  `build` ジョブが `needs: test` で受けるため、失敗すれば `wasm-pack build` にも
+  deploy にも進まない。計算ロジックの回帰はマージ前と配信前の両方で止まる。
 * `rust/Cargo.toml` の `crate-type = ["cdylib", "rlib"]` が両形態のビルドを担保する。
   `cargo test` はネイティブターゲットでビルドされるため、コアが WASM 専用 API に
   依存し始めればここで検出される。実際 `#[cfg(target_arch = "wasm32")]` を使っているのは

@@ -763,7 +763,7 @@ def main():
         time.sleep(1)
 
     # --- Write output ---
-    output_path = Path(__file__).parent.parent / "web" / "data" / "augments.json"
+    output_path = Path(__file__).parent.parent / "web" / "public" / "data" / "augments.json"
     output = {"version": 1, "augments": augments}
     with open(output_path, "w", encoding="utf-8") as f:
         json.dump(output, f, ensure_ascii=False, indent=2)

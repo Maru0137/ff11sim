@@ -134,7 +134,7 @@ async function seedAndOpenEquipTab(page, slots) {
 
 test('オーグメント選択でテキストとステータスが更新される', async ({ page }) => {
   const errors = collectErrors(page);
-  // 23755 は web/data/augments.json に Default パス (rank 15-30) を持つ。
+  // 23755 は web/public/data/augments.json に Default パス (rank 15-30) を持つ。
   // オーグメント選択肢の構築 → 選択 → テキスト表示 → ステータス集計の
   // 経路 (augments.json 由来のデータが WASM の抽出まで流れる) を検証する。
   await seedAndOpenEquipTab(page, { main: { item_id: 23755 } });

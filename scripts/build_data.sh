@@ -19,9 +19,9 @@
 # web/ に置くと同じデータを二重に配ることになる。
 #
 # _build_metadata.json は次回の変化判定で配信サイト経由で読むため配信される必要が
-# あるが、生成物なので出力先は build/ に統一する。配信は web/data/ に置いた
-# 追跡済み symlink 経由で行う。web/data/ の他のファイルと同じ方式 (docs/adr/0002)。
-# これで web/data/ の中身はすべて git 管理下になり、生成物と混ざらない。
+# あるが、生成物なので出力先は build/ に統一する。配信は web/public/data/ に置いた
+# 追跡済み symlink 経由で行う。web/public/data/ の他のファイルと同じ方式 (docs/adr/0002)。
+# これで web/public/data/ の中身はすべて git 管理下になり、生成物と混ざらない。
 #
 # 環境変数:
 #   UPSTREAM_BLOBS  detect_resource_changes.sh が出力した blobs (JSON)。

@@ -1,5 +1,5 @@
 // Supabase クライアントの初期化と認証ユーティリティ。
-// SDK は CDN (esm.sh) 経由で読み込み、npm セットアップを不要にする。
+// SDK は npm 依存 (lockfile でバージョン固定) を Vite がバンドルする (docs/adr/0011)。
 //
 // 公開 API:
 //   - supabase: createClient のインスタンス (DB クエリに使用)
@@ -8,7 +8,7 @@
 //   - signOut(): ログアウト
 //   - onAuthChange(callback): 認証状態変化通知 (signed_in / signed_out)
 
-import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
+import { createClient } from '@supabase/supabase-js';
 import { SUPABASE_URL, SUPABASE_ANON_KEY } from './config.js';
 
 export const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {

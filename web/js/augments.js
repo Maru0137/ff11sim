@@ -1,5 +1,5 @@
 // オーグメントデータの取得と、スロット行のオーグメント UI 更新。
-// データソースは web/data/augments.json (docs/adr/0004)。
+// データソースは web/public/data/augments.json (docs/adr/0004)。
 // AUGMENT_JA_TO_EN は constants.js、convertAugmentJaToEn は utils.js に定義。
 import { equipState } from './equip-state.js';
 

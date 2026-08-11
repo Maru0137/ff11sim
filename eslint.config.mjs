@@ -9,7 +9,7 @@ import html from 'eslint-plugin-html';
 export default [
   {
     // 生成物と依存。整形も命名も生成側の都合なので検査しない。
-    ignores: ['web/pkg/**', 'node_modules/**', 'test-results/**', 'playwright-report/**'],
+    ignores: ['web/pkg/**', 'dist/**', 'node_modules/**', 'test-results/**', 'playwright-report/**'],
   },
   {
     // ブラウザで動くコード。インライン <script> を含むため HTML も対象にする。

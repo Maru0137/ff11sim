@@ -83,14 +83,21 @@ dev サーバ・TypeScript・ユニットテストといった将来の改善が
 
 ### Confirmation
 
-本 ADR の時点で Vite は未導入である（インライン script のモジュール化を先行して
-実施中）。導入後の検証手段は次を想定する:
+* Playwright スモークテスト（`playwright.config.js` の webServer が
+  `npm run build && npm run preview` を実行）は常にビルド成果物（`dist/`）に
+  対して走る。ビルド不能な状態では webServer の起動自体が失敗し、
+  test.yml のスモークステップが落ちるため、PR とデプロイ前の両方で検出される
+* `.github/workflows/deploy.yml` の build ジョブが `npm run build` を実行し、
+  `dist/` を GitHub Pages にアップロードする。ビルド失敗時は deploy に進まない
+* supabase-js は `package.json` の dependencies（lockfile 固定）で、
+  `web/js/supabase-client.js` が npm パッケージを import する。
+  外部 CDN への参照が配信物に残っていないことは
+  `grep esm.sh dist/assets/*.js` が空であることで確認した（導入時）
 
-* CI（test.yml / deploy.yml）が `vite build` を実行し、ビルド不能な状態では
-  デプロイに進めないこと
-* Playwright スモークテストがビルド成果物（`vite preview`）に対して走ること
+検証されていないもの:
 
-導入時に本セクションを実態に合わせて更新すること。
+* dev サーバ（`npm run dev`）の経路は CI で検証されない。スモークは
+  preview（ビルド成果物）のみを対象とする
 
 ## Pros and Cons of the Options
 

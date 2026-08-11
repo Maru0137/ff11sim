@@ -21,8 +21,16 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
+      # rust-toolchain.toml に固定したツールチェーンを取得する。バージョンを
+      # ワークフロー側にも書くと二重管理になるため指定しない。
       - name: Setup Rust
-        uses: dtolnay/rust-toolchain@stable
+        run: rustup show active-toolchain
+
+      # 整形検査はコンパイルを伴わないので、装備データの生成より前に置いて早く落とす。
+      # pre-commit でも同じ検査をしているが、--no-verify で迂回できるためここでも見る。
+      - name: Check formatting
+        run: cargo fmt --check
+        working-directory: rust
 
       - name: Setup Python
         uses: actions/setup-python@v5
@@ -65,8 +73,12 @@ jobs:
             build/.items-signature
           key: items-json-${{ steps.upstream.outputs.digest }}-${{ hashFiles('scripts/parse_lua_to_json.py') }}
 
-      # lib のユニットテストと tests/ の統合テストが走る。
-      # examples は含めない (未追跡の status_calculator.rs が壊れているため)。
+      # clippy は装備データの生成後に置く。コンパイルを伴うため
+      # include_str! の対象 (build/items.json) が必要になる。
+      - name: Run clippy
+        run: cargo clippy --lib --tests -- -D warnings
+        working-directory: rust
+
       - name: Run tests
-        run: cargo test --lib --tests
+        run: cargo test
         working-directory: rust

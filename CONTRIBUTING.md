@@ -48,21 +48,21 @@ uv run pre-commit install
 scripts/build_web_data.sh
 ```
 
-`web/data/items.json` は上流の [Windower/Resources](https://github.com/Windower/Resources) から
+`build/items.json` は上流の [Windower/Resources](https://github.com/Windower/Resources) から
 生成する派生物で、git では管理していません（[ADR 0003](docs/adr/0003-items-json-generated-in-ci.md)）。
-**装備検索・装備セット・後述の JS テストはこれが無いと動きません。**
+**Rust のビルドより先に実行する必要があります。** 装備データは `include_str!` でバイナリに
+埋め込むため（[ADR 0009](docs/adr/0009-embed-item-data-in-binary.md)）、これが無いとコンパイルが通りません。
 
 生成物は 3 つです。
 
 | 出力 | 内容 |
 |---|---|
-| `web/data/items.json` | 装備データ本体（約 8.6MB） |
+| `build/items.json` | 装備データ本体（約 8.6MB） |
 | `web/data/_build_metadata.json` | 何から作られたかの記録（上流の blob SHA・commit・時刻） |
 | `temp_resources/*.lua` | 上流からのダウンロードキャッシュ |
 
-スキップされるのは**上流のダウンロードだけ**です。ローカルファイルの `git hash-object` が
-上流の blob SHA と一致すれば取得を省きます。`items.json` の生成・検証・メタデータ出力は
-毎回実行されますが、キャッシュがあれば全体で数秒で終わります。
+上流の内容と変換スクリプトが前回と同じなら、ダウンロードと `items.json` の生成を
+どちらもスキップします。作り直したいときは `FORCE_REBUILD=1` を付けてください。
 
 WASM をビルドします。
 
@@ -122,27 +122,15 @@ http://localhost:8000 を開きます。ポートは 8000 を推奨します
 
 ## 5. テストを通す
 
-Rust のテストです。
-
 ```bash
 cargo test --manifest-path rust/Cargo.toml
 ```
 
-JS のテストです（`items.json` の生成が前提）。
+装備の解釈も検索も Rust に移植済みなので（[ADR 0010](docs/adr/0010-equipment-interpretation-in-rust.md)）、
+テストはこれだけです。`build/items.json` の生成が前提になります。
 
-```bash
-node web/test/equip-stats-extraction.test.js
-```
-
-```bash
-node web/test/skillchain-bonus.test.js
-```
-
-```bash
-node web/test/ws-damage-sam-elemental.test.js
-```
-
-**PR を出しても自動テストは走りません。** 手元で通してから出してください。
+PR を出すと [test.yml](.github/workflows/test.yml) が同じ内容を実行しますが、
+手元で通してから出してください。
 
 方針は次のとおりです。
 
@@ -229,7 +217,7 @@ PR には**何をなぜ変えたか**と、**どう検証したか**（実行し
 
 | 症状 | 対処 |
 |---|---|
-| 装備検索が空になる / JS テストが落ちる | `scripts/build_web_data.sh` を実行して `web/data/items.json` を生成する |
+| Rust のビルドが `include_str!` で失敗する / 装備検索が空になる | `scripts/build_web_data.sh` を実行して `build/items.json` を生成する |
 | WASM が読み込めない | `web/pkg/` があるか確認。無ければ `wasm-pack build` を実行する |
 | Rust を直したのにブラウザに反映されない | WASM の再ビルドが必要。ブラウザのキャッシュも確認する |
 | commit が `cargo fmt --check` で止まる | `cargo fmt --manifest-path rust/Cargo.toml` して `git add` し直す |

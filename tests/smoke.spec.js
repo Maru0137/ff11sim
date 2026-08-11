@@ -107,5 +107,170 @@ test('保存済みキャラクターのステータスが 0 でなく表示さ�
   expect(Number.isFinite(hp)).toBe(true);
   expect(hp).toBeGreaterThan(0);
 
+  // ステータスサブタブが切り替わること (タブ切り替えロジックの回帰検出)
+  await page.click('button[data-subtab="subtab-melee-auto"]');
+  await expect(page.locator('#subtab-melee-auto')).toHaveClass(/active/);
+
+  expect(errors).toEqual([]);
+});
+
+// 装備セットとキャラクターを localStorage に投入して装備セットタブを開く共通手順。
+// slots に入れる装備は各テストの検証対象に合わせて呼び出し側が選ぶ。
+async function seedAndOpenEquipTab(page, slots) {
+  await page.goto('/');
+  await page.evaluate(({ ch, slots }) => {
+    localStorage.setItem('ff11sim_characters', JSON.stringify([ch]));
+    localStorage.setItem('ff11sim_equipsets', JSON.stringify(
+      slots ? [{ name: 'smoke-set', character: ch.name, job: 'War', slots }] : []
+    ));
+  }, { ch: makeCharacter(), slots });
+  await page.reload();
+  await page.waitForTimeout(3000);
+  await page.click('button[data-tab="tab-equipsets"]');
+  await page.selectOption('#equipSelectChar', 'smoke');
+  await page.selectOption('#equipSelectJob', 'War');
+  await page.waitForTimeout(2000);
+}
+
+test('オーグメント選択でテキストとステータスが更新される', async ({ page }) => {
+  const errors = collectErrors(page);
+  // 23755 は web/data/augments.json に Default パス (rank 15-30) を持つ。
+  // オーグメント選択肢の構築 → 選択 → テキスト表示 → ステータス集計の
+  // 経路 (augments.json 由来のデータが WASM の抽出まで流れる) を検証する。
+  await seedAndOpenEquipTab(page, { main: { item_id: 23755 } });
+
+  const augPath = page.locator('.equip-slot-aug-path[data-slot="main"]');
+  await expect(augPath).toBeEnabled();
+  // "-- オーグメント --" 以外の選択肢が構築されていること
+  expect(await augPath.locator('option').count()).toBeGreaterThan(1);
+
+  await augPath.selectOption('0-15');
+  await page.waitForTimeout(500);
+  const augText = await page.locator('.equip-slot-aug-text[data-slot="main"]').innerText();
+  expect(augText).toContain('飛攻');
+
+  // カスタム説明の入力が装備ステータス集計へ反映されること
+  const strBefore = await page.locator('#equipEquipStr').innerText();
+  await page.fill('.equip-slot-custom-desc[data-slot="main"]', 'STR+5');
+  await page.waitForTimeout(500);
+  const strAfter = await page.locator('#equipEquipStr').innerText();
+  expect(strAfter).not.toBe(strBefore);
+
+  expect(errors).toEqual([]);
+});
+
+test('スロット検索で装備を選び、装備セットを保存できる', async ({ page }) => {
+  const errors = collectErrors(page);
+  // セット 0 件で開始し、検索 UI → アイテム選択 → 保存 → 再読込後の残存を検証。
+  // 既存テストは localStorage へ直接投入するため、この対話経路は通らない。
+  await seedAndOpenEquipTab(page, null);
+
+  // セットが無いので "+" タブから新規フォームを開く
+  await page.click('.equipset-tab-add');
+  await expect(page.locator('#equipEditSection')).toBeVisible();
+
+  // 検索欄にフォーカスすると WAR + メインスロットで絞った候補が出る
+  const searchInput = page.locator('.equip-slot-search[data-slot="main"]');
+  await searchInput.focus();
+  await page.waitForTimeout(1000);
+  const items = page.locator('.equip-slot-dropdown-item');
+  expect(await items.count()).toBeGreaterThan(0);
+
+  await items.first().click();
+  await page.waitForTimeout(500);
+  expect((await searchInput.inputValue()).length).toBeGreaterThan(0);
+
+  await page.fill('#equipSetName', 'ui-set');
+  await page.click('#btnSaveEquipSet');
+  await page.waitForTimeout(1000);
+  await expect(page.locator('.equipset-tab', { hasText: 'ui-set' })).toBeVisible();
+
+  // 再読込しても保存したセットが残っていること
+  await page.reload();
+  await page.waitForTimeout(3000);
+  await page.click('button[data-tab="tab-equipsets"]');
+  await page.selectOption('#equipSelectChar', 'smoke');
+  await page.selectOption('#equipSelectJob', 'War');
+  await page.waitForTimeout(2000);
+  await expect(page.locator('.equipset-tab', { hasText: 'ui-set' })).toBeVisible();
+  expect((await searchInput.inputValue()).length).toBeGreaterThan(0);
+
+  expect(errors).toEqual([]);
+});
+
+test('キャラクターを UI から作成できる', async ({ page }) => {
+  const errors = collectErrors(page);
+  // 既存テストは localStorage へ直接投入するため、フォーム経由の作成
+  // (デフォルト値の構築・スキルデフォルト計算・保存) はここで検証する。
+  await page.goto('/');
+  await page.waitForTimeout(3000);
+
+  await page.click('#btnNewChar');
+  await expect(page.locator('#charEditSection')).toBeVisible();
+  await page.fill('#charName', 'ui-char');
+  await page.click('#btnSaveChar');
+  await page.waitForTimeout(1000);
+
+  await expect(page.locator('#charList')).toContainText('ui-char');
+  // 装備セットタブのキャラクターセレクタにも反映されること
+  await expect(page.locator('#equipSelectChar option[value="ui-char"]')).toHaveCount(1);
+
+  expect(errors).toEqual([]);
+});
+
+test('共有 URL (?share=) で装備セットが閲覧できる', async ({ page }) => {
+  const errors = collectErrors(page);
+  // Supabase REST をスタブし、共有閲覧モードの分岐 (通常初期化のスキップ・
+  // キャラクター snapshot からのステータス再現) をネットワーク非依存で検証する。
+  const row = {
+    name: 'shared-smoke',
+    character_name: 'smoke',
+    job: 'War',
+    data: {
+      slots: { main: { item_id: 21071, skill: 11 } },
+      support_job: null,
+      character: makeCharacter(),
+    },
+    created_at: '2026-01-01T00:00:00Z',
+  };
+  await page.route('**/rest/v1/shared_equipsets*', (route) => {
+    // supabase-js の maybeSingle は Accept ヘッダでレスポンス形式が変わる
+    const accept = route.request().headers()['accept'] || '';
+    const body = accept.includes('vnd.pgrst.object')
+      ? JSON.stringify(row)
+      : JSON.stringify([row]);
+    route.fulfill({ status: 200, contentType: 'application/json', body });
+  });
+
+  await page.goto('/?share=00000000-0000-0000-0000-000000000000');
+  await page.waitForTimeout(3000);
+
+  await expect(page.locator('body')).toHaveClass(/share-mode/);
+  await expect(page.locator('#sharedHeader')).toBeVisible();
+  await expect(page.locator('#sharedSetName')).toHaveText('shared-smoke');
+
+  // snapshot からステータスが再現されること (characterOverride 経路)
+  const hpText = await page.locator('#equipBaseHp').innerText();
+  const hp = parseInt(hpText.replace(/[^0-9-]/g, ''), 10);
+  expect(hp).toBeGreaterThan(0);
+
+  expect(errors).toEqual([]);
+});
+
+test('ログインボタンが表示され、クリックしてもエラーが出ない', async ({ page }) => {
+  const errors = collectErrors(page);
+  // OAuth リダイレクト先をスタブし、実際の認証へ飛ばさずに配線だけ検証する
+  await page.route('**/auth/v1/**', (route) => {
+    route.fulfill({ status: 200, contentType: 'text/html', body: '<html></html>' });
+  });
+
+  await page.goto('/');
+  await page.waitForTimeout(3000);
+
+  const loginBtn = page.locator('#auth-ui .auth-btn-google');
+  await expect(loginBtn).toBeVisible();
+  await loginBtn.click();
+  await page.waitForTimeout(1000);
+
   expect(errors).toEqual([]);
 });

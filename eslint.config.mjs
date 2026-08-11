@@ -27,7 +27,7 @@ export default [
   },
   {
     // Node で動くコード (テスト・設定ファイル)。
-    files: ['tests/**/*.js', '*.config.js', '*.mjs'],
+    files: ['tests/**/*.js', 'tests/**/*.mjs', '*.config.js', '*.mjs'],
     languageOptions: {
       ecmaVersion: 'latest',
       sourceType: 'module',

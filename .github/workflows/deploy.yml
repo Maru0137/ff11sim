@@ -137,6 +137,7 @@ jobs:
           cd rust
           wasm-pack build --target web --out-dir ../web/pkg
 
+      # config.js はバンドルに取り込まれるため、vite build より前に生成する。
       - name: Generate Supabase config
         env:
           SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
@@ -147,13 +148,27 @@ jobs:
           export const SUPABASE_ANON_KEY = '${SUPABASE_ANON_KEY}';
           EOF
 
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+
+      - name: Install npm dependencies
+        run: npm ci
+
+      # web/ をそのまま配信する構成から、vite build の成果物 (dist/) を
+      # 配信する構成に変更した (docs/adr/0011)。
+      - name: Build site
+        run: npm run build
+
       - name: Setup Pages
         uses: actions/configure-pages@v4
 
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v3
         with:
-          path: './web'
+          path: './dist'
 
   deploy:
     environment:

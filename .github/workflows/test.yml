@@ -32,6 +32,21 @@ jobs:
         run: cargo fmt --check
         working-directory: rust
 
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+
+      - name: Install npm dependencies
+        run: npm ci
+
+      # 未定義識別子 (no-undef) の検出が主目的。削除した JS モジュールの識別子を
+      # index.html が参照し続け、本番でステータスが全て 0 になる事故があった。
+      # インライン <script> も検査対象 (eslint-plugin-html)。
+      - name: Lint JS
+        run: npm run lint
+
       - name: Setup Python
         uses: actions/setup-python@v5
         with:
@@ -82,3 +97,31 @@ jobs:
       - name: Run tests
         run: cargo test
         working-directory: rust
+
+      # ---- スモークテスト ----
+      # ページを実際に開き「コンソールエラーが無い」「ステータスが 0 でない」を見る。
+      # Rust のテストが全て通っていても、JS の参照漏れや WASM の初期化失敗で
+      # ページ全体が動かないことがある (実際に起きた)。その層はここでしか検出できない。
+
+      - name: Install wasm-pack
+        uses: taiki-e/install-action@v2
+        with:
+          tool: wasm-pack@0.14.0
+
+      - name: Build WASM
+        run: wasm-pack build rust --target web --out-dir ../web/pkg
+
+      - name: Install Playwright browser
+        run: npx playwright install --with-deps chromium
+
+      - name: Run smoke tests
+        run: npm run test:smoke
+
+      # 失敗時の調査用にトレースを残す
+      - name: Upload test results
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-results
+          path: test-results/
+          retention-days: 7

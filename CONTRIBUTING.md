@@ -9,6 +9,7 @@
 | Rust | コア実装のビルド・テスト | [rustup](https://rustup.rs/) で導入。版は `rust-toolchain.toml` で固定 |
 | wasm-pack@0.14.0 | ブラウザ向け WASM のビルド | 次のコマンドで導入 |
 | Python 3 | 装備データ生成スクリプト | 標準ライブラリのみ使用 |
+| Node.js + npm | JS の lint・スモークテスト・ローカル配信 | `package.json` / `package-lock.json` で版を固定 |
 | [uv](https://docs.astral.sh/uv/) | 開発ツール (pre-commit) の導入 | `pyproject.toml` / `uv.lock` で版を固定 |
 
 wasm-pack は Cargo の依存としては管理できません（`[dependencies]` はライブラリ用で、
@@ -29,6 +30,12 @@ git clone https://github.com/Maru0137/ff11sim.git && cd ff11sim
 
 ```bash
 uv sync
+```
+
+JS の開発ツールを取得します（`node_modules/` が作られます）。
+
+```bash
+npm ci
 ```
 
 pre-commit を有効化します。
@@ -74,18 +81,38 @@ wasm-pack build rust --target web --out-dir ../web/pkg
 
 ### 3. テスト手順
 
+計算ロジックのテスト（Rust）。`build/items.json` の生成が前提になります。
+
 ```bash
 cargo test --manifest-path rust/Cargo.toml
 ```
 
-`build/items.json` の生成が前提になります。
+JS の静的検査。未定義識別子（削除したモジュールの参照残りなど）を検出します。
+`index.html` 内のインライン script も対象です。
+
+```bash
+npm run lint
+```
+
+スモークテスト。ページを実際に開き「コンソールエラーが無い」「ステータスが 0 でない」を
+確認します。Rust のテストが通っていても JS の参照漏れや WASM の初期化失敗で
+ページが動かないことがあり、その層はここでしか検出できません。
+WASM のビルド（手順 2）が前提になります。初回のみブラウザの取得が必要です。
+
+```bash
+npx playwright install chromium
+```
+
+```bash
+npm run test:smoke
+```
 
 ### 4. ローカルでの Web ページ確認
 
 `web/` を静的配信します。
 
 ```bash
-python3 -m http.server 8000 --directory web
+npm run serve
 ```
 
 http://localhost:8000 を開きます。ポートは 8000 を推奨します

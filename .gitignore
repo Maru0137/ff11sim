@@ -8,3 +8,6 @@ web/data/items.json
 web/js/config.js
 temp_resources/
 .venv/
+node_modules/
+test-results/
+playwright-report/

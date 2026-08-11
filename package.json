@@ -1,0 +1,17 @@
+{
+  "name": "ff11sim",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "lint": "eslint .",
+    "serve": "http-server web -p 8000 -c-1",
+    "test:smoke": "playwright test"
+  },
+  "devDependencies": {
+    "@playwright/test": "^1.57.0",
+    "eslint": "^10.8.1",
+    "eslint-plugin-html": "^8.1.4",
+    "globals": "^17.9.0",
+    "http-server": "^14.1.1"
+  }
+}

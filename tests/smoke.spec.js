@@ -51,7 +51,7 @@ function collectErrors(page) {
 
 test('トップページがエラーなしで読み込める', async ({ page }) => {
   const errors = collectErrors(page);
-  await page.goto('/');
+  await page.goto('./');
   // WASM の初期化と初期描画を待つ
   await page.waitForTimeout(3000);
   expect(errors).toEqual([]);
@@ -59,7 +59,7 @@ test('トップページがエラーなしで読み込める', async ({ page }) 
 
 test('検索ページがエラーなしで読み込め、検索が動く', async ({ page }) => {
   const errors = collectErrors(page);
-  await page.goto('/search.html');
+  await page.goto('search.html');
   await page.waitForTimeout(3000);
   // WASM 埋め込みデータでの検索が 1 件以上返ること (表示名は日本語)
   await page.fill('#searchQuery', 'Excalibur');
@@ -80,7 +80,7 @@ test('保存済みキャラクターのステータスが 0 でなく表示さ�
   // 初めて実行され、空だとその経路のバグ (WEAPON_SKILL_KEYS 事故もこれ) を
   // 素通しする。武器スキルボーナス持ちの装備を意図的に選ぶ。
   // 21071 = C. Palug Hammer ("Club skill +N" を含む)。
-  await page.goto('/');
+  await page.goto('./');
   await page.evaluate((ch) => {
     localStorage.setItem('ff11sim_characters', JSON.stringify([ch]));
     localStorage.setItem('ff11sim_equipsets', JSON.stringify([
@@ -117,7 +117,7 @@ test('保存済みキャラクターのステータスが 0 でなく表示さ�
 // 装備セットとキャラクターを localStorage に投入して装備セットタブを開く共通手順。
 // slots に入れる装備は各テストの検証対象に合わせて呼び出し側が選ぶ。
 async function seedAndOpenEquipTab(page, slots) {
-  await page.goto('/');
+  await page.goto('./');
   await page.evaluate(({ ch, slots }) => {
     localStorage.setItem('ff11sim_characters', JSON.stringify([ch]));
     localStorage.setItem('ff11sim_equipsets', JSON.stringify(
@@ -202,7 +202,7 @@ test('キャラクターを UI から作成できる', async ({ page }) => {
   const errors = collectErrors(page);
   // 既存テストは localStorage へ直接投入するため、フォーム経由の作成
   // (デフォルト値の構築・スキルデフォルト計算・保存) はここで検証する。
-  await page.goto('/');
+  await page.goto('./');
   await page.waitForTimeout(3000);
 
   await page.click('#btnNewChar');
@@ -242,7 +242,7 @@ test('共有 URL (?share=) で装備セットが閲覧できる', async ({ page 
     route.fulfill({ status: 200, contentType: 'application/json', body });
   });
 
-  await page.goto('/?share=00000000-0000-0000-0000-000000000000');
+  await page.goto('./?share=00000000-0000-0000-0000-000000000000');
   await page.waitForTimeout(3000);
 
   await expect(page.locator('body')).toHaveClass(/share-mode/);
@@ -264,7 +264,7 @@ test('ログインボタンが表示され、クリックしてもエラーが�
     route.fulfill({ status: 200, contentType: 'text/html', body: '<html></html>' });
   });
 
-  await page.goto('/');
+  await page.goto('./');
   await page.waitForTimeout(3000);
 
   const loginBtn = page.locator('#auth-ui .auth-btn-google');

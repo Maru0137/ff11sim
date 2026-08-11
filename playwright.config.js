@@ -9,15 +9,17 @@ export default defineConfig({
   testDir: './tests',
   // 落ちたときに原因が分かるよう、失敗時のみトレースを残す。
   use: {
-    baseURL: 'http://localhost:8000',
+    baseURL: 'http://localhost:8000/ff11sim/',
     trace: 'on-first-retry',
   },
   projects: [{ name: 'chromium', use: { ...devices['Desktop Chrome'] } }],
-  // 配信物 (vite build の成果物) に対して検証する。dev サーバではなく
-  // preview を使うことで、バンドル起因の問題もここで検出できる。
+  // 配信物 (vite build の成果物) を、本番 (GitHub Pages) と同じ
+  // /ff11sim/ サブパス配下で配信して検証する (tests/serve-dist.mjs)。
+  // ルート配信 (vite preview) ではルート絶対パスのアセット参照が
+  // 通ってしまい、本番だけ 404 になるバグを検出できない (実際に起きた)。
   webServer: {
-    command: 'npm run build && npm run preview',
-    url: 'http://localhost:8000',
+    command: 'npm run build && node tests/serve-dist.mjs',
+    url: 'http://localhost:8000/ff11sim/',
     reuseExistingServer: !process.env.CI,
     timeout: 120_000,
   },

@@ -1,0 +1,24 @@
+# commit 前の自動検査。
+#
+# 有効化 (クローン後に 1 度だけ):
+#   pre-commit install
+#
+# 迂回:
+#   git commit --no-verify
+#
+# clippy は入れていない。ビルドを伴い commit のたびに待たされるため CI 向き。
+repos:
+  - repo: local
+    hooks:
+      - id: cargo-fmt
+        name: cargo fmt --check
+        # pre-commit は未ステージの変更を退避してから実行するので、作業ツリーの中身は
+        # ステージ内容と一致する。そのため crate 全体を素直に検査してよい。
+        #
+        # ファイル名を渡さない (pass_filenames: false) のは cargo fmt が crate 単位で
+        # 動くため。個別ファイルを rustfmt に渡す方式だと edition を別途指定する必要が
+        # あり、rust/Cargo.toml の edition と二重管理になる。
+        entry: bash -c 'cd rust && exec cargo fmt --check'
+        language: system
+        files: \.rs$
+        pass_filenames: false

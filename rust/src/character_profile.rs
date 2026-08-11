@@ -41,12 +41,9 @@ impl CharacterProfile {
     }
 
     pub fn set_job_level(&mut self, job: Job, level: i32, master_lv: i32) {
+        assert!((0..=99).contains(&level), "level must be between 0 and 99");
         assert!(
-            level >= 0 && level <= 99,
-            "level must be between 0 and 99"
-        );
-        assert!(
-            master_lv >= 0 && master_lv <= 50,
+            (0..=50).contains(&master_lv),
             "master_lv must be between 0 and 50"
         );
         self.job_levels[job] = JobLevel { level, master_lv };
@@ -87,6 +84,12 @@ impl CharacterProfile {
 /// キャラクター登録管理
 pub struct CharaRegistry {
     characters: Vec<CharacterProfile>,
+}
+
+impl Default for CharaRegistry {
+    fn default() -> Self {
+        Self::new()
+    }
 }
 
 impl CharaRegistry {

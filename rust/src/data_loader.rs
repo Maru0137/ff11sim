@@ -185,7 +185,11 @@ mod tests {
     #[test]
     fn skills_meta_covers_all_skills() {
         let keys: Vec<SkillKind> = SKILLS_META.iter().map(|m| m.key).collect();
-        assert_eq!(keys.len(), SkillKind::VARIANTS.len(), "skill count mismatch");
+        assert_eq!(
+            keys.len(),
+            SkillKind::VARIANTS.len(),
+            "skill count mismatch"
+        );
         for v in SkillKind::VARIANTS {
             assert!(keys.contains(v), "missing skill: {:?}", v);
         }

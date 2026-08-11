@@ -6,7 +6,20 @@ pub use strum::{EnumCount, EnumIter, VariantArray};
 
 use crate::data_loader::GRADE_COEFFICIENTS;
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, EnumCount, EnumIter, VariantArray, Enum, Serialize, Deserialize)]
+#[derive(
+    Debug,
+    Clone,
+    Copy,
+    PartialEq,
+    Eq,
+    Hash,
+    EnumCount,
+    EnumIter,
+    VariantArray,
+    Enum,
+    Serialize,
+    Deserialize,
+)]
 pub enum Grade {
     A,
     B,
@@ -17,7 +30,20 @@ pub enum Grade {
     G,
 }
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, EnumCount, EnumIter, VariantArray, Enum, Serialize, Deserialize)]
+#[derive(
+    Debug,
+    Clone,
+    Copy,
+    PartialEq,
+    Eq,
+    Hash,
+    EnumCount,
+    EnumIter,
+    VariantArray,
+    Enum,
+    Serialize,
+    Deserialize,
+)]
 pub enum BpKind {
     Str,
     Dex,
@@ -28,7 +54,20 @@ pub enum BpKind {
     Chr,
 }
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, EnumCount, EnumIter, VariantArray, Enum, Serialize, Deserialize)]
+#[derive(
+    Debug,
+    Clone,
+    Copy,
+    PartialEq,
+    Eq,
+    Hash,
+    EnumCount,
+    EnumIter,
+    VariantArray,
+    Enum,
+    Serialize,
+    Deserialize,
+)]
 pub enum StatusKind {
     Hp,
     Mp,
@@ -155,7 +194,10 @@ impl MeritPoints {
 
     pub fn status_bonus(&self, kind: StatusKind) -> i32 {
         let rank = self.get(kind);
-        assert!(rank >= 0 && rank <= 15, "merit point rank must be between 0 and 15");
+        assert!(
+            (0..=15).contains(&rank),
+            "merit point rank must be between 0 and 15"
+        );
         MERIT_POINT_BONUS[kind as usize] * rank
     }
 }
@@ -306,15 +348,13 @@ pub fn calc_status(kind: StatusKind, grade: Grade, lv: i32) -> f32 {
     // truncate for each term with 0.5
     let mut ret = grade.base(kind);
     ret += (grade.coef(kind, 2) * std::cmp::min(lv - 1, 59) as f32 * 2.0).floor() / 2.0;
-    ret += (grade.coef(kind, 61) * std::cmp::min(std::cmp::max(lv - 60, 0), 15) as f32 * 2.0)
-        .floor()
-        / 2.0;
+    ret += (grade.coef(kind, 61) * (lv - 60).clamp(0, 15) as f32 * 2.0).floor() / 2.0;
     ret += (grade.coef(kind, 76) * std::cmp::max(lv - 75, 0) as f32 * 2.0).floor() / 2.0;
 
     if kind == StatusKind::Hp || kind == StatusKind::Mp {
         ret += (grade.coef_30plus(kind) * std::cmp::max(lv - 30, 0) as f32 * 2.0).floor() / 2.0;
     }
-    return ret;
+    ret
 }
 
 /// 防御力を計算する。

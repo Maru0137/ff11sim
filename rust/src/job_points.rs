@@ -61,7 +61,7 @@ impl JobPointCategories {
             .iter()
             .map(|&r| {
                 assert!(
-                    r >= 0 && r <= JP_MAX_RANK,
+                    (0..=JP_MAX_RANK).contains(&r),
                     "JP category rank must be between 0 and {}: {}",
                     JP_MAX_RANK,
                     r

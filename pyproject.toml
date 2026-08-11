@@ -1,0 +1,19 @@
+# 開発ツールのバージョンを固定するための設定。
+#
+# このリポジトリは Rust が主体で、Python は装備データ生成スクリプト
+# (scripts/*.py) にしか使っていない。それらは標準ライブラリのみで動くため、
+# ここに書いているのは配布物の依存ではなく開発ツールだけ。
+[project]
+name = "ff11sim"
+version = "0"
+description = "開発ツールのバージョン固定用。配布物ではない"
+# CI (.github/workflows/deploy.yml) の setup-python に合わせる。明示しないと
+# uv が手元の Python から推論し、CI より新しいバージョンを要求しかねない。
+requires-python = ">=3.11"
+
+[tool.uv]
+# 配布パッケージではないのでビルド・インストールの対象にしない。
+package = false
+
+[dependency-groups]
+dev = ["pre-commit>=4,<5"]

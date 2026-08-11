@@ -58,7 +58,7 @@ scripts/build_data.sh
 | 出力 | 内容 |
 |---|---|
 | `build/items.json` | 装備データ本体（約 8.6MB） |
-| `web/data/_build_metadata.json` | 何から作られたかの記録（上流の blob SHA・commit・時刻） |
+| `build/_build_metadata.json` | 何から作られたかの記録（上流の blob SHA・commit・時刻） |
 | `temp_resources/*.lua` | 上流からのダウンロードキャッシュ |
 
 上流の内容と変換スクリプトが前回と同じなら、ダウンロードと `items.json` の生成を

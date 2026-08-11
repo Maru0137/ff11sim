@@ -64,7 +64,7 @@ CI と同じコマンドで、以下を一括で行います。
 - 上流 Lua のダウンロード (`temp_resources/` にキャッシュ。2 回目以降は内容が同じならスキップ)
 - `build/items.json` の生成 (Rust が `include_str!` で埋め込む)
 - 件数の検証
-- `web/data/_build_metadata.json` (ビルドのメタ情報) の出力
+- `build/_build_metadata.json` (ビルドのメタ情報) の出力。`web/data/` の symlink 経由で配信される
 
 > **`cargo build` / `cargo test` より先に実行する必要があります。**
 > 装備データは `include_str!` で Rust のバイナリに埋め込まれるため (`docs/adr/0009`)、

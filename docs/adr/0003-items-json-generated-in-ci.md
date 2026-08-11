@@ -51,7 +51,7 @@ FFXI のバージョンアップで装備が追加・変更されるたびに Wi
 - 生成物 (`build/` 配下) とダウンロードキャッシュ (`temp_resources/`) は
   `.gitignore` に登録する。`items.json` を `web/` の外に出すのは、ブラウザが
   これを読まなくなったため ([ADR 0010](0010-equipment-interpretation-in-rust.md))。
-  `web/data/_build_metadata.json` だけは配信サイト経由で次回の変化判定が読むので
+  `build/_build_metadata.json` だけは配信サイト経由で次回の変化判定が読むので
   `web/` に残す。
 
 **上流の更新に自動で追随する**
@@ -71,7 +71,7 @@ FFXI のバージョンアップで装備が追加・変更されるたびに Wi
   空振りビルドも起きない。日付比較も不要になる。取得はディレクトリ一覧エンドポイント
   (`contents/resources_data?ref=master`) を使い、ファイル内容を転送せずメタデータのみ・
   API 1 回で済ませる。
-- 前回ビルド時の blob SHA は `web/data/_build_metadata.json` に記録し、配信サイト経由で
+- 前回ビルド時の blob SHA は `build/_build_metadata.json` に記録し、配信サイト経由で
   次回の `detect-resource-changes` が読む。`web/` 配下なので Pages にそのまま公開され、
   外部ストレージを用意せずに状態を持てる。このファイルはビルド全般のメタ情報を入れる器とし、
   blob SHA のほかにビルド時刻と ff11sim 自身の commit も記録する。実データと区別するため
@@ -243,7 +243,7 @@ flowchart TD
   片方だけ変化しても `changed=true`、キー順が逆でも正規化により `changed=false`、
   メタデータが 404 の場合と `blobs` を持たない旧形式の場合はいずれも `changed=true` に倒れること、
   追跡対象が欠けた場合と `METADATA_URL` 未指定の場合はいずれも終了コード 1 で止まること。
-* `.gitignore` に `web/data/_build_metadata.json` が登録されており、生成物がコミットされない。
+* `.gitignore` に `build/` が登録されており、生成物がコミットされない。
 * `scripts/validate_items.sh` が生成物の `item_count` を読み、下限を下回ると
   stderr に理由を出して終了コード 1 で停止する。下限の既定値はこのスクリプトが持ち、
   `MIN_ITEMS` で上書きできる。呼び出し元の `build_data.sh` は

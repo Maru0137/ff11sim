@@ -9,15 +9,19 @@
 #   scripts/build_data.sh            上流に変化が無ければ items.json の生成を省く
 #   scripts/build_data.sh --force    変化の有無に関わらず必ず作り直す
 #
-# 生成物:
-#   build/items.json               装備データ本体 (約 8.5MB, .gitignore 済み)
-#   web/data/_build_metadata.json  ビルドのメタ情報 (.gitignore 済み)
-#   temp_resources/*.lua           上流からのダウンロードキャッシュ (.gitignore 済み)
+# 生成物 (いずれも .gitignore 済み):
+#   build/items.json               装備データ本体 (約 8.5MB)
+#   build/_build_metadata.json     ビルドのメタ情報
+#   temp_resources/*.lua           上流からのダウンロードキャッシュ
 #
 # items.json を web/ の外に置くのは、ブラウザがこれを読まなくなったため
 # (docs/adr/0009 / docs/adr/0010)。Rust が include_str! で埋め込むので、
 # web/ に置くと同じデータを二重に配ることになる。
-# _build_metadata.json は次回の変化判定で配信サイト経由で読むので web/ に残す。
+#
+# _build_metadata.json は次回の変化判定で配信サイト経由で読むため配信される必要が
+# あるが、生成物なので出力先は build/ に統一する。配信は web/data/ に置いた
+# 追跡済み symlink 経由で行う。web/data/ の他のファイルと同じ方式 (docs/adr/0002)。
+# これで web/data/ の中身はすべて git 管理下になり、生成物と混ざらない。
 #
 # 環境変数:
 #   UPSTREAM_BLOBS  detect_resource_changes.sh が出力した blobs (JSON)。
@@ -59,15 +63,14 @@ source "$SCRIPT_DIR/upstream_common.sh"
 REPO_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
 CACHE_DIR="${CACHE_DIR:-$REPO_ROOT/temp_resources}"
 BUILD_DIR="$REPO_ROOT/build"
-WEB_DATA_DIR="$REPO_ROOT/web/data"
 ITEMS_JSON="$BUILD_DIR/items.json"
 # items.json の生成元を記録する指紋。上流の blob SHA と変換スクリプトのハッシュから作る。
 # 一致していれば再生成を省ける。変換スクリプトを入れたのは、上流が同じでも
 # パース結果が変わりうるため。
 ITEMS_SIGNATURE="$BUILD_DIR/.items-signature"
-METADATA_JSON="$WEB_DATA_DIR/_build_metadata.json"
+METADATA_JSON="$BUILD_DIR/_build_metadata.json"
 
-mkdir -p "$CACHE_DIR" "$BUILD_DIR" "$WEB_DATA_DIR"
+mkdir -p "$CACHE_DIR" "$BUILD_DIR"
 
 # --- 1. 上流の blob SHA を確定 -------------------------------------------------
 if [ -n "${UPSTREAM_BLOBS:-}" ]; then

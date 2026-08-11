@@ -2180,6 +2180,9 @@
             EQUIPMENT_SLOTS, STORAGE_KEY, EQUIP_STORAGE_KEY,
             AUGMENT_JA_TO_EN, BASE_STATS, COMBAT_STATS,
         } from './js/constants.js';
+        // 武器スキルのキー集合。以前は equip-stats.js が同じ一覧を自前で持っていたが、
+        // 二重管理になるので data/skills.json (category: Weapon) 由来の定義から作る。
+        const WEAPON_SKILL_KEYS = new Set(SKILL_KEYS_WEAPON.map(([key]) => key));
         import {
             jpCategoryCost, jpJobTotal, jpDefaultRanks,
             jobMeritDefaultRanks, jobMeritCategoryName, isJobMeritPlaceholder, samStoreTpIndex,
@@ -3596,7 +3599,6 @@
             }
             const slots = equipSet.slots;
 
-            console.log('[DEBUG] Processing slots:', slots);
             const statsArray = [];
             // 武器スロット (main/sub/range) ごとの装備合計を別途保持。
             // 一部の装備ステ (例: 魔命スキル) は装備中スロットに依存して扱いが変わるため、
@@ -3627,14 +3629,12 @@
                 if (!slotData) continue;
 
                 const item = get_item_by_id(slotData.item_id);
-                console.log('[DEBUG] Slot:', slotKey, 'Item:', item?.en, 'Has description_en:', !!item?.description_en);
 
                 const targetWeaponBucket = slotKey === 'range' ? 'ranged' : slotKey;
                 const isWeaponSlot = (slotKey === 'main' || slotKey === 'sub' || slotKey === 'range');
 
                 if (item && item.description_en) {
                     const stats = extract_all_stats(item.description_en);
-                    console.log('[DEBUG] Extracted stats:', stats);
                     statsArray.push(stats);
                     if (isWeaponSlot) slotStatsBuckets[targetWeaponBucket].push(stats);
                     addSkillBonuses(slotKey, extract_skill_bonuses(item.description_en));
@@ -3652,7 +3652,6 @@
                 if (slotData.custom_description) {
                     const customEn = convertAugmentJaToEn(slotData.custom_description);
                     const customStats = extract_all_stats(customEn);
-                    console.log('[DEBUG] Custom stats:', customStats);
                     statsArray.push(customStats);
                     if (isWeaponSlot) slotStatsBuckets[targetWeaponBucket].push(customStats);
                     addSkillBonuses(slotKey, extract_skill_bonuses(customEn));
@@ -3670,7 +3669,6 @@
                 sub: sum_stats(slotStatsBuckets.sub),
                 ranged: sum_stats(slotStatsBuckets.ranged),
             };
-            console.log('[DEBUG] Total stats:', result);
             return result;
         }
 

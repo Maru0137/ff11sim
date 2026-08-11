@@ -13,11 +13,12 @@ export default defineConfig({
     trace: 'on-first-retry',
   },
   projects: [{ name: 'chromium', use: { ...devices['Desktop Chrome'] } }],
-  // web/ を静的配信する。-c-1 でキャッシュを無効化し、再ビルド後の取り違えを防ぐ。
+  // 配信物 (vite build の成果物) に対して検証する。dev サーバではなく
+  // preview を使うことで、バンドル起因の問題もここで検出できる。
   webServer: {
-    command: 'npx http-server web -p 8000 -c-1 --silent',
+    command: 'npm run build && npm run preview',
     url: 'http://localhost:8000',
     reuseExistingServer: !process.env.CI,
-    timeout: 60_000,
+    timeout: 120_000,
   },
 });

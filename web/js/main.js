@@ -10,9 +10,9 @@ import { buildJobLevelTable, renderCharList, initCharacterTab } from './characte
 import { mountAuthUI } from '../src/auth-ui';
 import { initTabs } from './tabs.js';
 import { loadAugmentData } from './augments.js';
-import { buildEquipSlotsUI } from './equip-slots.js';
 import { mountModals } from '../src/modals/Modals';
 import { mountStatusPanel } from '../src/status/StatusPanel';
+import { mountEquipSlots } from '../src/equip/EquipSlots';
 import {
     renderEquipSetTabs, updateEquipCharSelector, initEquipSetControls,
 } from './equip-sets.js';
@@ -25,6 +25,7 @@ export async function startApp() {
 
     mountModals(document.getElementById('modals-root'));
     mountStatusPanel(document.getElementById('status-root'));
+    mountEquipSlots(document.getElementById('equipSlotsContainer'));
     initTabs();
     initCharacterTab();
     initEquipSetControls();
@@ -36,7 +37,6 @@ export async function startApp() {
         loadAugmentData(),
     ]);
     buildJobLevelTable();
-    buildEquipSlotsUI();
 
     // Populate equipment set job selector
     const equipJobSel = document.getElementById('equipSelectJob');

@@ -5,11 +5,10 @@
 // saveEquipSet → renderEquipSetTabs → selectEquipSetTab → showEquipSetEditForm
 // が相互に呼び合うため、この一連は 1 モジュールに保つこと。
 import { get_item_by_id } from './wasm.js';
-import { JOBS, RACE_NAMES, EQUIPMENT_SLOTS } from './constants.js';
+import { JOBS, RACE_NAMES } from './constants.js';
 import { loadCharacters, loadEquipSets, saveEquipSets } from './storage.js';
 import { equipState } from './equip-state.js';
-import { createEmptySlots } from './equip-slots.js';
-import { updateAugPathOptions } from './augments.js';
+import { createEmptySlots, notifySlotsLoaded } from '../src/equip/equip-store';
 import { updateEquipEditStatus } from '../src/status/status-store';
 
 // Render equipment set tabs for selected character+job
@@ -128,41 +127,15 @@ export function showEquipSetEditForm(equipSet) {
         });
         document.getElementById('equipSetName').value = equipSet.name;
         deleteBtn.classList.remove('hidden');
-
-        EQUIPMENT_SLOTS.forEach(slot => {
-            const data = equipState.currentEquipSlots[slot.key];
-            const input = document.querySelector(`.equip-slot-search[data-slot="${slot.key}"]`);
-            const descDiv = document.querySelector(`.equip-slot-description[data-slot="${slot.key}"]`);
-            const customDescInput = document.querySelector(`.equip-slot-custom-desc[data-slot="${slot.key}"]`);
-            if (input) {
-                input.value = data ? (data.name_ja || data.name_en || '') : '';
-            }
-            if (descDiv) {
-                const raw = data ? (data.description_ja || '') : '';
-                descDiv.innerHTML = raw.replace(/\\n/g, '<br>');
-            }
-            if (customDescInput) {
-                customDescInput.value = data ? (data.custom_description || '') : '';
-            }
-            updateAugPathOptions(slot.key);
-        });
     } else {
         equipState.editingEquipSetName = null;
         equipState.currentEquipSlots = createEmptySlots();
         document.getElementById('equipSetName').value = '';
         deleteBtn.classList.add('hidden');
-
-        EQUIPMENT_SLOTS.forEach(slot => {
-            const input = document.querySelector(`.equip-slot-search[data-slot="${slot.key}"]`);
-            const descDiv = document.querySelector(`.equip-slot-description[data-slot="${slot.key}"]`);
-            const customDescInput = document.querySelector(`.equip-slot-custom-desc[data-slot="${slot.key}"]`);
-            if (input) input.value = '';
-            if (descDiv) descDiv.textContent = '';
-            if (customDescInput) customDescInput.value = '';
-            updateAugPathOptions(slot.key);
-        });
     }
 
+    // スロット行 (React) に読み込みを通知し、検索テキスト等を選択名へリセット
+    notifySlotsLoaded();
     updateEquipEditStatus();
 }
 

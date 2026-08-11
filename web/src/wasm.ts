@@ -18,18 +18,20 @@ export interface SearchFilter {
     value: string;
 }
 
+// 全フィールドが serde(default) なので部分指定できる (装備スロット検索は
+// query/slot/job/limit のみ渡す)
 export interface SearchOptions {
-    query: string;
-    slot: string;
-    job: string;
-    filters: SearchFilter[];
-    sortBy: string;
-    descStat: string;
-    sortOrder: 'asc' | 'desc';
-    ilv119Only: boolean;
-    ilv119Slots: string[];
-    limit: number;
-    offset: number;
+    query?: string;
+    slot?: string;
+    job?: string;
+    filters?: SearchFilter[];
+    sortBy?: string;
+    descStat?: string;
+    sortOrder?: 'asc' | 'desc';
+    ilv119Only?: boolean;
+    ilv119Slots?: string[];
+    limit?: number;
+    offset?: number;
 }
 
 export interface SearchResultItem {
@@ -40,8 +42,11 @@ export interface SearchResultItem {
     item_level?: number;
     jobs: string[];
     slots: string[];
+    /** 武器スキル ID (武器のみ) */
+    skill?: number;
     /** 改行はリテラルの `\n` (バックスラッシュ + n) として入っている */
     description_ja?: string;
+    description_en?: string;
 }
 
 export interface SearchResults {

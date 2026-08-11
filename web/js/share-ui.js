@@ -1,12 +1,12 @@
 // 装備セット共有の UI 層。共有 URL の発行 (作成側)・共有閲覧モード
 // (?share=<uuid>)・インポート (閲覧側) のモーダルと配線を持つ。
 // Supabase との読み書きは js/share.js (docs/adr/0008)。
-import { JOBS, RACE_NAMES } from './constants.js';
-import { loadCharacters, loadEquipSets, saveEquipSets } from './storage.js';
+import { loadCharacters } from './storage.js';
 import { getCurrentUser } from './supabase-client.js';
 import { createShare, loadSharedEquipSet, getShareIdFromUrl } from './share.js';
 import { equipState } from './equip-state.js';
 import { showEquipSetEditForm } from './equip-sets.js';
+import { openShareUrlModal, openImportShareModal } from '../src/modals/modal-store';
 
 // 共有閲覧モード判定 (?share=<uuid>)
 const _sharedId = getShareIdFromUrl();
@@ -94,33 +94,16 @@ export function initShareUI() {
         const charSnapshot = characters.find(c => c.name === equipState.currentEquipChar) || null;
         try {
             const url = await createShare(equipSet, charSnapshot);
-            document.getElementById('shareUrlInput').value = url;
-            document.getElementById('shareUrlModal').classList.remove('hidden');
+            openShareUrlModal(url);
         } catch (e) {
             console.error('createShare failed:', e);
             alert('共有 URL の発行に失敗しました: ' + (e.message || e));
         }
     });
 
-    document.getElementById('btnCopyShareUrl').addEventListener('click', async () => {
-        const input = document.getElementById('shareUrlInput');
-        try {
-            await navigator.clipboard.writeText(input.value);
-            const btn = document.getElementById('btnCopyShareUrl');
-            const orig = btn.textContent;
-            btn.textContent = 'コピーしました!';
-            setTimeout(() => { btn.textContent = orig; }, 1500);
-        } catch {
-            // フォールバック: 選択するだけ
-            input.select();
-        }
-    });
-
-    document.getElementById('btnCloseShareUrlModal').addEventListener('click', () => {
-        document.getElementById('shareUrlModal').classList.add('hidden');
-    });
-
     // ===== インポート (閲覧側): 共有装備セットを自分のキャラ + ジョブにコピー =====
+    // モーダル本体 (キャラ + ジョブ + 名前の選択と確定処理) は React 側
+    // (web/src/modals/Modals.tsx)。ここは前提チェックとデータの受け渡しのみ。
     document.getElementById('btnImportShare').addEventListener('click', async () => {
         if (!_sharedEquipSet) return;
         if (!getCurrentUser()) {
@@ -130,77 +113,11 @@ export function initShareUI() {
             }
             return;
         }
-        // モーダル: キャラ + ジョブ + 名前 を選択
-        const charSel = document.getElementById('importShareCharSelect');
-        const jobSel = document.getElementById('importShareJobSelect');
-        const nameInput = document.getElementById('importShareNameInput');
-        const desc = document.getElementById('importShareDescription');
-
         const characters = await loadCharacters();
-        charSel.innerHTML = '';
         if (characters.length === 0) {
             alert('先に「キャラクター管理」タブからキャラクターを作成してください。');
             return;
         }
-        characters.forEach(ch => {
-            const opt = document.createElement('option');
-            opt.value = ch.name;
-            opt.textContent = `${ch.name} (${RACE_NAMES[ch.race] || ch.race})`;
-            charSel.appendChild(opt);
-        });
-
-        jobSel.innerHTML = '';
-        JOBS.forEach(j => {
-            const opt = document.createElement('option');
-            opt.value = j.key;
-            opt.textContent = j.name;
-            jobSel.appendChild(opt);
-        });
-        // 共有元のジョブをデフォルト選択
-        if (_sharedEquipSet.job) jobSel.value = _sharedEquipSet.job;
-
-        nameInput.value = _sharedEquipSet.name || '共有装備セット';
-        desc.textContent = `共有元: ${_sharedEquipSet.characterName || '(未設定)'} / ${_sharedEquipSet.job || '(未設定)'} / ${_sharedEquipSet.name}`;
-
-        document.getElementById('importShareModal').classList.remove('hidden');
-    });
-
-    document.getElementById('btnCancelImportShare').addEventListener('click', () => {
-        document.getElementById('importShareModal').classList.add('hidden');
-    });
-
-    document.getElementById('btnConfirmImportShare').addEventListener('click', async () => {
-        const character = document.getElementById('importShareCharSelect').value;
-        const job = document.getElementById('importShareJobSelect').value;
-        const name = document.getElementById('importShareNameInput').value.trim();
-        if (!character || !job || !name) {
-            alert('キャラクター・ジョブ・名前を全て指定してください。');
-            return;
-        }
-        const sets = await loadEquipSets();
-        // 重複名は (2), (3) ... を付与して回避
-        const used = new Set(
-            sets.filter(s => s.character === character && s.job === job).map(s => s.name)
-        );
-        let finalName = name;
-        let i = 2;
-        while (used.has(finalName)) finalName = `${name} (${i++})`;
-
-        sets.push({
-            name: finalName,
-            character,
-            job,
-            slots: { ...(_sharedEquipSet.slots || {}) },
-        });
-        try {
-            await saveEquipSets(sets);
-            alert(`「${finalName}」としてインポートしました。`);
-            document.getElementById('importShareModal').classList.add('hidden');
-            // share=URL を外して通常モードに戻る
-            window.location.href = window.location.origin + window.location.pathname;
-        } catch (e) {
-            console.error('import failed:', e);
-            alert('インポートに失敗しました: ' + (e.message || e));
-        }
+        openImportShareModal({ characters, shared: _sharedEquipSet });
     });
 }

@@ -10,7 +10,8 @@ import { buildJobLevelTable, renderCharList, initCharacterTab } from './characte
 import { mountAuthUI } from '../src/auth-ui';
 import { initTabs } from './tabs.js';
 import { loadAugmentData } from './augments.js';
-import { buildEquipSlotsUI, initCustomAugHelpModal } from './equip-slots.js';
+import { buildEquipSlotsUI } from './equip-slots.js';
+import { mountModals } from '../src/modals/Modals';
 import {
     renderEquipSetTabs, updateEquipCharSelector, initEquipSetControls,
 } from './equip-sets.js';
@@ -21,11 +22,11 @@ import './sync.js';
 export async function startApp() {
     mountAuthUI(document.getElementById('auth-ui'));
 
+    mountModals(document.getElementById('modals-root'));
     initTabs();
     initCharacterTab();
     initEquipSetControls();
     initShareUI();
-    initCustomAugHelpModal();
 
     await Promise.all([
         // items.json の fetch は廃止。WASM に埋め込まれている (docs/adr/0009)。

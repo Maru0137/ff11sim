@@ -6,6 +6,7 @@ import { EQUIPMENT_SLOTS } from './constants.js';
 import { equipState } from './equip-state.js';
 import { updateAugPathOptions, updateAugTextDisplay } from './augments.js';
 import { updateEquipEditStatus } from './equip-status.js';
+import { openCustomAugHelp } from '../src/modals/modal-store';
 
 // 装備データと検索は Rust 側に移した (docs/adr/0009, docs/adr/0010)。
 // items.json は WASM に埋め込まれているので JS からは読まない。
@@ -34,7 +35,7 @@ export function buildEquipSlotsUI() {
             helpBtn.textContent = '?';
             helpBtn.title = 'カスタムオーグメント欄の書き方を表示';
             helpBtn.addEventListener('click', () => {
-                document.getElementById('customAugHelpModal').classList.remove('hidden');
+                openCustomAugHelp();
             });
             span.appendChild(helpBtn);
         }
@@ -152,19 +153,6 @@ export function buildEquipSlotsUI() {
         });
     });
 
-}
-
-// カスタムオーグメント書式ヘルプモーダル (開くボタンは buildEquipSlotsUI が生成)
-export function initCustomAugHelpModal() {
-    document.getElementById('btnCloseCustomAugHelp').addEventListener('click', () => {
-        document.getElementById('customAugHelpModal').classList.add('hidden');
-    });
-    document.getElementById('customAugHelpModal').addEventListener('click', (e) => {
-        // 背景クリックで閉じる
-        if (e.target.id === 'customAugHelpModal') {
-            e.currentTarget.classList.add('hidden');
-        }
-    });
 }
 
 function setupSlotSearch(slotKey, input, dropdown) {

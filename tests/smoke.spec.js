@@ -70,6 +70,25 @@ test('検索ページがエラーなしで読み込め、検索が動く', async
   expect(errors).toEqual([]);
 });
 
+test('検索結果のページネーションで次のページへ進める', async ({ page }) => {
+  const errors = collectErrors(page);
+  // 初期表示は空クエリの全件検索で 50 件を超えるため、ページネーションが出る。
+  // Rust 側 SearchResult の has_more (snake_case) を JS が hasMore で読んでいて
+  // 「次へ」が恒久的に無効になるバグがあった。命名不一致の回帰をここで検出する。
+  await page.goto('search.html');
+  await page.waitForTimeout(3000);
+
+  await expect(page.locator('#pagination')).toBeVisible();
+  await expect(page.locator('#pageInfo')).toHaveText(/^Page 1 of /);
+  await expect(page.locator('#nextBtn')).toBeEnabled();
+
+  await page.click('#nextBtn');
+  await page.waitForTimeout(1000);
+  await expect(page.locator('#pageInfo')).toHaveText(/^Page 2 of /);
+
+  expect(errors).toEqual([]);
+});
+
 test('保存済みキャラクターのステータスが 0 でなく表示される', async ({ page }) => {
   const errors = collectErrors(page);
   // localStorage はオリジンごとなので、一度ページを開いてから投入して再読み込みする。

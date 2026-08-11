@@ -5,6 +5,8 @@
 // この種の参照漏れはコードを動かさずに検出できる。
 import globals from 'globals';
 import html from 'eslint-plugin-html';
+import tseslint from 'typescript-eslint';
+import reactHooks from 'eslint-plugin-react-hooks';
 
 export default [
   {
@@ -23,6 +25,26 @@ export default [
     },
     rules: {
       'no-undef': 'error',
+    },
+  },
+  {
+    // React / TypeScript 層 (web/src/、docs/adr/0012)。
+    // no-undef は付けない: TS では未定義識別子を tsc (npm run typecheck) が
+    // 検出し、core の no-undef は誤検知源になる (typescript-eslint の推奨)。
+    // 既存 JS 層の no-undef と同じ目的 (参照漏れ検出) は typecheck が担う。
+    files: ['web/**/*.ts', 'web/**/*.tsx'],
+    languageOptions: {
+      parser: tseslint.parser,
+      ecmaVersion: 'latest',
+      sourceType: 'module',
+      globals: { ...globals.browser },
+    },
+    plugins: { 'react-hooks': reactHooks },
+    rules: {
+      // 依存配列ミスは「状態と表示の不整合」という過去の本番障害と
+      // 同型の不具合を生むため error にする。
+      'react-hooks/rules-of-hooks': 'error',
+      'react-hooks/exhaustive-deps': 'error',
     },
   },
   {

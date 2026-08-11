@@ -21,7 +21,7 @@ wheels = [
 ]
 
 [[package]]
-name = "ff11sim-dev"
+name = "ff11sim"
 version = "0"
 source = { virtual = "." }
 

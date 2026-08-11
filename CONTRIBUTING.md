@@ -10,22 +10,11 @@ clone してから変更を push するまでの流れをまとめます。
 |---|---|---|
 | Rust (stable) | コア実装のビルド・テスト | [rustup](https://rustup.rs/) で導入 |
 | wasm-pack | ブラウザ向け WASM のビルド | `cargo install wasm-pack` |
-| Python 3 | 装備データ生成スクリプト | 標準ライブラリのみ使用。追加パッケージ不要 |
-| pre-commit | commit 前の自動検査 | 次節を参照 |
+| Python 3 | 装備データ生成スクリプト | 標準ライブラリのみ使用 |
+| [uv](https://docs.astral.sh/uv/) | 開発ツール (pre-commit) の導入 | `pyproject.toml` / `uv.lock` で版を固定 |
 
-pre-commit 本体は次のいずれかで導入します。
-
-```bash
-uv tool install pre-commit
-```
-
-```bash
-pipx install pre-commit
-```
-
-```bash
-brew install pre-commit
-```
+pre-commit は各自で入れるのではなく、`pyproject.toml` の依存として宣言してあります。
+`uv.lock` で版が固定されるため、全員が同じバージョンを使うことになります。
 
 ## 1. 初回セットアップ
 
@@ -37,20 +26,34 @@ git clone https://github.com/Maru0137/ff11sim.git
 cd ff11sim
 ```
 
+開発ツールを取得します（`.venv/` が作られます）。
+
+```bash
+uv sync
+```
+
 commit 前の検査を有効化します（1 度だけ）。
 
 ```bash
-pre-commit install
+uv run pre-commit install
 ```
 
 **git は clone 時にフックを自動で有効化しません**（任意のコードが実行されてしまうため）。
 そのためこの 1 行は各自で実行する必要があります。
+
+一度実行すれば、以降の `git commit` は `uv run` を付けなくてもフックが走ります
+（`.git/hooks/pre-commit` に `.venv` の Python が埋め込まれるため）。
+`pre-commit` を直接叩きたい場合のみ `uv run pre-commit ...` を使ってください。
 
 <details>
 <summary>毎回 <code>pre-commit install</code> したくない場合</summary>
 
 git の**テンプレートディレクトリ**を設定しておくと、以後 clone するリポジトリでは
 フックが最初から入った状態になります。マシンごとに 1 度だけの設定です。
+
+```bash
+uv tool install pre-commit
+```
 
 ```bash
 pre-commit init-templatedir ~/.git-template
@@ -63,8 +66,11 @@ git config --global init.templateDir ~/.git-template
 git は `git init` / `git clone` の際にテンプレートディレクトリの中身を新しい `.git/` へ
 コピーします。それを利用してフックスクリプトをあらかじめ仕込んでおく仕組みです。
 
+- **ここでは `uv run` を使わず、グローバルに入れた pre-commit で実行してください。**
+  `init-templatedir` は実行に使った Python のパスをフックに埋め込むため、
+  `uv run` で実行するとこのリポジトリの `.venv` を指すテンプレートができてしまいます
 - `.pre-commit-config.yaml` を持たないリポジトリでは何もせず通過するため、他のリポジトリに影響しません
-- **設定後に clone したリポジトリにのみ効きます。** 既存の clone では `pre-commit install` が必要です
+- **設定後に clone したリポジトリにのみ効きます。** 既存の clone では `uv run pre-commit install` が必要です
 - これは各自のグローバル設定であり、リポジトリ側からは強制できません
 
 </details>
@@ -249,4 +255,4 @@ PR には**何をなぜ変えたか**と、**どう検証したか**（実行し
 | WASM が読み込めない | `web/pkg/` があるか確認。無ければ `wasm-pack build` を実行する |
 | Rust を直したのにブラウザに反映されない | WASM の再ビルドが必要。ブラウザのキャッシュも確認する |
 | commit が `cargo fmt --check` で止まる | `cargo fmt --manifest-path rust/Cargo.toml` して `git add` し直す |
-| `pre-commit: command not found` | pre-commit 本体を導入する（「0. 必要なツール」参照） |
+| `pre-commit: command not found` | `uv sync` を実行して `.venv/` を作り直す |

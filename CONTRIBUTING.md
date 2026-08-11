@@ -9,12 +9,20 @@ clone してから変更を push するまでの流れをまとめます。
 | ツール | 用途 | 備考 |
 |---|---|---|
 | Rust | コア実装のビルド・テスト | [rustup](https://rustup.rs/) で導入。版は `rust-toolchain.toml` で固定 |
-| wasm-pack | ブラウザ向け WASM のビルド | `cargo install wasm-pack` |
+| wasm-pack | ブラウザ向け WASM のビルド | 次のコマンドで導入 |
 | Python 3 | 装備データ生成スクリプト | 標準ライブラリのみ使用 |
 | [uv](https://docs.astral.sh/uv/) | 開発ツール (pre-commit) の導入 | `pyproject.toml` / `uv.lock` で版を固定 |
 
 pre-commit は各自で入れるのではなく、`pyproject.toml` の依存として宣言してあります。
 `uv.lock` で版が固定されるため、全員が同じバージョンを使うことになります。
+
+wasm-pack は Cargo の依存としては管理できません（`[dependencies]` はライブラリ用で、
+依存クレートの実行ファイルはビルドされないため）。版を明示して導入してください。
+CI も同じ版を使っています。上げるときは両方を揃えて変更します。
+
+```bash
+cargo install --locked wasm-pack@0.14.0
+```
 
 Rust も同様に `rust-toolchain.toml` で版を固定しています。リポジトリ内で
 `cargo` / `rustfmt` を実行すると rustup がこのファイルを読んで該当バージョンに切り替え、

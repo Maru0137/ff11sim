@@ -63,8 +63,14 @@ jobs:
         run: cargo test
         working-directory: rust
 
+      # 版を固定する。以前の init.sh は常に最新を取得するため、開発者の手元
+      # (CONTRIBUTING.md で 0.14.0 を指定) と CI で別バージョンになりえた。
+      # cargo install はソースビルドで数分かかるので、prebuilt を取得できる
+      # このアクションを使う。版を上げるときは CONTRIBUTING.md と揃えて変更する。
       - name: Install wasm-pack
-        run: curl https://rustwasm.github.io/wasm-pack/installer/init.sh -sSf | sh
+        uses: taiki-e/install-action@v2
+        with:
+          tool: wasm-pack@0.14.0
 
       - name: Build WASM
         run: |

@@ -4,12 +4,24 @@ A simulator of FINAL FANTASY XI
 ## セットアップ
 
 clone してから変更を push するまでの流れは [CONTRIBUTING.md](CONTRIBUTING.md) にまとめています。
-最低限、次の 3 つが必要です。
+最低限、リポジトリのルートで次の 3 つを実行してください。
+
+commit 前の検査を有効化します（1 度だけ）。
 
 ```bash
-pre-commit install                 # commit 前の検査を有効化 (1 度だけ)
-scripts/build_web_data.sh          # 装備データを生成 (git 管理外)
-cd rust && wasm-pack build --target web --out-dir ../web/pkg
+pre-commit install
+```
+
+装備データを生成します（git 管理外のため clone 直後は存在しません）。
+
+```bash
+scripts/build_web_data.sh
+```
+
+WASM をビルドします。
+
+```bash
+wasm-pack build rust --target web --out-dir ../web/pkg
 ```
 
 - 開発の流れ全般: [CONTRIBUTING.md](CONTRIBUTING.md)

@@ -110,6 +110,12 @@ React / TypeScript 層（`web/src/`）の型検査。未定義識別子の検出
 npm run typecheck
 ```
 
+純関数のユニットテスト（Vitest、`web/src/**/*.test.ts`）。
+
+```bash
+npm run test:unit
+```
+
 スモークテスト。ページを実際に開き「コンソールエラーが無い」「ステータスが 0 でない」を
 確認します。Rust のテストが通っていても JS の参照漏れや WASM の初期化失敗で
 ページが動かないことがあり、その層はここでしか検出できません。

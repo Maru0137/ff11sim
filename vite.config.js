@@ -35,4 +35,11 @@ export default defineConfig({
             },
         },
     },
+    // Vitest (ユニットテスト)。root: 'web' 基準なので include も web/ 相対。
+    // ブラウザ API に依存しない純関数のみを対象にする (ページ全体の検証は
+    // Playwright スモークの責務)。
+    test: {
+        include: ['src/**/*.test.ts'],
+        environment: 'node',
+    },
 });

@@ -3,8 +3,8 @@
 // Supabase との読み書きは js/share.js (docs/adr/0008)。
 import { loadCharacters } from './storage.js';
 import { getCurrentUser } from './supabase-client.js';
-import { createShare, loadSharedEquipSet, getShareIdFromUrl } from './share.js';
-import { equipState } from './equip-state.js';
+import { createShare, loadSharedEquipSet, getShareIdFromUrl } from '../src/share';
+import { equipState } from '../src/equip/equip-store';
 import {
     showSharedEquipSet, setShareHeader, showShareLoadError,
 } from '../src/equip/equip-sets-store';

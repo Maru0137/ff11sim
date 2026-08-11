@@ -27,65 +27,48 @@
   `allowJs + checkJs: false` で型検査対象外。typescript は `~5.9.3` に固定
   (typescript-eslint の peer が TypeScript 6.1 未満のため。`npm update` で
   7.x に上げると lint が壊れる)
-- **StrictMode**: 未導入。effect の二重実行監査が済むまで見送り(Phase 7)
+- **StrictMode**: Phase 7 で導入済み (開発時のみの検査。本番ビルドは no-op)
 
-## 残フェーズ
+## 各フェーズの実施状況(全フェーズ実施済み: 2026-08-11)
 
-依存の少ない順・状態境界が切りやすい順。番号は実施順の目安であり、
-Phase 1〜2 は入れ替え可能。
+依存の少ない順・状態境界が切りやすい順に、フェーズごとに 1 コミットで実施した。
+完了条件 (lint / typecheck / スモーク 9 本、セレクタ変更なし) は各フェーズで確認済み。
 
-### Phase 1: モーダル類
+1. **モーダル類** — 済。`web/src/modals/`。開閉 API は modal-store に置き、
+   レガシー側からも呼べるようにした
+2. **ステータス表示** — 済。`web/src/status/`。status-display.js の約 200 の
+   setText を「id → 表示値」レコードの組み立て (compute.ts) に変換し、
+   テーブル構造は index.html から機械変換 (StatusTables.tsx)。
+   サブタブ状態と魔法タブの表示可否も React 化
+3. **装備エディタ** — 済。`web/src/equip/EquipSlots.tsx` + equip-store.ts。
+   equipState はバージョン購読で React と接続し、data-slot セレクタ経由の
+   DOM 参照 (DOM-as-database) を解消
+4. **装備セット管理パネル** — 済。`web/src/equip/EquipSetControls.tsx` /
+   EquipSetToolbar.tsx / equip-sets-store.ts
+5. **キャラクター管理** — 済。`web/src/character/`。モジュール変数 5 つ +
+   DOM に分散していた編集中状態を FormState に集約
+6. **index.html の畳み込み** — 済。ページ全体が App.tsx の単一 root。
+   main.js / tabs.js を削除し、共有閲覧モードの DOM 操作も store 化。
+   インライン CSS は web/styles/index.css へ抽出
+7. **仕上げ** — 一部済:
+   - TS 化済み: utils / share / augments / equip-state (equip-store へ統合)
+   - Vitest 導入済み (`npm run test:unit`、CI にステップ追加)。
+     format / utils / store-utils の純関数テスト
+   - StrictMode 導入済み (両ページ)
 
-- 対象: `initCustomAugHelpModal`(equip-slots.js 内)、`#shareUrlModal` /
-  `#importShareModal`(share-ui.js 内)
-- 理由: 共有状態への依存が最小の葉ウィジェット
-- スモーク: テスト「オーグメント選択…」+ 全テストの console エラー検査
+## 残課題
 
-### Phase 2: ステータス表示(equipStatusSection)
-
-- 対象: `status-display.js`(583 行)+ `tabs.js` のサブタブ切替、
-  index.html の `#equipStatusSection`(静的テーブル約 770 行)
-- 理由: 入力が `deps` オブジェクトに集約された表示専用モジュールで、
-  削除行数対リスク比が最大。status-display.js がサブタブの表示状態を
-  直接触っているため、tabs.js のサブタブ側と**一体で**移行する
-- スモーク: テスト「保存済みキャラクターのステータス…」(HP≠0、サブタブ切替)
-
-### Phase 3: 装備エディタ単位
-
-- 対象: `equip-slots.js` + `augments.js` の表示側 +
-  `equip-sets.js#showEquipSetEditForm`
-- 前提作業: `equip-state.js` の `equipState`(素の可変シングルトン)を
-  pub/sub 化し、`useSyncExternalStore` ブリッジで React と旧コードの両方から
-  読めるようにする。`data-slot` 属性による DOM 越しの参照
-  (augments.js → equip-slots.js の DOM)があるため、この 3 つは分割しない
-- スモーク: テスト「オーグメント選択…」「スロット検索で装備を選び…」
-
-### Phase 4: 装備セットタブバー
-
-- 対象: `equip-sets.js` 残部(タブバー、drag & drop 並べ替え、保存/コピー/削除)
-- スモーク: テスト「保存済みキャラクター…」「スロット検索で…」
-
-### Phase 5: キャラクター管理
-
-- 対象: `character-list.js` + `character-form.js`
-- 理由: form のモジュールレベル状態 5 つと list の `#jobLevelTable` 構築が
-  相互依存しており、実質 1 ウィジェット。**一体で**移行する
-- スモーク: テスト「キャラクターを UI から作成できる」
-
-### Phase 6: index.html の畳み込み
-
-- 対象: `main.js` / `tabs.js` 残部 / `share-ui.js` の `?share=` 分岐 /
-  index.html のインライン `<style>`(約 1,070 行)の整理
-- 理由: 全ウィジェットが React 化された後、ページを単一 root に統合する。
-  共有閲覧モードは通常初期化をスキップする第 2 の起動経路なので、
-  ここまで各フェーズでも `?share=` の動作確認を怠らないこと
-- スモーク: テスト「トップページ…」「共有 URL…」+ 全体
-
-### Phase 7: 純関数層の TS 化と仕上げ
-
-- 対象: `utils.js` / `constants.js` / `equip-bonuses.js` / `storage.js` /
-  `share.js` / `repositories/*` の TS 化、`web/js/wasm.js` の
-  `web/src/wasm.ts` への統合と WASM 境界型の拡張
-- 合わせて: Vitest 導入(equip-bonuses のユニットテスト —
-  [docs/tech-debt/inline-script-monolith.md](../tech-debt/inline-script-monolith.md)
-  の残課題)、`<StrictMode>` 導入の検討
+- **レガシー JS 層の TS 化**: `web/js/` に残るのは constants.js /
+  storage.js / repositories / supabase-client.js / sync.js / share-ui.js /
+  equip-bonuses.js / wasm.js / config.js。いずれも DOM 非依存で、
+  変換は機械的。wasm.js を web/src/wasm.ts に統合する場合は、CI の
+  typecheck が wasm-pack より先に走る前提 (web/pkg 不在) を崩さない工夫が要る
+- **equip-bonuses のユニットテスト**: WASM 関数 (extract_all_stats 等) に
+  依存するため、node での WASM 初期化 (バイト列を渡す init) か
+  ブラウザモードの導入が必要。constants.js の top-level await fetch も
+  node では動かないため、モックか読み込み方法の変更が要る
+  ([docs/tech-debt/inline-script-monolith.md](../tech-debt/inline-script-monolith.md) の残課題)
+- **search.html のインライン CSS 抽出** (index.html は抽出済み)
+- **サポートジョブ選択肢からメインジョブを除外する条件の修正**: 旧実装から
+  大文字小文字の不一致で機能しておらず、挙動維持のまま移植した
+  (web/src/equip/EquipSetControls.tsx のコメント参照)。直すなら独立した修正として

@@ -5,6 +5,7 @@
   "scripts": {
     "lint": "eslint .",
     "typecheck": "tsc --noEmit",
+    "test:unit": "vitest run",
     "dev": "vite",
     "build": "vite build",
     "preview": "vite preview --port 8000 --strictPort",
@@ -21,7 +22,8 @@
     "globals": "^17.9.0",
     "typescript": "~5.9.3",
     "typescript-eslint": "^8.67.0",
-    "vite": "^8.2.1"
+    "vite": "^8.2.1",
+    "vitest": "^4.1.10"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.112.3",

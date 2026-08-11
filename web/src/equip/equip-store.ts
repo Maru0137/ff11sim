@@ -1,10 +1,9 @@
-// 装備セットエディタ共有状態 (web/js/equip-state.js) と React の橋渡し。
+// 装備セットエディタの共有状態 (旧 web/js/equip-state.js を統合)。
 //
-// equipState 本体は従来どおり複数のレガシーモジュールが直接読み書きする
-// 可変オブジェクトのまま。React 側はバージョン番号を購読し、
+// equipState はスロット UI・セット管理・ステータス表示・共有閲覧モードが
+// 読み書きする可変オブジェクト。React 側はバージョン番号を購読し、
 // notifyEquipState() (updateEquipEditStatus 経由で全変更点から呼ばれる)
-// で再描画される。equipState 自体の React 移行は Phase 4 以降。
-import { equipState } from '../../js/equip-state.js';
+// で再描画される。
 import { EQUIPMENT_SLOTS } from '../../js/constants.js';
 import { createStore } from '../store-utils';
 
@@ -24,6 +23,23 @@ export interface SlotDef {
     key: string;
     label: string;
 }
+
+export const equipState = {
+    /** 選択中キャラクター名 */
+    currentEquipChar: '',
+    /** 選択中ジョブキー */
+    currentEquipJob: '',
+    /** 選択中サポートジョブキー */
+    currentEquipSupportJob: '',
+    /** slotKey → EquipSlotData | null */
+    currentEquipSlots: {} as Record<string, EquipSlotData | null | undefined>,
+    /** 編集中セット名 (新規なら null) */
+    editingEquipSetName: null as string | null,
+    /** "+" タブから新規作成中なら true */
+    isNewEquipSet: false,
+    /** 共有閲覧モード時のキャラクター snapshot (loadCharacters() に存在しないため)。null なら通常モード */
+    sharedCharacterOverride: null as unknown,
+};
 
 export const SLOT_DEFS: SlotDef[] = EQUIPMENT_SLOTS;
 
@@ -56,5 +72,3 @@ export const getSlotsGeneration = generationStore.get;
 export function notifySlotsLoaded() {
     generationStore.set(generationStore.get() + 1);
 }
-
-export { equipState };

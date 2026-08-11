@@ -17,7 +17,7 @@ import {
 import {
     jpJobTotal, jpDefaultRanks,
     jobMeritDefaultRanks, jobMeritCategoryName, isJobMeritPlaceholder, samStoreTpIndex,
-} from '../../js/utils.js';
+} from '../utils';
 import { charactersStore, reloadCharacterList } from './character-store';
 import type { CharacterRecord } from './character-store';
 

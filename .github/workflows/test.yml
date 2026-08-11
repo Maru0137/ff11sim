@@ -59,6 +59,11 @@ jobs:
       - name: Typecheck
         run: npm run typecheck
 
+      # 純関数のユニットテスト (Vitest)。ブラウザ API / WASM に依存しないため
+      # WASM ビルドより前に置いて早く落とす。
+      - name: Unit tests
+        run: npm run test:unit
+
       - name: Setup Python
         uses: actions/setup-python@v7
         with:

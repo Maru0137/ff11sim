@@ -1,4 +1,4 @@
-// 装備セット共有機能。
+// 装備セット共有機能 (旧 web/js/share.js の TS 化)。
 //
 // データモデル: shared_equipsets テーブル (DB schema 参照)
 //   id (uuid PK), user_id (作成者, nullable), name, character_name, job, data (slots 等), created_at
@@ -12,14 +12,33 @@
 //   - SELECT: 全員許可 (URL を知っていれば閲覧可)
 //   - INSERT: 認証ユーザーのみ (auth.uid() = user_id)
 
-import { supabase, getCurrentUser } from './supabase-client.js';
+import { supabase, getCurrentUser } from '../js/supabase-client.js';
 
 const SHARE_PARAM = 'share';
+
+interface ShareEquipSetInput {
+    name?: string;
+    character?: string;
+    job?: string;
+    support_job?: string | null;
+    slots?: Record<string, unknown>;
+}
+
+export interface SharedEquipSetResult {
+    name: string;
+    characterName: string;
+    job: string;
+    support_job?: string | null;
+    slots?: Record<string, unknown>;
+    /** 共有時のキャラクタースナップショット (なければ null) */
+    characterSnapshot: unknown;
+    _shared_created_at: string;
+}
 
 /**
  * URL の `?share=<uuid>` を取得。なければ null。
  */
-export function getShareIdFromUrl() {
+export function getShareIdFromUrl(): string | null {
     const params = new URLSearchParams(window.location.search);
     return params.get(SHARE_PARAM);
 }
@@ -27,7 +46,7 @@ export function getShareIdFromUrl() {
 /**
  * 共有ページの URL を組み立てる (現在のサイト origin + path + ?share=id)。
  */
-export function buildShareUrl(id) {
+export function buildShareUrl(id: string): string {
     const base = window.location.origin + window.location.pathname;
     return `${base}?${SHARE_PARAM}=${encodeURIComponent(id)}`;
 }
@@ -38,18 +57,17 @@ export function buildShareUrl(id) {
  *
  * 引数の characterSnapshot は閲覧側でステータス計算 (素 + 装備) を再現するため
  * data.character フィールドに格納する。閲覧者は読み取り専用で復元計算のみに利用する。
- *
- * @param {object} equipSet { name, character, job, slots, support_job }
- * @param {object|null} characterSnapshot { name, race, jobs:{<key>:{level,...}}, skills?, merit_points?, ... }
- * @returns {Promise<string>} 共有 URL
  */
-export async function createShare(equipSet, characterSnapshot) {
+export async function createShare(
+    equipSet: ShareEquipSetInput,
+    characterSnapshot: unknown
+): Promise<string> {
     const user = getCurrentUser();
     if (!user) throw new Error('not signed in');
 
     // name / character / job は別カラムに展開、それ以外 (slots 等) は data jsonb に格納
     const { name, character, job, ...rest } = equipSet;
-    const dataPayload = { ...rest };
+    const dataPayload: Record<string, unknown> = { ...rest };
     if (characterSnapshot) dataPayload.character = characterSnapshot;
 
     const row = {
@@ -72,15 +90,8 @@ export async function createShare(equipSet, characterSnapshot) {
 
 /**
  * 共有 ID から装備セットを復元。誰でも (未ログインでも) 取得可能。
- *
- * @param {string} id 共有 UUID
- * @returns {Promise<object>} {
- *   name, characterName, job, support_job, slots, ...
- *   character: 共有時のキャラクタースナップショット (なければ undefined)
- *   _shared_created_at
- * }
  */
-export async function loadSharedEquipSet(id) {
+export async function loadSharedEquipSet(id: string): Promise<SharedEquipSetResult> {
     const { data, error } = await supabase
         .from('shared_equipsets')
         .select('name, character_name, job, data, created_at')
@@ -91,7 +102,7 @@ export async function loadSharedEquipSet(id) {
 
     // data 内に character フィールドがあれば snapshot として展開する。
     // それ以外 (slots, support_job 等) はトップレベルに広げる。
-    const { character: characterSnapshot, ...rest } = data.data ?? {};
+    const { character: characterSnapshot, ...rest } = (data.data ?? {}) as Record<string, unknown>;
 
     return {
         name: data.name ?? '',

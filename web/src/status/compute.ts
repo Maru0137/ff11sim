@@ -3,7 +3,7 @@
 // 「id → 表示値」のレコード (StatusView.values) を組み立てて返し、描画は
 // StatusPanel (React) が行う。id は旧実装の DOM id と同一に保っている。
 import { JOBS, JP_CATEGORY_COUNT, ALL_SKILL_KEYS } from '../../js/constants.js';
-import { jpDefaultRanks } from '../../js/utils.js';
+import { jpDefaultRanks } from '../utils';
 import { loadCharacters } from '../../js/storage.js';
 import {
     calculate_status_from_profile,
@@ -11,7 +11,7 @@ import {
     isWasmReady,
     isItemsLoaded,
 } from '../../js/wasm.js';
-import { equipState } from '../../js/equip-state.js';
+import { equipState } from '../equip/equip-store';
 import { calculateEquipSetBonuses } from '../../js/equip-bonuses.js';
 
 // === 表示用ヘルパー (純粋) ===

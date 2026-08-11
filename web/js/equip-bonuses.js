@@ -9,8 +9,8 @@ import {
     sum_stats, empty_stats, isItemsLoaded,
 } from './wasm.js';
 import { SKILL_KEYS_WEAPON } from './constants.js';
-import { convertAugmentJaToEn } from './utils.js';
-import { getAugmentText } from './augments.js';
+import { convertAugmentJaToEn } from '../src/utils';
+import { getAugmentText } from '../src/augments';
 
 // 武器スキルのキー集合。以前は equip-stats.js が同じ一覧を自前で持っていたが、
 // 二重管理になるので data/skills.json (category: Weapon) 由来の定義から作る。

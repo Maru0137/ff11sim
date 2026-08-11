@@ -5,9 +5,10 @@
 //      (WASM ロード完了を待たない)
 //   2. WASM 初期化とオーグメントデータ取得を並行で待つ
 //   3. ?share= 付きなら共有閲覧モードへ分岐し、通常初期化はスキップする
+import { StrictMode } from 'react';
 import { createRoot } from 'react-dom/client';
 import { initWasmRuntime } from '../js/wasm.js';
-import { loadAugmentData } from '../js/augments.js';
+import { loadAugmentData } from './augments';
 import { isShareMode, enterShareMode } from '../js/share-ui.js';
 import { onAuthChange } from '../js/supabase-client.js';
 import { initEquipSetPanel, refreshEquipSetPanel } from './equip/equip-sets-store';
@@ -21,7 +22,12 @@ export async function startApp() {
     if (isShareMode()) {
         document.body.classList.add('share-mode');
     }
-    createRoot(document.getElementById('app-root')!).render(<App />);
+    // StrictMode は開発時のみ二重実行等の検査を行う (本番ビルドでは no-op)
+    createRoot(document.getElementById('app-root')!).render(
+        <StrictMode>
+            <App />
+        </StrictMode>
+    );
 
     await Promise.all([
         // items.json の fetch は廃止。WASM に埋め込まれている (docs/adr/0009)。

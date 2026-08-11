@@ -111,6 +111,12 @@ jobs:
       - name: Build WASM
         run: wasm-pack build rust --target web --out-dir ../web/pkg
 
+      # config.js は .gitignore 済みで、本物は deploy.yml が Secrets から生成する。
+      # 無いと import が 404 になりページ全体が読み込めないため、テンプレを流用する。
+      # スモークはログイン機能を検証しないので値はプレースホルダで足りる。
+      - name: Generate placeholder config
+        run: cp web/js/config.example.js web/js/config.js
+
       - name: Install Playwright browser
         run: npx playwright install --with-deps chromium
 

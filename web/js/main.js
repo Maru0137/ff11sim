@@ -5,7 +5,6 @@
 //   2. WASM 初期化とオーグメントデータ取得を並行で待つ
 //   3. ?share= 付きなら共有閲覧モードへ分岐し、通常初期化はスキップする
 import { initWasmRuntime } from './wasm.js';
-import { JOBS } from './constants.js';
 import { buildJobLevelTable, renderCharList, initCharacterTab } from './character-list.js';
 import { mountAuthUI } from '../src/auth-ui';
 import { initTabs } from './tabs.js';
@@ -13,10 +12,10 @@ import { loadAugmentData } from './augments.js';
 import { mountModals } from '../src/modals/Modals';
 import { mountStatusPanel } from '../src/status/StatusPanel';
 import { mountEquipSlots } from '../src/equip/EquipSlots';
-import {
-    renderEquipSetTabs, updateEquipCharSelector, initEquipSetControls,
-} from './equip-sets.js';
-import { isShareMode, enterShareMode, initShareUI } from './share-ui.js';
+import { mountEquipSetControls } from '../src/equip/EquipSetControls';
+import { mountEquipSetToolbar } from '../src/equip/EquipSetToolbar';
+import { initEquipSetPanel, refreshEquipSetPanel } from '../src/equip/equip-sets-store';
+import { isShareMode, enterShareMode } from './share-ui.js';
 import { onAuthChange } from './supabase-client.js';
 import './sync.js';
 
@@ -26,10 +25,10 @@ export async function startApp() {
     mountModals(document.getElementById('modals-root'));
     mountStatusPanel(document.getElementById('status-root'));
     mountEquipSlots(document.getElementById('equipSlotsContainer'));
+    mountEquipSetControls(document.getElementById('equipset-controls-root'));
+    mountEquipSetToolbar(document.getElementById('equipset-toolbar-root'));
     initTabs();
     initCharacterTab();
-    initEquipSetControls();
-    initShareUI();
 
     await Promise.all([
         // items.json の fetch は廃止。WASM に埋め込まれている (docs/adr/0009)。
@@ -38,22 +37,13 @@ export async function startApp() {
     ]);
     buildJobLevelTable();
 
-    // Populate equipment set job selector
-    const equipJobSel = document.getElementById('equipSelectJob');
-    JOBS.forEach(job => {
-        const opt = document.createElement('option');
-        opt.value = job.key;
-        opt.textContent = job.name;
-        equipJobSel.appendChild(opt);
-    });
-
     // ===== 共有閲覧モード =====
     if (isShareMode()) {
         await enterShareMode();
         return;
     }
 
-    await updateEquipCharSelector();
+    await initEquipSetPanel();
     await renderCharList();
 
     // 認証状態が変わったら表示中のリストを再描画
@@ -65,12 +55,12 @@ export async function startApp() {
             return;
         }
         await renderCharList();
-        await renderEquipSetTabs();
+        await refreshEquipSetPanel();
     });
 
     // sync.js が localStorage → Supabase アップロード完了時に発火
     window.addEventListener('ff11sim:synced', async () => {
         await renderCharList();
-        await renderEquipSetTabs();
+        await refreshEquipSetPanel();
     });
 }

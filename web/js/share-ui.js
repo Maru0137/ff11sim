@@ -5,7 +5,7 @@ import { loadCharacters } from './storage.js';
 import { getCurrentUser } from './supabase-client.js';
 import { createShare, loadSharedEquipSet, getShareIdFromUrl } from './share.js';
 import { equipState } from './equip-state.js';
-import { showEquipSetEditForm } from './equip-sets.js';
+import { showSharedEquipSet } from '../src/equip/equip-sets-store';
 import { openShareUrlModal, openImportShareModal } from '../src/modals/modal-store';
 
 // 共有閲覧モード判定 (?share=<uuid>)
@@ -56,8 +56,8 @@ export async function enterShareMode() {
         equipState.currentEquipChar = _sharedEquipSet.characterName || '(共有元)';
         equipState.currentEquipJob = _sharedEquipSet.job || '';
         equipState.currentEquipSupportJob = _sharedEquipSet.support_job || '';
-        // showEquipSetEditForm は equipSet.slots を読むので合わせて name/slots を持たせる
-        showEquipSetEditForm({
+        // 装備編集フォーム (React) に流し込んで描画
+        showSharedEquipSet({
             name: _sharedEquipSet.name,
             slots: _sharedEquipSet.slots || {},
         });
@@ -71,53 +71,52 @@ export async function enterShareMode() {
     }
 }
 
-export function initShareUI() {
-    // ===== 共有 (作成側): 編集中の装備セットを shared_equipsets テーブルに INSERT =====
-    document.getElementById('btnShareEquipSet').addEventListener('click', async () => {
-        if (!getCurrentUser()) {
-            alert('共有するにはログインが必要です。');
-            return;
-        }
-        if (!equipState.editingEquipSetName) {
-            alert('共有する装備セットを開いてから実行してください。');
-            return;
-        }
-        const equipSet = {
-            name: equipState.editingEquipSetName,
-            character: equipState.currentEquipChar,
-            job: equipState.currentEquipJob,
-            support_job: equipState.currentEquipSupportJob || null,
-            slots: { ...equipState.currentEquipSlots },
-        };
-        // 閲覧側でステータス再現するためキャラクター snapshot を同梱
-        const characters = await loadCharacters();
-        const charSnapshot = characters.find(c => c.name === equipState.currentEquipChar) || null;
-        try {
-            const url = await createShare(equipSet, charSnapshot);
-            openShareUrlModal(url);
-        } catch (e) {
-            console.error('createShare failed:', e);
-            alert('共有 URL の発行に失敗しました: ' + (e.message || e));
-        }
-    });
+// ===== 共有 (作成側): 編集中の装備セットを shared_equipsets テーブルに INSERT =====
+// ツールバーの「共有」ボタン (React、web/src/equip/EquipSetToolbar.tsx) から呼ばれる。
+export async function shareCurrentEquipSet() {
+    if (!getCurrentUser()) {
+        alert('共有するにはログインが必要です。');
+        return;
+    }
+    if (!equipState.editingEquipSetName) {
+        alert('共有する装備セットを開いてから実行してください。');
+        return;
+    }
+    const equipSet = {
+        name: equipState.editingEquipSetName,
+        character: equipState.currentEquipChar,
+        job: equipState.currentEquipJob,
+        support_job: equipState.currentEquipSupportJob || null,
+        slots: { ...equipState.currentEquipSlots },
+    };
+    // 閲覧側でステータス再現するためキャラクター snapshot を同梱
+    const characters = await loadCharacters();
+    const charSnapshot = characters.find(c => c.name === equipState.currentEquipChar) || null;
+    try {
+        const url = await createShare(equipSet, charSnapshot);
+        openShareUrlModal(url);
+    } catch (e) {
+        console.error('createShare failed:', e);
+        alert('共有 URL の発行に失敗しました: ' + (e.message || e));
+    }
+}
 
-    // ===== インポート (閲覧側): 共有装備セットを自分のキャラ + ジョブにコピー =====
-    // モーダル本体 (キャラ + ジョブ + 名前の選択と確定処理) は React 側
-    // (web/src/modals/Modals.tsx)。ここは前提チェックとデータの受け渡しのみ。
-    document.getElementById('btnImportShare').addEventListener('click', async () => {
-        if (!_sharedEquipSet) return;
-        if (!getCurrentUser()) {
-            if (confirm('インポートにはログインが必要です。Google でログインしますか?')) {
-                const { signInWithGoogle } = await import('./supabase-client.js');
-                await signInWithGoogle();
-            }
-            return;
+// ===== インポート (閲覧側): 共有装備セットを自分のキャラ + ジョブにコピー =====
+// モーダル本体 (キャラ + ジョブ + 名前の選択と確定処理) は React 側
+// (web/src/modals/Modals.tsx)。ここは前提チェックとデータの受け渡しのみ。
+export async function beginImportShare() {
+    if (!_sharedEquipSet) return;
+    if (!getCurrentUser()) {
+        if (confirm('インポートにはログインが必要です。Google でログインしますか?')) {
+            const { signInWithGoogle } = await import('./supabase-client.js');
+            await signInWithGoogle();
         }
-        const characters = await loadCharacters();
-        if (characters.length === 0) {
-            alert('先に「キャラクター管理」タブからキャラクターを作成してください。');
-            return;
-        }
-        openImportShareModal({ characters, shared: _sharedEquipSet });
-    });
+        return;
+    }
+    const characters = await loadCharacters();
+    if (characters.length === 0) {
+        alert('先に「キャラクター管理」タブからキャラクターを作成してください。');
+        return;
+    }
+    openImportShareModal({ characters, shared: _sharedEquipSet });
 }

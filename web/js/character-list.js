@@ -10,7 +10,7 @@ import {
     readMeritPointsFromForm,
     setFormStateFromCharacter, resetFormStateForNew, collectFormStateForSave,
 } from './character-form.js';
-import { updateEquipCharSelector } from './equip-sets.js';
+import { reloadCharacters } from '../src/equip/equip-sets-store';
 
 let editingCharName = null;
 
@@ -51,7 +51,7 @@ export async function renderCharList() {
         });
     }
     // Update equipment set character selector
-    await updateEquipCharSelector();
+    await reloadCharacters();
 }
 
 function showEditForm(character) {

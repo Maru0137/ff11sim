@@ -1254,28 +1254,8 @@
 
     <!-- Tab 2: Equipment Set -->
     <div id="tab-equipsets" class="tab-content">
-        <div class="equipset-selectors">
-            <div class="form-group">
-                <label for="equipSelectChar">キャラクター</label>
-                <select id="equipSelectChar">
-                    <option value="">-- キャラクターを選択 --</option>
-                </select>
-            </div>
-            <div class="form-group">
-                <label for="equipSelectJob">ジョブ</label>
-                <select id="equipSelectJob" disabled>
-                    <option value="">-- ジョブを選択 --</option>
-                </select>
-            </div>
-            <div class="form-group">
-                <label for="equipSelectSupportJob">サポートジョブ</label>
-                <select id="equipSelectSupportJob" disabled>
-                    <option value="">-- なし --</option>
-                </select>
-            </div>
-        </div>
-
-        <div id="equipSetTabBar" class="equipset-tabs hidden"></div>
+        <!-- セレクタとタブバーは React でマウントされる (web/src/equip/EquipSetControls.tsx) -->
+        <div id="equipset-controls-root"></div>
 
         <div id="equipEditSection" class="hidden">
             <div id="sharedHeader" class="shared-header" style="display:none">
@@ -1286,19 +1266,8 @@
                 </span>
             </div>
 
-            <div class="equipset-toolbar">
-                <div class="form-group" id="equipSetNameGroup">
-                    <label for="equipSetName">名前</label>
-                    <input type="text" id="equipSetName" placeholder="装備セット名">
-                </div>
-                <div class="btn-group" id="equipSetButtonGroup">
-                    <button class="btn btn-primary" id="btnSaveEquipSet">保存</button>
-                    <button class="btn btn-secondary" id="btnCopyEquipSet">複製</button>
-                    <button class="btn btn-share" id="btnShareEquipSet">共有</button>
-                    <button class="btn btn-primary" id="btnImportShare" style="display:none">インポート</button>
-                    <button class="btn btn-danger" id="btnDeleteEquipSet">削除</button>
-                </div>
-            </div>
+            <!-- ツールバーは React でマウントされる (web/src/equip/EquipSetToolbar.tsx) -->
+            <div id="equipset-toolbar-root"></div>
 
             <!-- ステータス表示は React でマウントされる (web/src/status/) -->
             <div id="status-root"></div>

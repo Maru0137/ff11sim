@@ -2196,6 +2196,7 @@
         } from './js/status-display.js';
         import { mountAuthUI } from './js/auth-ui.js';
         import { initTabs } from './js/tabs.js';
+        import { equipState } from './js/equip-state.js';
         import { onAuthChange, getCurrentUser } from './js/supabase-client.js';
         import {
             createShare, loadSharedEquipSet,
@@ -2209,8 +2210,7 @@
         const _sharedId = getShareIdFromUrl();
         const SHARE_MODE = _sharedId != null;
         let _sharedEquipSet = null;
-        // 共有モード時のキャラクター snapshot (loadCharacters() に存在しないため)
-        let _sharedCharacterOverride = null;
+        // 共有モード時のキャラクター snapshot は equipState.sharedCharacterOverride に集約。
 
         // 装備データと検索は Rust 側に移した (docs/adr/0009, docs/adr/0010)。
         // items.json は WASM に埋め込まれているので JS からは読まない。
@@ -2807,12 +2807,7 @@
         // Tab 2: Equipment Set Management
         // ==============================================
 
-        let editingEquipSetName = null;
-        let currentEquipChar = ''; // Selected character name
-        let currentEquipJob = ''; // Selected job key
-        let currentEquipSupportJob = ''; // Selected support job key
-        let currentEquipSlots = {}; // { slotKey: { item_id, name_en, name_ja } | null }
-        let isNewEquipSet = false; // True when creating a new set via "+" tab
+        // 装備エディタの共有状態は js/equip-state.js の equipState に集約。
 
         function createEmptySlots() {
             const slots = {};
@@ -2922,15 +2917,15 @@
                 setupSlotSearch(slot.key, input, dropdown);
 
                 augPathSelect.addEventListener('change', () => {
-                    if (currentEquipSlots[slot.key]) {
+                    if (equipState.currentEquipSlots[slot.key]) {
                         const val = augPathSelect.value;
                         if (val) {
                             const [pathIdx, rank] = val.split('-').map(Number);
-                            currentEquipSlots[slot.key].aug_path = pathIdx;
-                            currentEquipSlots[slot.key].aug_rank = rank;
+                            equipState.currentEquipSlots[slot.key].aug_path = pathIdx;
+                            equipState.currentEquipSlots[slot.key].aug_rank = rank;
                         } else {
-                            currentEquipSlots[slot.key].aug_path = null;
-                            currentEquipSlots[slot.key].aug_rank = null;
+                            equipState.currentEquipSlots[slot.key].aug_path = null;
+                            equipState.currentEquipSlots[slot.key].aug_rank = null;
                         }
                         updateAugTextDisplay(slot.key);
                         updateEquipEditStatus();
@@ -2938,14 +2933,14 @@
                 });
 
                 customDescInput.addEventListener('input', () => {
-                    if (currentEquipSlots[slot.key]) {
-                        currentEquipSlots[slot.key].custom_description = customDescInput.value;
+                    if (equipState.currentEquipSlots[slot.key]) {
+                        equipState.currentEquipSlots[slot.key].custom_description = customDescInput.value;
                         updateEquipEditStatus();
                     }
                 });
 
                 clearBtn.addEventListener('click', () => {
-                    currentEquipSlots[slot.key] = null;
+                    equipState.currentEquipSlots[slot.key] = null;
                     selected.textContent = '';
                     input.value = '';
                     description.textContent = '';
@@ -2969,7 +2964,7 @@
                 const results = itemSearch.search({
                     query: query,
                     slot: slotKey,
-                    job: currentEquipJob ? currentEquipJob.toUpperCase() : '',
+                    job: equipState.currentEquipJob ? equipState.currentEquipJob.toUpperCase() : '',
                     sortBy: 'id',
                     sortOrder: 'desc',
                     limit: 30,
@@ -3012,7 +3007,7 @@
         }
 
         function selectSlotItem(slotKey, item) {
-            currentEquipSlots[slotKey] = {
+            equipState.currentEquipSlots[slotKey] = {
                 item_id: item.id,
                 name_en: item.en,
                 name_ja: item.ja,
@@ -3043,7 +3038,7 @@
             const tabBar = document.getElementById('equipSetTabBar');
             tabBar.innerHTML = '';
 
-            if (!currentEquipChar || !currentEquipJob) {
+            if (!equipState.currentEquipChar || !equipState.currentEquipJob) {
                 tabBar.classList.add('hidden');
                 hideEquipSetEditForm();
                 return;
@@ -3052,7 +3047,7 @@
             tabBar.classList.remove('hidden');
 
             const sets = (await loadEquipSets()).filter(
-                s => s.character === currentEquipChar && s.job === currentEquipJob
+                s => s.character === equipState.currentEquipChar && s.job === equipState.currentEquipJob
             );
 
             sets.forEach(es => {
@@ -3110,7 +3105,7 @@
         }
 
         async function selectEquipSetTab(name) {
-            isNewEquipSet = false;
+            equipState.isNewEquipSet = false;
 
             // Update tab active state
             document.querySelectorAll('.equipset-tab').forEach(t => {
@@ -3119,7 +3114,7 @@
 
             const sets = await loadEquipSets();
             const es = sets.find(
-                s => s.character === currentEquipChar && s.job === currentEquipJob && s.name === name
+                s => s.character === equipState.currentEquipChar && s.job === equipState.currentEquipJob && s.name === name
             );
             if (es) {
                 showEquipSetEditForm(es);
@@ -3127,7 +3122,7 @@
         }
 
         function showNewEquipSetForm() {
-            isNewEquipSet = true;
+            equipState.isNewEquipSet = true;
 
             // Deactivate all tabs
             document.querySelectorAll('.equipset-tab').forEach(t => t.classList.remove('active'));
@@ -3142,11 +3137,11 @@
             const deleteBtn = document.getElementById('btnDeleteEquipSet');
 
             if (equipSet) {
-                editingEquipSetName = equipSet.name;
-                currentEquipSlots = { ...equipSet.slots };
+                equipState.editingEquipSetName = equipSet.name;
+                equipState.currentEquipSlots = { ...equipSet.slots };
                 // 旧データは skill フィールドを持たないので item_id から補完
-                Object.keys(currentEquipSlots).forEach(k => {
-                    const d = currentEquipSlots[k];
+                Object.keys(equipState.currentEquipSlots).forEach(k => {
+                    const d = equipState.currentEquipSlots[k];
                     if (d && d.skill == null && d.item_id != null) {
                         const item = get_item_by_id(d.item_id);
                         if (item && item.skill != null) d.skill = item.skill;
@@ -3156,7 +3151,7 @@
                 deleteBtn.classList.remove('hidden');
 
                 EQUIPMENT_SLOTS.forEach(slot => {
-                    const data = currentEquipSlots[slot.key];
+                    const data = equipState.currentEquipSlots[slot.key];
                     const input = document.querySelector(`.equip-slot-search[data-slot="${slot.key}"]`);
                     const descDiv = document.querySelector(`.equip-slot-description[data-slot="${slot.key}"]`);
                     const customDescInput = document.querySelector(`.equip-slot-custom-desc[data-slot="${slot.key}"]`);
@@ -3173,8 +3168,8 @@
                     updateAugPathOptions(slot.key);
                 });
             } else {
-                editingEquipSetName = null;
-                currentEquipSlots = createEmptySlots();
+                equipState.editingEquipSetName = null;
+                equipState.currentEquipSlots = createEmptySlots();
                 document.getElementById('equipSetName').value = '';
                 deleteBtn.classList.add('hidden');
 
@@ -3194,8 +3189,8 @@
 
         function hideEquipSetEditForm() {
             document.getElementById('equipEditSection').classList.add('hidden');
-            editingEquipSetName = null;
-            isNewEquipSet = false;
+            equipState.editingEquipSetName = null;
+            equipState.isNewEquipSet = false;
         }
 
         async function saveEquipSet() {
@@ -3206,23 +3201,23 @@
             }
 
             const sets = await loadEquipSets();
-            const character = currentEquipChar;
-            const job = currentEquipJob;
+            const character = equipState.currentEquipChar;
+            const job = equipState.currentEquipJob;
 
-            if (editingEquipSetName) {
+            if (equipState.editingEquipSetName) {
                 // Editing existing set
                 const idx = sets.findIndex(
-                    s => s.character === character && s.job === job && s.name === editingEquipSetName
+                    s => s.character === character && s.job === job && s.name === equipState.editingEquipSetName
                 );
                 if (idx >= 0) {
                     // Check name uniqueness if renamed
-                    if (name !== editingEquipSetName) {
+                    if (name !== equipState.editingEquipSetName) {
                         if (sets.some(s => s.character === character && s.job === job && s.name === name)) {
                             alert(`装備セット「${name}」は既に存在します。`);
                             return;
                         }
                     }
-                    sets[idx] = { name, job, character, slots: { ...currentEquipSlots } };
+                    sets[idx] = { name, job, character, slots: { ...equipState.currentEquipSlots } };
                 }
             } else {
                 // Creating new set
@@ -3230,7 +3225,7 @@
                     alert(`装備セット「${name}」は既に存在します。`);
                     return;
                 }
-                sets.push({ name, job, character, slots: { ...currentEquipSlots } });
+                sets.push({ name, job, character, slots: { ...equipState.currentEquipSlots } });
             }
 
             await saveEquipSets(sets);
@@ -3243,7 +3238,7 @@
             // 現在の (character, job) 内で fromName を toName の位置に移動。
             // 他の (character, job) のセットには触れずに save。
             const allSets = await loadEquipSets();
-            const inScope = (s) => s.character === currentEquipChar && s.job === currentEquipJob;
+            const inScope = (s) => s.character === equipState.currentEquipChar && s.job === equipState.currentEquipJob;
             const tabs = allSets.filter(inScope);
             const others = allSets.filter((s) => !inScope(s));
 
@@ -3262,15 +3257,15 @@
         }
 
         async function copyEquipSet() {
-            if (!currentEquipChar || !currentEquipJob) return;
+            if (!equipState.currentEquipChar || !equipState.currentEquipJob) return;
             // 編集中のセット名をベースに、未使用の名前を生成
-            const baseName = editingEquipSetName || document.getElementById('equipSetName').value.trim();
+            const baseName = equipState.editingEquipSetName || document.getElementById('equipSetName').value.trim();
             if (!baseName) {
                 alert('複製元の装備セットがありません。');
                 return;
             }
             const sets = await loadEquipSets();
-            const inScope = sets.filter(s => s.character === currentEquipChar && s.job === currentEquipJob);
+            const inScope = sets.filter(s => s.character === equipState.currentEquipChar && s.job === equipState.currentEquipJob);
             const usedNames = new Set(inScope.map(s => s.name));
             let newName = `${baseName} のコピー`;
             let i = 2;
@@ -3279,9 +3274,9 @@
             }
             sets.push({
                 name: newName,
-                job: currentEquipJob,
-                character: currentEquipChar,
-                slots: { ...currentEquipSlots },
+                job: equipState.currentEquipJob,
+                character: equipState.currentEquipChar,
+                slots: { ...equipState.currentEquipSlots },
             });
             await saveEquipSets(sets);
             await renderEquipSetTabs();
@@ -3289,14 +3284,14 @@
         }
 
         async function deleteEquipSet() {
-            if (!editingEquipSetName) return;
-            if (!confirm(`装備セット「${editingEquipSetName}」を削除しますか？`)) return;
+            if (!equipState.editingEquipSetName) return;
+            if (!confirm(`装備セット「${equipState.editingEquipSetName}」を削除しますか？`)) return;
 
             const sets = (await loadEquipSets()).filter(
-                s => !(s.character === currentEquipChar && s.job === currentEquipJob && s.name === editingEquipSetName)
+                s => !(s.character === equipState.currentEquipChar && s.job === equipState.currentEquipJob && s.name === equipState.editingEquipSetName)
             );
             await saveEquipSets(sets);
-            editingEquipSetName = null;
+            equipState.editingEquipSetName = null;
             await renderEquipSetTabs();
         }
 
@@ -3306,67 +3301,67 @@
             return _updateEquipEditStatus({
                 wasmReady: isWasmReady(),
                 itemsLoaded: isItemsLoaded(),
-                charName: currentEquipChar,
-                jobKey: currentEquipJob,
-                supportJob: currentEquipSupportJob || null,
-                currentEquipSlots,
+                charName: equipState.currentEquipChar,
+                jobKey: equipState.currentEquipJob,
+                supportJob: equipState.currentEquipSupportJob || null,
+                currentEquipSlots: equipState.currentEquipSlots,
                 calculate_status_from_profile,
                 calculate_default_skills,
                 calculateEquipSetBonuses,
                 // 共有閲覧モードでは元キャラの snapshot を渡す
-                characterOverride: _sharedCharacterOverride,
+                characterOverride: equipState.sharedCharacterOverride,
             });
         }
 
         // Character selector change
         document.getElementById('equipSelectChar').addEventListener('change', (e) => {
-            currentEquipChar = e.target.value;
+            equipState.currentEquipChar = e.target.value;
             const jobSel = document.getElementById('equipSelectJob');
             const supportJobSel = document.getElementById('equipSelectSupportJob');
-            if (currentEquipChar) {
+            if (equipState.currentEquipChar) {
                 jobSel.disabled = false;
             } else {
                 jobSel.disabled = true;
                 jobSel.value = '';
-                currentEquipJob = '';
+                equipState.currentEquipJob = '';
                 supportJobSel.disabled = true;
                 supportJobSel.innerHTML = '<option value="">-- なし --</option>';
-                currentEquipSupportJob = '';
+                equipState.currentEquipSupportJob = '';
             }
             renderEquipSetTabs();
         });
 
         // Job selector change
         document.getElementById('equipSelectJob').addEventListener('change', (e) => {
-            currentEquipJob = e.target.value;
+            equipState.currentEquipJob = e.target.value;
             updateSupportJobOptions();
             renderEquipSetTabs();
         });
 
         // Support job selector change
         document.getElementById('equipSelectSupportJob').addEventListener('change', (e) => {
-            currentEquipSupportJob = e.target.value;
+            equipState.currentEquipSupportJob = e.target.value;
             updateEquipEditStatus();
         });
 
         function updateSupportJobOptions() {
             const supportJobSel = document.getElementById('equipSelectSupportJob');
-            if (!currentEquipJob) {
+            if (!equipState.currentEquipJob) {
                 supportJobSel.disabled = true;
                 supportJobSel.innerHTML = '<option value="">-- なし --</option>';
-                currentEquipSupportJob = '';
+                equipState.currentEquipSupportJob = '';
                 return;
             }
             supportJobSel.disabled = false;
             supportJobSel.innerHTML = '<option value="">-- なし --</option>';
             for (const job of JOBS) {
-                if (job.key.toLowerCase() === currentEquipJob) continue;
+                if (job.key.toLowerCase() === equipState.currentEquipJob) continue;
                 const opt = document.createElement('option');
                 opt.value = job.key.toLowerCase();
                 opt.textContent = job.name;
                 supportJobSel.appendChild(opt);
             }
-            currentEquipSupportJob = '';
+            equipState.currentEquipSupportJob = '';
         }
 
         document.getElementById('btnSaveEquipSet').addEventListener('click', saveEquipSet);
@@ -3379,20 +3374,20 @@
                 alert('共有するにはログインが必要です。');
                 return;
             }
-            if (!editingEquipSetName) {
+            if (!equipState.editingEquipSetName) {
                 alert('共有する装備セットを開いてから実行してください。');
                 return;
             }
             const equipSet = {
-                name: editingEquipSetName,
-                character: currentEquipChar,
-                job: currentEquipJob,
-                support_job: currentEquipSupportJob || null,
-                slots: { ...currentEquipSlots },
+                name: equipState.editingEquipSetName,
+                character: equipState.currentEquipChar,
+                job: equipState.currentEquipJob,
+                support_job: equipState.currentEquipSupportJob || null,
+                slots: { ...equipState.currentEquipSlots },
             };
             // 閲覧側でステータス再現するためキャラクター snapshot を同梱
             const characters = await loadCharacters();
-            const charSnapshot = characters.find(c => c.name === currentEquipChar) || null;
+            const charSnapshot = characters.find(c => c.name === equipState.currentEquipChar) || null;
             try {
                 const url = await createShare(equipSet, charSnapshot);
                 document.getElementById('shareUrlInput').value = url;
@@ -3528,7 +3523,7 @@
             const pathSelect = document.querySelector(`.equip-slot-aug-path[data-slot="${slotKey}"]`);
             if (!augContainer || !pathSelect) return;
 
-            const slotData = currentEquipSlots[slotKey];
+            const slotData = equipState.currentEquipSlots[slotKey];
             const augInfo = slotData ? getItemAugments(slotData.item_id) : null;
             const hasAug = !!(augInfo && augInfo.paths && augInfo.paths.length > 0);
 
@@ -3561,7 +3556,7 @@
         function updateAugTextDisplay(slotKey) {
             const augTextDiv = document.querySelector(`.equip-slot-aug-text[data-slot="${slotKey}"]`);
             if (!augTextDiv) return;
-            const slotData = currentEquipSlots[slotKey];
+            const slotData = equipState.currentEquipSlots[slotKey];
             const text = getAugmentText(slotData);
             augTextDiv.textContent = text || '';
         }
@@ -3733,11 +3728,11 @@
                     // インポートボタンを表示
                     document.getElementById('btnImportShare').style.display = '';
                     // ステータス再現用 character snapshot を override にセット
-                    _sharedCharacterOverride = _sharedEquipSet.characterSnapshot || null;
+                    equipState.sharedCharacterOverride = _sharedEquipSet.characterSnapshot || null;
                     // 装備編集フォームに流し込んで描画
-                    currentEquipChar = _sharedEquipSet.characterName || '(共有元)';
-                    currentEquipJob = _sharedEquipSet.job || '';
-                    currentEquipSupportJob = _sharedEquipSet.support_job || '';
+                    equipState.currentEquipChar = _sharedEquipSet.characterName || '(共有元)';
+                    equipState.currentEquipJob = _sharedEquipSet.job || '';
+                    equipState.currentEquipSupportJob = _sharedEquipSet.support_job || '';
                     // showEquipSetEditForm は equipSet.slots を読むので合わせて name/slots を持たせる
                     showEquipSetEditForm({
                         name: _sharedEquipSet.name,

@@ -2194,6 +2194,7 @@
             clearAllEquipStats,
         } from './js/status-display.js';
         import { mountAuthUI } from './js/auth-ui.js';
+        import { initTabs } from './js/tabs.js';
         import { onAuthChange, getCurrentUser } from './js/supabase-client.js';
         import {
             createShare, loadSharedEquipSet,
@@ -2572,25 +2573,8 @@
         // loadCharacters / saveCharacters / loadEquipSets / saveEquipSets は
         // それぞれ constants.js / storage.js に定義。
 
-        // --- Tab switching ---
-        document.querySelectorAll('.tab-btn').forEach(btn => {
-            btn.addEventListener('click', () => {
-                document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
-                document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
-                btn.classList.add('active');
-                document.getElementById(btn.dataset.tab).classList.add('active');
-            });
-        });
-
-        // --- Status sub-tab switching ---
-        document.querySelectorAll('.status-subtab-btn').forEach(btn => {
-            btn.addEventListener('click', () => {
-                document.querySelectorAll('.status-subtab-btn').forEach(b => b.classList.remove('active'));
-                document.querySelectorAll('.status-subtab-content').forEach(c => c.classList.remove('active'));
-                btn.classList.add('active');
-                document.getElementById(btn.dataset.subtab).classList.add('active');
-            });
-        });
+        // --- Tab switching --- (js/tabs.js に分離)
+        initTabs();
 
         // ==============================================
         // Tab 1: Character Management

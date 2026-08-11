@@ -2,7 +2,6 @@
 // 開閉は modal-store 経由 (開くきっかけがレガシー JS 側にもあるため)。
 // 旧実装との対応: 背景クリックで閉じるのはカスタムオーグヘルプのみ。
 import { useRef, useState, useSyncExternalStore } from 'react';
-import { createRoot } from 'react-dom/client';
 import { JOBS, RACE_NAMES } from '../../js/constants.js';
 import { loadEquipSets, saveEquipSets } from '../../js/storage.js';
 import {
@@ -18,7 +17,7 @@ interface JobDef {
     name: string;
 }
 
-function Modals() {
+export function Modals() {
     const state = useSyncExternalStore(modalsStore.subscribe, modalsStore.get);
     return (
         <>
@@ -34,9 +33,6 @@ function Modals() {
     );
 }
 
-export function mountModals(container: HTMLElement) {
-    createRoot(container).render(<Modals />);
-}
 
 function ShareUrlModal({ url }: { url: string }) {
     const inputRef = useRef<HTMLInputElement>(null);

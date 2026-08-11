@@ -5,7 +5,9 @@ import { loadCharacters } from './storage.js';
 import { getCurrentUser } from './supabase-client.js';
 import { createShare, loadSharedEquipSet, getShareIdFromUrl } from './share.js';
 import { equipState } from './equip-state.js';
-import { showSharedEquipSet } from '../src/equip/equip-sets-store';
+import {
+    showSharedEquipSet, setShareHeader, showShareLoadError,
+} from '../src/equip/equip-sets-store';
 import { openShareUrlModal, openImportShareModal } from '../src/modals/modal-store';
 
 // 共有閲覧モード判定 (?share=<uuid>)
@@ -19,15 +21,9 @@ export function isShareMode() {
 // ===== 共有閲覧モード =====
 // ?share=<id> 付きで開かれた場合に通常 UI の代わりに呼ばれ、共有データを読み込む
 export async function enterShareMode() {
-    document.body.classList.add('share-mode');
-    // 装備セットタブを active に切り替え
-    document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
-    document.getElementById('tab-equipsets').classList.add('active');
     try {
         _sharedEquipSet = await loadSharedEquipSet(_sharedId);
         // ヘッダー反映
-        document.getElementById('sharedHeader').style.display = '';
-        document.getElementById('sharedSetName').textContent = _sharedEquipSet.name || '(無名)';
         // 例: "Hum WAR99/SAM59 ML50"
         // ジョブキーは main が "War"、support が "war" と大小文字が混在しているので正規化する
         const normJobKey = (k) => k ? k.charAt(0).toUpperCase() + k.slice(1).toLowerCase() : '';
@@ -45,29 +41,25 @@ export async function enterShareMode() {
             const mlStr = mainJl.master_lv ? ` ML${mainJl.master_lv}` : '';
             return `${race} ${mainStr}${supStr}${mlStr}`.trim();
         })();
-        document.getElementById('sharedSetMeta').textContent =
+        setShareHeader(
+            _sharedEquipSet.name || '(無名)',
             ` / 共有元: ${_sharedEquipSet.characterName || '?'}` +
-            (charSummary ? ` / ${charSummary}` : '');
-        // インポートボタンを表示
-        document.getElementById('btnImportShare').style.display = '';
+                (charSummary ? ` / ${charSummary}` : '')
+        );
         // ステータス再現用 character snapshot を override にセット
         equipState.sharedCharacterOverride = _sharedEquipSet.characterSnapshot || null;
-        // 装備編集フォームに流し込んで描画
         equipState.currentEquipChar = _sharedEquipSet.characterName || '(共有元)';
         equipState.currentEquipJob = _sharedEquipSet.job || '';
         equipState.currentEquipSupportJob = _sharedEquipSet.support_job || '';
-        // 装備編集フォーム (React) に流し込んで描画
+        // 装備編集フォーム (React) に流し込んで描画。
+        // インポートボタンの表示もこの中 (shareMode フラグ) で行われる
         showSharedEquipSet({
             name: _sharedEquipSet.name,
             slots: _sharedEquipSet.slots || {},
         });
     } catch (e) {
         console.error('failed to load shared equipset:', e);
-        document.getElementById('equipEditSection').classList.remove('hidden');
-        document.getElementById('sharedHeader').style.display = '';
-        document.getElementById('sharedSetName').textContent = '読み込みに失敗しました';
-        document.getElementById('sharedSetMeta').textContent =
-            ` / ${e.message || e}`;
+        showShareLoadError(e.message || String(e));
     }
 }
 

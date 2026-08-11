@@ -1,7 +1,6 @@
 // 装備セットタブのセレクタ (キャラ/ジョブ/サポ) とタブバー
 // (旧 web/js/equip-sets.js の描画部分)。状態は equip-sets-store。
-import { useEffect, useState, useSyncExternalStore } from 'react';
-import { createRoot } from 'react-dom/client';
+import { useState, useSyncExternalStore } from 'react';
 import { JOBS, RACE_NAMES } from '../../js/constants.js';
 import { equipState, subscribeEquipState, getEquipStateVersion } from './equip-store';
 import {
@@ -21,19 +20,12 @@ interface JobDef {
 
 const jobs = JOBS as JobDef[];
 
-function EquipSetControls() {
+export function EquipSetControls() {
     const state = useSyncExternalStore(equipSetsStore.subscribe, equipSetsStore.get);
     // セレクタの値は equipState 直読みのため、その変更通知も購読する
     useSyncExternalStore(subscribeEquipState, getEquipStateVersion);
     const [draggingName, setDraggingName] = useState<string | null>(null);
     const [dragOverName, setDragOverName] = useState<string | null>(null);
-
-    // #equipEditSection は静的 HTML のまま (中に status-root / スロットの
-    // React root を含むため)。表示状態だけここから同期する。Phase 6 で
-    // ページ全体が単一 root になった時点でこのブリッジは消える。
-    useEffect(() => {
-        document.getElementById('equipEditSection')?.classList.toggle('hidden', !state.editVisible);
-    }, [state.editVisible]);
 
     const tabBarVisible = !!(equipState.currentEquipChar && equipState.currentEquipJob);
 
@@ -134,6 +126,3 @@ function EquipSetControls() {
     );
 }
 
-export function mountEquipSetControls(container: HTMLElement) {
-    createRoot(container).render(<EquipSetControls />);
-}

@@ -166,6 +166,32 @@ export function showSharedEquipSet(equipSet: { name?: string; slots: EquipSet['s
     });
 }
 
+// ===== 共有ヘッダ (#sharedHeader) =====
+// 共有閲覧モードで表示する「共有された装備セット」バナー。
+// テキストは share-ui.js#enterShareMode が組み立てる。
+
+export interface ShareHeaderState {
+    visible: boolean;
+    name: string;
+    meta: string;
+}
+
+export const shareHeaderStore = createStore<ShareHeaderState>({
+    visible: false,
+    name: '-',
+    meta: '',
+});
+
+export function setShareHeader(name: string, meta: string) {
+    shareHeaderStore.set({ visible: true, name, meta });
+}
+
+/** 共有データの読み込み失敗時: ヘッダにエラーを出しつつ編集フォームの枠だけ開く */
+export function showShareLoadError(message: string) {
+    shareHeaderStore.set({ visible: true, name: '読み込みに失敗しました', meta: ` / ${message}` });
+    patch({ editVisible: true });
+}
+
 // ===== 保存・複製・削除・並べ替え =====
 
 export async function saveEquipSet() {

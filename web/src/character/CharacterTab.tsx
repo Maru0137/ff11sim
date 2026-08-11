@@ -6,7 +6,6 @@
 // スキル上限の追従 (ジョブレベル・スキルメリット変更時に、未カスタムの
 // スキル値だけ新デフォルトへ更新する) などの挙動は旧実装を踏襲。
 import { useState, useSyncExternalStore } from 'react';
-import { createRoot } from 'react-dom/client';
 import { calculate_default_skills } from '../../js/wasm.js';
 import { loadCharacters, saveCharacters } from '../../js/storage.js';
 import {
@@ -266,7 +265,7 @@ function formStateFor(character: CharacterRecord | null): FormState {
     };
 }
 
-function CharacterTab() {
+export function CharacterTab() {
     const characters = useSyncExternalStore(charactersStore.subscribe, charactersStore.get);
     const [form, setForm] = useState<FormState | null>(null);
     // ジョブ別メリット / JP のジョブセレクタはフォームを閉じても保持 (旧実装踏襲)
@@ -731,6 +730,3 @@ function CharacterForm({ form, setForm, jmJob, setJmJob, jpJob, setJpJob, onSave
     );
 }
 
-export function mountCharacterTab(container: HTMLElement) {
-    createRoot(container).render(<CharacterTab />);
-}

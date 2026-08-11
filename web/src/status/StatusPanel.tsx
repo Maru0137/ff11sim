@@ -2,7 +2,6 @@
 // tabs.js のサブタブ切替を統合)。値の計算は compute.ts、テーブル構造は
 // StatusTables.tsx (index.html から機械変換)。
 import { useEffect, useState, useSyncExternalStore } from 'react';
-import { createRoot } from 'react-dom/client';
 import { statusStore } from './status-store';
 import {
     SUBTABS,
@@ -14,7 +13,7 @@ import {
 const MAGIC_PREFIX = 'subtab-magic-';
 const DEFAULT_SUBTAB = 'subtab-defense';
 
-function StatusPanel() {
+export function StatusPanel() {
     const view = useSyncExternalStore(statusStore.subscribe, statusStore.get);
     const [active, setActive] = useState(DEFAULT_SUBTAB);
 
@@ -84,6 +83,3 @@ function StatusPanel() {
     );
 }
 
-export function mountStatusPanel(container: HTMLElement) {
-    createRoot(container).render(<StatusPanel />);
-}

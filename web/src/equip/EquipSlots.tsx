@@ -7,7 +7,6 @@
 // 装備セットの読み込み時は世代 key で行が作り直され、ローカル状態が
 // 選択名にリセットされる (旧実装の input.value 代入に相当)。
 import { useRef, useState, useSyncExternalStore } from 'react';
-import { createRoot } from 'react-dom/client';
 import { searchItems } from '../wasm';
 import type { SearchResultItem } from '../wasm';
 import { isItemsLoaded } from '../../js/wasm.js';
@@ -32,7 +31,7 @@ interface AugPathInfo {
 
 const HEADER_LABELS = ['スロット', '装備名', '', '説明', 'オーグメント', 'Aug説明', 'カスタム'];
 
-function EquipSlots() {
+export function EquipSlots() {
     useSyncExternalStore(subscribeEquipState, getEquipStateVersion);
     const generation = useSyncExternalStore(subscribeSlotsGeneration, getSlotsGeneration);
 
@@ -62,9 +61,6 @@ function EquipSlots() {
     );
 }
 
-export function mountEquipSlots(container: HTMLElement) {
-    createRoot(container).render(<EquipSlots />);
-}
 
 function SlotRow({ slot }: { slot: SlotDef }) {
     const data = (getSlots()[slot.key] ?? null) as EquipSlotData | null;

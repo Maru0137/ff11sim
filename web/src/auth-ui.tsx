@@ -18,7 +18,7 @@ import {
 const subscribe = (callback: () => void): (() => void) => onAuthChange(callback);
 const getSnapshot = (): User | null => getCurrentUser();
 
-function AuthWidget() {
+export function AuthWidget() {
     const user = useSyncExternalStore(subscribe, getSnapshot);
     if (!user) {
         return (

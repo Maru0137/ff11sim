@@ -3,7 +3,6 @@
 // ここからは関数として呼び出す。share-mode での表示制御は既存 CSS
 // (body.share-mode #btnSaveEquipSet 等) が id を参照するため id を維持する。
 import { useSyncExternalStore } from 'react';
-import { createRoot } from 'react-dom/client';
 import {
     equipSetsStore,
     setNameInput,
@@ -13,7 +12,7 @@ import {
 } from './equip-sets-store';
 import { shareCurrentEquipSet, beginImportShare } from '../../js/share-ui.js';
 
-function EquipSetToolbar() {
+export function EquipSetToolbar() {
     const state = useSyncExternalStore(equipSetsStore.subscribe, equipSetsStore.get);
 
     return (
@@ -58,6 +57,3 @@ function EquipSetToolbar() {
     );
 }
 
-export function mountEquipSetToolbar(container: HTMLElement) {
-    createRoot(container).render(<EquipSetToolbar />);
-}

@@ -5,7 +5,6 @@
 //   2. WASM 初期化とオーグメントデータ取得を並行で待つ
 //   3. ?share= 付きなら共有閲覧モードへ分岐し、通常初期化はスキップする
 import { initWasmRuntime } from './wasm.js';
-import { buildJobLevelTable, renderCharList, initCharacterTab } from './character-list.js';
 import { mountAuthUI } from '../src/auth-ui';
 import { initTabs } from './tabs.js';
 import { loadAugmentData } from './augments.js';
@@ -15,6 +14,8 @@ import { mountEquipSlots } from '../src/equip/EquipSlots';
 import { mountEquipSetControls } from '../src/equip/EquipSetControls';
 import { mountEquipSetToolbar } from '../src/equip/EquipSetToolbar';
 import { initEquipSetPanel, refreshEquipSetPanel } from '../src/equip/equip-sets-store';
+import { mountCharacterTab } from '../src/character/CharacterTab';
+import { reloadCharacterList } from '../src/character/character-store';
 import { isShareMode, enterShareMode } from './share-ui.js';
 import { onAuthChange } from './supabase-client.js';
 import './sync.js';
@@ -27,15 +28,14 @@ export async function startApp() {
     mountEquipSlots(document.getElementById('equipSlotsContainer'));
     mountEquipSetControls(document.getElementById('equipset-controls-root'));
     mountEquipSetToolbar(document.getElementById('equipset-toolbar-root'));
+    mountCharacterTab(document.getElementById('characters-root'));
     initTabs();
-    initCharacterTab();
 
     await Promise.all([
         // items.json の fetch は廃止。WASM に埋め込まれている (docs/adr/0009)。
         initWasmRuntime(),
         loadAugmentData(),
     ]);
-    buildJobLevelTable();
 
     // ===== 共有閲覧モード =====
     if (isShareMode()) {
@@ -44,7 +44,7 @@ export async function startApp() {
     }
 
     await initEquipSetPanel();
-    await renderCharList();
+    await reloadCharacterList();
 
     // 認証状態が変わったら表示中のリストを再描画
     // (INITIAL は startApp 完了直後に呼ばれて二重実行になるのでスキップ)
@@ -54,13 +54,13 @@ export async function startApp() {
             initialAuthSeen = true;
             return;
         }
-        await renderCharList();
+        await reloadCharacterList();
         await refreshEquipSetPanel();
     });
 
     // sync.js が localStorage → Supabase アップロード完了時に発火
     window.addEventListener('ff11sim:synced', async () => {
-        await renderCharList();
+        await reloadCharacterList();
         await refreshEquipSetPanel();
     });
 }

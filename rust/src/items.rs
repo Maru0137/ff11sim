@@ -134,7 +134,7 @@ struct AugmentsFile {
 
 /// `augments.json` はリポジトリ管理下なので、`items.json` と違いビルド順の制約を受けない。
 pub static AUGMENTS: LazyLock<HashMap<u32, ItemAugments>> = LazyLock::new(|| {
-    serde_json::from_str::<AugmentsFile>(include_str!("../../web/data/augments.json"))
+    serde_json::from_str::<AugmentsFile>(include_str!("../../web/public/data/augments.json"))
         .expect("augments.json parse failed")
         .augments
 });

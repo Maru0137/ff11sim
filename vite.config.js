@@ -11,6 +11,11 @@ import { resolve } from 'node:path';
 
 export default defineConfig({
     root: 'web',
+    // 8000 は Supabase のリダイレクト許可リストに登録済みのポート
+    // (web/README.md)。dev / preview とも同じポートに揃える。
+    server: {
+        port: 8000,
+    },
     build: {
         target: 'esnext',
         outDir: '../dist',

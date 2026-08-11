@@ -1,0 +1,15 @@
+# Rust ツールチェーンの固定。
+#
+# rustfmt の整形結果は Rust のバージョンによって変わりうる。固定しないと
+# 「手元では通るのに CI で cargo fmt --check が落ちる」が起きる。
+#
+# rustup はこのファイルをディレクトリ override として読むため、リポジトリ内で
+# cargo / rustfmt を実行すればここに書いたバージョンが自動で使われる。未導入なら
+# その場で取得される。
+#
+# 更新するときは channel を書き換えてコミットする。全員と CI が同時に追随する。
+[toolchain]
+channel = "1.93.1"
+components = ["rustfmt", "clippy"]
+# wasm-pack がビルドに使う。宣言しておけば rustup target add が要らない。
+targets = ["wasm32-unknown-unknown"]

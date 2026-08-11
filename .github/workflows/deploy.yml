@@ -51,8 +51,13 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
+      # rust-toolchain.toml に固定したツールチェーンを取得する。rustup はこの
+      # ファイルをディレクトリ override として読むため、バージョンをワークフロー側に
+      # 書くと二重管理になる。ここでは指定せず rustup に解決させる。
+      # (dtolnay/rust-toolchain@stable は rustup default を stable に向けるだけで
+      #  ファイルの override には勝てず、stable と固定版の両方を落とすことになる)
       - name: Setup Rust
-        uses: dtolnay/rust-toolchain@stable
+        run: rustup show active-toolchain
 
       - name: Run tests
         run: cargo test

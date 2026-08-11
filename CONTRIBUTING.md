@@ -8,13 +8,19 @@ clone してから変更を push するまでの流れをまとめます。
 
 | ツール | 用途 | 備考 |
 |---|---|---|
-| Rust (stable) | コア実装のビルド・テスト | [rustup](https://rustup.rs/) で導入 |
+| Rust | コア実装のビルド・テスト | [rustup](https://rustup.rs/) で導入。版は `rust-toolchain.toml` で固定 |
 | wasm-pack | ブラウザ向け WASM のビルド | `cargo install wasm-pack` |
 | Python 3 | 装備データ生成スクリプト | 標準ライブラリのみ使用 |
 | [uv](https://docs.astral.sh/uv/) | 開発ツール (pre-commit) の導入 | `pyproject.toml` / `uv.lock` で版を固定 |
 
 pre-commit は各自で入れるのではなく、`pyproject.toml` の依存として宣言してあります。
 `uv.lock` で版が固定されるため、全員が同じバージョンを使うことになります。
+
+Rust も同様に `rust-toolchain.toml` で版を固定しています。リポジトリ内で
+`cargo` / `rustfmt` を実行すると rustup がこのファイルを読んで該当バージョンに切り替え、
+未導入ならその場で取得します。**rustfmt の整形結果は Rust の版によって変わりうる**ため、
+固定しないと「手元では通るのに CI で `cargo fmt --check` が落ちる」が起きます。
+更新するときは `channel` を書き換えてコミットすれば、全員と CI が同時に追随します。
 
 ## 1. 初回セットアップ
 
@@ -256,3 +262,4 @@ PR には**何をなぜ変えたか**と、**どう検証したか**（実行し
 | Rust を直したのにブラウザに反映されない | WASM の再ビルドが必要。ブラウザのキャッシュも確認する |
 | commit が `cargo fmt --check` で止まる | `cargo fmt --manifest-path rust/Cargo.toml` して `git add` し直す |
 | `pre-commit: command not found` | `uv sync` を実行して `.venv/` を作り直す |
+| `rust-toolchain.toml` の版が使われない | 環境変数 `RUSTUP_TOOLCHAIN` を確認する。設定されているとファイルより優先される |

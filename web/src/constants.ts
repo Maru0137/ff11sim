@@ -69,6 +69,7 @@ export const EQUIPMENT_SLOTS: SlotDef[] = _slots.map((s) => ({ key: s.key, label
 
 export const STORAGE_KEY = 'ff11sim_characters';
 export const EQUIP_STORAGE_KEY = 'ff11sim_equipsets';
+export const PROPSET_STORAGE_KEY = 'ff11sim_property_sets';
 
 // オーグメント JA→EN 変換テーブル。長いパターンを先に置くこと（部分一致回避）。
 export const AUGMENT_JA_TO_EN: [string, string][] = [

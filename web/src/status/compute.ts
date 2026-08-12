@@ -14,18 +14,7 @@ import {
 import { equipState } from '../equip/equip-store';
 import { calculateEquipSetBonuses } from '../equip/equip-bonuses';
 
-// === 表示用ヘルパー (純粋) ===
-const numOrDash = (v: number | null | undefined) => (v != null && v !== 0 ? v : '-');
-const pctOrDash = (v: number | null | undefined) => (v ? `${v}%` : '-');
-const formatStatBonus = (val: number) => (val > 0 ? `+${val}` : val < 0 ? `${val}` : '-');
-const fmtPct = (v: number | null | undefined) => (v != null && v !== 0 ? `${v}%` : '-');
-
-const SKILL_JA_MAP: Record<string, string> = Object.fromEntries(ALL_SKILL_KEYS);
-
-function formatWeaponSkill(kind: string | null | undefined, value: number | null | undefined) {
-    if (!kind || !value) return '-';
-    return `${SKILL_JA_MAP[kind] || kind} (${value})`;
-}
+import { numOrDash, pctOrDash, formatStatBonus, fmtPct, formatWeaponSkill } from './format';
 
 // 状態異常レジストのキー (表示 id `statDefRes*` の小文字 suffix と対応)
 export const STATUS_RESIST_KEYS = [

@@ -5,7 +5,9 @@
 /* ===== 2 カラムレイアウト (左: 装備グリッド / 右: ステータス) ===== */
 .equipset-columns {
     display: grid;
-    grid-template-columns: minmax(380px, 560px) minmax(0, 1fr);
+    /* 最大 670px は装備名の最長 (日本語 全角10文字相当 = 13px フォントで実測 ~136px) が
+       ellipsis されずに収まる幅から逆算: (136 + padding18 + border2) x 4 + gap6 x 3 + panel padding30 */
+    grid-template-columns: minmax(380px, 670px) minmax(0, 1fr);
     gap: 20px;
     align-items: start;
 }
@@ -15,7 +17,9 @@
     margin-top: 0;
 }
 
-@media (max-width: 1100px) {
+/* 装備カラムを 650px に広げた分、ステータス側が潰れる下限も上がるため
+   1 カラム化の閾値を 1100px から引き上げ (旧レイアウトでのステータス最小幅 ~170px を維持) */
+@media (max-width: 1200px) {
     .equipset-columns {
         grid-template-columns: 1fr;
     }
@@ -31,7 +35,7 @@
     top: 16px;
 }
 
-@media (max-width: 1100px) {
+@media (max-width: 1200px) {
     .equip-grid-panel {
         position: static;
     }

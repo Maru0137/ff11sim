@@ -2,12 +2,39 @@
    .equip-grid-panel / .equipset-columns / .equip-select-modal スコープに
    閉じる (index.css のグローバルルールとの衝突回避)。 */
 
+/* ===== 2 カラムレイアウト (左: 装備グリッド / 右: ステータス) ===== */
+.equipset-columns {
+    display: grid;
+    grid-template-columns: minmax(380px, 560px) minmax(0, 1fr);
+    gap: 20px;
+    align-items: start;
+}
+
+/* 縦の間隔はカラムの gap が担うので、パネル自身の margin-top は消す */
+.equipset-columns .status-section {
+    margin-top: 0;
+}
+
+@media (max-width: 1100px) {
+    .equipset-columns {
+        grid-template-columns: 1fr;
+    }
+}
+
 /* ===== 4x4 グリッド ===== */
 .equip-grid-panel {
-    margin-top: 20px;
     padding: 15px;
     background: #0f0f23;
     border-radius: 5px;
+    /* ステータス側が長くても、スクロール中グリッドが視界に残るようにする */
+    position: sticky;
+    top: 16px;
+}
+
+@media (max-width: 1100px) {
+    .equip-grid-panel {
+        position: static;
+    }
 }
 
 .equip-grid-panel h3 {
@@ -118,10 +145,14 @@
     border: 1px solid #444;
 }
 
+/* Mantine Modal のタイトルは h2 で描画されるため、
+   index.css の裸 h2 ルール (下線) を打ち消す */
 .equip-select-modal-title {
     color: #f0c040;
     font-size: 16px;
     font-weight: 600;
+    border-bottom: none;
+    padding-bottom: 0;
 }
 
 /* 選択中装備の詳細 */

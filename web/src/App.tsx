@@ -62,8 +62,12 @@ function EquipSetsView() {
                 </div>
 
                 <EquipSetToolbar />
-                <StatusPanel />
-                <EquipGrid />
+                {/* 左: 装備グリッド / 右: ステータス。装備を変えながら
+                    ステータスをスクロールなしで確認できる (狭幅では縦積み) */}
+                <div className="equipset-columns">
+                    <EquipGrid />
+                    <StatusPanel />
+                </div>
             </div>
         </>
     );

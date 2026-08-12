@@ -96,10 +96,11 @@ describe('buildBreakdownModel', () => {
         const col = (key: string) => STATUS_BREAKDOWN_COLUMNS.findIndex((c) => c.key === key);
         const row = (key: string) => model.rows.find((r) => r.key === key)!;
 
-        // 装備行: per_slot_stats から。0 は null、負値は保持
+        // 装備行: per_slot_stats から。0 は null
         expect(row('head').cells[col('hp')]).toBe(145);
         expect(row('head').cells[col('str')]).toBeNull();
-        expect(row('head').cells[col('pdt')]).toBe(-11);
+        // 被ダメ系 (negate 列) は「被物理-」表記に合わせ符号を反転 (-11% 軽減 → 11)
+        expect(row('head').cells[col('pdt')]).toBe(11);
         expect(row('body').cells.every((c) => c === null)).toBe(true);
 
         // キャラ行: charRows から。f32 由来の小数は保持 (表示桁で丸め)
@@ -121,6 +122,16 @@ describe('buildBreakdownModel', () => {
         expect(model.totals[col('def')]).toBe(430);
         // totals に無い列 (ヘイスト等) は '-'
         expect(model.totals[col('haste')]).toBe('-');
+    });
+
+    it('被ダメ増加 (正値) の装備は negate 列で負値になり悪化が分かる', () => {
+        const model = buildBreakdownModel({
+            ...baseInputs,
+            perSlotStats: { neck: { damage_taken_pct: 5 } },
+        });
+        const col = (key: string) => STATUS_BREAKDOWN_COLUMNS.findIndex((c) => c.key === key);
+        const row = model.rows.find((r) => r.key === 'neck')!;
+        expect(row.cells[col('dt')]).toBe(-5);
     });
 
     it('ユーザー定義項目の列はスロット別ユーザー値から装備行を埋める', () => {

@@ -149,20 +149,22 @@ export function LeftStatusTables({ v }: { v: ValueGetter }) {
                         <td className="equip-val" id="equipEquipMeva">{v('equipEquipMeva')}</td>
                         <td className="total-val" id="equipTotalMeva">{v('equipTotalMeva')}</td>
                     </tr>
+                    {/* 被ダメ系は軽減方向 (負値) が望ましいため「〜-」表記で符号を
+                        反転して表示する (compute.ts 側で反転済み)。-30% → 30% */}
                     <tr>
-                        <td>被ダメージ</td>
+                        <td>被ダメージ-</td>
                         <td className="base-val">-</td>
                         <td className="equip-val" id="equipEquipDt">{v('equipEquipDt')}</td>
                         <td className="total-val" id="equipTotalDt">{v('equipTotalDt')}</td>
                     </tr>
                     <tr>
-                        <td>被物理ダメージ</td>
+                        <td>被物理ダメージ-</td>
                         <td className="base-val">-</td>
                         <td className="equip-val" id="equipEquipPdt">{v('equipEquipPdt')}</td>
                         <td className="total-val" id="equipTotalPdt">{v('equipTotalPdt')}</td>
                     </tr>
                     <tr>
-                        <td>被魔法ダメージ</td>
+                        <td>被魔法ダメージ-</td>
                         <td className="base-val">-</td>
                         <td className="equip-val" id="equipEquipMdt">{v('equipEquipMdt')}</td>
                         <td className="total-val" id="equipTotalMdt">{v('equipTotalMdt')}</td>

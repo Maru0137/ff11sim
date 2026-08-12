@@ -247,12 +247,15 @@ export async function computeStatusView(): Promise<StatusView | null> {
         V.equipTotalMeva = mevaTotal;
         V.equipEquipHaste = fmtPct(equip.haste_pct);
         V.equipTotalHaste = fmtPct(equip.haste_pct);
-        V.equipEquipDt = fmtPct(equip.damage_taken_pct);
-        V.equipTotalDt = fmtPct(equip.damage_taken_pct);
-        V.equipEquipPdt = fmtPct(equip.physical_damage_taken_pct);
-        V.equipTotalPdt = fmtPct(equip.physical_damage_taken_pct);
-        V.equipEquipMdt = fmtPct(equip.magic_damage_taken_pct);
-        V.equipTotalMdt = fmtPct(equip.magic_damage_taken_pct);
+        // 被ダメ系は「被ダメージ-」表記で符号を反転して表示する
+        // (軽減 -30% → 30%。増加装備なら負値になり悪化が分かる)
+        const flipDt = (v: number | null | undefined) => (v ? -v : v);
+        V.equipEquipDt = fmtPct(flipDt(equip.damage_taken_pct));
+        V.equipTotalDt = fmtPct(flipDt(equip.damage_taken_pct));
+        V.equipEquipPdt = fmtPct(flipDt(equip.physical_damage_taken_pct));
+        V.equipTotalPdt = fmtPct(flipDt(equip.physical_damage_taken_pct));
+        V.equipEquipMdt = fmtPct(flipDt(equip.magic_damage_taken_pct));
+        V.equipTotalMdt = fmtPct(flipDt(equip.magic_damage_taken_pct));
 
         const magicAttackTotal = totalStats.magic_attack != null ? totalStats.magic_attack : 0;
         const magicAccuracyTotal = (equip.magic_accuracy || 0) + (totalStats.magic_accuracy_bonus || 0);

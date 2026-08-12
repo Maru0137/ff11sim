@@ -21,6 +21,11 @@ export interface BreakdownColumnSpec {
     totalId: string;
     /** ユーザー定義項目 ('user:<term>')。装備行はスロット別ユーザー値から引く */
     userItemId?: string;
+    /**
+     * セル値の符号を反転して表示する (被ダメ系の「〜-」表記用。軽減 -30 → 30)。
+     * 合計行はパネル表示値の参照なので反転済み (compute.ts と対で保つ)
+     */
+    negate?: boolean;
 }
 
 /** null = 寄与なし ('-' 表示)。合計行は表示値 (文字列含む) をそのまま持つ */
@@ -59,9 +64,9 @@ export const STATUS_BREAKDOWN_COLUMNS: BreakdownColumnSpec[] = [
     { key: 'evasion', label: '回避', equipKey: 'evasion', charKey: 'evasion', totalId: 'equipTotalEva' },
     { key: 'mdef', label: '魔防', equipKey: 'magic_def_bonus', charKey: 'mdef', totalId: 'equipTotalMdef' },
     { key: 'magic_evasion', label: '魔回避', equipKey: 'magic_evasion', charKey: 'magic_evasion', totalId: 'equipTotalMeva' },
-    { key: 'dt', label: '被ダメ', equipKey: 'damage_taken_pct', totalId: 'equipTotalDt' },
-    { key: 'pdt', label: '被物理', equipKey: 'physical_damage_taken_pct', totalId: 'equipTotalPdt' },
-    { key: 'mdt', label: '被魔法', equipKey: 'magic_damage_taken_pct', totalId: 'equipTotalMdt' },
+    { key: 'dt', label: '被ダメ-', equipKey: 'damage_taken_pct', totalId: 'equipTotalDt', negate: true },
+    { key: 'pdt', label: '被物理-', equipKey: 'physical_damage_taken_pct', totalId: 'equipTotalPdt', negate: true },
+    { key: 'mdt', label: '被魔法-', equipKey: 'magic_damage_taken_pct', totalId: 'equipTotalMdt', negate: true },
 ];
 
 /**
@@ -133,7 +138,7 @@ export function buildBreakdownModel(inp: BreakdownInputs): BreakdownModel {
             } else if (col.equipKey) {
                 v = slotStats?.[col.equipKey] || 0;
             }
-            return v === 0 ? null : v;
+            return v === 0 ? null : col.negate ? -v : v;
         });
         rows.push({
             key: def.key,
@@ -148,8 +153,10 @@ export function buildBreakdownModel(inp: BreakdownInputs): BreakdownModel {
         const srcRow = inp.charRows[src];
         const cells = inp.columns.map((col): BreakdownCell => {
             const v = (col.charKey && srcRow?.[col.charKey]) || 0;
+            if (v === 0) return null;
             // f32 由来の値 (種族 37.5 など) の表示桁を丸める (サポは 0.25 刻み)
-            return v === 0 ? null : Math.round(v * 100) / 100;
+            const rounded = Math.round(v * 100) / 100;
+            return col.negate ? -rounded : rounded;
         });
         rows.push({
             key: src,

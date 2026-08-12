@@ -1151,6 +1151,15 @@ pub fn extract_skill_bonuses(description_en: &str) -> Result<JsValue, JsValue> {
         .map_err(|e| JsValue::from_str(&e.to_string()))
 }
 
+/// 説明文から任意名のステータス値を 1 件抽出する。
+/// プロパティセットのユーザー定義項目用 (docs/adr/0015)。
+/// item_search のソート用抽出と同一ロジック:
+/// 全角正規化 + `名前[空白][:][±]数値` の最初の一致 (合算しない)。
+#[wasm_bindgen]
+pub fn extract_named_stat(description: &str, stat_name: &str) -> i32 {
+    crate::item_search::extract_stat_from_description(description, stat_name)
+}
+
 // ---------------------------------------------------------------------------
 // 装備検索 (docs/adr/0010)
 //

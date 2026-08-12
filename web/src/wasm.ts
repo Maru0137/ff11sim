@@ -23,6 +23,7 @@ export {
     get_item_by_id,
     extract_all_stats,
     extract_skill_bonuses,
+    extract_named_stat,
     sum_stats,
     empty_stats,
     isWasmReady,

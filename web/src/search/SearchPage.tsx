@@ -4,6 +4,8 @@
 // 装備データと検索は Rust 側にある (docs/adr/0009, docs/adr/0010)。
 // items.json は WASM に埋め込まれているので JS からは読まない。
 import { useEffect, useRef, useState } from 'react';
+// スタイルは .search-page スコープに閉じている (index.css との衝突回避)
+import '../../styles/search.css';
 import { searchItems, loadItems } from '../wasm';
 import type { SearchResults } from '../wasm';
 import { SearchForm } from './SearchForm';
@@ -113,7 +115,7 @@ export function SearchPage() {
                 : `${results.total.toLocaleString()} 件`;
 
     return (
-        <>
+        <div className="search-page">
             <SearchForm
                 form={form}
                 ilv119Visible={ilv119VisibleFor(form.slot)}
@@ -159,6 +161,6 @@ export function SearchPage() {
                     onNext={() => search(form, offset + PAGE_SIZE)}
                 />
             </div>
-        </>
+        </div>
     );
 }

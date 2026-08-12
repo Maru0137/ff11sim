@@ -4,7 +4,7 @@
 // StatusTables.tsx の SubtabContents をそのまま使い、カスタムセットは
 // CustomPropsetGrid で描画する。選択は装備セットごとに記憶する
 // (selection-prefs、ローカル専用)。
-import { useEffect, useState, useSyncExternalStore } from 'react';
+import { useEffect, useMemo, useState, useSyncExternalStore } from 'react';
 import { statusStore } from './status-store';
 import {
     TEMPLATE_PROPSETS,
@@ -13,9 +13,11 @@ import {
     SubtabContents,
     EffectiveSkillsSection,
 } from './StatusTables';
+import { BreakdownModal } from './BreakdownModal';
 import { equipState, subscribeEquipState, getEquipStateVersion } from '../equip/equip-store';
 import { isShareMode } from '../share-ui';
 import { propsetsStore } from '../propsets/propsets-store';
+import { TEMPLATE_ITEM_IDS } from '../propsets/catalog';
 import { CustomPropsetGrid } from '../propsets/CustomPropsetGrid';
 import { PropsetManageModal } from '../propsets/PropsetManageModal';
 import {
@@ -35,6 +37,8 @@ export function StatusPanel() {
     useSyncExternalStore(subscribeEquipState, getEquipStateVersion);
     const [selection, setSelection] = useState(DEFAULT_SELECTION);
     const [modal, setModal] = useState<{ setId?: string } | null>(null);
+    // 内訳モーダル (docs/adr/0016)。読み取り専用機能なので share mode でも開ける
+    const [breakdown, setBreakdown] = useState<'status' | 'propset' | null>(null);
 
     const readOnly = isShareMode();
     const currentSetKey = equipState.editingEquipSetName
@@ -80,9 +84,32 @@ export function StatusPanel() {
         ? null
         : propsets.sets.find((s) => s.id === selection) ?? null;
 
+    // 内訳モーダル (propset モード) の列項目とタイトル
+    const templateId = selection.startsWith(TEMPLATE_PREFIX)
+        ? selection.slice(TEMPLATE_PREFIX.length)
+        : null;
+    const propsetItemIds = useMemo(
+        () => (customSet ? customSet.items : TEMPLATE_ITEM_IDS[templateId ?? ''] ?? []),
+        [customSet, templateId]
+    );
+    const propsetLabel = customSet
+        ? customSet.name
+        : TEMPLATE_PROPSETS.find((t) => t.id === templateId)?.label ?? '';
+
     return (
         <div id="equipStatusSection" className="status-section">
-            <h3>ステータス</h3>
+            <h3>
+                ステータス
+                {view !== null && (
+                    <button
+                        type="button"
+                        className="breakdown-btn"
+                        onClick={() => setBreakdown('status')}
+                    >
+                        内訳
+                    </button>
+                )}
+            </h3>
             <LeftStatusTables v={v} />
 
             {/* 用途別ステータス: プロパティセット選択 */}
@@ -132,6 +159,15 @@ export function StatusPanel() {
                         )}
                     </>
                 )}
+                {view !== null && (
+                    <button
+                        type="button"
+                        className="breakdown-btn"
+                        onClick={() => setBreakdown('propset')}
+                    >
+                        内訳
+                    </button>
+                )}
             </div>
 
             {customSet ? (
@@ -164,6 +200,18 @@ export function StatusPanel() {
                 <PropsetManageModal
                     initialSetId={modal.setId}
                     onClose={() => setModal(null)}
+                />
+            )}
+
+            {breakdown !== null && view !== null && (
+                <BreakdownModal
+                    mode={breakdown}
+                    title={
+                        breakdown === 'status' ? '内訳: ステータス' : `内訳: ${propsetLabel}`
+                    }
+                    itemIds={breakdown === 'propset' ? propsetItemIds : undefined}
+                    view={view}
+                    onClose={() => setBreakdown(null)}
                 />
             )}
         </div>

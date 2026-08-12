@@ -39,6 +39,23 @@
     cursor: pointer;
 }
 
+/* 内訳モーダルを開くボタン (ステータス見出し / プロパティセット行) */
+.breakdown-btn {
+    background: #0f0f23;
+    color: #8ab4f8;
+    border: 1px dashed #444;
+    border-radius: 4px;
+    padding: 3px 10px;
+    font-size: 12px;
+    font-weight: normal;
+    cursor: pointer;
+    margin-left: 10px;
+}
+
+.breakdown-btn:hover {
+    color: #cdd9f5;
+}
+
 /* ===== カスタムセット表示グリッド ===== */
 .propset-grid {
     display: grid;

@@ -1,4 +1,4 @@
-// ヘッダーのログイン UI (React 島、docs/adr/0012)。
+// ログイン UI (docs/adr/0012)。
 // 未ログイン: 「Google でログイン」ボタン
 // ログイン中: 表示名 + 「ログアウト」ボタン
 //
@@ -6,7 +6,6 @@
 // に useSyncExternalStore で接続する。onAuthChange は購読直後に 'INITIAL'
 // イベントで一度発火するが、余分な通知として無害。
 import { useSyncExternalStore } from 'react';
-import { createRoot } from 'react-dom/client';
 import type { User } from '@supabase/supabase-js';
 import {
     getCurrentUser,
@@ -41,12 +40,4 @@ export function AuthWidget() {
             </button>
         </>
     );
-}
-
-/**
- * 指定された container 要素にログイン UI を描画する。
- * 認証状態変化時に自動再描画。
- */
-export function mountAuthUI(container: HTMLElement) {
-    createRoot(container).render(<AuthWidget />);
 }

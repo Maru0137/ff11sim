@@ -109,8 +109,9 @@ CI (`.github/workflows/deploy.yml`) が deploy 時に `web/js/config.js` を生�
 
 ```
 web/
-├── index.html          # メインページ（Character/Equipment Set/Status）
-├── search.html         # 装備検索ページ
+├── index.html          # SPA 本体（キャラクター / 装備セット / 装備検索）
+├── search.html         # 旧装備検索 URL → #/search へのリダイレクトシム (ADR 0013)
+├── src/                # React + TypeScript 層（サイドバー・各ビュー）
 ├── js/                 # UI・永続化・認証（装備ロジックは Rust 側にある）
 ├── public/
 │   └── data/           # 実行時 fetch されるデータ (大半は data/ への symlink)

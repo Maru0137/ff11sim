@@ -1,73 +1,21 @@
-* {
-    box-sizing: border-box;
-}
-.page-header {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: 16px;
-}
-.auth-ui {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    font-size: 0.9em;
-}
-.auth-ui .auth-user { color: #aaa; }
-.auth-ui .auth-btn {
-    background: #16213e;
-    color: #eee;
-    border: 1px solid #444;
-    padding: 6px 12px;
-    border-radius: 4px;
-    cursor: pointer;
-    font-size: 0.9em;
-}
-.auth-ui .auth-btn:hover { background: #1f2a4a; }
-.auth-ui .auth-btn-google { background: #4285f4; border-color: #4285f4; }
-.auth-ui .auth-btn-google:hover { background: #357ae8; }
-body {
-    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-    background: #1a1a2e;
-    color: #eee;
-    margin: 0;
-    padding: 20px;
-    min-height: 100vh;
-}
-.container {
-    max-width: 1200px;
-    margin: 0 auto;
-}
-h1 {
-    color: #f0c040;
-    margin-bottom: 20px;
-}
-.nav {
-    margin-bottom: 20px;
-}
-.nav a {
-    color: #88c0d0;
-    text-decoration: none;
-    margin-right: 20px;
-}
-.nav a:hover {
-    text-decoration: underline;
-}
+/* 装備検索ビューのスタイル。index.css と同居しても衝突しないよう、
+   全ルールを .search-page (SearchPage.tsx のルート要素) に閉じている。
+   ページ骨格 (body / .container / h1 / .auth-ui 等) は index.css の責務。 */
 
 /* Search Section */
-.search-section {
+.search-page .search-section {
     background: #16213e;
     padding: 20px;
     border-radius: 8px;
     margin-bottom: 20px;
 }
-.search-row {
+.search-page .search-row {
     display: flex;
     gap: 10px;
     margin-bottom: 15px;
     flex-wrap: wrap;
 }
-.search-input {
+.search-page .search-input {
     flex: 1;
     min-width: 200px;
     padding: 10px;
@@ -77,7 +25,9 @@ h1 {
     color: #eee;
     font-size: 14px;
 }
-select {
+/* index.css の select { width: 100% } より特異性で勝つよう width を明示 */
+.search-page select {
+    width: auto;
     padding: 10px;
     border: 1px solid #444;
     border-radius: 4px;
@@ -88,31 +38,32 @@ select {
 }
 
 /* Filters Section */
-.filters-section {
+.search-page .filters-section {
     background: #0f0f23;
     padding: 15px;
     border-radius: 4px;
     margin-bottom: 15px;
 }
-.filters-header {
+.search-page .filters-header {
     display: flex;
     justify-content: space-between;
     align-items: center;
     margin-bottom: 10px;
 }
-.filters-header h3 {
+.search-page .filters-header h3 {
     margin: 0;
     font-size: 14px;
     color: #f0c040;
 }
-.filter-row {
+.search-page .filter-row {
     display: flex;
     gap: 10px;
     margin-bottom: 10px;
     align-items: center;
     flex-wrap: wrap;
 }
-.filter-row select, .filter-row input {
+.search-page .filter-row select,
+.search-page .filter-row input {
     padding: 8px;
     border: 1px solid #444;
     border-radius: 4px;
@@ -120,10 +71,10 @@ select {
     color: #eee;
     font-size: 13px;
 }
-.filter-row input {
+.search-page .filter-row input {
     width: 150px;
 }
-.btn {
+.search-page .btn {
     padding: 8px 16px;
     border: none;
     border-radius: 4px;
@@ -131,106 +82,108 @@ select {
     font-size: 13px;
     transition: background 0.2s;
 }
-.btn-primary {
+.search-page .btn-primary {
     background: #4a9eff;
     color: white;
 }
-.btn-primary:hover {
+.search-page .btn-primary:hover {
     background: #3a8eef;
 }
-.btn-danger {
+.search-page .btn-danger {
     background: #ff4a4a;
     color: white;
 }
-.btn-danger:hover {
+.search-page .btn-danger:hover {
     background: #ef3a3a;
 }
-.btn-secondary {
+.search-page .btn-secondary {
     background: #555;
     color: white;
 }
-.btn-secondary:hover {
+.search-page .btn-secondary:hover {
     background: #666;
 }
 
 /* Sort Section */
-.sort-section {
+.search-page .sort-section {
     display: flex;
     gap: 10px;
     align-items: center;
     margin-bottom: 15px;
 }
-.sort-section label {
+.search-page .sort-section label {
     font-size: 14px;
 }
 
 /* Results Section */
-.results-section {
+.search-page .results-section {
     background: #16213e;
     padding: 20px;
     border-radius: 8px;
 }
-.results-header {
+.search-page .results-header {
     display: flex;
     justify-content: space-between;
     align-items: center;
     margin-bottom: 15px;
 }
-.results-count {
+.search-page .results-count {
     color: #888;
     font-size: 14px;
 }
-.loading {
+.search-page .loading {
     text-align: center;
     padding: 40px;
     color: #888;
 }
-.error {
+.search-page .error {
     text-align: center;
     padding: 40px;
     color: #ff4a4a;
 }
 
 /* Table */
-.results-table {
+.search-page .results-table {
     width: 100%;
     border-collapse: collapse;
     font-size: 13px;
 }
-.results-table th, .results-table td {
+.search-page .results-table th,
+.search-page .results-table td {
     padding: 10px 8px;
     text-align: left;
     border-bottom: 1px solid #333;
 }
-.results-table th {
+.search-page .results-table th {
     background: #0f0f23;
     color: #f0c040;
     cursor: pointer;
     user-select: none;
     white-space: nowrap;
 }
-.results-table th:hover {
+.search-page .results-table th:hover {
     background: #1a1a3e;
 }
-.results-table th.sorted-asc::after {
+.search-page .results-table th.sorted-asc::after {
     content: ' ▲';
     font-size: 10px;
 }
-.results-table th.sorted-desc::after {
+.search-page .results-table th.sorted-desc::after {
     content: ' ▼';
     font-size: 10px;
 }
-.results-table tr:hover {
+.search-page .results-table tr:hover {
     background: #1a1a3e;
 }
-.jobs-list, .slots-list {
+.search-page .jobs-list,
+.search-page .slots-list {
     font-size: 11px;
     color: #88c0d0;
 }
-.description {
+.search-page .description {
     white-space: pre-line;
 }
-.stat-highlight {
+.search-page .stat-highlight {
     background-color: #f0c040;
     color: #1a1a2e;
     padding: 1px 3px;
@@ -239,13 +192,13 @@ select {
 }
 
 /* Pagination */
-.pagination {
+.search-page .pagination {
     display: flex;
     justify-content: center;
     gap: 10px;
     margin-top: 20px;
 }
-.pagination button {
+.search-page .pagination button {
     padding: 8px 16px;
     border: 1px solid #444;
     border-radius: 4px;
@@ -253,29 +206,33 @@ select {
     color: #eee;
     cursor: pointer;
 }
-.pagination button:hover:not(:disabled) {
+.search-page .pagination button:hover:not(:disabled) {
     background: #1a1a3e;
 }
-.pagination button:disabled {
+.search-page .pagination button:disabled {
     opacity: 0.5;
     cursor: not-allowed;
 }
-.pagination .page-info {
+.search-page .pagination .page-info {
     padding: 8px 16px;
     color: #888;
 }
 
 @media (max-width: 768px) {
-    .search-row, .filter-row {
+    .search-page .search-row,
+    .search-page .filter-row {
         flex-direction: column;
     }
-    .search-input, select, .filter-row input {
+    .search-page .search-input,
+    .search-page select,
+    .search-page .filter-row input {
         width: 100%;
     }
-    .results-table {
+    .search-page .results-table {
         font-size: 12px;
     }
-    .results-table th, .results-table td {
+    .search-page .results-table th,
+    .search-page .results-table td {
         padding: 8px 4px;
     }
 }

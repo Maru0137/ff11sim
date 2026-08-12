@@ -152,8 +152,8 @@ http://localhost:8000 を開きます（Supabase のリダイレクト許可リ�
 │   ├── src/               ステータス計算・ダメージ計算・装備解釈・WASM バインディング
 │   └── tests/             統合テスト
 ├── web/                   ブラウザ UI (vite build した dist/ を GitHub Pages で配信)
-│   ├── index.html         キャラクター・装備セット・ステータス
-│   ├── search.html        装備検索
+│   ├── index.html         SPA 本体 (キャラクター / 装備セット / 装備検索)
+│   ├── search.html        旧装備検索 URL のリダイレクトシム (ADR 0013)
 │   ├── js/                UI・保存・Supabase 連携
 │   └── public/data/       UI が実行時に読むデータ (大半は data/ への symlink)
 ├── data/                  Rust と Web が共有するテーブルデータ (ADR 0002)

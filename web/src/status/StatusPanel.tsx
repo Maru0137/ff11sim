@@ -25,7 +25,6 @@ import {
 import '../../styles/propsets.css';
 
 const TEMPLATE_PREFIX = 'template:';
-const MAGIC_SELECTION_PREFIX = 'template:subtab-magic-';
 const DEFAULT_SELECTION = 'template:subtab-defense';
 
 export function StatusPanel() {
@@ -45,13 +44,6 @@ export function StatusPanel() {
           )
         : null;
 
-    // 魔法タブはジョブが該当スキルを持つ場合のみ表示。
-    // view が無い (クリア状態) 間は旧実装同様すべて表示のまま。
-    const isVisible = (subtabId: string) =>
-        !subtabId.startsWith('subtab-magic-') ||
-        view === null ||
-        (view.magicTabVisible[subtabId] ?? true);
-
     // 装備セット切替時: 記憶していた選択を検証付きで復元
     useEffect(() => {
         if (!currentSetKey) return;
@@ -65,18 +57,6 @@ export function StatusPanel() {
             : propsetsStore.get().sets.some((s) => s.id === stored);
         setSelection(valid ? stored : DEFAULT_SELECTION);
     }, [currentSetKey]);
-
-    // 旧実装踏襲: 選択中の魔法テンプレートが非表示になったら、
-    // 可視の魔法テンプレート → 既定 (待機/回避/防御) へフォールバック
-    useEffect(() => {
-        if (!selection.startsWith(MAGIC_SELECTION_PREFIX) || view === null) return;
-        const subtabId = selection.slice(TEMPLATE_PREFIX.length);
-        if (view.magicTabVisible[subtabId] ?? true) return;
-        const firstVisibleMagic = SUBTABS.find(
-            (t) => t.id.startsWith('subtab-magic-') && view.magicTabVisible[t.id]
-        );
-        setSelection(firstVisibleMagic ? TEMPLATE_PREFIX + firstVisibleMagic.id : DEFAULT_SELECTION);
-    }, [selection, view]);
 
     // 選択中のカスタムセットが削除されたら既定へフォールバック
     useEffect(() => {
@@ -113,7 +93,7 @@ export function StatusPanel() {
                     onChange={(e) => handleSelect(e.target.value)}
                 >
                     <optgroup label="テンプレート">
-                        {SUBTABS.filter((t) => isVisible(t.id)).map((t) => (
+                        {SUBTABS.map((t) => (
                             <option key={t.id} value={TEMPLATE_PREFIX + t.id}>
                                 {t.label}
                             </option>

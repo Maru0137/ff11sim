@@ -52,8 +52,6 @@ export interface EffectiveSkillEntry {
 export interface StatusView {
     /** 旧 DOM id → 表示値 */
     values: Record<string, string | number>;
-    /** 魔法サブタブ id → 表示可否 (メイン/サポートジョブが該当スキルを持つか) */
-    magicTabVisible: Record<string, boolean>;
     effectiveSkills: EffectiveSkillEntry[];
     /** プロパティ項目 id (カタログ / 'user:<term>') → 表示値 (docs/adr/0015) */
     propertyValues: Record<string, string | number>;
@@ -426,13 +424,6 @@ export async function computeStatusView(): Promise<StatusView | null> {
                 ['GeomancyHandbellSkill', 'Handbell'],
             ]},
         ];
-        // タブの可視性: メイン or サポートジョブが該当スキルを習得 (effective_skill > 0) しているもののみ表示
-        const skillKeysOf = (skills: (string | [string, string])[]) =>
-            skills.map((s) => (typeof s === 'string' ? s : s[1]));
-        const isTabAvailable = (skills: (string | [string, string])[]) =>
-            skillKeysOf(skills).some((k) => (effSkillsForMagic[k] || 0) > 0);
-
-        const magicTabVisible: Record<string, boolean> = {};
         magicTabs.forEach(({ prefix, skills }) => {
             // スキル値の表示 (単一スキル → "<prefix>Skill"、複数 → 各 ID 指定)
             if (skills.length === 1 && typeof skills[0] === 'string') {
@@ -451,8 +442,6 @@ export async function computeStatusView(): Promise<StatusView | null> {
             V[`statMg${prefix}Mnd`] = totalStats.mnd || '-';
             V[`statMg${prefix}Chr`] = totalStats.chr || '-';
             V[`statMg${prefix}Mp`] = totalStats.mp || '-';
-
-            magicTabVisible[`subtab-magic-${prefix.toLowerCase()}`] = isTabAvailable(skills);
         });
 
         // 有効スキル値（値が 0 のスキルは非表示）
@@ -499,7 +488,7 @@ export async function computeStatusView(): Promise<StatusView | null> {
             propertyValues[id] = numOrDash(raw);
         }
 
-        return { values: V, magicTabVisible, effectiveSkills, propertyValues };
+        return { values: V, effectiveSkills, propertyValues };
     } catch (e) {
         console.error('Error calculating equipment edit status:', e);
         return null;

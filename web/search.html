@@ -2,29 +2,10 @@
 <html lang="ja">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>FFXI 装備検索</title>
-    <!-- スタイルは SearchPage.tsx が import する (styles/search.css) -->
+    <!-- 装備検索は index.html の SPA に統合された (docs/adr/0013)。
+         旧 URL のブックマーク互換のためリダイレクトのみ行う。 -->
+    <script>location.replace('./#/search');</script>
 </head>
-<body class="search-standalone">
-    <div class="container">
-        <nav class="nav">
-            <a href="index.html">ステータス計算</a>
-            <a href="search.html">装備検索</a>
-        </nav>
-
-        <header class="page-header">
-            <h1>FFXI 装備検索</h1>
-            <div id="auth-ui" class="auth-ui"></div>
-        </header>
-
-        <!-- 検索フォームと結果は React でマウントされる (web/src/search/) -->
-        <div id="search-root"></div>
-    </div>
-
-    <script type="module">
-        import { startSearchPage } from './src/search/main';
-        startSearchPage();
-    </script>
-</body>
+<body></body>
 </html>

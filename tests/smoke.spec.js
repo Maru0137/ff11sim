@@ -59,7 +59,9 @@ test('トップページがエラーなしで読み込める', async ({ page }) 
 
 test('検索ページがエラーなしで読み込め、検索が動く', async ({ page }) => {
   const errors = collectErrors(page);
+  // 旧 URL (search.html) は SPA の検索ビューへリダイレクトされる
   await page.goto('search.html');
+  await expect(page).toHaveURL(/#\/search$/);
   await page.waitForTimeout(3000);
   // WASM 埋め込みデータでの検索が 1 件以上返ること (表示名は日本語)
   await page.fill('#searchQuery', 'Excalibur');
@@ -76,6 +78,7 @@ test('検索結果のページネーションで次のページへ進める', as
   // Rust 側 SearchResult の has_more (snake_case) を JS が hasMore で読んでいて
   // 「次へ」が恒久的に無効になるバグがあった。命名不一致の回帰をここで検出する。
   await page.goto('search.html');
+  await expect(page).toHaveURL(/#\/search$/);
   await page.waitForTimeout(3000);
 
   await expect(page.locator('#pagination')).toBeVisible();

@@ -2,64 +2,6 @@
    全ルールを .search-page (SearchPage.tsx のルート要素) に閉じている。
    ページ骨格 (body / .container / h1 / .auth-ui 等) は index.css の責務。 */
 
-/* ===== search.html 単独ページの骨格 (SPA 統合時に search.html ごと削除) ===== */
-body.search-standalone,
-.search-standalone * {
-    box-sizing: border-box;
-}
-body.search-standalone {
-    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-    background: #1a1a2e;
-    color: #eee;
-    margin: 0;
-    padding: 20px;
-    min-height: 100vh;
-}
-.search-standalone .container {
-    max-width: 1200px;
-    margin: 0 auto;
-}
-.search-standalone h1 {
-    color: #f0c040;
-    margin-bottom: 20px;
-}
-.search-standalone .nav {
-    margin-bottom: 20px;
-}
-.search-standalone .nav a {
-    color: #88c0d0;
-    text-decoration: none;
-    margin-right: 20px;
-}
-.search-standalone .nav a:hover {
-    text-decoration: underline;
-}
-.search-standalone .page-header {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: 16px;
-}
-.search-standalone .auth-ui {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    font-size: 0.9em;
-}
-.search-standalone .auth-ui .auth-user { color: #aaa; }
-.search-standalone .auth-ui .auth-btn {
-    background: #16213e;
-    color: #eee;
-    border: 1px solid #444;
-    padding: 6px 12px;
-    border-radius: 4px;
-    cursor: pointer;
-    font-size: 0.9em;
-}
-.search-standalone .auth-ui .auth-btn:hover { background: #1f2a4a; }
-.search-standalone .auth-ui .auth-btn-google { background: #4285f4; border-color: #4285f4; }
-.search-standalone .auth-ui .auth-btn-google:hover { background: #357ae8; }
-
 /* Search Section */
 .search-page .search-section {
     background: #16213e;

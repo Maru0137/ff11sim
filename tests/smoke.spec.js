@@ -134,8 +134,9 @@ test('保存済みキャラクターのステータスが 0 でなく表示さ�
   expect(Number.isFinite(hp)).toBe(true);
   expect(hp).toBeGreaterThan(0);
 
-  // ステータスサブタブが切り替わること (タブ切り替えロジックの回帰検出)
-  await page.click('button[data-subtab="subtab-melee-auto"]');
+  // プロパティセットの切り替えでテンプレート表示が切り替わること
+  // (旧ステータスサブタブの切り替え回帰検出をドロップダウンで踏襲)
+  await page.selectOption('#propsetSelect', 'template:subtab-melee-auto');
   await expect(page.locator('#subtab-melee-auto')).toHaveClass(/active/);
 
   expect(errors).toEqual([]);
@@ -233,6 +234,45 @@ test('スロット検索で装備を選び、装備セットを保存できる',
   await page.waitForTimeout(2000);
   await expect(page.locator('.equipset-tab', { hasText: 'ui-set' })).toBeVisible();
   await expect(cellName).not.toHaveText('未設定');
+
+  expect(errors).toEqual([]);
+});
+
+test('カスタムプロパティセットを作成でき、選択が装備セットごとに記憶される', async ({ page }) => {
+  const errors = collectErrors(page);
+  // ユーザー定義項目の抽出対象となる「二刀流+5」をカスタム説明に仕込む
+  await seedAndOpenEquipTab(page, {
+    main: { item_id: 21071, skill: 11, custom_description: '二刀流+5' },
+  });
+
+  // 管理モーダル → 新規作成 → 項目選択 → ユーザー定義項目追加 → 保存
+  await page.click('button:has-text("プロパティセット管理")');
+  await page.click('button:has-text("新規カスタムセット")');
+  await page.fill('#propsetNameInput', 'スモークセット');
+  await page.click('.propset-chip:has-text("攻撃")');
+  await page.click('.propset-chip:has-text("ストアTP")');
+  await page.fill('.propset-user-add input', '二刀流');
+  await page.click('.propset-user-add button');
+  await page.waitForTimeout(500);
+  await page.click('.propset-btn-primary');
+  await page.click('.propset-modal-actions button:has-text("閉じる")');
+
+  // ドロップダウンで選択するとグリッドに項目と抽出値が表示される
+  await page.selectOption('#propsetSelect', { label: 'スモークセット' });
+  const grid = page.locator('.propset-grid');
+  await expect(grid.locator('.propset-cell', { hasText: '攻撃' })).toBeVisible();
+  await expect(grid.locator('.propset-cell', { hasText: 'ストアTP' })).toBeVisible();
+  await expect(grid.locator('.propset-cell', { hasText: '二刀流' })).toContainText('5');
+
+  // 再読込後、同じ装備セットを開くと選択が復元される (装備セットごとの記憶)
+  await page.reload();
+  await page.waitForTimeout(3000);
+  await page.click('[data-nav="equipsets"]');
+  await page.selectOption('#equipSelectChar', 'smoke');
+  await page.selectOption('#equipSelectJob', 'War');
+  await page.waitForTimeout(2000);
+  await expect(page.locator('#propsetSelect option:checked')).toHaveText('スモークセット');
+  await expect(page.locator('.propset-grid')).toBeVisible();
 
   expect(errors).toEqual([]);
 });

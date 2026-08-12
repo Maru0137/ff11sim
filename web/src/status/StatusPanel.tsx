@@ -1,6 +1,9 @@
-// 装備編集タブのステータス表示パネル (旧 status-display.js の DOM 書き込みと
-// tabs.js のサブタブ切替を統合)。値の計算は compute.ts、テーブル構造は
-// StatusTables.tsx (index.html から機械変換)。
+// 装備編集タブのステータス表示パネル。
+// 用途別ステータスはサブタブバーからプロパティセットのドロップダウンに
+// 置き換え (docs/adr/0015)。テンプレート (現行 19 タブ) の表示 JSX は
+// StatusTables.tsx の SubtabContents をそのまま使い、カスタムセットは
+// CustomPropsetGrid で描画する。選択は装備セットごとに記憶する
+// (selection-prefs、ローカル専用)。
 import { useEffect, useState, useSyncExternalStore } from 'react';
 import { statusStore } from './status-store';
 import {
@@ -9,58 +12,152 @@ import {
     SubtabContents,
     EffectiveSkillsSection,
 } from './StatusTables';
+import { equipState, subscribeEquipState, getEquipStateVersion } from '../equip/equip-store';
+import { isShareMode } from '../share-ui';
+import { propsetsStore } from '../propsets/propsets-store';
+import { CustomPropsetGrid } from '../propsets/CustomPropsetGrid';
+import { PropsetManageModal } from '../propsets/PropsetManageModal';
+import {
+    equipSetPrefKey,
+    getSelectedPropsetId,
+    setSelectedPropsetId,
+} from '../propsets/selection-prefs';
+import '../../styles/propsets.css';
 
-const MAGIC_PREFIX = 'subtab-magic-';
-const DEFAULT_SUBTAB = 'subtab-defense';
+const TEMPLATE_PREFIX = 'template:';
+const MAGIC_SELECTION_PREFIX = 'template:subtab-magic-';
+const DEFAULT_SELECTION = 'template:subtab-defense';
 
 export function StatusPanel() {
     const view = useSyncExternalStore(statusStore.subscribe, statusStore.get);
-    const [active, setActive] = useState(DEFAULT_SUBTAB);
+    const propsets = useSyncExternalStore(propsetsStore.subscribe, propsetsStore.get);
+    // editingEquipSetName (装備セット切替) の変化を拾う
+    useSyncExternalStore(subscribeEquipState, getEquipStateVersion);
+    const [selection, setSelection] = useState(DEFAULT_SELECTION);
+    const [modal, setModal] = useState<{ setId?: string } | null>(null);
+
+    const readOnly = isShareMode();
+    const currentSetKey = equipState.editingEquipSetName
+        ? equipSetPrefKey(
+              equipState.currentEquipChar,
+              equipState.currentEquipJob,
+              equipState.editingEquipSetName
+          )
+        : null;
 
     // 魔法タブはジョブが該当スキルを持つ場合のみ表示。
     // view が無い (クリア状態) 間は旧実装同様すべて表示のまま。
-    const isVisible = (id: string) =>
-        !id.startsWith(MAGIC_PREFIX) || view === null || (view.magicTabVisible[id] ?? true);
+    const isVisible = (subtabId: string) =>
+        !subtabId.startsWith('subtab-magic-') ||
+        view === null ||
+        (view.magicTabVisible[subtabId] ?? true);
 
-    // 旧実装踏襲: active な魔法タブが非表示になったら、
-    // 可視の魔法タブ → 既定 (待機/回避/防御) へフォールバック
+    // 装備セット切替時: 記憶していた選択を検証付きで復元
     useEffect(() => {
-        if (
-            active.startsWith(MAGIC_PREFIX) &&
-            view !== null &&
-            !(view.magicTabVisible[active] ?? true)
-        ) {
-            const firstVisibleMagic = SUBTABS.find(
-                (t) => t.id.startsWith(MAGIC_PREFIX) && view.magicTabVisible[t.id]
-            );
-            setActive(firstVisibleMagic ? firstVisibleMagic.id : DEFAULT_SUBTAB);
+        if (!currentSetKey) return;
+        const stored = getSelectedPropsetId(currentSetKey);
+        if (!stored) {
+            setSelection(DEFAULT_SELECTION);
+            return;
         }
-    }, [active, view]);
+        const valid = stored.startsWith(TEMPLATE_PREFIX)
+            ? SUBTABS.some((t) => t.id === stored.slice(TEMPLATE_PREFIX.length))
+            : propsetsStore.get().sets.some((s) => s.id === stored);
+        setSelection(valid ? stored : DEFAULT_SELECTION);
+    }, [currentSetKey]);
+
+    // 旧実装踏襲: 選択中の魔法テンプレートが非表示になったら、
+    // 可視の魔法テンプレート → 既定 (待機/回避/防御) へフォールバック
+    useEffect(() => {
+        if (!selection.startsWith(MAGIC_SELECTION_PREFIX) || view === null) return;
+        const subtabId = selection.slice(TEMPLATE_PREFIX.length);
+        if (view.magicTabVisible[subtabId] ?? true) return;
+        const firstVisibleMagic = SUBTABS.find(
+            (t) => t.id.startsWith('subtab-magic-') && view.magicTabVisible[t.id]
+        );
+        setSelection(firstVisibleMagic ? TEMPLATE_PREFIX + firstVisibleMagic.id : DEFAULT_SELECTION);
+    }, [selection, view]);
+
+    // 選択中のカスタムセットが削除されたら既定へフォールバック
+    useEffect(() => {
+        if (selection.startsWith(TEMPLATE_PREFIX) || !propsets.loaded) return;
+        if (!propsets.sets.some((s) => s.id === selection)) {
+            setSelection(DEFAULT_SELECTION);
+        }
+    }, [selection, propsets]);
+
+    const handleSelect = (id: string) => {
+        setSelection(id);
+        if (currentSetKey && !readOnly) {
+            setSelectedPropsetId(currentSetKey, id);
+        }
+    };
 
     const v = (id: string): string | number => view?.values[id] ?? '-';
+
+    const customSet = selection.startsWith(TEMPLATE_PREFIX)
+        ? null
+        : propsets.sets.find((s) => s.id === selection) ?? null;
 
     return (
         <div id="equipStatusSection" className="status-section">
             <h3>ステータス</h3>
             <LeftStatusTables v={v} />
 
-            {/* 用途別ステータスサブタブ */}
-            <div className="status-subtabs">
-                {SUBTABS.map(({ id, label }) => (
-                    <button
-                        key={id}
-                        type="button"
-                        data-subtab={id}
-                        className={id === active ? 'status-subtab-btn active' : 'status-subtab-btn'}
-                        style={{ display: isVisible(id) ? undefined : 'none' }}
-                        onClick={() => setActive(id)}
-                    >
-                        {label}
-                    </button>
-                ))}
+            {/* 用途別ステータス: プロパティセット選択 */}
+            <div className="propset-selector">
+                <label htmlFor="propsetSelect">プロパティセット:</label>
+                <select
+                    id="propsetSelect"
+                    value={selection}
+                    onChange={(e) => handleSelect(e.target.value)}
+                >
+                    <optgroup label="テンプレート">
+                        {SUBTABS.filter((t) => isVisible(t.id)).map((t) => (
+                            <option key={t.id} value={TEMPLATE_PREFIX + t.id}>
+                                {t.label}
+                            </option>
+                        ))}
+                    </optgroup>
+                    {propsets.sets.length > 0 && (
+                        <optgroup label="カスタム">
+                            {propsets.sets.map((s) => (
+                                <option key={s.id} value={s.id}>
+                                    {s.name}
+                                </option>
+                            ))}
+                        </optgroup>
+                    )}
+                </select>
+                {!readOnly && (
+                    <>
+                        <button
+                            type="button"
+                            className="propset-manage-btn"
+                            onClick={() => setModal({})}
+                        >
+                            ⚙ プロパティセット管理
+                        </button>
+                        {customSet && (
+                            <button
+                                type="button"
+                                className="propset-manage-btn"
+                                onClick={() => setModal({ setId: customSet.id })}
+                            >
+                                ✎ このセットを編集
+                            </button>
+                        )}
+                    </>
+                )}
             </div>
 
-            <SubtabContents v={v} activeId={active} />
+            {customSet ? (
+                <div className="status-subtab-content active">
+                    <CustomPropsetGrid set={customSet} userItems={propsets.userItems} view={view} />
+                </div>
+            ) : (
+                <SubtabContents v={v} activeId={selection.slice(TEMPLATE_PREFIX.length)} />
+            )}
 
             <EffectiveSkillsSection>
                 {view === null ? null : view.effectiveSkills.length === 0 ? (
@@ -79,7 +176,13 @@ export function StatusPanel() {
                     ))
                 )}
             </EffectiveSkillsSection>
+
+            {modal !== null && (
+                <PropsetManageModal
+                    initialSetId={modal.setId}
+                    onClose={() => setModal(null)}
+                />
+            )}
         </div>
     );
 }
-

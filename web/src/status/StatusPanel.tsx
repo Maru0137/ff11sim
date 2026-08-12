@@ -8,6 +8,7 @@ import { useEffect, useState, useSyncExternalStore } from 'react';
 import { statusStore } from './status-store';
 import {
     SUBTABS,
+    SUBTAB_GROUPS,
     LeftStatusTables,
     SubtabContents,
     EffectiveSkillsSection,
@@ -92,13 +93,15 @@ export function StatusPanel() {
                     value={selection}
                     onChange={(e) => handleSelect(e.target.value)}
                 >
-                    <optgroup label="テンプレート">
-                        {SUBTABS.map((t) => (
-                            <option key={t.id} value={TEMPLATE_PREFIX + t.id}>
-                                {t.label}
-                            </option>
-                        ))}
-                    </optgroup>
+                    {SUBTAB_GROUPS.map((group) => (
+                        <optgroup key={group} label={group}>
+                            {SUBTABS.filter((t) => t.group === group).map((t) => (
+                                <option key={t.id} value={TEMPLATE_PREFIX + t.id}>
+                                    {t.label}
+                                </option>
+                            ))}
+                        </optgroup>
+                    ))}
                     {propsets.sets.length > 0 && (
                         <optgroup label="カスタム">
                             {propsets.sets.map((s) => (

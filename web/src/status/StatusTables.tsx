@@ -8,26 +8,35 @@ function subtabClass(id: string, activeId: string): string {
     return id === activeId ? 'status-subtab-content active' : 'status-subtab-content';
 }
 
-export const SUBTABS: { id: string; label: string }[] = [
-    { id: 'subtab-defense', label: '待機/回避/防御' },
-    { id: 'subtab-melee-auto', label: 'オートアタック' },
-    { id: 'subtab-ranged-auto', label: '遠隔攻撃' },
-    { id: 'subtab-melee-ws', label: '近接物理WS' },
-    { id: 'subtab-ranged-ws', label: '遠隔物理WS' },
-    { id: 'subtab-elemental-ws', label: '属性WS' },
-    { id: 'subtab-melee-elemental-ws', label: '近接属性物理WS' },
-    { id: 'subtab-ranged-elemental-ws', label: '遠隔属性物理WS' },
-    { id: 'subtab-magic-divine', label: '神聖魔法' },
-    { id: 'subtab-magic-healing', label: '回復魔法' },
-    { id: 'subtab-magic-enhancing', label: '強化魔法' },
-    { id: 'subtab-magic-enfeebling', label: '弱体魔法' },
-    { id: 'subtab-magic-elemental', label: '精霊魔法' },
-    { id: 'subtab-magic-dark', label: '暗黒魔法' },
-    { id: 'subtab-magic-summoning', label: '召喚魔法' },
-    { id: 'subtab-magic-ninjutsu', label: '忍術' },
-    { id: 'subtab-magic-song', label: '呪歌' },
-    { id: 'subtab-magic-blue', label: '青魔法' },
-    { id: 'subtab-magic-geomancy', label: '風水魔法' },
+// プロパティセット選択 UI (StatusPanel / PropsetManageModal) の
+// テンプレート分類。表示順 = この配列順 (docs/adr/0015)。
+export const SUBTAB_GROUPS = [
+    '待機/防御/回避',
+    'オートアタック/遠隔攻撃',
+    'ウェポンスキル',
+    '魔法',
+] as const;
+
+export const SUBTABS: { id: string; label: string; group: (typeof SUBTAB_GROUPS)[number] }[] = [
+    { id: 'subtab-defense', label: '待機/回避/防御', group: '待機/防御/回避' },
+    { id: 'subtab-melee-auto', label: 'オートアタック', group: 'オートアタック/遠隔攻撃' },
+    { id: 'subtab-ranged-auto', label: '遠隔攻撃', group: 'オートアタック/遠隔攻撃' },
+    { id: 'subtab-melee-ws', label: '近接物理WS', group: 'ウェポンスキル' },
+    { id: 'subtab-ranged-ws', label: '遠隔物理WS', group: 'ウェポンスキル' },
+    { id: 'subtab-elemental-ws', label: '属性WS', group: 'ウェポンスキル' },
+    { id: 'subtab-melee-elemental-ws', label: '近接属性物理WS', group: 'ウェポンスキル' },
+    { id: 'subtab-ranged-elemental-ws', label: '遠隔属性物理WS', group: 'ウェポンスキル' },
+    { id: 'subtab-magic-divine', label: '神聖魔法', group: '魔法' },
+    { id: 'subtab-magic-healing', label: '回復魔法', group: '魔法' },
+    { id: 'subtab-magic-enhancing', label: '強化魔法', group: '魔法' },
+    { id: 'subtab-magic-enfeebling', label: '弱体魔法', group: '魔法' },
+    { id: 'subtab-magic-elemental', label: '精霊魔法', group: '魔法' },
+    { id: 'subtab-magic-dark', label: '暗黒魔法', group: '魔法' },
+    { id: 'subtab-magic-summoning', label: '召喚魔法', group: '魔法' },
+    { id: 'subtab-magic-ninjutsu', label: '忍術', group: '魔法' },
+    { id: 'subtab-magic-song', label: '呪歌', group: '魔法' },
+    { id: 'subtab-magic-blue', label: '青魔法', group: '魔法' },
+    { id: 'subtab-magic-geomancy', label: '風水魔法', group: '魔法' },
 ];
 
 export function LeftStatusTables({ v }: { v: ValueGetter }) {

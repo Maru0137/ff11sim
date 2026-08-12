@@ -9,7 +9,7 @@ import { useState, useSyncExternalStore } from 'react';
 import { Modal } from '@mantine/core';
 import { useMediaQuery } from '@mantine/hooks';
 import { updateEquipEditStatus } from '../status/status-store';
-import { SUBTABS } from '../status/StatusTables';
+import { SUBTABS, SUBTAB_GROUPS } from '../status/StatusTables';
 import {
     BUILTIN_PROPERTY_ITEMS,
     PROPERTY_CATEGORIES,
@@ -108,19 +108,25 @@ function ListView({
                 </div>
             ))}
 
-            <h4 className="propset-section-title">テンプレート</h4>
-            {SUBTABS.map(({ id, label }) => (
-                <div key={id} className="propset-row">
-                    <span className="propset-row-name">{label}</span>
-                    <span className="propset-row-meta">
-                        {(TEMPLATE_ITEM_IDS[id] ?? []).length} 項目
-                    </span>
-                    <button
-                        type="button"
-                        onClick={() => newSet(`${label}のコピー`, [...(TEMPLATE_ITEM_IDS[id] ?? [])])}
-                    >
-                        複製して編集
-                    </button>
+            {SUBTAB_GROUPS.map((group) => (
+                <div key={group}>
+                    <h4 className="propset-section-title">{group}</h4>
+                    {SUBTABS.filter((t) => t.group === group).map(({ id, label }) => (
+                        <div key={id} className="propset-row">
+                            <span className="propset-row-name">{label}</span>
+                            <span className="propset-row-meta">
+                                {(TEMPLATE_ITEM_IDS[id] ?? []).length} 項目
+                            </span>
+                            <button
+                                type="button"
+                                onClick={() =>
+                                    newSet(`${label}のコピー`, [...(TEMPLATE_ITEM_IDS[id] ?? [])])
+                                }
+                            >
+                                複製して編集
+                            </button>
+                        </div>
+                    ))}
                 </div>
             ))}
 

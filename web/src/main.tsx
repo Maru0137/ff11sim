@@ -7,6 +7,11 @@
 //   3. ?share= 付きなら共有閲覧モードへ分岐し、通常初期化はスキップする
 import { StrictMode } from 'react';
 import { createRoot } from 'react-dom/client';
+import { MantineProvider } from '@mantine/core';
+// CSS は Mantine → 既存 index.css の順に読み、既存スタイルを後勝ちにする
+import '@mantine/core/styles.css';
+import '../styles/index.css';
+import { theme, cssVariablesResolver } from './theme';
 import { initWasmRuntime } from './wasm';
 import { loadAugmentData } from './augments';
 import { isShareMode, enterShareMode } from './share-ui';
@@ -25,7 +30,13 @@ export async function startApp() {
     // StrictMode は開発時のみ二重実行等の検査を行う (本番ビルドでは no-op)
     createRoot(document.getElementById('app-root')!).render(
         <StrictMode>
-            <App />
+            <MantineProvider
+                theme={theme}
+                cssVariablesResolver={cssVariablesResolver}
+                forceColorScheme="dark"
+            >
+                <App />
+            </MantineProvider>
         </StrictMode>
     );
 

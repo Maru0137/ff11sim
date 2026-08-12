@@ -1,3 +1,4 @@
+pub mod breakdown;
 pub mod chara;
 pub mod character_profile;
 pub mod data_loader;

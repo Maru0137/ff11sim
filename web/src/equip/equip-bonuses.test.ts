@@ -92,4 +92,24 @@ describe('calculateEquipSetBonuses', () => {
         expect(result.accuracy).toBe(15);
         expect(result.slot_stats.main.accuracy).toBe(10);
     });
+
+    it('全スロット別の装備合計 (per_slot_stats) が返り、総和が全体と一致する', () => {
+        const result = calculateEquipSetBonuses({
+            slots: {
+                main: { item_id: 0, custom_description: '命中+10' },
+                body: { item_id: 0, custom_description: '命中+5 STR+3' },
+                legs: null,
+            },
+        });
+        // 生のスロットキーで各スロット分のみ持つ
+        expect(result.per_slot_stats.main.accuracy).toBe(10);
+        expect(result.per_slot_stats.body.accuracy).toBe(5);
+        expect(result.per_slot_stats.body.str).toBe(3);
+        // 装備のないスロットは含まない
+        expect(result.per_slot_stats.legs).toBeUndefined();
+        // スロット別の総和 == 全体合計
+        const perSlot = result.per_slot_stats as Record<string, { accuracy?: number }>;
+        const sum = Object.values(perSlot).reduce((acc, s) => acc + (s.accuracy || 0), 0);
+        expect(sum).toBe(result.accuracy);
+    });
 });

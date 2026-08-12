@@ -36,6 +36,9 @@ export function calculateEquipSetBonuses(equipSet: EquipSetLike | null | undefin
     // 一部の装備ステ (例: 魔命スキル) は装備中スロットに依存して扱いが変わるため、
     // UI で「メイン枠のみ表示」のような出し分けに使う。
     const slotStatsBuckets: Record<WeaponBucket, unknown[]> = { main: [], sub: [], ranged: [] };
+    // 全スロット別の装備合計 (内訳モーダル用、docs/adr/0016)。
+    // キーは生のスロットキー ('range' のまま。slot_stats の 'ranged' とは別物)。
+    const perSlotBuckets: Record<string, unknown[]> = {};
     // スキルボーナスをスロット別に集計:
     // 武器スロット(main/sub/range)装備の「武器スキル」ボーナスはそのスロット専用。
     // それ以外（非武器スロット装備すべて、武器スロット装備の非武器スキル）は全スロット共通。
@@ -64,10 +67,12 @@ export function calculateEquipSetBonuses(equipSet: EquipSetLike | null | undefin
 
         const targetWeaponBucket = (slotKey === 'range' ? 'ranged' : slotKey) as WeaponBucket;
         const isWeaponSlot = (slotKey === 'main' || slotKey === 'sub' || slotKey === 'range');
+        const perSlot = (perSlotBuckets[slotKey] ||= []);
 
         if (item && item.description_en) {
             const stats = extract_all_stats(item.description_en);
             statsArray.push(stats);
+            perSlot.push(stats);
             if (isWeaponSlot) slotStatsBuckets[targetWeaponBucket].push(stats);
             addSkillBonuses(slotKey, extract_skill_bonuses(item.description_en));
         }
@@ -77,6 +82,7 @@ export function calculateEquipSetBonuses(equipSet: EquipSetLike | null | undefin
             const augEn = convertAugmentJaToEn(augText);
             const augStats = extract_all_stats(augEn);
             statsArray.push(augStats);
+            perSlot.push(augStats);
             if (isWeaponSlot) slotStatsBuckets[targetWeaponBucket].push(augStats);
             addSkillBonuses(slotKey, extract_skill_bonuses(augEn));
         }
@@ -85,6 +91,7 @@ export function calculateEquipSetBonuses(equipSet: EquipSetLike | null | undefin
             const customEn = convertAugmentJaToEn(slotData.custom_description);
             const customStats = extract_all_stats(customEn);
             statsArray.push(customStats);
+            perSlot.push(customStats);
             if (isWeaponSlot) slotStatsBuckets[targetWeaponBucket].push(customStats);
             addSkillBonuses(slotKey, extract_skill_bonuses(customEn));
         }
@@ -101,5 +108,9 @@ export function calculateEquipSetBonuses(equipSet: EquipSetLike | null | undefin
         sub: sum_stats(slotStatsBuckets.sub),
         ranged: sum_stats(slotStatsBuckets.ranged),
     };
+    // 全スロット別装備合計 (内訳モーダル用)。装備のあるスロットのみ含む
+    result.per_slot_stats = Object.fromEntries(
+        Object.entries(perSlotBuckets).map(([key, arr]) => [key, sum_stats(arr)])
+    );
     return result;
 }

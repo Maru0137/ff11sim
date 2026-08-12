@@ -277,6 +277,36 @@ test('カスタムプロパティセットを作成でき、選択が装備セ�
   expect(errors).toEqual([]);
 });
 
+test('内訳モーダルが開ける (ステータス / プロパティセット)', async ({ page }) => {
+  const errors = collectErrors(page);
+  // 内訳は WASM の calculate_status_breakdown を通る唯一の UI 経路。
+  // 値の正しさは Rust 側の恒等式テスト (rust/src/breakdown.rs) の責務で、
+  // ここでは JS→WASM のシグネチャとテーブル描画の生存のみ確認する。
+  await seedAndOpenEquipTab(page, {
+    main: { item_id: 21071, skill: 11, custom_description: 'STR+5' },
+  });
+
+  // ステータス内訳: 装備 16 部位 + キャラ由来 8 行 + 合計行
+  await page.click('#equipStatusSection h3 .breakdown-btn');
+  await page.waitForTimeout(1000);
+  await expect(page.locator('.breakdown-table')).toBeVisible();
+  await expect(page.locator('.breakdown-table tbody tr')).toHaveCount(25);
+  await page.keyboard.press('Escape');
+  await expect(page.locator('.breakdown-table')).toHaveCount(0);
+
+  // プロパティセット内訳 (既定テンプレート) + 「値のない行を隠す」
+  await page.click('.propset-selector .breakdown-btn');
+  await page.waitForTimeout(1000);
+  await expect(page.locator('.breakdown-table')).toBeVisible();
+  const rowsBefore = await page.locator('.breakdown-table tbody tr').count();
+  await page.check('.breakdown-hide-empty input');
+  const rowsAfter = await page.locator('.breakdown-table tbody tr').count();
+  expect(rowsAfter).toBeLessThan(rowsBefore);
+  await page.keyboard.press('Escape');
+
+  expect(errors).toEqual([]);
+});
+
 test('キャラクターを UI から作成できる', async ({ page }) => {
   const errors = collectErrors(page);
   // 既存テストは localStorage へ直接投入するため、フォーム経由の作成

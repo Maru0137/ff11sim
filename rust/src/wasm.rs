@@ -556,7 +556,102 @@ fn skill_gift_bonus(job: crate::job::Job, skill: SkillKind, total_jp: i32) -> i3
     job.gift_value(gift, total_jp)
 }
 
-fn chara_to_status_result(chara: &Chara) -> StatusResult {
+/// 戦闘計算に使う有効スキル値のコンテキスト。
+/// `chara_to_status_result` と内訳 (`breakdown::chara_breakdown`) で共有し、
+/// スキル解決の二重実装によるドリフトを防ぐ。
+pub(crate) struct CombatSkills {
+    pub base_effective: std::collections::HashMap<SkillKind, i32>,
+    pub main_weapon: Option<(SkillKind, i32)>,
+    pub sub_weapon: Option<(SkillKind, i32)>,
+    pub ranged_weapon: Option<(SkillKind, i32)>,
+    /// メイン武器未装備時の H2H スキル値 (メインスロット扱い)
+    pub h2h_fallback: i32,
+    pub eff_evasion_skill: i32,
+}
+
+impl CombatSkills {
+    /// メイン武器のスキル値と H2H かどうか (武器なしは H2H 扱い)
+    pub fn main_skill(&self) -> (i32, bool) {
+        match self.main_weapon {
+            Some((kind, v)) => (v, kind == SkillKind::HandToHand),
+            None => (self.h2h_fallback, true),
+        }
+    }
+}
+
+pub(crate) fn combat_skills(chara: &Chara) -> CombatSkills {
+    // 各スキルの「基本有効値」= min(char, cap)（装備ボーナスを含まない）
+    let mut base_effective: std::collections::HashMap<SkillKind, i32> =
+        std::collections::HashMap::new();
+    for skill in <SkillKind as VariantArray>::VARIANTS {
+        let v = effective_skill(
+            *skill,
+            chara.main_job,
+            chara.main_lv,
+            chara.master_lv,
+            chara.support_job,
+            chara.support_lv,
+            chara.skills.get(*skill),
+            &chara.merit_points,
+        );
+        base_effective.insert(*skill, v);
+    }
+
+    let get_bonus = |map: &std::collections::BTreeMap<String, i32>, kind: SkillKind| -> i32 {
+        *map.get(skill_kind_to_key(kind)).unwrap_or(&0)
+    };
+    let global_bonus = |kind: SkillKind| get_bonus(&chara.bonus_stats.skill_bonus_global, kind);
+    let main_slot_bonus = |kind: SkillKind| get_bonus(&chara.bonus_stats.skill_bonus_main, kind);
+    let sub_slot_bonus = |kind: SkillKind| get_bonus(&chara.bonus_stats.skill_bonus_sub, kind);
+    let ranged_slot_bonus =
+        |kind: SkillKind| get_bonus(&chara.bonus_stats.skill_bonus_ranged, kind);
+
+    // 該当ジョブ構成で対象スキルを習得しているか（メイン/サポートどちらかにランクあり）
+    let job_has_skill = |kind: SkillKind| -> bool {
+        job_skill_rank(chara.main_job, kind).is_some()
+            || chara
+                .support_job
+                .map(|j| job_skill_rank(j, kind).is_some())
+                .unwrap_or(false)
+    };
+
+    // 指定スロットの武器種別と有効値（スロット固有 + global を加算）を取得するヘルパー
+    // ジョブ構成がスキルを持たない場合はボーナスを適用せず、値は 0 となる
+    let resolve_weapon = |id: Option<i32>, slot_bonus: &dyn Fn(SkillKind) -> i32| {
+        id.and_then(weapon_skill_from_item_id).map(|skill| {
+            let v = if job_has_skill(skill) {
+                base_effective[&skill] + slot_bonus(skill) + global_bonus(skill)
+            } else {
+                0
+            };
+            (skill, v)
+        })
+    };
+
+    let main_weapon = resolve_weapon(chara.bonus_stats.main_weapon_skill_id, &main_slot_bonus);
+    let sub_weapon = resolve_weapon(chara.bonus_stats.sub_weapon_skill_id, &sub_slot_bonus);
+    let ranged_weapon =
+        resolve_weapon(chara.bonus_stats.ranged_weapon_skill_id, &ranged_slot_bonus);
+
+    // 武器なし = H2H. スロット固有ボーナスはメインスロット扱い
+    let h2h_fallback = base_effective[&SkillKind::HandToHand]
+        + main_slot_bonus(SkillKind::HandToHand)
+        + global_bonus(SkillKind::HandToHand);
+
+    // 回避は非武器スキル → 装備ボーナスは global のみ
+    let eff_evasion_skill = base_effective[&SkillKind::Evasion] + global_bonus(SkillKind::Evasion);
+
+    CombatSkills {
+        base_effective,
+        main_weapon,
+        sub_weapon,
+        ranged_weapon,
+        h2h_fallback,
+        eff_evasion_skill,
+    }
+}
+
+pub(crate) fn chara_to_status_result(chara: &Chara) -> StatusResult {
     use crate::status::{
         calc_accuracy, calc_defense, calc_evasion, calc_magic_attack, calc_magic_defense,
         calc_main_attack, calc_ranged_accuracy, calc_ranged_attack, calc_sub_attack,
@@ -636,22 +731,8 @@ fn chara_to_status_result(chara: &Chara) -> StatusResult {
         (0, 0)
     };
 
-    // 各スキルの「基本有効値」= min(char, cap)（装備ボーナスを含まない）
-    let mut base_effective: std::collections::HashMap<SkillKind, i32> =
-        std::collections::HashMap::new();
-    for skill in <SkillKind as VariantArray>::VARIANTS {
-        let v = effective_skill(
-            *skill,
-            chara.main_job,
-            chara.main_lv,
-            chara.master_lv,
-            chara.support_job,
-            chara.support_lv,
-            chara.skills.get(*skill),
-            &chara.merit_points,
-        );
-        base_effective.insert(*skill, v);
-    }
+    // 有効スキル値のコンテキスト (内訳計算と共有)
+    let cs = combat_skills(chara);
 
     // 装備ボーナスを引いた上で effective_skills マップを組み立てる
     // 非武器スロットのスキルボーナスは全スロット共通(global)として加算される
@@ -659,10 +740,6 @@ fn chara_to_status_result(chara: &Chara) -> StatusResult {
         *map.get(skill_kind_to_key(kind)).unwrap_or(&0)
     };
     let global_bonus = |kind: SkillKind| get_bonus(&chara.bonus_stats.skill_bonus_global, kind);
-    let main_slot_bonus = |kind: SkillKind| get_bonus(&chara.bonus_stats.skill_bonus_main, kind);
-    let sub_slot_bonus = |kind: SkillKind| get_bonus(&chara.bonus_stats.skill_bonus_sub, kind);
-    let ranged_slot_bonus =
-        |kind: SkillKind| get_bonus(&chara.bonus_stats.skill_bonus_ranged, kind);
 
     // 該当ジョブ構成で対象スキルを習得しているか（メイン/サポートどちらかにランクあり）
     let job_has_skill = |kind: SkillKind| -> bool {
@@ -676,7 +753,7 @@ fn chara_to_status_result(chara: &Chara) -> StatusResult {
     // effective_skills（表示用）: base + global + ギフトのスキルボーナス
     // ジョブ構成がスキルを持たない場合はボーナスも適用しない（未習得扱い）
     let mut effective_skills: BTreeMap<String, i32> = BTreeMap::new();
-    for (skill, base) in base_effective.iter() {
+    for (skill, base) in cs.base_effective.iter() {
         let v = if job_has_skill(*skill) {
             base + global_bonus(*skill) + skill_gift_bonus(chara.main_job, *skill, total_jp)
         } else {
@@ -685,45 +762,10 @@ fn chara_to_status_result(chara: &Chara) -> StatusResult {
         effective_skills.insert(skill_kind_to_key(*skill).to_string(), v);
     }
 
-    // 回避は非武器スキル → 装備ボーナスは global のみ
-    let eff_evasion_skill = base_effective[&SkillKind::Evasion] + global_bonus(SkillKind::Evasion);
-
-    // 指定スロットの武器種別と有効値（スロット固有 + global を加算）を取得するヘルパー
-    // ジョブ構成がスキルを持たない場合はボーナスを適用せず、値は 0 となる
-    let resolve_weapon_main = |id: Option<i32>| -> Option<(SkillKind, i32)> {
-        id.and_then(weapon_skill_from_item_id).map(|skill| {
-            let v = if job_has_skill(skill) {
-                base_effective[&skill] + main_slot_bonus(skill) + global_bonus(skill)
-            } else {
-                0
-            };
-            (skill, v)
-        })
-    };
-    let resolve_weapon_sub = |id: Option<i32>| -> Option<(SkillKind, i32)> {
-        id.and_then(weapon_skill_from_item_id).map(|skill| {
-            let v = if job_has_skill(skill) {
-                base_effective[&skill] + sub_slot_bonus(skill) + global_bonus(skill)
-            } else {
-                0
-            };
-            (skill, v)
-        })
-    };
-    let resolve_weapon_ranged = |id: Option<i32>| -> Option<(SkillKind, i32)> {
-        id.and_then(weapon_skill_from_item_id).map(|skill| {
-            let v = if job_has_skill(skill) {
-                base_effective[&skill] + ranged_slot_bonus(skill) + global_bonus(skill)
-            } else {
-                0
-            };
-            (skill, v)
-        })
-    };
-
-    let main_weapon = resolve_weapon_main(chara.bonus_stats.main_weapon_skill_id);
-    let sub_weapon = resolve_weapon_sub(chara.bonus_stats.sub_weapon_skill_id);
-    let ranged_weapon = resolve_weapon_ranged(chara.bonus_stats.ranged_weapon_skill_id);
+    let eff_evasion_skill = cs.eff_evasion_skill;
+    let main_weapon = cs.main_weapon;
+    let sub_weapon = cs.sub_weapon;
+    let ranged_weapon = cs.ranged_weapon;
 
     let main_weapon_skill = main_weapon.map(|(k, _)| skill_kind_to_key(k).to_string());
     let main_weapon_skill_value = main_weapon.map(|(_, v)| v).unwrap_or(0);
@@ -763,15 +805,7 @@ fn chara_to_status_result(chara: &Chara) -> StatusResult {
 
     // メイン攻撃/命中
     // メイン武器未装備時は H2H 扱いで H2H スキル値を使う
-    let (main_skill_value, is_h2h) = if let Some((kind, v)) = main_weapon {
-        (v, kind == SkillKind::HandToHand)
-    } else {
-        // 武器なし = H2H. スロット固有ボーナスはメインスロット扱い
-        let h2h_v = base_effective[&SkillKind::HandToHand]
-            + main_slot_bonus(SkillKind::HandToHand)
-            + global_bonus(SkillKind::HandToHand);
-        (h2h_v, true)
-    };
+    let (main_skill_value, is_h2h) = cs.main_skill();
     let main_attack_total =
         calc_main_attack(str_val, main_skill_value, is_h2h, chara.bonus_stats.attack)
             + attack_bonus;
@@ -1117,6 +1151,45 @@ pub fn calculate_status_from_profile(
 
     let result = chara_to_status_result(&chara);
     result
+        .serialize(&object_serializer())
+        .map_err(|e| JsValue::from_str(&e.to_string()))
+}
+
+/// キャラクター由来 (種族/メイン/サポ/メリポ/JP/ギフト/ML/基礎) のソース別内訳を返す
+/// WASM 関数 (docs/adr/0016)。入力は calculate_status_from_profile と同一。
+/// bonus_stats (装備合算) は「基礎」行の計算 (装備込み VIT・有効スキル等) に必要。
+#[wasm_bindgen]
+pub fn calculate_status_breakdown(
+    profile_js: JsValue,
+    main_job: &str,
+    support_job: Option<String>,
+    bonus_stats_js: JsValue,
+) -> Result<JsValue, JsValue> {
+    let profile: CharacterProfile = serde_wasm_bindgen::from_value(profile_js)
+        .map_err(|e| JsValue::from_str(&format!("Invalid profile: {}", e)))?;
+
+    let main_job = str_to_job(main_job).ok_or_else(|| JsValue::from_str("Invalid main job"))?;
+
+    let support_job = match support_job {
+        Some(ref sj) => {
+            Some(str_to_job(sj).ok_or_else(|| JsValue::from_str("Invalid support job"))?)
+        }
+        None => None,
+    };
+
+    let bonus_stats: BonusStats = if bonus_stats_js.is_undefined() || bonus_stats_js.is_null() {
+        BonusStats::default()
+    } else {
+        serde_wasm_bindgen::from_value(bonus_stats_js)
+            .map_err(|e| JsValue::from_str(&format!("Invalid bonus stats: {}", e)))?
+    };
+
+    let mut chara = profile
+        .to_chara(main_job, support_job)
+        .map_err(|e| JsValue::from_str(&e))?;
+    chara.bonus_stats = bonus_stats;
+
+    crate::breakdown::chara_breakdown(&chara)
         .serialize(&object_serializer())
         .map_err(|e| JsValue::from_str(&e.to_string()))
 }

@@ -3,7 +3,10 @@
 // fetch できないため .wasm のバイト列を渡す。web/pkg のビルドが前提)。
 import { describe, it, expect, beforeAll } from 'vitest';
 import { readFileSync } from 'node:fs';
-import { calculateUserPropertyValues } from './user-item-values';
+import {
+    calculateUserPropertyValues,
+    calculateUserPropertyValuesPerSlot,
+} from './user-item-values';
 
 beforeAll(async () => {
     const { initWasmRuntime } = await import('../../js/wasm.js');
@@ -38,6 +41,24 @@ describe('calculateUserPropertyValues', () => {
             [userItem('二刀流')]
         );
         expect(totals['user:二刀流']).toBe(0);
+    });
+
+    it('スロット別の値が取れ、総和が合算関数と一致する', () => {
+        const slots = {
+            body: { item_id: 0, custom_description: '二刀流+5' },
+            hands: { item_id: 0, custom_description: '二刀流+3 ストアTP+10' },
+        };
+        const items = [userItem('二刀流'), userItem('ストアTP')];
+        const perSlot = calculateUserPropertyValuesPerSlot(slots, items);
+        expect(perSlot.body['user:二刀流']).toBe(5);
+        expect(perSlot.hands['user:二刀流']).toBe(3);
+        expect(perSlot.hands['user:ストアTP']).toBe(10);
+        // 値 0 の項目はキーごと含まない (疎)
+        expect(perSlot.body['user:ストアTP']).toBeUndefined();
+
+        const totals = calculateUserPropertyValues(slots, items);
+        expect(totals['user:二刀流']).toBe(8);
+        expect(totals['user:ストアTP']).toBe(10);
     });
 
     it('日本語テキストを JA→EN 変換せずそのまま抽出する', () => {

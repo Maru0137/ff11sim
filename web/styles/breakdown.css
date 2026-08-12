@@ -1,0 +1,131 @@
+/* 内訳モーダル (docs/adr/0016)。BreakdownModal から直接 import する
+   スコープ付きスタイル (propsets.css と同じ方式)。 */
+
+.breakdown-controls {
+    display: flex;
+    justify-content: flex-end;
+    margin-bottom: 8px;
+}
+
+.breakdown-hide-empty {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    color: #aaa;
+    font-size: 12px;
+    cursor: pointer;
+    user-select: none;
+}
+
+.breakdown-hide-empty input {
+    accent-color: #f0c040;
+    margin: 0;
+}
+
+.breakdown-table-wrap {
+    overflow: auto;
+    max-height: 70vh;
+    border: 1px solid #333;
+    border-radius: 6px;
+}
+
+.breakdown-table {
+    border-collapse: separate;
+    border-spacing: 0;
+    min-width: max-content;
+    font-variant-numeric: tabular-nums;
+}
+
+.breakdown-table th,
+.breakdown-table td {
+    padding: 5px 10px;
+    font-size: 12px;
+    text-align: right;
+    border-bottom: 1px solid #333;
+    white-space: nowrap;
+}
+
+.breakdown-table thead th {
+    color: #f0c040;
+    border-bottom: 2px solid #444;
+    position: sticky;
+    top: 0;
+    background: #1b2747;
+    z-index: 2;
+}
+
+.breakdown-table th.breakdown-rowhead,
+.breakdown-table td.breakdown-rowhead {
+    text-align: left;
+    color: #aaa;
+    position: sticky;
+    left: 0;
+    background: #1b2747;
+    min-width: 4.5em;
+    z-index: 1;
+}
+
+.breakdown-table thead th.breakdown-rowhead {
+    z-index: 3;
+}
+
+.breakdown-table th.breakdown-itemname,
+.breakdown-table td.breakdown-itemname {
+    text-align: left;
+    color: #ddd;
+    min-width: 12em;
+}
+
+.breakdown-cell-value {
+    color: #88c0d0;
+}
+
+.breakdown-cell-zero {
+    color: #4a4a66;
+}
+
+.breakdown-cell-negative {
+    color: #e08080;
+}
+
+.breakdown-table tbody tr:hover td {
+    background: rgba(138, 180, 248, 0.07);
+}
+
+.breakdown-table tbody tr:hover td.breakdown-rowhead {
+    background: #223055;
+}
+
+/* キャラ由来行は装備行と区別 (行ヘッダ・補足を水色系に) */
+.breakdown-row-char td.breakdown-rowhead,
+.breakdown-row-char td.breakdown-itemname {
+    color: #4fc3f7;
+}
+
+.breakdown-row-total td {
+    border-top: 2px solid #444;
+    border-bottom: none;
+    color: #f0c040;
+    font-weight: bold;
+    position: sticky;
+    bottom: 0;
+    background: #1b2747;
+}
+
+.breakdown-row-total td.breakdown-rowhead {
+    color: #f0c040;
+    z-index: 2;
+}
+
+.breakdown-notes {
+    margin-top: 8px;
+    color: #666;
+    font-size: 11px;
+    line-height: 1.6;
+}
+
+.breakdown-empty {
+    color: #666;
+    padding: 20px 4px;
+    font-size: 13px;
+}

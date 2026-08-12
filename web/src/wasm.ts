@@ -19,6 +19,7 @@ import { search_items, item_count, initWasmRuntime } from '../js/wasm.js';
 // (docs/roadmap/react-migration.md の残課題)。
 export {
     calculate_status_from_profile,
+    calculate_status_breakdown,
     calculate_default_skills,
     get_item_by_id,
     extract_all_stats,

@@ -14,13 +14,16 @@ import { getAugmentText } from '../augments';
 import type { EquipSlotData } from '../equip/equip-store';
 import type { UserPropertyItem } from './types';
 
-export function calculateUserPropertyValues(
+/**
+ * スロット別のユーザー定義項目値 (内訳モーダル用、docs/adr/0016)。
+ * 装備のあるスロットのみ含む。値 0 の項目はキーごと含まない (疎)。
+ */
+export function calculateUserPropertyValuesPerSlot(
     slots: Record<string, EquipSlotData | null | undefined> | undefined,
     userItems: UserPropertyItem[]
-): Record<string, number> {
-    const totals: Record<string, number> = {};
-    for (const item of userItems) totals[item.id] = 0;
-    if (!slots || userItems.length === 0 || !isItemsLoaded()) return totals;
+): Record<string, Record<string, number>> {
+    const perSlot: Record<string, Record<string, number>> = {};
+    if (!slots || userItems.length === 0 || !isItemsLoaded()) return perSlot;
 
     for (const slotKey of Object.keys(slots)) {
         const slotData = slots[slotKey];
@@ -35,8 +38,25 @@ export function calculateUserPropertyValues(
         for (const text of texts) {
             if (!text) continue;
             for (const userItem of userItems) {
-                totals[userItem.id] += extract_named_stat(text, userItem.term);
+                const v = extract_named_stat(text, userItem.term);
+                if (!v) continue;
+                const bucket = (perSlot[slotKey] ||= {});
+                bucket[userItem.id] = (bucket[userItem.id] || 0) + v;
             }
+        }
+    }
+    return perSlot;
+}
+
+export function calculateUserPropertyValues(
+    slots: Record<string, EquipSlotData | null | undefined> | undefined,
+    userItems: UserPropertyItem[]
+): Record<string, number> {
+    const totals: Record<string, number> = {};
+    for (const item of userItems) totals[item.id] = 0;
+    for (const bucket of Object.values(calculateUserPropertyValuesPerSlot(slots, userItems))) {
+        for (const [id, v] of Object.entries(bucket)) {
+            totals[id] += v;
         }
     }
     return totals;

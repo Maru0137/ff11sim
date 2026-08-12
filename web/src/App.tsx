@@ -11,7 +11,7 @@ import { AuthWidget } from './auth-ui';
 import { AppLayout, IconCharacter, IconEquipSet, IconSearch, type ViewMeta } from './AppLayout';
 import { Modals } from './modals/Modals';
 import { StatusPanel } from './status/StatusPanel';
-import { EquipSlots } from './equip/EquipSlots';
+import { EquipGrid } from './equip/EquipGrid';
 import { EquipSetControls } from './equip/EquipSetControls';
 import { EquipSetToolbar } from './equip/EquipSetToolbar';
 import { CharacterTab } from './character/CharacterTab';
@@ -62,9 +62,11 @@ function EquipSetsView() {
                 </div>
 
                 <EquipSetToolbar />
-                <StatusPanel />
-                <div id="equipSlotsContainer" className="equip-slot-grid">
-                    <EquipSlots />
+                {/* 左: 装備グリッド / 右: ステータス。装備を変えながら
+                    ステータスをスクロールなしで確認できる (狭幅では縦積み) */}
+                <div className="equipset-columns">
+                    <EquipGrid />
+                    <StatusPanel />
                 </div>
             </div>
         </>

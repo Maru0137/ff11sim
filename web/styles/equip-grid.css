@@ -1,0 +1,311 @@
+/* 装備セットの 4x4 グリッドと装備選択モーダル (web/src/equip/EquipGrid.tsx)。
+   .equip-grid-panel / .equipset-columns / .equip-select-modal スコープに
+   閉じる (index.css のグローバルルールとの衝突回避)。 */
+
+/* ===== 2 カラムレイアウト (左: 装備グリッド / 右: ステータス) ===== */
+.equipset-columns {
+    display: grid;
+    grid-template-columns: minmax(380px, 560px) minmax(0, 1fr);
+    gap: 20px;
+    align-items: start;
+}
+
+/* 縦の間隔はカラムの gap が担うので、パネル自身の margin-top は消す */
+.equipset-columns .status-section {
+    margin-top: 0;
+}
+
+@media (max-width: 1100px) {
+    .equipset-columns {
+        grid-template-columns: 1fr;
+    }
+}
+
+/* ===== 4x4 グリッド ===== */
+.equip-grid-panel {
+    padding: 15px;
+    background: #0f0f23;
+    border-radius: 5px;
+    /* ステータス側が長くても、スクロール中グリッドが視界に残るようにする */
+    position: sticky;
+    top: 16px;
+}
+
+@media (max-width: 1100px) {
+    .equip-grid-panel {
+        position: static;
+    }
+}
+
+.equip-grid-panel h3 {
+    margin: 0 0 10px;
+    font-size: 16px;
+}
+
+.equip-grid {
+    display: grid;
+    /* minmax(0, 1fr) でないとセル内の ellipsis が効かない */
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 6px;
+}
+
+.equip-cell {
+    display: flex;
+    flex-direction: column;
+    gap: 3px;
+    text-align: left;
+    font-family: inherit;
+    background: #16213e;
+    color: #eee;
+    border: 1px solid #333;
+    border-radius: 6px;
+    padding: 8px 9px;
+    min-height: 68px;
+    cursor: pointer;
+    transition: border-color 0.1s, background 0.1s;
+}
+
+.equip-cell:hover {
+    border-color: #f0c040;
+    background: #1f2a4a;
+}
+
+.equip-cell:focus-visible {
+    outline: 2px solid #f0c040;
+    outline-offset: 1px;
+}
+
+.equip-cell-top {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    min-width: 0;
+}
+
+.equip-cell-slot {
+    font-size: 10px;
+    color: #f0c040;
+    letter-spacing: 0.06em;
+    flex-shrink: 0;
+}
+
+.equip-cell-badges {
+    margin-left: auto;
+    display: flex;
+    gap: 3px;
+    flex-shrink: 0;
+}
+
+.equip-cell-badge {
+    font-size: 9px;
+    line-height: 1;
+    padding: 2px 4px;
+    border-radius: 3px;
+    background: #2a3a5e;
+    color: #88c0d0;
+    border: 1px solid #3a4a6e;
+}
+
+.equip-cell-badge.memo {
+    background: #3a2e14;
+    color: #d9c37a;
+    border-color: #5a4a1a;
+}
+
+.equip-cell-name {
+    font-size: 13px;
+    font-weight: 600;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.equip-cell-summary {
+    font-size: 11px;
+    color: #999;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    font-variant-numeric: tabular-nums;
+}
+
+.equip-cell.empty {
+    border-style: dashed;
+    background: transparent;
+}
+
+.equip-cell.empty .equip-cell-name {
+    color: #777;
+    font-weight: 400;
+}
+
+/* ===== 装備選択モーダル ===== */
+.equip-select-modal {
+    background: #1a1a2e;
+    border: 1px solid #444;
+}
+
+/* Mantine Modal のタイトルは h2 で描画されるため、
+   index.css の裸 h2 ルール (下線) を打ち消す */
+.equip-select-modal-title {
+    color: #f0c040;
+    font-size: 16px;
+    font-weight: 600;
+    border-bottom: none;
+    padding-bottom: 0;
+}
+
+/* 選択中装備の詳細 */
+.equip-modal-selected {
+    background: #16213e;
+    border: 1px solid #333;
+    border-radius: 6px;
+    padding: 12px 14px;
+    margin-bottom: 16px;
+}
+
+.equip-modal-selected.empty {
+    color: #777;
+    font-size: 13px;
+    border-style: dashed;
+    background: transparent;
+}
+
+.equip-modal-selected-name {
+    font-size: 15px;
+    font-weight: 600;
+    margin-bottom: 6px;
+}
+
+.equip-modal-selected-desc {
+    font-size: 12px;
+    color: #aaa;
+    line-height: 1.6;
+    margin-bottom: 10px;
+}
+
+.equip-modal-controls {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.equip-modal-control-row {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    flex-wrap: wrap;
+}
+
+/* index.css の裸 label ルール (display:block 等) を上書きして横並びに */
+.equip-modal-control-row > label {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    margin-bottom: 0;
+    font-size: 12px;
+    color: #aaa;
+    width: 110px;
+    flex-shrink: 0;
+}
+
+/* index.css の裸 select ルール (width:100%) を上書き */
+.equip-modal-aug-path {
+    width: auto;
+    min-width: 220px;
+    padding: 5px 8px;
+    font-size: 12px;
+}
+
+.equip-modal-aug-path:disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
+}
+
+.equip-modal-aug-text {
+    font-size: 12px;
+    color: #cda;
+    white-space: pre-line;
+}
+
+.equip-modal-custom-desc {
+    flex: 1;
+    min-width: 200px;
+    width: auto;
+    padding: 5px 8px;
+    font-size: 12px;
+}
+
+.equip-modal-readonly-custom {
+    font-size: 12px;
+    color: #d9c37a;
+}
+
+.equip-modal-remove {
+    align-self: flex-start;
+    background: transparent;
+    color: #aaa;
+    border: 1px solid #444;
+}
+
+.equip-modal-remove:hover {
+    color: #fff;
+    border-color: #f44336;
+    background: #f44336;
+}
+
+/* 検索セクション */
+.equip-modal-search-row {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 8px;
+}
+
+.equip-modal-query {
+    flex: 1;
+    width: auto;
+}
+
+.equip-modal-ilv {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    margin-bottom: 0;
+    font-size: 12px;
+    color: #aaa;
+    white-space: nowrap;
+}
+
+.equip-modal-count {
+    font-size: 12px;
+    color: #888;
+    white-space: nowrap;
+}
+
+/* 結果テーブル: search.css (.search-page スコープ) を流用しつつ、
+   モーダル内ではスクロールコンテナに閉じ込める */
+.equip-modal-results {
+    max-height: 340px;
+    overflow-y: auto;
+    border: 1px solid #333;
+    border-radius: 5px;
+}
+
+.equip-modal-results .results-table th {
+    position: sticky;
+    top: 0;
+}
+
+.equip-modal-results .results-table tbody tr {
+    cursor: pointer;
+}
+
+.equip-modal-results .results-table tbody tr:hover {
+    background: #1f2a4a;
+}
+
+.equip-modal-results .results-table tr.selected-row {
+    background: #16213e;
+    box-shadow: inset 3px 0 0 #f0c040;
+}

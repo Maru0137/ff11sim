@@ -58,6 +58,100 @@ export interface StatusView {
 }
 
 /**
+ * キャラレコードから WASM に渡す CharacterProfile を組み立てる。
+ * JP 未定義時は全振り (全 20)、skills 未定義時はデフォルト (全ジョブ最大) を補完。
+ * 内訳モーダル (calculate_status_breakdown) も同一入力を使うため export する。
+ */
+export function buildStatusProfile(ch: {
+    name: string;
+    race: string;
+    job_levels: unknown;
+    merit_points?: unknown;
+    job_points?: { categories?: Record<string, { ranks?: unknown }> };
+    skills?: { values?: unknown };
+}) {
+    // JP データが未定義の場合は全振り（全 20）をデフォルトとして補完
+    const jpCategories: Record<string, { ranks: number[] }> = {};
+    const storedJp: Record<string, { ranks?: unknown } | undefined> =
+        (ch.job_points && ch.job_points.categories) || {};
+    JOBS.forEach((job: { key: string }) => {
+        const stored = storedJp[job.key];
+        if (stored && Array.isArray(stored.ranks) && stored.ranks.length === JP_CATEGORY_COUNT) {
+            jpCategories[job.key] = { ranks: stored.ranks.slice() };
+        } else {
+            jpCategories[job.key] = { ranks: jpDefaultRanks() };
+        }
+    });
+
+    // skills: 未定義時はデフォルト（全ジョブ最大）を WASM で計算
+    let charSkills;
+    if (ch.skills && ch.skills.values) {
+        charSkills = ch.skills;
+    } else {
+        const basicProfile = {
+            name: ch.name, race: ch.race,
+            job_levels: ch.job_levels,
+            merit_points: ch.merit_points,
+        };
+        const defaults = calculate_default_skills(basicProfile);
+        charSkills = { values: defaults };
+    }
+
+    return {
+        name: ch.name,
+        race: ch.race,
+        job_levels: ch.job_levels,
+        merit_points: ch.merit_points,
+        job_points: { categories: jpCategories },
+        skills: charSkills,
+    };
+}
+
+/**
+ * 装備合算値 (calculateEquipSetBonuses の結果) から WASM に渡す BonusStats を
+ * 組み立てる。内訳モーダルも同一入力を使うため export する。
+ */
+export function buildBonusStats(
+    equip: any,
+    slots: Record<string, { skill?: number | null } | null | undefined> | undefined
+) {
+    const getSlotSkillId = (slotKey: string) => {
+        const s = slots && slots[slotKey];
+        return s && s.skill != null ? s.skill : null;
+    };
+
+    return {
+        hp: equip.hp, mp: equip.mp,
+        str_: equip.str, dex: equip.dex, vit: equip.vit,
+        agi: equip.agi, int: equip.int, mnd: equip.mnd, chr: equip.chr,
+        def: equip.def,
+        magic_def_bonus: equip.magic_def_bonus,
+        evasion: equip.evasion || 0,
+        magic_attack: equip.magic_attack || 0,
+        attack: equip.attack || 0,
+        accuracy: equip.accuracy || 0,
+        ranged_attack: equip.ranged_attack || 0,
+        ranged_accuracy: equip.ranged_accuracy || 0,
+        store_tp: equip.store_tp || 0,
+        double_attack_pct: equip.double_attack_pct || 0,
+        skillchain_bonus: equip.skillchain_bonus || 0,
+        triple_attack_pct: equip.triple_attack_pct || 0,
+        regen: equip.regen || 0,
+        refresh: equip.refresh || 0,
+        subtle_blow: equip.subtle_blow || 0,
+        rapid_shot_pct: equip.rapid_shot_pct || 0,
+        fast_cast_pct: equip.fast_cast_pct || 0,
+        main_weapon_skill_id: getSlotSkillId('main'),
+        sub_weapon_skill_id: getSlotSkillId('sub'),
+        ranged_weapon_skill_id: getSlotSkillId('range'),
+        skill_bonus_main: equip.skill_bonus_main || {},
+        skill_bonus_sub: equip.skill_bonus_sub || {},
+        skill_bonus_ranged: equip.skill_bonus_ranged || {},
+        skill_bonus_global: equip.skill_bonus_global || {},
+    };
+}
+
+/**
  * 現在の装備編集状態 (equipState) からステータス表示ビューを計算する。
  * 表示クリア (旧 clearAllEquipStats 相当) の場合は null を返す。
  */
@@ -86,84 +180,14 @@ export async function computeStatusView(): Promise<StatusView | null> {
     if (!jobLevel || jobLevel.level === 0) return null;
 
     try {
-        // JP データが未定義の場合は全振り（全 20）をデフォルトとして補完
-        const jpCategories: Record<string, { ranks: number[] }> = {};
-        const storedJp: Record<string, { ranks?: unknown } | undefined> =
-            (ch.job_points && ch.job_points.categories) || {};
-        JOBS.forEach((job: { key: string }) => {
-            const stored = storedJp[job.key];
-            if (stored && Array.isArray(stored.ranks) && stored.ranks.length === JP_CATEGORY_COUNT) {
-                jpCategories[job.key] = { ranks: stored.ranks.slice() };
-            } else {
-                jpCategories[job.key] = { ranks: jpDefaultRanks() };
-            }
-        });
-
-        // skills: 未定義時はデフォルト（全ジョブ最大）を WASM で計算
-        let charSkills;
-        if (ch.skills && ch.skills.values) {
-            charSkills = ch.skills;
-        } else {
-            const basicProfile = {
-                name: ch.name, race: ch.race,
-                job_levels: ch.job_levels,
-                merit_points: ch.merit_points,
-            };
-            const defaults = calculate_default_skills(basicProfile);
-            charSkills = { values: defaults };
-        }
-
-        const profile = {
-            name: ch.name,
-            race: ch.race,
-            job_levels: ch.job_levels,
-            merit_points: ch.merit_points,
-            job_points: { categories: jpCategories },
-            skills: charSkills,
-        };
+        const profile = buildStatusProfile(ch);
 
         const baseStats = calculate_status_from_profile(profile, jobKey, supportJob, null);
 
         const tempEquipSet = { name: '_temp', slots: currentEquipSlots };
         const equip = calculateEquipSetBonuses(tempEquipSet);
 
-        const getSlotSkillId = (slotKey: string) => {
-            const s = currentEquipSlots && currentEquipSlots[slotKey];
-            return s && s.skill != null ? s.skill : null;
-        };
-        const mainWeaponSkillId = getSlotSkillId('main');
-        const subWeaponSkillId = getSlotSkillId('sub');
-        const rangedWeaponSkillId = getSlotSkillId('range');
-
-        const bonusStats = {
-            hp: equip.hp, mp: equip.mp,
-            str_: equip.str, dex: equip.dex, vit: equip.vit,
-            agi: equip.agi, int: equip.int, mnd: equip.mnd, chr: equip.chr,
-            def: equip.def,
-            magic_def_bonus: equip.magic_def_bonus,
-            evasion: equip.evasion || 0,
-            magic_attack: equip.magic_attack || 0,
-            attack: equip.attack || 0,
-            accuracy: equip.accuracy || 0,
-            ranged_attack: equip.ranged_attack || 0,
-            ranged_accuracy: equip.ranged_accuracy || 0,
-            store_tp: equip.store_tp || 0,
-            double_attack_pct: equip.double_attack_pct || 0,
-            skillchain_bonus: equip.skillchain_bonus || 0,
-            triple_attack_pct: equip.triple_attack_pct || 0,
-            regen: equip.regen || 0,
-            refresh: equip.refresh || 0,
-            subtle_blow: equip.subtle_blow || 0,
-            rapid_shot_pct: equip.rapid_shot_pct || 0,
-            fast_cast_pct: equip.fast_cast_pct || 0,
-            main_weapon_skill_id: mainWeaponSkillId,
-            sub_weapon_skill_id: subWeaponSkillId,
-            ranged_weapon_skill_id: rangedWeaponSkillId,
-            skill_bonus_main: equip.skill_bonus_main || {},
-            skill_bonus_sub: equip.skill_bonus_sub || {},
-            skill_bonus_ranged: equip.skill_bonus_ranged || {},
-            skill_bonus_global: equip.skill_bonus_global || {},
-        };
+        const bonusStats = buildBonusStats(equip, currentEquipSlots);
         const totalStats = calculate_status_from_profile(profile, jobKey, supportJob, bonusStats);
 
         const V: Record<string, string | number> = {};

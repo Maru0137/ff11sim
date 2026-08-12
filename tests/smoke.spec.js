@@ -164,24 +164,30 @@ test('オーグメント選択でテキストとステータスが更新され�
   // 23755 は web/public/data/augments.json に Default パス (rank 15-30) を持つ。
   // オーグメント選択肢の構築 → 選択 → テキスト表示 → ステータス集計の
   // 経路 (augments.json 由来のデータが WASM の抽出まで流れる) を検証する。
+  // オーグメント UI はセルクリックで開く装備選択モーダル内にある。
   await seedAndOpenEquipTab(page, { main: { item_id: 23755 } });
 
-  const augPath = page.locator('.equip-slot-aug-path[data-slot="main"]');
+  await page.click('.equip-cell[data-slot="main"]');
+  const augPath = page.locator('.equip-modal-aug-path');
   await expect(augPath).toBeEnabled();
   // "-- オーグメント --" 以外の選択肢が構築されていること
   expect(await augPath.locator('option').count()).toBeGreaterThan(1);
 
   await augPath.selectOption('0-15');
   await page.waitForTimeout(500);
-  const augText = await page.locator('.equip-slot-aug-text[data-slot="main"]').innerText();
+  const augText = await page.locator('.equip-modal-aug-text').innerText();
   expect(augText).toContain('飛攻');
 
   // カスタム説明の入力が装備ステータス集計へ反映されること
   const strBefore = await page.locator('#equipEquipStr').innerText();
-  await page.fill('.equip-slot-custom-desc[data-slot="main"]', 'STR+5');
+  await page.fill('.equip-modal-custom-desc', 'STR+5');
   await page.waitForTimeout(500);
   const strAfter = await page.locator('#equipEquipStr').innerText();
   expect(strAfter).not.toBe(strBefore);
+
+  // モーダルを閉じるとセルに Aug / メモ バッジが出ること
+  await page.keyboard.press('Escape');
+  await expect(page.locator('.equip-cell[data-slot="main"] .equip-cell-badge')).toHaveCount(2);
 
   expect(errors).toEqual([]);
 });
@@ -196,16 +202,22 @@ test('スロット検索で装備を選び、装備セットを保存できる',
   await page.click('.equipset-tab-add');
   await expect(page.locator('#equipEditSection')).toBeVisible();
 
-  // 検索欄にフォーカスすると WAR + メインスロットで絞った候補が出る
-  const searchInput = page.locator('.equip-slot-search[data-slot="main"]');
-  await searchInput.focus();
+  // メインのセルをクリックすると選択モーダルが開き、
+  // WAR + メインスロットで絞った候補が初回検索で出る
+  await page.click('.equip-cell[data-slot="main"]');
   await page.waitForTimeout(1000);
-  const items = page.locator('.equip-slot-dropdown-item');
-  expect(await items.count()).toBeGreaterThan(0);
+  const rows = page.locator('.equip-modal-results .results-table tbody tr');
+  expect(await rows.count()).toBeGreaterThan(0);
 
-  await items.first().click();
+  // 行クリックで装備が選択され、選択中装備の詳細に反映される
+  await rows.first().click();
   await page.waitForTimeout(500);
-  expect((await searchInput.inputValue()).length).toBeGreaterThan(0);
+  await expect(page.locator('.equip-modal-selected-name')).not.toBeEmpty();
+
+  // モーダルを閉じるとセルに装備名が表示される
+  await page.keyboard.press('Escape');
+  const cellName = page.locator('.equip-cell[data-slot="main"] .equip-cell-name');
+  await expect(cellName).not.toHaveText('未設定');
 
   await page.fill('#equipSetName', 'ui-set');
   await page.click('#btnSaveEquipSet');
@@ -220,7 +232,7 @@ test('スロット検索で装備を選び、装備セットを保存できる',
   await page.selectOption('#equipSelectJob', 'War');
   await page.waitForTimeout(2000);
   await expect(page.locator('.equipset-tab', { hasText: 'ui-set' })).toBeVisible();
-  expect((await searchInput.inputValue()).length).toBeGreaterThan(0);
+  await expect(cellName).not.toHaveText('未設定');
 
   expect(errors).toEqual([]);
 });

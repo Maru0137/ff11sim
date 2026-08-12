@@ -11,7 +11,7 @@ import { AuthWidget } from './auth-ui';
 import { AppLayout, IconCharacter, IconEquipSet, IconSearch, type ViewMeta } from './AppLayout';
 import { Modals } from './modals/Modals';
 import { StatusPanel } from './status/StatusPanel';
-import { EquipSlots } from './equip/EquipSlots';
+import { EquipGrid } from './equip/EquipGrid';
 import { EquipSetControls } from './equip/EquipSetControls';
 import { EquipSetToolbar } from './equip/EquipSetToolbar';
 import { CharacterTab } from './character/CharacterTab';
@@ -63,9 +63,7 @@ function EquipSetsView() {
 
                 <EquipSetToolbar />
                 <StatusPanel />
-                <div id="equipSlotsContainer" className="equip-slot-grid">
-                    <EquipSlots />
-                </div>
+                <EquipGrid />
             </div>
         </>
     );

@@ -70,6 +70,17 @@ create table public.shared_equipsets (
 create index shared_equipsets_user_id_idx on public.shared_equipsets (user_id);
 
 -- ---------------------------------------------------------------------------
+-- 6. property_sets: プロパティセット (docs/adr/0015)
+--    カスタムセット + ユーザー定義項目の PropsetDoc を 1 ユーザー 1 行で格納
+-- ---------------------------------------------------------------------------
+create table public.property_sets (
+  user_id uuid primary key references auth.users(id) on delete cascade,
+  data jsonb not null default '{}'::jsonb,
+  created_at timestamptz default now(),
+  updated_at timestamptz default now()
+);
+
+-- ---------------------------------------------------------------------------
 -- Row Level Security
 -- ---------------------------------------------------------------------------
 alter table public.profiles enable row level security;
@@ -77,6 +88,7 @@ alter table public.characters enable row level security;
 alter table public.equipsets enable row level security;
 alter table public.items enable row level security;
 alter table public.shared_equipsets enable row level security;
+alter table public.property_sets enable row level security;
 
 create policy "users can rw own profile" on public.profiles
   for all using (auth.uid() = id) with check (auth.uid() = id);
@@ -89,6 +101,9 @@ create policy "users can rw own equipsets" on public.equipsets
 
 create policy "anyone can read items" on public.items
   for select using (true);
+
+create policy "users can rw own property_sets" on public.property_sets
+  for all using (auth.uid() = user_id) with check (auth.uid() = user_id);
 
 create policy "anyone can read shared equipsets" on public.shared_equipsets
   for select using (true);
@@ -114,6 +129,10 @@ create trigger characters_set_updated_at
 
 create trigger equipsets_set_updated_at
   before update on public.equipsets
+  for each row execute procedure public.set_updated_at();
+
+create trigger property_sets_set_updated_at
+  before update on public.property_sets
   for each row execute procedure public.set_updated_at();
 
 -- ---------------------------------------------------------------------------

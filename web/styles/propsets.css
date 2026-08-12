@@ -1,0 +1,354 @@
+/* プロパティセット UI (docs/adr/0015)。
+   セレクタ (StatusPanel)・表示グリッド (CustomPropsetGrid)・
+   管理モーダル (PropsetManageModal) のスコープ付きスタイル。
+   コンポーネントから直接 import する (equip-grid.css と同じ方式)。 */
+
+/* ===== セレクタ行 (StatusPanel) ===== */
+.propset-selector {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-wrap: wrap;
+    margin-top: 12px;
+    margin-bottom: 8px;
+}
+
+.propset-selector label {
+    color: #aaa;
+    font-size: 12px;
+}
+
+.propset-selector select {
+    background: #0f0f23;
+    color: #f0c040;
+    border: 1px solid #444;
+    border-radius: 4px;
+    padding: 6px 10px;
+    font-size: 13px;
+    min-width: 200px;
+    cursor: pointer;
+}
+
+.propset-manage-btn {
+    background: #0f0f23;
+    color: #8ab4f8;
+    border: 1px dashed #444;
+    border-radius: 4px;
+    padding: 6px 12px;
+    font-size: 12px;
+    cursor: pointer;
+}
+
+/* ===== カスタムセット表示グリッド ===== */
+.propset-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+    gap: 6px;
+}
+
+.propset-cell {
+    background: #0f0f23;
+    border: 1px solid #333;
+    border-radius: 4px;
+    padding: 6px 10px;
+    display: flex;
+    justify-content: space-between;
+    gap: 8px;
+    font-size: 13px;
+    font-variant-numeric: tabular-nums;
+}
+
+.propset-cell-label {
+    color: #aaa;
+    font-size: 12px;
+}
+
+.propset-cell-label.user {
+    color: #8ab4f8;
+}
+
+.propset-cell-unknown .propset-cell-label {
+    color: #666;
+}
+
+.propset-cell-value {
+    color: #88c0d0;
+    font-weight: 600;
+}
+
+.propset-grid-empty {
+    color: #666;
+    font-size: 13px;
+    padding: 16px 4px;
+}
+
+/* ===== 管理モーダル: 一覧 ===== */
+.propset-section-title {
+    margin: 14px 0 6px;
+    font-size: 12px;
+    color: #8ab4f8;
+    letter-spacing: 0.05em;
+}
+
+.propset-manage .propset-section-title:first-child {
+    margin-top: 0;
+}
+
+.propset-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 6px 4px;
+    border-bottom: 1px solid #333;
+    font-size: 13px;
+}
+
+.propset-row-name {
+    flex: 1;
+}
+
+.propset-row-meta {
+    color: #666;
+    font-size: 12px;
+}
+
+.propset-row-empty {
+    color: #666;
+}
+
+.propset-row button,
+.propset-modal-actions button,
+.propset-user-add button {
+    background: #0f0f23;
+    color: #aaa;
+    border: 1px solid #444;
+    border-radius: 4px;
+    padding: 4px 12px;
+    font-size: 12px;
+    cursor: pointer;
+    white-space: nowrap;
+}
+
+.propset-row button:hover,
+.propset-modal-actions button:hover {
+    color: #eee;
+}
+
+.propset-btn-danger {
+    color: #e08080 !important;
+    border-color: #7a3a3a !important;
+}
+
+.propset-btn-primary {
+    color: #1a1a2e !important;
+    background: #f0c040 !important;
+    border-color: #f0c040 !important;
+    font-weight: 600;
+}
+
+.propset-modal-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 8px;
+    margin-top: 16px;
+}
+
+/* ===== 管理モーダル: 編集 ===== */
+.propset-edit-name {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 12px;
+}
+
+.propset-edit-name label {
+    color: #aaa;
+    font-size: 13px;
+}
+
+.propset-edit-name input {
+    background: #0f0f23;
+    border: 1px solid #444;
+    color: #eee;
+    border-radius: 4px;
+    padding: 6px 10px;
+    font-size: 13px;
+    width: 240px;
+}
+
+.propset-edit-cols {
+    display: grid;
+    grid-template-columns: 1fr 280px;
+    gap: 16px;
+}
+
+@media (max-width: 640px) {
+    .propset-edit-cols {
+        grid-template-columns: 1fr;
+    }
+}
+
+.propset-col-title {
+    font-size: 12px;
+    color: #aaa;
+    margin-bottom: 6px;
+}
+
+.propset-catalog,
+.propset-selected {
+    border: 1px solid #333;
+    border-radius: 6px;
+    background: #0f0f23;
+    max-height: 380px;
+    overflow-y: auto;
+    padding: 8px 10px;
+}
+
+.propset-catalog .propset-col-title,
+.propset-selected .propset-col-title {
+    margin-top: 0;
+}
+
+.propset-catalog-search {
+    width: 100%;
+    background: #16213e;
+    border: 1px solid #444;
+    color: #eee;
+    border-radius: 4px;
+    padding: 5px 10px;
+    font-size: 13px;
+    margin-bottom: 8px;
+}
+
+.propset-cat-group {
+    margin-bottom: 8px;
+}
+
+.propset-cat-title {
+    color: #f0c040;
+    font-size: 11px;
+    letter-spacing: 0.06em;
+    margin: 6px 0 4px;
+}
+
+.propset-chips {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 4px;
+}
+
+.propset-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    border: 1px solid #444;
+    border-radius: 12px;
+    padding: 3px 10px;
+    font-size: 12px;
+    color: #aaa;
+    cursor: pointer;
+    user-select: none;
+    background: #16213e;
+}
+
+.propset-chip.selected {
+    color: #f0c040;
+    border-color: #f0c040;
+}
+
+.propset-chip.selected::before {
+    content: '✓';
+    font-size: 11px;
+}
+
+.propset-chip-user {
+    border-style: dashed;
+}
+
+.propset-chip-del {
+    background: none;
+    border: none;
+    color: #666;
+    font-size: 11px;
+    padding: 0 0 0 2px;
+    cursor: pointer;
+}
+
+.propset-chip-del:hover {
+    color: #e08080;
+}
+
+.propset-user-add {
+    display: flex;
+    gap: 6px;
+    margin-top: 6px;
+}
+
+.propset-user-add input {
+    flex: 1;
+    background: #16213e;
+    border: 1px solid #444;
+    color: #eee;
+    border-radius: 4px;
+    padding: 4px 10px;
+    font-size: 12px;
+    min-width: 0;
+}
+
+.propset-cat-hint {
+    color: #666;
+    font-size: 11px;
+    margin-top: 4px;
+    line-height: 1.5;
+}
+
+.propset-selected-empty {
+    color: #666;
+    font-size: 12px;
+    padding: 12px 4px;
+}
+
+.propset-sel-row {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 4px 2px;
+    border-bottom: 1px solid #333;
+    font-size: 13px;
+}
+
+.propset-sel-row.dragging {
+    opacity: 0.35;
+}
+
+.propset-sel-row.drag-over {
+    border-top: 2px solid #f0c040;
+}
+
+.propset-drag-handle {
+    cursor: grab;
+    color: #666;
+    padding: 0 4px;
+    user-select: none;
+    font-size: 13px;
+}
+
+.propset-drag-handle:active {
+    cursor: grabbing;
+}
+
+.propset-sel-name {
+    flex: 1;
+}
+
+.propset-sel-row button {
+    background: #16213e;
+    color: #aaa;
+    border: 1px solid #444;
+    border-radius: 3px;
+    width: 24px;
+    height: 22px;
+    font-size: 11px;
+    cursor: pointer;
+    padding: 0;
+}

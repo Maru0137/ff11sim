@@ -480,6 +480,24 @@ mod tests {
         assert_eq!(extract_stat_from_description("なにもない", "STR"), 0);
     }
 
+    // プロパティセットのユーザー定義項目 (日本語プロパティ名) が前提とする挙動
+    #[test]
+    fn extract_stat_handles_japanese_property_names() {
+        assert_eq!(extract_stat_from_description("二刀流+5", "二刀流"), 5);
+        assert_eq!(extract_stat_from_description("二刀流＋１０", "二刀流"), 10);
+        // 説明文の途中にあっても一致する
+        assert_eq!(
+            extract_stat_from_description("ダブルアタック+3 二刀流+2", "二刀流"),
+            2
+        );
+        // 複数一致は最初の 1 件のみ (合算しない)
+        assert_eq!(
+            extract_stat_from_description("二刀流+3 何か 二刀流+4", "二刀流"),
+            3
+        );
+        assert_eq!(extract_stat_from_description("ストアTP+5", "二刀流"), 0);
+    }
+
     #[test]
     fn search_by_query_finds_known_item() {
         let opts = SearchOptions {

@@ -18,6 +18,8 @@ import { isShareMode, enterShareMode } from './share-ui';
 import { onAuthChange } from './supabase-client';
 import { initEquipSetPanel, refreshEquipSetPanel } from './equip/equip-sets-store';
 import { reloadCharacterList } from './character/character-store';
+import { loadPropsets } from './propsets/propsets-store';
+import { updateEquipEditStatus } from './status/status-store';
 import { App } from './App';
 // ログイン時の localStorage → Supabase 同期 (import の副作用で登録)
 import './sync';
@@ -48,10 +50,13 @@ export async function startApp() {
 
     // ===== 共有閲覧モード =====
     if (isShareMode()) {
+        // 閲覧者自身のプロパティセットは共有画面でも使える
+        await loadPropsets();
         await enterShareMode();
         return;
     }
 
+    await loadPropsets();
     await initEquipSetPanel();
     await reloadCharacterList();
 
@@ -65,11 +70,16 @@ export async function startApp() {
         }
         await reloadCharacterList();
         await refreshEquipSetPanel();
+        // repo が Local/Supabase で切り替わるため取り直し、ユーザー定義項目の値を再計算
+        await loadPropsets();
+        await updateEquipEditStatus();
     });
 
     // sync.js が localStorage → Supabase アップロード完了時に発火
     window.addEventListener('ff11sim:synced', async () => {
         await reloadCharacterList();
         await refreshEquipSetPanel();
+        await loadPropsets();
+        await updateEquipEditStatus();
     });
 }

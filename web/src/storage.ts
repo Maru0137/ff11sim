@@ -6,6 +6,8 @@
 
 import { getCharacterRepo } from './repositories/character-repo';
 import { getEquipSetRepo } from './repositories/equipset-repo';
+import { getPropsetRepo } from './repositories/propset-repo';
+import type { PropsetDoc } from './propsets/types';
 
 export async function loadCharacters(): Promise<any[]> {
     return getCharacterRepo().list();
@@ -21,4 +23,12 @@ export async function loadEquipSets(): Promise<any[]> {
 
 export async function saveEquipSets(sets: { name: string }[]): Promise<void> {
     return getEquipSetRepo().save(sets);
+}
+
+export async function loadPropsetDoc(): Promise<PropsetDoc> {
+    return getPropsetRepo().load();
+}
+
+export async function savePropsetDoc(doc: PropsetDoc): Promise<void> {
+    return getPropsetRepo().save(doc);
 }

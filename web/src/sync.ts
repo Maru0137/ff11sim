@@ -9,10 +9,15 @@
 // index.html / search.html はこれを listen して画面を再描画する。
 
 import type { User } from '@supabase/supabase-js';
-import { STORAGE_KEY, EQUIP_STORAGE_KEY } from './constants';
+import { STORAGE_KEY, EQUIP_STORAGE_KEY, PROPSET_STORAGE_KEY } from './constants';
 import { supabase, onAuthChange } from './supabase-client';
+import { normalizePropsetDoc } from './propsets/types';
 
 const syncFlagKey = (userId: string) => `ff11sim_synced_${userId}`;
+// プロパティセットは後から追加された同期対象のため専用フラグ。
+// 既存フラグに相乗りすると、機能追加前に同期済みのユーザーの
+// ローカル doc が永久にアップロードされない。
+const propsetSyncFlagKey = (userId: string) => `ff11sim_synced_propsets_${userId}`;
 
 interface LocalCharacter {
     name: string;
@@ -116,13 +121,50 @@ async function syncLocalToSupabase(user: User): Promise<{ uploaded: number }> {
     return { uploaded: charsToUpload.length + setsToUpload.length };
 }
 
+// プロパティセット (docs/adr/0015) の同期。競合解決は他と同じ Supabase 優先:
+// 行が既にあればローカル doc はアップロードしない (docs/adr/0006)。
+async function syncLocalPropsetsToSupabase(user: User): Promise<{ uploaded: number }> {
+    const flagKey = propsetSyncFlagKey(user.id);
+    if (localStorage.getItem(flagKey)) return { uploaded: 0 };
+
+    let localDoc;
+    try {
+        localDoc = normalizePropsetDoc(JSON.parse(localStorage.getItem(PROPSET_STORAGE_KEY) || 'null'));
+    } catch {
+        localDoc = normalizePropsetDoc(null);
+    }
+    if (localDoc.sets.length === 0 && localDoc.userItems.length === 0) {
+        localStorage.setItem(flagKey, '1');
+        return { uploaded: 0 };
+    }
+
+    const { data: existing, error: e1 } = await supabase
+        .from('property_sets')
+        .select('user_id')
+        .eq('user_id', user.id)
+        .maybeSingle();
+    if (e1) throw e1;
+
+    if (!existing) {
+        const { error } = await supabase
+            .from('property_sets')
+            .insert({ user_id: user.id, data: localDoc });
+        if (error) throw error;
+    }
+
+    localStorage.setItem(flagKey, '1');
+    return { uploaded: existing ? 0 : 1 };
+}
+
 let _syncing = false;
 onAuthChange(async (user, _event) => {
     if (!user) return;
     if (_syncing) return;
     _syncing = true;
     try {
-        const { uploaded } = await syncLocalToSupabase(user);
+        const { uploaded: mainUploaded } = await syncLocalToSupabase(user);
+        const { uploaded: propsetUploaded } = await syncLocalPropsetsToSupabase(user);
+        const uploaded = mainUploaded + propsetUploaded;
         if (uploaded > 0) {
             console.log(`[sync] uploaded ${uploaded} items to Supabase`);
         }

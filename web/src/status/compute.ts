@@ -13,19 +13,11 @@ import {
 } from '../wasm';
 import { equipState } from '../equip/equip-store';
 import { calculateEquipSetBonuses } from '../equip/equip-bonuses';
+import { BUILTIN_PROPERTY_ITEMS, type PropertyValueContext } from '../propsets/catalog';
+import { propsetsStore } from '../propsets/propsets-store';
+import { calculateUserPropertyValues } from '../propsets/user-item-values';
 
-// === 表示用ヘルパー (純粋) ===
-const numOrDash = (v: number | null | undefined) => (v != null && v !== 0 ? v : '-');
-const pctOrDash = (v: number | null | undefined) => (v ? `${v}%` : '-');
-const formatStatBonus = (val: number) => (val > 0 ? `+${val}` : val < 0 ? `${val}` : '-');
-const fmtPct = (v: number | null | undefined) => (v != null && v !== 0 ? `${v}%` : '-');
-
-const SKILL_JA_MAP: Record<string, string> = Object.fromEntries(ALL_SKILL_KEYS);
-
-function formatWeaponSkill(kind: string | null | undefined, value: number | null | undefined) {
-    if (!kind || !value) return '-';
-    return `${SKILL_JA_MAP[kind] || kind} (${value})`;
-}
+import { numOrDash, pctOrDash, formatStatBonus, fmtPct, formatWeaponSkill } from './format';
 
 // 状態異常レジストのキー (表示 id `statDefRes*` の小文字 suffix と対応)
 export const STATUS_RESIST_KEYS = [
@@ -60,9 +52,9 @@ export interface EffectiveSkillEntry {
 export interface StatusView {
     /** 旧 DOM id → 表示値 */
     values: Record<string, string | number>;
-    /** 魔法サブタブ id → 表示可否 (メイン/サポートジョブが該当スキルを持つか) */
-    magicTabVisible: Record<string, boolean>;
     effectiveSkills: EffectiveSkillEntry[];
+    /** プロパティ項目 id (カタログ / 'user:<term>') → 表示値 (docs/adr/0015) */
+    propertyValues: Record<string, string | number>;
 }
 
 /**
@@ -432,13 +424,6 @@ export async function computeStatusView(): Promise<StatusView | null> {
                 ['GeomancyHandbellSkill', 'Handbell'],
             ]},
         ];
-        // タブの可視性: メイン or サポートジョブが該当スキルを習得 (effective_skill > 0) しているもののみ表示
-        const skillKeysOf = (skills: (string | [string, string])[]) =>
-            skills.map((s) => (typeof s === 'string' ? s : s[1]));
-        const isTabAvailable = (skills: (string | [string, string])[]) =>
-            skillKeysOf(skills).some((k) => (effSkillsForMagic[k] || 0) > 0);
-
-        const magicTabVisible: Record<string, boolean> = {};
         magicTabs.forEach(({ prefix, skills }) => {
             // スキル値の表示 (単一スキル → "<prefix>Skill"、複数 → 各 ID 指定)
             if (skills.length === 1 && typeof skills[0] === 'string') {
@@ -457,8 +442,6 @@ export async function computeStatusView(): Promise<StatusView | null> {
             V[`statMg${prefix}Mnd`] = totalStats.mnd || '-';
             V[`statMg${prefix}Chr`] = totalStats.chr || '-';
             V[`statMg${prefix}Mp`] = totalStats.mp || '-';
-
-            magicTabVisible[`subtab-magic-${prefix.toLowerCase()}`] = isTabAvailable(skills);
         });
 
         // 有効スキル値（値が 0 のスキルは非表示）
@@ -475,7 +458,37 @@ export async function computeStatusView(): Promise<StatusView | null> {
             });
         });
 
-        return { values: V, magicTabVisible, effectiveSkills };
+        // プロパティ項目値 (docs/adr/0015)。カスタムセットの表示用に
+        // 全カタログ項目 + 全ユーザー定義項目を毎回計算する (選択に依存しない)。
+        const propertyValues: Record<string, string | number> = {};
+        const propertyCtx: PropertyValueContext = {
+            equip,
+            totalStats,
+            derived: {
+                magicAttackTotal,
+                magicAccuracyTotal,
+                magicDamageTotal,
+                wsDamagePct,
+                skillchainBonusTotal,
+                statusResists: statusResistTotals,
+            },
+        };
+        for (const item of BUILTIN_PROPERTY_ITEMS) {
+            try {
+                propertyValues[item.id] = item.resolve(propertyCtx);
+            } catch {
+                propertyValues[item.id] = '-';
+            }
+        }
+        const userItemTotals = calculateUserPropertyValues(
+            currentEquipSlots,
+            propsetsStore.get().userItems
+        );
+        for (const [id, raw] of Object.entries(userItemTotals)) {
+            propertyValues[id] = numOrDash(raw);
+        }
+
+        return { values: V, effectiveSkills, propertyValues };
     } catch (e) {
         console.error('Error calculating equipment edit status:', e);
         return null;

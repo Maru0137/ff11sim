@@ -11,6 +11,11 @@ import { equipState, createEmptySlots, notifySlotsLoaded, notifyEquipState } fro
 import type { EquipSlotData } from './equip-store';
 import { updateEquipEditStatus } from '../status/status-store';
 import { createStore } from '../store-utils';
+import {
+    equipSetPrefKey,
+    migrateSelectionKey,
+    removeSelectedPropsetId,
+} from '../propsets/selection-prefs';
 
 export interface CharacterSummary {
     name: string;
@@ -217,6 +222,11 @@ export async function saveEquipSet() {
                     alert(`装備セット「${name}」は既に存在します。`);
                     return;
                 }
+                // 識別キーが変わるため、プロパティセット選択記憶を移し替える
+                migrateSelectionKey(
+                    equipSetPrefKey(character, job, equipState.editingEquipSetName),
+                    equipSetPrefKey(character, job, name)
+                );
             }
             sets[idx] = { name, job, character, slots: { ...equipState.currentEquipSlots } };
         }
@@ -276,6 +286,13 @@ export async function deleteEquipSet() {
             )
     );
     await saveEquipSets(sets);
+    removeSelectedPropsetId(
+        equipSetPrefKey(
+            equipState.currentEquipChar,
+            equipState.currentEquipJob,
+            equipState.editingEquipSetName
+        )
+    );
     equipState.editingEquipSetName = null;
     await refreshTabs();
 }

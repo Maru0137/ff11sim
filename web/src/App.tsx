@@ -1,10 +1,14 @@
-// index.html のページ全体 (旧 main.js のマウント群 + tabs.js の React 統合)。
-// アクティブビューは location.hash が持つ (routing.ts)。共有閲覧モード
-// (?share=) では装備セットビュー固定で、CSS (body.share-mode) が編集系 UI を隠す。
+// index.html のページ全体。アクティブビューは location.hash が持つ (routing.ts)。
+//
+// 通常モード: 左サイドバーレイアウト (AppLayout) に 3 ビューを載せる。
+// ビューは display:none 切替でアンマウントしない (検索条件等の state 保持)。
+// 共有閲覧モード (?share=): サイドバーを出さず装備セットビューのみ表示し、
+// CSS (body.share-mode) が編集系 UI を隠す。
 import { useState, useSyncExternalStore } from 'react';
 import { isShareMode } from './share-ui';
-import { parseHash, navigate, useHash, type ViewId } from './routing';
+import { parseHash, useHash, type ViewId } from './routing';
 import { AuthWidget } from './auth-ui';
+import { AppLayout, IconCharacter, IconEquipSet, IconSearch, type ViewMeta } from './AppLayout';
 import { Modals } from './modals/Modals';
 import { StatusPanel } from './status/StatusPanel';
 import { EquipSlots } from './equip/EquipSlots';
@@ -14,11 +18,58 @@ import { CharacterTab } from './character/CharacterTab';
 import { SearchPage } from './search/SearchPage';
 import { equipSetsStore, shareHeaderStore } from './equip/equip-sets-store';
 
-const TABS: { view: ViewId; label: string }[] = [
-    { view: 'characters', label: 'キャラクター管理' },
-    { view: 'equipsets', label: '装備セット' },
-    { view: 'search', label: '装備検索' },
+const VIEWS: ViewMeta[] = [
+    {
+        view: 'characters',
+        label: 'キャラクター',
+        description: 'キャラクターの登録・編集',
+        icon: <IconCharacter />,
+    },
+    {
+        view: 'equipsets',
+        label: '装備セット',
+        description: '装備セットの作成とステータス計算',
+        icon: <IconEquipSet />,
+    },
+    {
+        view: 'search',
+        label: '装備検索',
+        description: '装備データベースの検索',
+        icon: <IconSearch />,
+    },
 ];
+
+// 装備セットビュー。通常モードと共有閲覧モードの両方から使う。
+function EquipSetsView() {
+    const panel = useSyncExternalStore(equipSetsStore.subscribe, equipSetsStore.get);
+    const shareHeader = useSyncExternalStore(shareHeaderStore.subscribe, shareHeaderStore.get);
+
+    return (
+        <>
+            <EquipSetControls />
+
+            <div id="equipEditSection" className={panel.editVisible ? '' : 'hidden'}>
+                <div
+                    id="sharedHeader"
+                    className="shared-header"
+                    style={{ display: shareHeader.visible ? undefined : 'none' }}
+                >
+                    <span className="shared-badge">共有された装備セット</span>
+                    <span className="shared-meta">
+                        <strong id="sharedSetName">{shareHeader.name}</strong>
+                        <span id="sharedSetMeta">{shareHeader.meta}</span>
+                    </span>
+                </div>
+
+                <EquipSetToolbar />
+                <StatusPanel />
+                <div id="equipSlotsContainer" className="equip-slot-grid">
+                    <EquipSlots />
+                </div>
+            </div>
+        </>
+    );
+}
 
 export function App() {
     const hash = useHash();
@@ -30,73 +81,49 @@ export function App() {
     // display:none 切替なので検索条件・結果の state は保持される。
     const [searchMounted, setSearchMounted] = useState(false);
     if (activeView === 'search' && !searchMounted) setSearchMounted(true);
-    const panel = useSyncExternalStore(equipSetsStore.subscribe, equipSetsStore.get);
-    const shareHeader = useSyncExternalStore(shareHeaderStore.subscribe, shareHeaderStore.get);
+
+    // 共有閲覧モード: サイドバー無しの単票レイアウト
+    if (isShareMode()) {
+        return (
+            <div className="share-layout">
+                <header className="page-header">
+                    <h1>FF11 ステータスシミュレータ</h1>
+                    <div id="auth-ui" className="auth-ui">
+                        <AuthWidget />
+                    </div>
+                </header>
+                <div id="tab-equipsets" className="view-content active">
+                    <EquipSetsView />
+                </div>
+                <Modals />
+            </div>
+        );
+    }
 
     return (
-        <>
-            <header className="page-header">
-                <h1>FF11 ステータスシミュレータ</h1>
-                <div id="auth-ui" className="auth-ui">
-                    <AuthWidget />
-                </div>
-            </header>
-
-            <div className="tabs">
-                {TABS.map((t) => (
-                    <button
-                        key={t.view}
-                        className={t.view === activeView ? 'tab-btn active' : 'tab-btn'}
-                        data-tab={`tab-${t.view}`}
-                        onClick={() => navigate(t.view)}
-                    >
-                        {t.label}
-                    </button>
-                ))}
-            </div>
-
+        <AppLayout views={VIEWS} activeView={activeView}>
             <div
                 id="tab-characters"
-                className={activeView === 'characters' ? 'tab-content active' : 'tab-content'}
+                className={activeView === 'characters' ? 'view-content active' : 'view-content'}
             >
                 <CharacterTab />
             </div>
 
             <div
                 id="tab-equipsets"
-                className={activeView === 'equipsets' ? 'tab-content active' : 'tab-content'}
+                className={activeView === 'equipsets' ? 'view-content active' : 'view-content'}
             >
-                <EquipSetControls />
-
-                <div id="equipEditSection" className={panel.editVisible ? '' : 'hidden'}>
-                    <div
-                        id="sharedHeader"
-                        className="shared-header"
-                        style={{ display: shareHeader.visible ? undefined : 'none' }}
-                    >
-                        <span className="shared-badge">共有された装備セット</span>
-                        <span className="shared-meta">
-                            <strong id="sharedSetName">{shareHeader.name}</strong>
-                            <span id="sharedSetMeta">{shareHeader.meta}</span>
-                        </span>
-                    </div>
-
-                    <EquipSetToolbar />
-                    <StatusPanel />
-                    <div id="equipSlotsContainer" className="equip-slot-grid">
-                        <EquipSlots />
-                    </div>
-                </div>
+                <EquipSetsView />
             </div>
 
             <div
                 id="tab-search"
-                className={activeView === 'search' ? 'tab-content active' : 'tab-content'}
+                className={activeView === 'search' ? 'view-content active' : 'view-content'}
             >
                 {searchMounted && <SearchPage />}
             </div>
 
             <Modals />
-        </>
+        </AppLayout>
     );
 }

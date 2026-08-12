@@ -117,7 +117,7 @@ test('保存済みキャラクターのステータスが 0 でなく表示さ�
 
   // 装備セットタブでキャラクターとジョブを選ぶと、最初のセットが自動選択され
   // ステータス表示が走る
-  await page.click('button[data-tab="tab-equipsets"]');
+  await page.click('[data-nav="equipsets"]');
   await page.selectOption('#equipSelectChar', 'smoke');
   await page.selectOption('#equipSelectJob', 'War');
   await page.waitForTimeout(2000);
@@ -153,7 +153,7 @@ async function seedAndOpenEquipTab(page, slots) {
   }, { ch: makeCharacter(), slots });
   await page.reload();
   await page.waitForTimeout(3000);
-  await page.click('button[data-tab="tab-equipsets"]');
+  await page.click('[data-nav="equipsets"]');
   await page.selectOption('#equipSelectChar', 'smoke');
   await page.selectOption('#equipSelectJob', 'War');
   await page.waitForTimeout(2000);
@@ -215,7 +215,7 @@ test('スロット検索で装備を選び、装備セットを保存できる',
   // 再読込しても保存したセットが残っていること
   await page.reload();
   await page.waitForTimeout(3000);
-  await page.click('button[data-tab="tab-equipsets"]');
+  await page.click('[data-nav="equipsets"]');
   await page.selectOption('#equipSelectChar', 'smoke');
   await page.selectOption('#equipSelectJob', 'War');
   await page.waitForTimeout(2000);
@@ -276,10 +276,50 @@ test('共有 URL (?share=) で装備セットが閲覧できる', async ({ page 
   await expect(page.locator('#sharedHeader')).toBeVisible();
   await expect(page.locator('#sharedSetName')).toHaveText('shared-smoke');
 
+  // 共有 URL ではサイドバーのナビゲーションを出さない
+  await expect(page.locator('[data-nav="equipsets"]')).toHaveCount(0);
+
   // snapshot からステータスが再現されること (characterOverride 経路)
   const hpText = await page.locator('#equipBaseHp').innerText();
   const hp = parseInt(hpText.replace(/[^0-9-]/g, ''), 10);
   expect(hp).toBeGreaterThan(0);
+
+  expect(errors).toEqual([]);
+});
+
+test('deep link (#/search) とサイドバーのビュー切替が機能する', async ({ page }) => {
+  const errors = collectErrors(page);
+  // hash 直リンクで検索ビューが開くこと (ブックマーク・共有 URL の経路)
+  await page.goto('./#/search');
+  await page.waitForTimeout(3000);
+  await expect(page.locator('#searchQuery')).toBeVisible();
+
+  // サイドバーのナビクリックで hash とビューが切り替わること
+  await page.click('[data-nav="characters"]');
+  await expect(page).toHaveURL(/#\/characters$/);
+  await expect(page.locator('#btnNewChar')).toBeVisible();
+  await expect(page.locator('#searchQuery')).not.toBeVisible();
+
+  expect(errors).toEqual([]);
+});
+
+test('モバイル幅ではハンバーガーからナビゲーションできる', async ({ page }) => {
+  const errors = collectErrors(page);
+  await page.setViewportSize({ width: 375, height: 700 });
+  await page.goto('./');
+  await page.waitForTimeout(3000);
+
+  // サイドバーは初期状態で閉じている (AppShell は transform で画面外に出す
+  // ため display は none にならない。画面内に無いことで判定する)
+  await expect(page.locator('[data-nav="search"]')).not.toBeInViewport();
+
+  // ハンバーガーで開き、項目クリックでビュー切替 + ドロワーが閉じる
+  await page.click('[aria-label="メニュー"]');
+  await expect(page.locator('[data-nav="search"]')).toBeInViewport();
+  await page.click('[data-nav="search"]');
+  await expect(page).toHaveURL(/#\/search$/);
+  await expect(page.locator('[data-nav="search"]')).not.toBeInViewport();
+  await expect(page.locator('#searchQuery')).toBeVisible();
 
   expect(errors).toEqual([]);
 });

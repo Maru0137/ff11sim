@@ -7,6 +7,67 @@ use crate::race::Race;
 use crate::skills::CharacterSkills;
 use crate::status::{BonusStats, MeritPoints, StatusKind, calc_master_lv_bonus, calc_status};
 
+/// `Chara::status()` のソース別分解。
+/// race / main_job / support_job はゲーム仕様上「合算してから切り捨て」のため
+/// f32 のまま保持する (個別に floor すると合計が合わない)。
+#[derive(Debug, Clone, Copy, Default)]
+pub struct StatusParts {
+    pub race: f32,
+    pub main_job: f32,
+    pub support_job: f32,
+    pub mlv: i32,
+    pub merit: i32,
+    /// HP/MP 特性 (MaxHpBoost 等) のうちメインジョブ採用分
+    pub trait_main: i32,
+    /// HP/MP 特性のうちサポートジョブ採用分
+    pub trait_support: i32,
+    pub equip: i32,
+}
+
+impl StatusParts {
+    pub fn total(&self) -> i32 {
+        (self.race + self.main_job + self.support_job).floor() as i32
+            + self.mlv
+            + self.merit
+            + self.equip
+            + self.trait_main
+            + self.trait_support
+    }
+}
+
+/// ジョブ特性のメイン/サポート別の値。採用規則 (絶対値の大きい方、同値はメイン)
+/// は adopted_* に集約する。
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub struct TraitBreakdown {
+    pub main: i32,
+    pub support: i32,
+}
+
+impl TraitBreakdown {
+    fn main_wins(&self) -> bool {
+        self.main.abs() >= self.support.abs()
+    }
+
+    /// 採用された値
+    pub fn adopted(&self) -> i32 {
+        if self.main_wins() {
+            self.main
+        } else {
+            self.support
+        }
+    }
+
+    /// 採用値のうちメインジョブ分 (サポート採用時は 0)
+    pub fn adopted_main(&self) -> i32 {
+        if self.main_wins() { self.main } else { 0 }
+    }
+
+    /// 採用値のうちサポートジョブ分 (メイン採用時は 0)
+    pub fn adopted_support(&self) -> i32 {
+        if self.main_wins() { 0 } else { self.support }
+    }
+}
+
 #[derive(Debug, Clone)]
 pub struct Chara {
     pub race: Race,
@@ -29,9 +90,14 @@ impl Chara {
     }
 
     pub fn status(&self, kind: StatusKind) -> i32 {
-        // For MP: if main job has no MP, return 0 (no race/support/mlv contribution)
+        self.status_parts(kind).total()
+    }
+
+    /// ステータス値のソース別分解。`status()` はこの合成 (`StatusParts::total`)。
+    pub fn status_parts(&self, kind: StatusKind) -> StatusParts {
+        // For MP: if main job has no MP, all sources contribute 0 (equip included)
         if kind == StatusKind::Mp && self.main_job.status_grade(StatusKind::Mp).is_none() {
-            return 0;
+            return StatusParts::default();
         }
 
         // Race status
@@ -53,27 +119,33 @@ impl Chara {
             _ => 0.0,
         };
 
-        // Master level bonus
-        let mlv_bonus = calc_master_lv_bonus(kind, self.master_lv);
-
-        // Merit point bonus
-        let merit_bonus = self.merit_points.status_bonus(kind);
-
-        // Job trait bonus for HP/MP
-        let trait_hp_mp = match kind {
+        // Job trait bonus for HP/MP (採用ジョブ側の行に振り分ける)
+        let (trait_main, trait_support) = match kind {
             StatusKind::Hp => {
-                self.job_trait_total(JobTrait::MaxHpBoost)
-                    + self.job_trait_total(JobTrait::MaxHpBoost2)
+                let b1 = self.job_trait_breakdown(JobTrait::MaxHpBoost);
+                let b2 = self.job_trait_breakdown(JobTrait::MaxHpBoost2);
+                (
+                    b1.adopted_main() + b2.adopted_main(),
+                    b1.adopted_support() + b2.adopted_support(),
+                )
             }
-            StatusKind::Mp => self.job_trait_total(JobTrait::MaxMpBoost),
-            _ => 0,
+            StatusKind::Mp => {
+                let b = self.job_trait_breakdown(JobTrait::MaxMpBoost);
+                (b.adopted_main(), b.adopted_support())
+            }
+            _ => (0, 0),
         };
 
-        (status_race + status_main_job + status_support_job).floor() as i32
-            + mlv_bonus
-            + merit_bonus
-            + self.bonus_stats.get(kind)
-            + trait_hp_mp
+        StatusParts {
+            race: status_race,
+            main_job: status_main_job,
+            support_job: status_support_job,
+            mlv: calc_master_lv_bonus(kind, self.master_lv),
+            merit: self.merit_points.status_bonus(kind),
+            trait_main,
+            trait_support,
+            equip: self.bonus_stats.get(kind),
+        }
     }
 
     /// Calculate total job trait bonus from main + support job.
@@ -84,16 +156,17 @@ impl Chara {
     /// MartialArts のような負値特性 (隔短縮) は min を取りたいため、
     /// 単純に絶対値が大きい方を選ぶ (符号は同一前提)。
     pub fn job_trait_total(&self, trait_kind: JobTrait) -> i32 {
+        self.job_trait_breakdown(trait_kind).adopted()
+    }
+
+    /// ジョブ特性のメイン/サポート別の値。採用は `TraitBreakdown::adopted*`。
+    pub fn job_trait_breakdown(&self, trait_kind: JobTrait) -> TraitBreakdown {
         let main = self.main_job_trait_bonus(trait_kind);
         let support = match (&self.support_job, &self.support_lv) {
             (Some(job), Some(lv)) => job.trait_bonus(trait_kind, *lv),
             _ => 0,
         };
-        if main.abs() >= support.abs() {
-            main
-        } else {
-            support
-        }
+        TraitBreakdown { main, support }
     }
 
     /// メインジョブ単独のジョブ特性ボーナス (BLU の JobTraitEffectUp ギフトを考慮)。

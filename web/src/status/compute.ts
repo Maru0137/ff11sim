@@ -13,6 +13,9 @@ import {
 } from '../wasm';
 import { equipState } from '../equip/equip-store';
 import { calculateEquipSetBonuses } from '../equip/equip-bonuses';
+import { BUILTIN_PROPERTY_ITEMS, type PropertyValueContext } from '../propsets/catalog';
+import { propsetsStore } from '../propsets/propsets-store';
+import { calculateUserPropertyValues } from '../propsets/user-item-values';
 
 import { numOrDash, pctOrDash, formatStatBonus, fmtPct, formatWeaponSkill } from './format';
 
@@ -52,6 +55,8 @@ export interface StatusView {
     /** 魔法サブタブ id → 表示可否 (メイン/サポートジョブが該当スキルを持つか) */
     magicTabVisible: Record<string, boolean>;
     effectiveSkills: EffectiveSkillEntry[];
+    /** プロパティ項目 id (カタログ / 'user:<term>') → 表示値 (docs/adr/0015) */
+    propertyValues: Record<string, string | number>;
 }
 
 /**
@@ -464,7 +469,37 @@ export async function computeStatusView(): Promise<StatusView | null> {
             });
         });
 
-        return { values: V, magicTabVisible, effectiveSkills };
+        // プロパティ項目値 (docs/adr/0015)。カスタムセットの表示用に
+        // 全カタログ項目 + 全ユーザー定義項目を毎回計算する (選択に依存しない)。
+        const propertyValues: Record<string, string | number> = {};
+        const propertyCtx: PropertyValueContext = {
+            equip,
+            totalStats,
+            derived: {
+                magicAttackTotal,
+                magicAccuracyTotal,
+                magicDamageTotal,
+                wsDamagePct,
+                skillchainBonusTotal,
+                statusResists: statusResistTotals,
+            },
+        };
+        for (const item of BUILTIN_PROPERTY_ITEMS) {
+            try {
+                propertyValues[item.id] = item.resolve(propertyCtx);
+            } catch {
+                propertyValues[item.id] = '-';
+            }
+        }
+        const userItemTotals = calculateUserPropertyValues(
+            currentEquipSlots,
+            propsetsStore.get().userItems
+        );
+        for (const [id, raw] of Object.entries(userItemTotals)) {
+            propertyValues[id] = numOrDash(raw);
+        }
+
+        return { values: V, magicTabVisible, effectiveSkills, propertyValues };
     } catch (e) {
         console.error('Error calculating equipment edit status:', e);
         return null;

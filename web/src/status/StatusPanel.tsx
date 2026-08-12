@@ -7,8 +7,8 @@
 import { useEffect, useState, useSyncExternalStore } from 'react';
 import { statusStore } from './status-store';
 import {
-    SUBTABS,
-    SUBTAB_GROUPS,
+    TEMPLATE_PROPSETS,
+    TEMPLATE_PROPSET_GROUPS,
     LeftStatusTables,
     SubtabContents,
     EffectiveSkillsSection,
@@ -54,7 +54,7 @@ export function StatusPanel() {
             return;
         }
         const valid = stored.startsWith(TEMPLATE_PREFIX)
-            ? SUBTABS.some((t) => t.id === stored.slice(TEMPLATE_PREFIX.length))
+            ? TEMPLATE_PROPSETS.some((t) => t.id === stored.slice(TEMPLATE_PREFIX.length))
             : propsetsStore.get().sets.some((s) => s.id === stored);
         setSelection(valid ? stored : DEFAULT_SELECTION);
     }, [currentSetKey]);
@@ -93,9 +93,9 @@ export function StatusPanel() {
                     value={selection}
                     onChange={(e) => handleSelect(e.target.value)}
                 >
-                    {SUBTAB_GROUPS.map((group) => (
+                    {TEMPLATE_PROPSET_GROUPS.map((group) => (
                         <optgroup key={group} label={group}>
-                            {SUBTABS.filter((t) => t.group === group).map((t) => (
+                            {TEMPLATE_PROPSETS.filter((t) => t.group === group).map((t) => (
                                 <option key={t.id} value={TEMPLATE_PREFIX + t.id}>
                                     {t.label}
                                 </option>

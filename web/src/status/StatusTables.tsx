@@ -10,14 +10,14 @@ function subtabClass(id: string, activeId: string): string {
 
 // プロパティセット選択 UI (StatusPanel / PropsetManageModal) の
 // テンプレート分類。表示順 = この配列順 (docs/adr/0015)。
-export const SUBTAB_GROUPS = [
+export const TEMPLATE_PROPSET_GROUPS = [
     '待機/防御/回避',
     'オートアタック/遠隔攻撃',
     'ウェポンスキル',
     '魔法',
 ] as const;
 
-export const SUBTABS: { id: string; label: string; group: (typeof SUBTAB_GROUPS)[number] }[] = [
+export const TEMPLATE_PROPSETS: { id: string; label: string; group: (typeof TEMPLATE_PROPSET_GROUPS)[number] }[] = [
     { id: 'subtab-defense', label: '待機/回避/防御', group: '待機/防御/回避' },
     { id: 'subtab-melee-auto', label: 'オートアタック', group: 'オートアタック/遠隔攻撃' },
     { id: 'subtab-ranged-auto', label: '遠隔攻撃', group: 'オートアタック/遠隔攻撃' },

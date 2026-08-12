@@ -9,7 +9,7 @@ import { useState, useSyncExternalStore } from 'react';
 import { Modal } from '@mantine/core';
 import { useMediaQuery } from '@mantine/hooks';
 import { updateEquipEditStatus } from '../status/status-store';
-import { SUBTABS, SUBTAB_GROUPS } from '../status/StatusTables';
+import { TEMPLATE_PROPSETS, TEMPLATE_PROPSET_GROUPS } from '../status/StatusTables';
 import {
     BUILTIN_PROPERTY_ITEMS,
     PROPERTY_CATEGORIES,
@@ -108,10 +108,10 @@ function ListView({
                 </div>
             ))}
 
-            {SUBTAB_GROUPS.map((group) => (
+            {TEMPLATE_PROPSET_GROUPS.map((group) => (
                 <div key={group}>
                     <h4 className="propset-section-title">{group}</h4>
-                    {SUBTABS.filter((t) => t.group === group).map(({ id, label }) => (
+                    {TEMPLATE_PROPSETS.filter((t) => t.group === group).map(({ id, label }) => (
                         <div key={id} className="propset-row">
                             <span className="propset-row-name">{label}</span>
                             <span className="propset-row-meta">

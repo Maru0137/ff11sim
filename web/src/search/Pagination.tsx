@@ -7,20 +7,35 @@ interface PaginationProps {
     hasMore: boolean;
     onPrev: () => void;
     onNext: () => void;
+    /** 検索ビューと装備選択モーダルの同時マウントで id が重複しないよう、
+        2 箇所目以降の利用では false にする (id は検索ビューのものとして残す) */
+    withIds?: boolean;
 }
 
-export function Pagination({ total, offset, pageSize, hasMore, onPrev, onNext }: PaginationProps) {
+export function Pagination({
+    total,
+    offset,
+    pageSize,
+    hasMore,
+    onPrev,
+    onNext,
+    withIds = true,
+}: PaginationProps) {
     const visible = total > pageSize;
     const currentPage = Math.floor(offset / pageSize) + 1;
     const totalPages = Math.ceil(total / pageSize);
 
     return (
-        <div className="pagination" id="pagination" style={{ display: visible ? 'flex' : 'none' }}>
-            <button id="prevBtn" disabled={offset === 0} onClick={onPrev}>前へ</button>
-            <span className="page-info" id="pageInfo">
+        <div
+            className="pagination"
+            id={withIds ? 'pagination' : undefined}
+            style={{ display: visible ? 'flex' : 'none' }}
+        >
+            <button id={withIds ? 'prevBtn' : undefined} disabled={offset === 0} onClick={onPrev}>前へ</button>
+            <span className="page-info" id={withIds ? 'pageInfo' : undefined}>
                 {visible ? `Page ${currentPage} of ${totalPages}` : ''}
             </span>
-            <button id="nextBtn" disabled={!hasMore} onClick={onNext}>次へ</button>
+            <button id={withIds ? 'nextBtn' : undefined} disabled={!hasMore} onClick={onNext}>次へ</button>
         </div>
     );
 }

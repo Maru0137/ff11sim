@@ -25,8 +25,8 @@ export interface FormState {
 
 const PAGE_SIZE = 50;
 
-// iLv119 フィルタが意味を持つスロット
-const ILV119_SLOTS = ['main', 'sub', 'range', 'head', 'body', 'hands', 'legs', 'feet'];
+// iLv119 フィルタが意味を持つスロット (装備選択モーダルと共用)
+export const ILV119_SLOTS = ['main', 'sub', 'range', 'head', 'body', 'hands', 'legs', 'feet'];
 
 // <select id="sortBy"> に存在するキー。旧実装は th クリックで select に
 // 列キーを代入しており、select に無いキー (jobs / slots / description_ja)

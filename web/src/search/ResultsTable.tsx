@@ -54,9 +54,21 @@ interface ResultsTableProps {
     /** sortBy が desc_stat のときのハイライト対象。それ以外は '' */
     descStat: string;
     onHeaderClick: (columnId: string) => void;
+    /** 行クリックで選択する用途 (装備選択モーダル) 向け。未指定なら行は非インタラクティブ */
+    onRowClick?: (item: SearchResultItem) => void;
+    /** selected-row でハイライトするアイテム id */
+    selectedId?: number | null;
 }
 
-export function ResultsTable({ items, sortBy, sortOrder, descStat, onHeaderClick }: ResultsTableProps) {
+export function ResultsTable({
+    items,
+    sortBy,
+    sortOrder,
+    descStat,
+    onHeaderClick,
+    onRowClick,
+    selectedId,
+}: ResultsTableProps) {
     // WASM 側で適用済みのソートを table 状態として持たせる (manual なので
     // 行の並びには影響しない)。sortBy が列以外 (category / desc_stat) の
     // ときは空。
@@ -97,7 +109,15 @@ export function ResultsTable({ items, sortBy, sortOrder, descStat, onHeaderClick
             </thead>
             <tbody>
                 {table.getRowModel().rows.map((row) => (
-                    <tr key={row.id}>
+                    <tr
+                        key={row.id}
+                        className={
+                            selectedId != null && row.original.id === selectedId
+                                ? 'selected-row'
+                                : undefined
+                        }
+                        onClick={onRowClick ? () => onRowClick(row.original) : undefined}
+                    >
                         {row.getAllCells().map((cell) =>
                             cell.column.id === 'description_ja' ? (
                                 <DescriptionCell

@@ -73,14 +73,26 @@ LIMBUS_SET_PAGES = [
     # ジャスト装束
     ("https://wiki.ffo.jp/html/39950.html", [
         ["ジャストクラウン", "ジャストシクラス", "ジャストガントレ", "ジャストフランチャ", "ジャストソルレット"],
+        ["マグニクラウン", "マグニシクラス", "マグニガントレ", "マグニフランチャ", "マグニソルレット"],
+        ["ドゥーテクラウン", "ドゥーテシクラス", "ドゥーテガントレ", "ドゥーテフランチャ", "ドゥーテソルレット"],
     ]),
     # トラスト装束
     ("https://wiki.ffo.jp/html/39951.html", [
         ["トラストクラウン", "トラストプレート", "トラストガントレ", "トラストブレー", "トラストサバトン"],
+        ["プレステクラウン", "プレステプレート", "プレステガントレ", "プレステブレー", "プレステサバトン"],
+        ["スオーンクラウン", "スオーンプレート", "スオーンガントレ", "スオーンブレー", "スオーンサバトン"],
     ]),
     # 慈悲装束
     ("https://wiki.ffo.jp/html/39952.html", [
         ["慈悲総面", "慈悲腹巻", "慈悲篭手", "慈悲膝甲", "慈悲脛当"],
+        ["慈愛総面", "慈愛腹巻", "慈愛篭手", "慈愛膝甲", "慈愛脛当"],
+        ["寵愛総面", "寵愛腹巻", "寵愛篭手", "寵愛膝甲", "寵愛脛当"],
+    ]),
+    # ブレーブ装束 (ページはバイソン装束 HQ と共用。Rank 表は IL119 版のみ)
+    ("https://wiki.ffo.jp/html/25704.html", [
+        ["ブレーブペタソス", "ブレーブコート", "ブレーブグローブ", "ブレーブトンバン", "ブレーブサボ"],
+        ["イントレペタソス", "イントレコート", "イントレグローブ", "イントレトンバン", "イントレサボ"],
+        ["インドムペタソス", "インドムコート", "インドムグローブ", "インドムトンバン", "インドムサボ"],
     ]),
 ]
 
@@ -607,12 +619,17 @@ def parse_limbus_set_page(html):
     if not aug_table:
         return None
 
-    # Find Rank 30 row
+    # Find Rank 1 / Rank 30 rows. Rank 1 is needed for pages where the stat
+    # name only appears as a "(XXX枠)" label in the Rank 1 row (e.g. トラスト).
+    rank1_row = None
     rank30_row = None
     for row in aug_table:
-        if row and row[0].strip() == "30":
+        if not row:
+            continue
+        if row[0].strip() == "1":
+            rank1_row = row
+        elif row[0].strip() == "30":
             rank30_row = row
-            break
 
     if not rank30_row or len(rank30_row) < 4:
         return None
@@ -630,15 +647,23 @@ def parse_limbus_set_page(html):
         for col_idx in [2, 3]:
             if col_idx >= len(rank30_row):
                 break
-            cell = rank30_row[col_idx]
+            cell = rank30_row[col_idx].replace("(未確認)", "")
             if not cell:
                 continue
-            # First line is the stat name, subsequent lines have slot-specific values
-            cell_lines = cell.split("\n")
-            stat_name = cell_lines[0].strip()
+            first_line = cell.split("\n")[0].strip()
+            if re.match(r"^頭[+\-]", first_line):
+                # No stat name line; take it from the Rank 1 "(XXX枠)" label
+                stat_name = ""
+                if rank1_row and col_idx < len(rank1_row):
+                    m = re.search(r"[（(](.+?)枠[)）]", rank1_row[col_idx])
+                    if m:
+                        stat_name = m.group(1)
+            else:
+                stat_name = first_line
             if not stat_name:
                 continue
-            # Try to find slot-specific value
+            # Slot value carries its own sign; drop a trailing sign on the name
+            stat_name = stat_name.rstrip("+-")
             slot_values = _parse_limbus_slot_values(cell)
             if slot_idx in slot_values:
                 val = slot_values[slot_idx]

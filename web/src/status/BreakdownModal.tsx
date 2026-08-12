@@ -60,12 +60,16 @@ async function computeBreakdownModel(
     const perSlotUserValues =
         mode === 'propset' ? calculateUserPropertyValuesPerSlot(slots, userItems) : {};
 
-    // キャラ由来行の補足ラベル (ジョブ名 + 有効レベル)
-    const jobName = (key: string) => JOBS.find((j) => j.key === key)?.name || key;
-    const mainLv: number = ch.job_levels[jobKey]?.level || 0;
-    const masterLv: number = ch.job_levels[jobKey]?.master_lv || 0;
+    // キャラ由来行の補足ラベル (ジョブ名 + 有効レベル)。
+    // サポートジョブのセレクト値は小文字キーなので、JOBS / job_levels の
+    // 参照は大文字小文字を無視して正規化する (WASM 側の str_to_job と同じ扱い)
+    const findJob = (key: string) => JOBS.find((j) => j.key.toLowerCase() === key.toLowerCase());
+    const jobName = (key: string) => findJob(key)?.name || key;
+    const jobLevelOf = (key: string) => ch.job_levels[findJob(key)?.key ?? key];
+    const mainLv: number = jobLevelOf(jobKey)?.level || 0;
+    const masterLv: number = jobLevelOf(jobKey)?.master_lv || 0;
     // サポート有効レベル = min(実レベル, メインLv/2 + ML/5) — character_profile.rs と同じ
-    const subActualLv: number = supportJob ? ch.job_levels[supportJob]?.level || 0 : 0;
+    const subActualLv: number = supportJob ? jobLevelOf(supportJob)?.level || 0 : 0;
     const subEffectiveLv = Math.min(
         subActualLv,
         Math.floor(mainLv / 2) + Math.floor(masterLv / 5)

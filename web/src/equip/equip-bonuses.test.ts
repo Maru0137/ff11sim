@@ -108,10 +108,8 @@ describe('calculateEquipSetBonuses', () => {
         // 装備のないスロットは含まない
         expect(result.per_slot_stats.legs).toBeUndefined();
         // スロット別の総和 == 全体合計
-        const sum = Object.values(result.per_slot_stats).reduce(
-            (acc: number, s: { accuracy?: number }) => acc + (s.accuracy || 0),
-            0
-        );
+        const perSlot = result.per_slot_stats as Record<string, { accuracy?: number }>;
+        const sum = Object.values(perSlot).reduce((acc, s) => acc + (s.accuracy || 0), 0);
         expect(sum).toBe(result.accuracy);
     });
 });

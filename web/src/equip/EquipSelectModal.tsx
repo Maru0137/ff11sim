@@ -51,7 +51,11 @@ const INITIAL_SEARCH: SearchState = {
 
 export function EquipSelectModal({ slot, onClose }: { slot: SlotDef; onClose: () => void }) {
     useSyncExternalStore(subscribeEquipState, getEquipStateVersion);
-    const isMobile = useMediaQuery('(max-width: 768px)') ?? false;
+    // getInitialValueInEffect: false — 初回レンダーから正しい値にしないと、
+    // モバイルで一瞬デスクトップ用モーダルが出てから fullScreen に切り替わる
+    const isMobile = useMediaQuery('(max-width: 768px)', false, {
+        getInitialValueInEffect: false,
+    });
     const readOnly = isShareMode();
 
     const [query, setQuery] = useState('');
@@ -132,6 +136,9 @@ export function EquipSelectModal({ slot, onClose }: { slot: SlotDef; onClose: ()
             // z-index 1000) より下。カスタムAugヘルプが正しく重なるようにする
             zIndex={900}
             fullScreen={isMobile}
+            // スクロールロック中もピンチズーム/パンを許可する。ズームした状態で
+            // 塞がれると閉じるボタンに到達できなくなる (iOS Safari)
+            removeScrollProps={{ allowPinchZoom: true }}
             classNames={{ content: 'equip-select-modal', title: 'equip-select-modal-title' }}
         >
             <SelectedSection
@@ -148,7 +155,9 @@ export function EquipSelectModal({ slot, onClose }: { slot: SlotDef; onClose: ()
                             className="equip-modal-query"
                             placeholder="装備名で検索 (スロットとジョブで自動絞り込み)..."
                             value={query}
-                            data-autofocus
+                            // モバイルではソフトキーボードが即座に開いて邪魔なので
+                            // autofocus しない (undefined で属性ごと外す)
+                            data-autofocus={isMobile ? undefined : true}
                             onChange={(e) => handleQueryChange(e.target.value)}
                         />
                         {ilvVisible && (

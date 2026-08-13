@@ -692,7 +692,7 @@ pub fn extract_all_stats(description_en: &str) -> EquipStats {
         r"(?<!ranged )(?<![a-z])attack{WS}*([+-]){WS}*([0-9]+)(?!%)"
     ));
     s.accuracy = signed(&format!(
-        r"(?<!ranged )(?<!magic )(?<!skill )(?<![a-z])accuracy{WS}*([+-]){WS}*([0-9]+)"
+        r"(?<!ranged )(?<!magic )(?<!skill )(?<!burst )(?<![a-z])accuracy{WS}*([+-]){WS}*([0-9]+)"
     ));
     s.evasion = signed(&format!(
         r"(?<!magic )(?<![a-z])evasion{WS}*([+-]){WS}*([0-9]+)"
@@ -1010,9 +1010,13 @@ pub fn extract_skill_bonuses(description_en: &str) -> BTreeMap<&'static str, i32
 /// **並び順に意味がある。** 単純な順次置換なので、長い表記を先に置かないと
 /// 部分一致で壊れる (例: 「魔法クリティカルヒットII」を「魔法クリティカルヒット率」
 /// より先に、「攻」を最後に置く)。`web/js/constants.js` の順序をそのまま保つこと。
-static AUGMENT_JA_TO_EN: [(&str, &str); 86] = [
+static AUGMENT_JA_TO_EN: [(&str, &str); 88] = [
     ("ウェポンスキルのダメージ", "Weapon skill damage"),
     ("マジックバーストダメージ", "Magic burst damage"),
+    // 順序重要: 「マジックバースト命中」→「マジックバースト」の順。
+    // 「マジックバースト+N」(ソーサラストール系) は MB ダメージの表記揺れ
+    ("マジックバースト命中", "Magic burst accuracy"),
+    ("マジックバースト", "Magic burst damage"),
     ("コンサーブMP", "\"Conserve MP\""),
     ("精霊魔法の再詠唱間隔", "Elemental magic recast delay"),
     ("青魔法の再詠唱間隔", "Blue magic recast delay"),
@@ -1374,6 +1378,16 @@ mod tests {
         let s = extract_all_stats("Bonus damage added to magic burst");
         assert_eq!(s.magic_burst_damage, 0);
         assert_eq!(s.magic_burst_damage_2, 0);
+    }
+
+    #[test]
+    fn magic_burst_accuracy_is_not_accuracy() {
+        // "Magic burst accuracy+20" (Peda. M.Board +2 等) は MB命中であり、
+        // 命中にも MB ダメージにも合算しない
+        let s = extract_all_stats("Magic burst accuracy+20");
+        assert_eq!(s.accuracy, 0);
+        assert_eq!(s.magic_accuracy, 0);
+        assert_eq!(s.magic_burst_damage, 0);
     }
 
     #[test]

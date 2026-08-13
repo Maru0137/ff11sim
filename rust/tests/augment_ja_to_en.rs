@@ -63,6 +63,28 @@ fn longer_notations_are_replaced_first() {
     assert_eq!(convert_augment_ja_to_en("攻+30"), "Attack+30");
 }
 
+/// マジックバースト系の表記揺れ。
+/// 「マジックバースト+N」(ソーサラストール系) は MB ダメージとして合算する。
+/// 「マジックバースト命中+N」は MB ダメージにも命中にも合算しない。
+#[test]
+fn converts_magic_burst_variants() {
+    // ソーサラストール+2 Rank15 の実オーグメント
+    let converted = convert_augment_ja_to_en("マジックバースト+10\nマジックバースト命中+25");
+    assert_eq!(converted, "Magic burst damage+10\nMagic burst accuracy+25");
+    let stats = ff11sim::equip_stats::extract_all_stats(&converted);
+    assert_eq!(stats.magic_burst_damage, 10);
+    assert_eq!(stats.magic_burst_damage_2, 0);
+    // MB命中は追跡対象外。命中/魔命へ誤合算しない
+    assert_eq!(stats.accuracy, 0);
+    assert_eq!(stats.magic_accuracy, 0);
+
+    // 「マジックバーストダメージII+N」(ニャメ系) は II として抽出される (回帰確認)
+    let converted = convert_augment_ja_to_en("マジックバーストダメージII+7");
+    let stats = ff11sim::equip_stats::extract_all_stats(&converted);
+    assert_eq!(stats.magic_burst_damage_2, 7);
+    assert_eq!(stats.magic_burst_damage, 0);
+}
+
 /// 実データで代表的な変換を確認する。
 /// 期待値は node で JS 実装を動かした結果をそのまま使っている。
 #[test]

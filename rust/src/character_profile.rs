@@ -177,6 +177,8 @@ mod tests {
         let chara = profile.to_chara(Job::War, Some(Job::Drg)).unwrap();
         assert_eq!(chara.status(StatusKind::Hp), 1945);
         assert_eq!(chara.status(StatusKind::Str), 147);
+        // メイン War に MP グレードなし → 種族・メイン・ML 分は除外。
+        // サポ Drg も MP グレードなしのため MP = 0
         assert_eq!(chara.status(StatusKind::Mp), 0);
     }
 

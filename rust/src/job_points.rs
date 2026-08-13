@@ -32,6 +32,8 @@ pub enum GiftStatKind {
     TripleShot,
     /// リサイクル発動率 (%) — Cor JP カテゴリ「矢弾消費量軽減」
     Recycle,
+    /// マジックバーストダメージ (%) — Blm JP カテゴリ「マジックバーストダメージ」
+    MagicBurstDamage,
     /// Skill bonuses, capacity points, automaton bonuses など、
     /// 現状のステータス計算には反映しないギフトの placeholder
     None,
@@ -106,6 +108,8 @@ pub struct GiftBonuses {
     pub double_shot: i32,
     pub triple_shot: i32,
     pub recycle: i32,
+    /// マジックバーストダメージ (%) — JP カテゴリ由来
+    pub magic_burst_damage: i32,
 }
 
 impl GiftBonuses {
@@ -126,6 +130,7 @@ impl GiftBonuses {
             GiftStatKind::DoubleShot => self.double_shot += value,
             GiftStatKind::TripleShot => self.triple_shot += value,
             GiftStatKind::Recycle => self.recycle += value,
+            GiftStatKind::MagicBurstDamage => self.magic_burst_damage += value,
             GiftStatKind::None => {}
         }
     }
@@ -189,12 +194,21 @@ fn jp_category_effects(job: Job) -> &'static [JpCategoryEffect] {
             stat: MagicAccuracy,
             per_rank: 1,
         }],
-        // Blm: category 5 は Magic Accuracy Bonus (+1 MACC/rank)
-        Job::Blm => &[JpCategoryEffect {
-            category_index: 5,
-            stat: MagicAccuracy,
-            per_rank: 1,
-        }],
+        // Blm:
+        //   category 3 「マジックバーストダメージ」: MB ダメージ +1%/rank
+        //   category 5 「魔法命中率ボーナス」: MACC +1/rank
+        Job::Blm => &[
+            JpCategoryEffect {
+                category_index: 3,
+                stat: MagicBurstDamage,
+                per_rank: 1,
+            },
+            JpCategoryEffect {
+                category_index: 5,
+                stat: MagicAccuracy,
+                per_rank: 1,
+            },
+        ],
         // Rdm: category 3 は Magic Accuracy Bonus, category 5 は Magic Atk. Bonus
         Job::Rdm => &[
             JpCategoryEffect {
@@ -239,6 +253,7 @@ pub fn calc_gift_bonuses(job: Job, total_jp: i32) -> GiftBonuses {
         double_shot: 0,
         triple_shot: 0,
         recycle: 0,
+        magic_burst_damage: 0,
     }
 }
 
@@ -348,6 +363,17 @@ mod tests {
         let bonuses = calc_jp_category_bonuses(Job::Whm, &cats);
         assert_eq!(bonuses.magic_accuracy, 20);
         assert_eq!(bonuses.magic_attack, 0);
+    }
+
+    #[test]
+    fn test_jp_category_bonuses_blm() {
+        // Blm の category 3 は マジックバーストダメージ (+1%/rank)、category 5 は MACC
+        let mut cats = JobPointCategories::default();
+        cats.ranks[3] = 20;
+        cats.ranks[5] = 20;
+        let bonuses = calc_jp_category_bonuses(Job::Blm, &cats);
+        assert_eq!(bonuses.magic_burst_damage, 20);
+        assert_eq!(bonuses.magic_accuracy, 20);
     }
 
     #[test]

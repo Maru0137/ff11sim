@@ -333,11 +333,68 @@ pub fn default_skills(
 // Effective Skill (char value capped by job)
 // ---------------------------------------------------------------------------
 
-/// メイン/サポートジョブの組み合わせにおけるスキルの有効値を計算する。
-/// キャラクターのスキル値とジョブ経由のキャップの最大値のうち、低い方を返す。
-/// キャップはメインジョブ（+ ML）とサポートジョブ（support_lv で上限）のうち高い方 + メリットボーナス。
+/// 有効スキル値のソース別分解 (内訳表示用)。
+/// `base + merit + master_lv == effective_skill(...)` を恒等式として保つ
+/// (effective_skill は本関数への委譲)。
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub struct EffectiveSkillParts {
+    /// 素のキャップ (メリポ/ML 抜き) までの値
+    pub base: i32,
+    /// メリットポイント (スキル上限アップ) による増分
+    pub merit: i32,
+    /// マスターレベルによる増分
+    pub master_lv: i32,
+}
+
+impl EffectiveSkillParts {
+    pub fn total(&self) -> i32 {
+        self.base + self.merit + self.master_lv
+    }
+}
+
+/// メイン/サポートジョブの組み合わせにおけるスキルの有効値をソース別に分解する。
+/// メリポ (スキル上限アップ) と ML はどちらもキャップの引き上げとして効くため、
+/// 寄与は「キャップを 素 → +メリポ → +ML の順に広げたときの表示値の増分」として
+/// 帰属する (キャラのスキル値がキャップに届いていない分は 0。振っても表示値が
+/// 上がらない実挙動どおり)。積み上げ順は内訳モーダルの行順 (メリポ → ML) に合わせる。
 /// 引数はいずれも独立した入力で、意味のある単位に束ねられない。
 /// 構造体化しても呼び出し側の記述量が増えるだけなので許容する。
+#[allow(clippy::too_many_arguments)]
+pub fn effective_skill_parts(
+    skill: SkillKind,
+    main_job: Job,
+    main_lv: i32,
+    master_lv: i32,
+    support_job: Option<Job>,
+    support_lv: Option<i32>,
+    char_value: i32,
+    merit: &crate::status::MeritPoints,
+) -> EffectiveSkillParts {
+    let sup_cap = match (support_job, support_lv) {
+        (Some(sj), Some(sl)) => job_skill_cap(sj, skill, sl, 0),
+        _ => 0,
+    };
+    // キャップ = メインジョブ (+ ML) とサポートジョブのうち高い方 + メリットボーナス
+    let cap_at = |ml: i32, with_merit: bool| -> i32 {
+        let mut cap = job_skill_cap(main_job, skill, main_lv, ml).max(sup_cap);
+        if with_merit && cap > 0 {
+            cap += skill.merit_bonus(merit, skill.key());
+        }
+        cap
+    };
+    let base = char_value.min(cap_at(0, false));
+    let with_merit = char_value.min(cap_at(0, true));
+    let full = char_value.min(cap_at(master_lv, true));
+    EffectiveSkillParts {
+        base,
+        merit: with_merit - base,
+        master_lv: full - with_merit,
+    }
+}
+
+/// メイン/サポートジョブの組み合わせにおけるスキルの有効値を計算する。
+/// キャラクターのスキル値とジョブ経由のキャップの最大値のうち、低い方を返す。
+/// 分解版 (effective_skill_parts) への委譲で、内訳との乖離を防ぐ。
 #[allow(clippy::too_many_arguments)]
 pub fn effective_skill(
     skill: SkillKind,
@@ -349,16 +406,17 @@ pub fn effective_skill(
     char_value: i32,
     merit: &crate::status::MeritPoints,
 ) -> i32 {
-    let main_cap = job_skill_cap(main_job, skill, main_lv, master_lv);
-    let sup_cap = match (support_job, support_lv) {
-        (Some(sj), Some(sl)) => job_skill_cap(sj, skill, sl, 0),
-        _ => 0,
-    };
-    let mut max_cap = main_cap.max(sup_cap);
-    if max_cap > 0 {
-        max_cap += skill.merit_bonus(merit, skill.key());
-    }
-    char_value.min(max_cap)
+    effective_skill_parts(
+        skill,
+        main_job,
+        main_lv,
+        master_lv,
+        support_job,
+        support_lv,
+        char_value,
+        merit,
+    )
+    .total()
 }
 
 // ---------------------------------------------------------------------------
@@ -368,6 +426,45 @@ pub fn effective_skill(
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn effective_skill_parts_attribution_and_identity() {
+        // メリポ「片手剣スキル上限アップ」rank 8 = +16
+        let mut merit = crate::status::MeritPoints::default();
+        merit.combat_skill_merits.insert("Sword".to_string(), 8);
+        let cap0 = job_skill_cap(Job::War, SkillKind::Sword, 99, 0);
+        assert!(cap0 > 0);
+
+        let parts = |char_value: i32, ml: i32| {
+            effective_skill_parts(
+                SkillKind::Sword,
+                Job::War,
+                99,
+                ml,
+                None,
+                None,
+                char_value,
+                &merit,
+            )
+        };
+
+        // キャラ値がフルキャップ以上: 基礎 = 素キャップ、メリポ = +16、ML = +20
+        let p = parts(cap0 + 100, 20);
+        assert_eq!((p.base, p.merit, p.master_lv), (cap0, 16, 20));
+        // キャラ値が素キャップ未満: 引き上げ分は発現しない
+        let p = parts(cap0 - 10, 20);
+        assert_eq!((p.base, p.merit, p.master_lv), (cap0 - 10, 0, 0));
+        // キャラ値が素キャップ + 5: 行順どおりメリポ側に先に帰属する
+        let p = parts(cap0 + 5, 20);
+        assert_eq!((p.base, p.merit, p.master_lv), (cap0, 5, 0));
+        // 恒等式: total == effective_skill
+        for (cv, ml) in [(cap0 + 100, 20), (cap0 - 10, 20), (cap0 + 5, 0)] {
+            assert_eq!(
+                parts(cv, ml).total(),
+                effective_skill(SkillKind::Sword, Job::War, 99, ml, None, None, cv, &merit)
+            );
+        }
+    }
 
     #[test]
     fn test_skill_cap_control_points() {

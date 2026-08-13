@@ -68,12 +68,8 @@ async function computeBreakdownModel(
     const jobLevelOf = (key: string) => ch.job_levels[findJob(key)?.key ?? key];
     const mainLv: number = jobLevelOf(jobKey)?.level || 0;
     const masterLv: number = jobLevelOf(jobKey)?.master_lv || 0;
-    // サポート有効レベル = min(実レベル, メインLv/2 + ML/5) — character_profile.rs と同じ
-    const subActualLv: number = supportJob ? jobLevelOf(supportJob)?.level || 0 : 0;
-    const subEffectiveLv = Math.min(
-        subActualLv,
-        Math.floor(mainLv / 2) + Math.floor(masterLv / 5)
-    );
+    // サポート有効レベルは WASM が計算済みの値 (character_profile::to_chara) を使う
+    const subEffectiveLv: number = breakdown.support_effective_lv ?? 0;
     const charItemLabels: Partial<Record<string, string>> = {
         base: 'Lv・ステータス・スキル由来',
         race: RACE_NAMES[ch.race] || ch.race,
@@ -91,6 +87,8 @@ async function computeBreakdownModel(
         charRows: breakdown.rows || {},
         totals: mode === 'status' ? view.values : view.propertyValues,
         charItemLabels,
+        perSlotSkillBonuses: equip.per_slot_skill_bonuses,
+        weaponSkillKinds: view.weaponSkillKinds,
     });
 }
 
@@ -217,7 +215,9 @@ export function BreakdownModal({ mode, title, itemIds, view, onClose }: Breakdow
                         {mode === 'propset' && (
                             <div>
                                 ※ 「基礎」行はレベル・ステータス・スキル由来の項 (攻撃 = STR +
-                                武器スキル + 8 など)。武器スキルなど内訳を分解できない項目は列に含まれません。
+                                武器スキル + 8 など)。スキル値列の基礎は素のキャップまでの値で、
+                                メリポ/ML 行はキャップ引き上げによる増分 (キャラ値が届いていない分は
+                                表示されない)。実効魔命など内訳を分解できない合成値項目は列に含まれません。
                             </div>
                         )}
                     </div>

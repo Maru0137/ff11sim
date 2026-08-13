@@ -45,12 +45,17 @@ export function calculateEquipSetBonuses(equipSet: EquipSetLike | null | undefin
     const skillBonusBuckets: Record<WeaponBucket | 'global', SkillBonuses> = {
         main: {}, sub: {}, ranged: {}, global: {},
     };
+    // 全スロット別のスキルボーナス合計 (内訳モーダルのスキル値列用)。
+    // キーは生のスロットキー (per_slot_stats と同じく 'range' のまま)
+    const perSlotSkillBuckets: Record<string, SkillBonuses> = {};
     const addSkillBonuses = (slotKey: string, bonuses: SkillBonuses | null | undefined) => {
         if (!bonuses) return;
         const targetSlot = (slotKey === 'range' ? 'ranged' : slotKey) as WeaponBucket;
         const isWeaponSlot = (slotKey === 'main' || slotKey === 'sub' || slotKey === 'range');
+        const perSlot = (perSlotSkillBuckets[slotKey] ||= {});
         for (const [k, v] of Object.entries(bonuses)) {
             if (!v) continue;
+            perSlot[k] = (perSlot[k] || 0) + v;
             if (isWeaponSlot && WEAPON_SKILL_KEYS.has(k)) {
                 skillBonusBuckets[targetSlot][k] = (skillBonusBuckets[targetSlot][k] || 0) + v;
             } else {
@@ -112,5 +117,7 @@ export function calculateEquipSetBonuses(equipSet: EquipSetLike | null | undefin
     result.per_slot_stats = Object.fromEntries(
         Object.entries(perSlotBuckets).map(([key, arr]) => [key, sum_stats(arr)])
     );
+    // 全スロット別スキルボーナス (内訳モーダルのスキル値列用)
+    result.per_slot_skill_bonuses = perSlotSkillBuckets;
     return result;
 }

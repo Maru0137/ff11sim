@@ -33,9 +33,19 @@ describe('buildPropsetColumns', () => {
         expect(cols[2].equipKey).toBe('quad_attack_pct');
     });
 
-    it('内訳非対応の項目 (武器スキル) と未知 id は列から除外する', () => {
-        const cols = buildPropsetColumns(['main_weapon_skill', 'store_tp', 'no_such_id']);
+    it('内訳非対応の項目 (実効魔命) と未知 id は列から除外する', () => {
+        const cols = buildPropsetColumns(['macc_main', 'store_tp', 'no_such_id']);
         expect(cols.map((c) => c.key)).toEqual(['store_tp']);
+    });
+
+    it('武器スキルは weaponSlot、魔法スキルは skillKey 付きの列になる', () => {
+        const cols = buildPropsetColumns(['main_weapon_skill', 'skill_enfeebling']);
+        expect(cols[0]).toMatchObject({
+            key: 'main_weapon_skill', charKey: 'main_weapon_skill', weaponSlot: 'main',
+        });
+        expect(cols[1]).toMatchObject({
+            key: 'skill_enfeebling', charKey: 'skill_Enfeebling', skillKey: 'Enfeebling',
+        });
     });
 
     it('ユーザー定義項目は装備行のみ (userItemId 経由) の列になる', () => {
@@ -132,6 +142,48 @@ describe('buildBreakdownModel', () => {
         const col = (key: string) => STATUS_BREAKDOWN_COLUMNS.findIndex((c) => c.key === key);
         const row = model.rows.find((r) => r.key === 'neck')!;
         expect(row.cells[col('dt')]).toBe(-5);
+    });
+
+    it('スキル値列: 装備行はスロット別スキルボーナス、武器列は他武器スロット分を除外', () => {
+        const cols = buildPropsetColumns(['main_weapon_skill', 'skill_enfeebling']);
+        const model = buildBreakdownModel({
+            ...baseInputs,
+            columns: cols,
+            perSlotSkillBonuses: {
+                // メイン武器の片手剣+10 は main 列のみ、サブ武器の片手剣+7 は除外
+                main: { Sword: 10 },
+                sub: { Sword: 7 },
+                // 非武器スロットのボーナスは武器列にも魔法列にも適用
+                neck: { Sword: 5, Enfeebling: 8 },
+            },
+            weaponSkillKinds: { main: 'Sword', sub: 'Sword', ranged: null },
+            charRows: {
+                base: { main_weapon_skill: 424, skill_Enfeebling: 500 },
+                gift: { skill_Enfeebling: 25 },
+            },
+            totals: { main_weapon_skill: '片手剣 (439)', skill_enfeebling: 533 },
+        });
+        const row = (key: string) => model.rows.find((r) => r.key === key)!;
+        expect(row('main').cells).toEqual([10, null]);
+        expect(row('sub').cells).toEqual([null, null]);
+        expect(row('neck').cells).toEqual([5, 8]);
+        expect(row('base').cells).toEqual([424, 500]);
+        expect(row('gift').cells).toEqual([null, 25]);
+        expect(model.totals).toEqual(['片手剣 (439)', 533]);
+    });
+
+    it('スキル値列: 表示値が "-" (未習得/未装備) なら装備行も抑制する', () => {
+        const cols = buildPropsetColumns(['ranged_weapon_skill', 'skill_ninjutsu']);
+        const model = buildBreakdownModel({
+            ...baseInputs,
+            columns: cols,
+            perSlotSkillBonuses: { neck: { Ninjutsu: 10 } },
+            weaponSkillKinds: { main: 'Sword', sub: null, ranged: null },
+            charRows: {},
+            totals: { ranged_weapon_skill: '-', skill_ninjutsu: '-' },
+        });
+        const row = model.rows.find((r) => r.key === 'neck')!;
+        expect(row.cells).toEqual([null, null]);
     });
 
     it('ユーザー定義項目の列はスロット別ユーザー値から装備行を埋める', () => {

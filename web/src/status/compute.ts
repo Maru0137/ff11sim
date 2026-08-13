@@ -55,6 +55,14 @@ export interface StatusView {
     effectiveSkills: EffectiveSkillEntry[];
     /** プロパティ項目 id (カタログ / 'user:<term>') → 表示値 (docs/adr/0015) */
     propertyValues: Record<string, string | number>;
+    /** レンジスロットが WS を撃てる武器 (弓術/射撃) か。WS 系テンプレートのレンジ行表示に使う */
+    rangedWsWeapon: boolean;
+    /** レンジスロットの楽器種別。呪歌テンプレートの楽器スキル列切替に使う */
+    songInstrument: 'wind' | 'string' | null;
+    /** レンジスロットに風水鈴を装備しているか。風水テンプレートの風水鈴スキル列表示に使う */
+    geoHandbell: boolean;
+    /** 武器スロット → 装備中武器のスキルキー。内訳の武器スキル列の装備分解決に使う */
+    weaponSkillKinds: { main: string | null; sub: string | null; ranged: string | null };
 }
 
 /**
@@ -223,25 +231,20 @@ export async function computeStatusView(): Promise<StatusView | null> {
         V.equipTotalMnd = totalStats.mnd || 0;
         V.equipTotalChr = totalStats.chr || 0;
 
-        // 防御系ステータス（素 = 合計 - 装備）
-        const defEquip = equip.def || 0;
-        const defTotal = totalStats.def || 0;
-        const evaEquip = equip.evasion || 0;
-        const evaTotal = totalStats.evasion || 0;
-        const mdefEquip = equip.magic_def_bonus || 0;
-        const mdefTotal = totalStats.mdef || 0;
+        // 防御系ステータス。「素」は WASM が解析計算した値 (def_base 等) を使う。
+        // 素 + 装備プロパティ == 総合 の恒等式は Rust 側テストで担保
         const mevaEquip = equip.magic_evasion || 0;
         const mevaBonus = totalStats.magic_evasion_bonus || 0;
         const mevaTotal = mevaEquip + mevaBonus;
-        V.equipBaseDef = defTotal - defEquip;
-        V.equipEquipDef = defEquip;
-        V.equipTotalDef = defTotal;
-        V.equipBaseEva = evaTotal - evaEquip;
-        V.equipEquipEva = evaEquip;
-        V.equipTotalEva = evaTotal;
-        V.equipBaseMdef = mdefTotal - mdefEquip;
-        V.equipEquipMdef = mdefEquip;
-        V.equipTotalMdef = mdefTotal;
+        V.equipBaseDef = totalStats.def_base || 0;
+        V.equipEquipDef = equip.def || 0;
+        V.equipTotalDef = totalStats.def || 0;
+        V.equipBaseEva = totalStats.evasion_base || 0;
+        V.equipEquipEva = equip.evasion || 0;
+        V.equipTotalEva = totalStats.evasion || 0;
+        V.equipBaseMdef = totalStats.mdef_base || 0;
+        V.equipEquipMdef = equip.magic_def_bonus || 0;
+        V.equipTotalMdef = totalStats.mdef || 0;
         V.equipBaseMeva = mevaBonus;
         V.equipEquipMeva = mevaEquip;
         V.equipTotalMeva = mevaTotal;
@@ -259,7 +262,6 @@ export async function computeStatusView(): Promise<StatusView | null> {
 
         const magicAttackTotal = totalStats.magic_attack != null ? totalStats.magic_attack : 0;
         const magicAccuracyTotal = (equip.magic_accuracy || 0) + (totalStats.magic_accuracy_bonus || 0);
-        const magicEvasionTotal = (equip.magic_evasion || 0) + (totalStats.magic_evasion_bonus || 0);
         const magicDamageTotal = equip.magic_damage || 0;
         const wsDamagePct = equip.weapon_skill_damage_pct || 0;
         // 連携ボーナス総合 (装備 + ジョブ特性 + ギフト) は WASM 側で算出済み。
@@ -302,24 +304,64 @@ export async function computeStatusView(): Promise<StatusView | null> {
         V.statAaDaDmg = pctOrDash(equip.double_attack_damage_pct);
         V.statAaTaDmg = pctOrDash(equip.triple_attack_damage_pct);
         V.statAaCritDmg = pctOrDash(equip.critical_hit_damage_pct);
+        V.statAaPdl = pctOrDash(equip.physical_damage_limit_pct);
         V.statAaSb = numOrDash(totalStats.subtle_blow);
         V.statAaSb2 = numOrDash(equip.subtle_blow_2);
 
         // ----- Tab 3: 遠隔攻撃 -----
+        // 装備抽出 + キャラ側総合の合成値。カタログ項目も同じ値を参照するため
+        // derived として渡す (式の二重定義を避ける)
+        const trueShotTotal = (equip.true_shot || 0) + (totalStats.trueshot || 0);
+        const recycleTotal = (equip.recycle || 0) + (totalStats.recycle || 0);
+        const doubleShotTotal = (equip.double_shot_pct || 0) + (totalStats.double_shot_pct || 0);
+        const tripleShotTotal = (equip.triple_shot_pct || 0) + (totalStats.triple_shot_pct || 0);
+        const conserveMpTotal = (equip.conserve_mp || 0) + (totalStats.conserve_mp || 0);
         V.statRaSkill = formatWeaponSkill(totalStats.ranged_weapon_skill, totalStats.ranged_weapon_skill_value);
         V.statRaAtk = totalStats.ranged_attack != null ? totalStats.ranged_attack : '-';
         V.statRaAcc = totalStats.ranged_accuracy != null ? totalStats.ranged_accuracy : '-';
-        V.statRaStr = totalStats.str_ || '-';
-        V.statRaAgi = totalStats.agi || '-';
         V.statRaStp = numOrDash(totalStats.store_tp);
+        V.statRaSb = numOrDash(totalStats.subtle_blow);
+        V.statRaSb2 = numOrDash(equip.subtle_blow_2);
+        V.statRaDoubleShot = pctOrDash(doubleShotTotal);
+        V.statRaTripleShot = pctOrDash(tripleShotTotal);
+        V.statRaDoubleShotDmg = pctOrDash(equip.double_shot_damage_pct);
+        V.statRaTripleShotDmg = pctOrDash(equip.triple_shot_damage_pct);
+        V.statRaCrit = pctOrDash(equip.critical_hit_rate_pct);
+        V.statRaCritDmg = pctOrDash(equip.critical_hit_damage_pct);
+        V.statRaPdl = pctOrDash(equip.physical_damage_limit_pct);
+        V.statRaTs = numOrDash(trueShotTotal);
+        V.statRaRecycle = numOrDash(recycleTotal);
 
         // ----- Tab 4: 近接物理 WS -----
+        // 魔命スキルは武器スロット (メイン/サブ) の装備分のみ表示。レンジ枠は
+        // メイン分を表示 (属性 WS タブと同じ規則)。
+        const mainMaccSkill = equip.slot_stats?.main?.magic_accuracy_skill || 0;
+        const subMaccSkill = equip.slot_stats?.sub?.magic_accuracy_skill || 0;
+        const mainSkillValue = totalStats.main_weapon_skill_value || 0;
+        const rangedSkillValue = totalStats.ranged_weapon_skill_value || 0;
+        // レンジの実効魔命は WS を撃てる弓術/射撃の装備時のみ算出。
+        // 楽器 (弦/管) や投てきではスキル値が WS の魔命に寄与しないため '-' 表示
+        const rangedIsWsWeapon =
+            totalStats.ranged_weapon_skill === 'Archery' ||
+            totalStats.ranged_weapon_skill === 'Marksmanship';
+        // 実効魔命 = 魔命+ (装備 + ボーナス) + メインの魔命スキル + 当該スキル値。
+        // キーは 'main' | 'ranged' | 魔法種別 (魔法分は Tab 9-19 のループで追加)。
+        // メイン/レンジ行のみ表示 (サブ行は UI 上ダッシュ固定)
+        const maccTotals: Record<string, number> = {
+            main: mainSkillValue + mainMaccSkill + magicAccuracyTotal,
+            ranged: rangedIsWsWeapon
+                ? rangedSkillValue + mainMaccSkill + magicAccuracyTotal
+                : 0,
+        };
         V.statMwsSkill = formatWeaponSkill(totalStats.main_weapon_skill, totalStats.main_weapon_skill_value);
         V.statMwsAtk = numOrDash(totalStats.main_attack);
         V.statMwsAcc = numOrDash(totalStats.main_accuracy);
+        V.statMwsMaccSkill = numOrDash(mainMaccSkill);
+        V.statMwsMaccTotal = numOrDash(maccTotals.main);
         V.statMwsSubSkill = formatWeaponSkill(totalStats.sub_weapon_skill, totalStats.sub_weapon_skill_value);
         V.statMwsSubAtk = totalStats.sub_attack != null ? totalStats.sub_attack : '-';
         V.statMwsSubAcc = totalStats.sub_accuracy != null ? totalStats.sub_accuracy : '-';
+        V.statMwsSubMaccSkill = numOrDash(subMaccSkill);
         V.statMwsStp = numOrDash(totalStats.store_tp);
         V.statMwsSb = numOrDash(totalStats.subtle_blow);
         V.statMwsSb2 = numOrDash(equip.subtle_blow_2);
@@ -337,6 +379,8 @@ export async function computeStatusView(): Promise<StatusView | null> {
         V.statRwsSkill = formatWeaponSkill(totalStats.ranged_weapon_skill, totalStats.ranged_weapon_skill_value);
         V.statRwsAtk = totalStats.ranged_attack != null ? totalStats.ranged_attack : '-';
         V.statRwsAcc = totalStats.ranged_accuracy != null ? totalStats.ranged_accuracy : '-';
+        V.statRwsMaccSkill = numOrDash(mainMaccSkill);
+        V.statRwsMaccTotal = numOrDash(maccTotals.ranged);
         V.statRwsStp = numOrDash(totalStats.store_tp);
         V.statRwsSb = numOrDash(totalStats.subtle_blow);
         V.statRwsSb2 = numOrDash(equip.subtle_blow_2);
@@ -346,21 +390,15 @@ export async function computeStatusView(): Promise<StatusView | null> {
         V.statRwsTpb = numOrDash(equip.tp_bonus);
         V.statRwsScb = numOrDash(skillchainBonusTotal);
         V.statRwsPdl = pctOrDash(equip.physical_damage_limit_pct);
-        V.statRwsTs = numOrDash(equip.true_shot);
+        V.statRwsTs = numOrDash(trueShotTotal);
 
         // ----- Tab 6: 属性 WS -----
-        // 魔命スキルはメイン武器スロットの装備分のみ表示 (サブ/レンジは UI 上ダッシュ固定)。
-        // 魔命合計 = 各行の武器スキル値 + メインの魔命スキル + 魔命総合 (装備 + ボーナス)。
-        const mainMaccSkill = equip.slot_stats?.main?.magic_accuracy_skill || 0;
-        const mainSkillValue = totalStats.main_weapon_skill_value || 0;
-        const rangedSkillValue = totalStats.ranged_weapon_skill_value || 0;
         V.statEwsMainSkill = formatWeaponSkill(totalStats.main_weapon_skill, totalStats.main_weapon_skill_value);
         V.statEwsMainMaccSkill = numOrDash(mainMaccSkill);
-        V.statEwsMainMaccTotal = numOrDash(mainSkillValue + mainMaccSkill + magicAccuracyTotal);
+        V.statEwsMainMaccTotal = numOrDash(maccTotals.main);
         V.statEwsRangedSkill = formatWeaponSkill(totalStats.ranged_weapon_skill, totalStats.ranged_weapon_skill_value);
-        V.statEwsRangedMaccTotal = numOrDash(rangedSkillValue + mainMaccSkill + magicAccuracyTotal);
+        V.statEwsRangedMaccTotal = numOrDash(maccTotals.ranged);
         V.statEwsMatk = numOrDash(magicAttackTotal);
-        V.statEwsMacc = numOrDash(magicAccuracyTotal);
         V.statEwsStp = numOrDash(totalStats.store_tp);
         V.statEwsSb = numOrDash(totalStats.subtle_blow);
         V.statEwsSb2 = numOrDash(equip.subtle_blow_2);
@@ -372,20 +410,16 @@ export async function computeStatusView(): Promise<StatusView | null> {
         V.statEwsScb = numOrDash(skillchainBonusTotal);
 
         // ----- Tab 7: 近接属性物理 WS -----
-        const subMaccSkill = equip.slot_stats?.sub?.magic_accuracy_skill || 0;
-        const subSkillValue = totalStats.sub_weapon_skill_value || 0;
         V.statMewsSkill = formatWeaponSkill(totalStats.main_weapon_skill, totalStats.main_weapon_skill_value);
         V.statMewsAtk = numOrDash(totalStats.main_attack);
         V.statMewsAcc = numOrDash(totalStats.main_accuracy);
         V.statMewsMaccSkill = numOrDash(mainMaccSkill);
-        V.statMewsMaccTotal = numOrDash(mainSkillValue + mainMaccSkill + magicAccuracyTotal);
+        V.statMewsMaccTotal = numOrDash(maccTotals.main);
         V.statMewsSubSkill = formatWeaponSkill(totalStats.sub_weapon_skill, totalStats.sub_weapon_skill_value);
         V.statMewsSubAtk = totalStats.sub_attack != null ? totalStats.sub_attack : '-';
         V.statMewsSubAcc = totalStats.sub_accuracy != null ? totalStats.sub_accuracy : '-';
         V.statMewsSubMaccSkill = numOrDash(subMaccSkill);
-        V.statMewsSubMaccTotal = numOrDash(subSkillValue + subMaccSkill + magicAccuracyTotal);
         V.statMewsMatk = numOrDash(magicAttackTotal);
-        V.statMewsMacc = numOrDash(magicAccuracyTotal);
         V.statMewsMdmg = numOrDash(magicDamageTotal);
         V.statMewsAff = numOrDash(equip.magic_affinity);
         V.statMewsMcrit2 = pctOrDash(equip.magic_critical_hit_2_pct);
@@ -408,9 +442,8 @@ export async function computeStatusView(): Promise<StatusView | null> {
         V.statRewsAtk = numOrDash(totalStats.ranged_attack);
         V.statRewsAcc = numOrDash(totalStats.ranged_accuracy);
         V.statRewsMaccSkill = numOrDash(mainMaccSkill);
-        V.statRewsMaccTotal = numOrDash(rangedSkillValue + mainMaccSkill + magicAccuracyTotal);
+        V.statRewsMaccTotal = numOrDash(maccTotals.ranged);
         V.statRewsMatk = numOrDash(magicAttackTotal);
-        V.statRewsMacc = numOrDash(magicAccuracyTotal);
         V.statRewsMdmg = numOrDash(magicDamageTotal);
         V.statRewsAff = numOrDash(equip.magic_affinity);
         V.statRewsMcrit2 = pctOrDash(equip.magic_critical_hit_2_pct);
@@ -423,12 +456,18 @@ export async function computeStatusView(): Promise<StatusView | null> {
         V.statRewsTpb = numOrDash(equip.tp_bonus);
         V.statRewsScb = numOrDash(skillchainBonusTotal);
         V.statRewsPdl = pctOrDash(equip.physical_damage_limit_pct);
-        V.statRewsTs = numOrDash(equip.true_shot);
+        V.statRewsTs = numOrDash(trueShotTotal);
 
         // ----- Tab 9-19: 魔法 (11 種別) -----
         // 各種別ごとに: 該当スキル + 魔攻/魔命/魔回避/魔法ダメ + INT/MND/CHR/MP
         // 呪歌 (歌唱/弦楽器/管楽器), 風水 (風水/風水鈴) は複数スキルを持つ。
         const effSkillsForMagic = totalStats.effective_skills || {};
+        // レンジスロットの楽器/風水鈴種別 (呪歌・風水の魔命合計とスキル列切替に使う)
+        const songInstrument: 'wind' | 'string' | null =
+            totalStats.ranged_weapon_skill === 'WindInstrument' ? 'wind'
+            : totalStats.ranged_weapon_skill === 'StringInstrument' ? 'string'
+            : null;
+        const geoHandbell = totalStats.ranged_weapon_skill === 'Handbell';
         const magicTabs: { prefix: string; skills: (string | [string, string])[] }[] = [
             { prefix: 'Divine',     skills: ['Divine'] },
             { prefix: 'Healing',    skills: ['Healing'] },
@@ -461,15 +500,47 @@ export async function computeStatusView(): Promise<StatusView | null> {
                         numOrDash(effSkillsForMagic[key]);
                 });
             }
+            // 実効魔命 = 魔命+ + メインの魔命スキル + 当該魔法スキル値。
+            // 種別キー (subtab の kind = prefix 小文字) で maccTotals に追加する。
+            // 呪歌: 歌唱 + 管楽器 (管楽器装備時のみ加算。弦楽器はスキル表示のみで加算しない)
+            // 風水: 風水魔法 + 風水鈴 (レンジに風水鈴装備時のみ加算)
+            let maccMagicSkill: number;
+            if (prefix === 'Song') {
+                maccMagicSkill = (effSkillsForMagic.Singing || 0)
+                    + (songInstrument === 'wind' ? effSkillsForMagic.WindInstrument || 0 : 0);
+            } else if (prefix === 'Geomancy') {
+                maccMagicSkill = (effSkillsForMagic.Geomancy || 0)
+                    + (geoHandbell ? effSkillsForMagic.Handbell || 0 : 0);
+            } else {
+                maccMagicSkill = effSkillsForMagic[skills[0] as string] || 0;
+            }
+            const maccTotal = magicAccuracyTotal + mainMaccSkill + maccMagicSkill;
+            maccTotals[prefix.toLowerCase()] = maccTotal;
+            V[`statMg${prefix}MaccSkill`] = numOrDash(mainMaccSkill);
+            V[`statMg${prefix}MaccTotal`] = numOrDash(maccTotal);
             V[`statMg${prefix}Matk`] = numOrDash(magicAttackTotal);
-            V[`statMg${prefix}Macc`] = numOrDash(magicAccuracyTotal);
-            V[`statMg${prefix}Meva`] = numOrDash(magicEvasionTotal);
             V[`statMg${prefix}Mdmg`] = numOrDash(magicDamageTotal);
+            V[`statMg${prefix}ConserveMp`] = numOrDash(conserveMpTotal);
+            V[`statMg${prefix}FastCast`] = pctOrDash(totalStats.fast_cast_pct);
+            V[`statMg${prefix}QuickMagic`] = pctOrDash(equip.quick_magic_pct);
+            // MB 系は MB の成立する種別のみ表示 (神聖/精霊/暗黒/忍術/青)。
+            // MB.ボーナス = ジョブ特性 + ギフト、MBダメージ/II = 装備抽出
+            if (['Divine', 'Elemental', 'Dark', 'Ninjutsu', 'Blue'].includes(prefix)) {
+                V[`statMg${prefix}MbBonus`] = numOrDash(totalStats.magic_burst_damage);
+                V[`statMg${prefix}MbDmg`] = numOrDash(equip.magic_burst_damage);
+                V[`statMg${prefix}MbDmg2`] = numOrDash(equip.magic_burst_damage_2);
+            }
             V[`statMg${prefix}Int`] = totalStats.int || '-';
             V[`statMg${prefix}Mnd`] = totalStats.mnd || '-';
             V[`statMg${prefix}Chr`] = totalStats.chr || '-';
             V[`statMg${prefix}Mp`] = totalStats.mp || '-';
         });
+
+        // 再詠唱間隔 (装備抽出のみ。データに存在する 4 種: 精霊/青は %、歌/忍術は秒)
+        V.statMgElementalRecast = pctOrDash(equip.elemental_recast_delay_pct);
+        V.statMgBlueRecast = pctOrDash(equip.blue_recast_delay_pct);
+        V.statMgSongRecast = numOrDash(equip.song_recast_delay);
+        V.statMgNinjutsuRecast = numOrDash(equip.ninjutsu_recast_delay);
 
         // 有効スキル値（値が 0 のスキルは非表示）
         const effSkills = totalStats.effective_skills || {};
@@ -498,6 +569,14 @@ export async function computeStatusView(): Promise<StatusView | null> {
                 wsDamagePct,
                 skillchainBonusTotal,
                 statusResists: statusResistTotals,
+                mainMaccSkill,
+                subMaccSkill,
+                maccTotals,
+                trueShotTotal,
+                recycleTotal,
+                doubleShotTotal,
+                tripleShotTotal,
+                conserveMpTotal,
             },
         };
         for (const item of BUILTIN_PROPERTY_ITEMS) {
@@ -515,7 +594,19 @@ export async function computeStatusView(): Promise<StatusView | null> {
             propertyValues[id] = numOrDash(raw);
         }
 
-        return { values: V, effectiveSkills, propertyValues };
+        return {
+            values: V,
+            effectiveSkills,
+            propertyValues,
+            rangedWsWeapon: rangedIsWsWeapon,
+            songInstrument,
+            geoHandbell,
+            weaponSkillKinds: {
+                main: totalStats.main_weapon_skill ?? null,
+                sub: totalStats.sub_weapon_skill ?? null,
+                ranged: totalStats.ranged_weapon_skill ?? null,
+            },
+        };
     } catch (e) {
         console.error('Error calculating equipment edit status:', e);
         return null;

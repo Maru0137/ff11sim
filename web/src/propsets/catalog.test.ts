@@ -67,6 +67,65 @@ describe('BUILTIN_PROPERTY_ITEMS', () => {
     });
 });
 
+describe('魔命スキル/実効魔命 (macc_*)', () => {
+    it('resolve が compute.ts の derived 合成値を表示する (0 は "-")', () => {
+        const ctx = {
+            equip: {},
+            totalStats: {},
+            derived: {
+                magicAttackTotal: 0, magicAccuracyTotal: 0, magicDamageTotal: 0,
+                wsDamagePct: 0, skillchainBonusTotal: 0, statusResists: {},
+                mainMaccSkill: 228, subMaccSkill: 0,
+                maccTotals: { main: 750, ranged: 610, enfeebling: 802, song: 0 },
+                trueShotTotal: 0, recycleTotal: 0,
+                doubleShotTotal: 0, tripleShotTotal: 0, conserveMpTotal: 0,
+            },
+        };
+        expect(BUILTIN_ITEM_BY_ID.get('macc_skill_main')?.resolve(ctx)).toBe(228);
+        expect(BUILTIN_ITEM_BY_ID.get('macc_skill_sub')?.resolve(ctx)).toBe('-');
+        expect(BUILTIN_ITEM_BY_ID.get('macc_main')?.resolve(ctx)).toBe(750);
+        expect(BUILTIN_ITEM_BY_ID.get('macc_ranged')?.resolve(ctx)).toBe(610);
+        expect(BUILTIN_ITEM_BY_ID.get('macc_enfeebling')?.resolve(ctx)).toBe(802);
+        expect(BUILTIN_ITEM_BY_ID.get('macc_song')?.resolve(ctx)).toBe('-');
+    });
+
+    it('実効魔命はメイン/レンジのみ (サブは存在しない)', () => {
+        expect(BUILTIN_ITEM_BY_ID.has('macc_sub')).toBe(false);
+    });
+
+    it('魔法系テンプレート全てが魔命スキルと当該種別の実効魔命を含む', () => {
+        const magicKinds = [
+            'divine', 'healing', 'enhancing', 'enfeebling', 'elemental', 'dark',
+            'summoning', 'ninjutsu', 'song', 'blue', 'geomancy',
+        ];
+        for (const kind of magicKinds) {
+            const ids = TEMPLATE_ITEM_IDS[`subtab-magic-${kind}`];
+            expect(ids, kind).toBeDefined();
+            expect(ids).toContain('macc_skill_main');
+            expect(ids).toContain(`macc_${kind}`);
+        }
+    });
+
+    it('WS 系テンプレート全てが魔命スキルと実効魔命を含む', () => {
+        const wsTemplates = [
+            'subtab-melee-ws', 'subtab-ranged-ws', 'subtab-elemental-ws',
+            'subtab-melee-elemental-ws', 'subtab-ranged-elemental-ws',
+        ];
+        for (const subtabId of wsTemplates) {
+            const ids = TEMPLATE_ITEM_IDS[subtabId];
+            expect(ids, subtabId).toBeDefined();
+            expect(
+                ids.some((id) => id.startsWith('macc_skill_')),
+                `${subtabId}: 魔命スキル項目が必要`
+            ).toBe(true);
+            expect(
+                ids.includes('macc_main') || ids.includes('macc_ranged'),
+                `${subtabId}: 実効魔命項目が必要`
+            ).toBe(true);
+        }
+    });
+});
+
 describe('TEMPLATE_ITEM_IDS', () => {
     it('全エントリが実在するカタログ id を参照する', () => {
         for (const [subtabId, itemIds] of Object.entries(TEMPLATE_ITEM_IDS)) {

@@ -26,6 +26,12 @@ pub enum GiftStatKind {
     RangedAccuracy,
     /// 連携ボーナス効果アップ (%)
     SkillchainBonus,
+    /// ダブルショット発動率 (%) — Rng JP カテゴリ「ダブルショット効果」
+    DoubleShot,
+    /// トリプルショット発動率 (%) — Cor JP カテゴリ「トリプルショット効果」
+    TripleShot,
+    /// リサイクル発動率 (%) — Cor JP カテゴリ「矢弾消費量軽減」
+    Recycle,
     /// Skill bonuses, capacity points, automaton bonuses など、
     /// 現状のステータス計算には反映しないギフトの placeholder
     None,
@@ -96,6 +102,10 @@ pub struct GiftBonuses {
     pub ranged_accuracy: i32,
     /// 連携ボーナス (%) — ジョブ特性 / 装備 / メリット等と合算される
     pub skillchain_bonus: i32,
+    /// ダブル/トリプルショット発動率・リサイクル発動率 (%) — JP カテゴリ由来
+    pub double_shot: i32,
+    pub triple_shot: i32,
+    pub recycle: i32,
 }
 
 impl GiftBonuses {
@@ -113,6 +123,9 @@ impl GiftBonuses {
             GiftStatKind::RangedAttack => self.ranged_attack += value,
             GiftStatKind::RangedAccuracy => self.ranged_accuracy += value,
             GiftStatKind::SkillchainBonus => self.skillchain_bonus += value,
+            GiftStatKind::DoubleShot => self.double_shot += value,
+            GiftStatKind::TripleShot => self.triple_shot += value,
+            GiftStatKind::Recycle => self.recycle += value,
             GiftStatKind::None => {}
         }
     }
@@ -141,15 +154,35 @@ fn jp_category_effects(job: Job) -> &'static [JpCategoryEffect] {
             stat: PhysicalAttack,
             per_rank: 1,
         }],
-        // Cor:
-        //   category 7 「遠隔命中アップ」: 飛命 +1/rank
-        //   category 9 「適正距離の遠隔攻撃力アップ」: 飛攻 +2/rank は条件付き（適正距離）のため
-        //   ステータス表示には反映しない
-        Job::Cor => &[JpCategoryEffect {
+        // Rng: category 7 「ダブルショット効果」: ダブルショット発動率 +1%/rank
+        Job::Rng => &[JpCategoryEffect {
             category_index: 7,
-            stat: RangedAccuracy,
+            stat: DoubleShot,
             per_rank: 1,
         }],
+        // Cor:
+        //   category 5 「矢弾消費量軽減」: リサイクル発動率 +1%/rank
+        //   category 7 「遠隔命中アップ」: 飛命 +1/rank
+        //   category 8 「トリプルショット効果」: トリプルショット発動率 +1%/rank
+        //   category 9 「適正距離の遠隔攻撃力アップ」: 飛攻 +2/rank は条件付き（適正距離）のため
+        //   ステータス表示には反映しない
+        Job::Cor => &[
+            JpCategoryEffect {
+                category_index: 5,
+                stat: Recycle,
+                per_rank: 1,
+            },
+            JpCategoryEffect {
+                category_index: 7,
+                stat: RangedAccuracy,
+                per_rank: 1,
+            },
+            JpCategoryEffect {
+                category_index: 8,
+                stat: TripleShot,
+                per_rank: 1,
+            },
+        ],
         // Whm: category 3 は Magic Accuracy Bonus (+1 MACC/rank)
         Job::Whm => &[JpCategoryEffect {
             category_index: 3,
@@ -203,6 +236,9 @@ pub fn calc_gift_bonuses(job: Job, total_jp: i32) -> GiftBonuses {
         ranged_attack: 0,
         ranged_accuracy: 0,
         skillchain_bonus: job.gift_value(Gift::SkillchainBonus, total_jp),
+        double_shot: 0,
+        triple_shot: 0,
+        recycle: 0,
     }
 }
 

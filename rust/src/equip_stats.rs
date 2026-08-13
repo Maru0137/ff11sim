@@ -183,6 +183,14 @@ pub struct EquipStats {
     pub true_shot: i32,
     pub magic_critical_hit_2_pct: i32,
     pub magic_affinity: i32,
+    pub magic_burst_damage: i32,
+    pub magic_burst_damage_2: i32,
+    pub conserve_mp: i32,
+    // 再詠唱間隔 (精霊/青は %、歌/忍術は秒。値は装備テキストどおり負数)
+    pub elemental_recast_delay_pct: i32,
+    pub blue_recast_delay_pct: i32,
+    pub song_recast_delay: i32,
+    pub ninjutsu_recast_delay: i32,
     pub damage_taken_pct: i32,
     pub physical_damage_taken_pct: i32,
     pub magic_damage_taken_pct: i32,
@@ -196,6 +204,11 @@ pub struct EquipStats {
     pub quick_magic_pct: i32,
     pub snapshot_pct: i32,
     pub rapid_shot_pct: i32,
+    pub double_shot_pct: i32,
+    pub triple_shot_pct: i32,
+    pub double_shot_damage_pct: i32,
+    pub triple_shot_damage_pct: i32,
+    pub recycle: i32,
     // 属性耐性 8 種
     pub resist_fire: i32,
     pub resist_ice: i32,
@@ -271,6 +284,16 @@ impl EquipStats {
             ("true_shot", self.true_shot),
             ("magic_critical_hit_2_pct", self.magic_critical_hit_2_pct),
             ("magic_affinity", self.magic_affinity),
+            ("magic_burst_damage", self.magic_burst_damage),
+            ("magic_burst_damage_2", self.magic_burst_damage_2),
+            ("conserve_mp", self.conserve_mp),
+            (
+                "elemental_recast_delay_pct",
+                self.elemental_recast_delay_pct,
+            ),
+            ("blue_recast_delay_pct", self.blue_recast_delay_pct),
+            ("song_recast_delay", self.song_recast_delay),
+            ("ninjutsu_recast_delay", self.ninjutsu_recast_delay),
             ("damage_taken_pct", self.damage_taken_pct),
             ("physical_damage_taken_pct", self.physical_damage_taken_pct),
             ("magic_damage_taken_pct", self.magic_damage_taken_pct),
@@ -284,6 +307,11 @@ impl EquipStats {
             ("quick_magic_pct", self.quick_magic_pct),
             ("snapshot_pct", self.snapshot_pct),
             ("rapid_shot_pct", self.rapid_shot_pct),
+            ("double_shot_pct", self.double_shot_pct),
+            ("triple_shot_pct", self.triple_shot_pct),
+            ("double_shot_damage_pct", self.double_shot_damage_pct),
+            ("triple_shot_damage_pct", self.triple_shot_damage_pct),
+            ("recycle", self.recycle),
             ("resist_fire", self.resist_fire),
             ("resist_ice", self.resist_ice),
             ("resist_wind", self.resist_wind),
@@ -364,6 +392,13 @@ impl EquipStats {
             "true_shot" => self.true_shot = v,
             "magic_critical_hit_2_pct" => self.magic_critical_hit_2_pct = v,
             "magic_affinity" => self.magic_affinity = v,
+            "magic_burst_damage" => self.magic_burst_damage = v,
+            "magic_burst_damage_2" => self.magic_burst_damage_2 = v,
+            "conserve_mp" => self.conserve_mp = v,
+            "elemental_recast_delay_pct" => self.elemental_recast_delay_pct = v,
+            "blue_recast_delay_pct" => self.blue_recast_delay_pct = v,
+            "song_recast_delay" => self.song_recast_delay = v,
+            "ninjutsu_recast_delay" => self.ninjutsu_recast_delay = v,
             "damage_taken_pct" => self.damage_taken_pct = v,
             "physical_damage_taken_pct" => self.physical_damage_taken_pct = v,
             "magic_damage_taken_pct" => self.magic_damage_taken_pct = v,
@@ -377,6 +412,11 @@ impl EquipStats {
             "quick_magic_pct" => self.quick_magic_pct = v,
             "snapshot_pct" => self.snapshot_pct = v,
             "rapid_shot_pct" => self.rapid_shot_pct = v,
+            "double_shot_pct" => self.double_shot_pct = v,
+            "triple_shot_pct" => self.triple_shot_pct = v,
+            "double_shot_damage_pct" => self.double_shot_damage_pct = v,
+            "triple_shot_damage_pct" => self.triple_shot_damage_pct = v,
+            "recycle" => self.recycle = v,
             "resist_fire" => self.resist_fire = v,
             "resist_ice" => self.resist_ice = v,
             "resist_wind" => self.resist_wind = v,
@@ -448,6 +488,13 @@ impl EquipStats {
         self.true_shot += other.true_shot;
         self.magic_critical_hit_2_pct += other.magic_critical_hit_2_pct;
         self.magic_affinity += other.magic_affinity;
+        self.magic_burst_damage += other.magic_burst_damage;
+        self.magic_burst_damage_2 += other.magic_burst_damage_2;
+        self.conserve_mp += other.conserve_mp;
+        self.elemental_recast_delay_pct += other.elemental_recast_delay_pct;
+        self.blue_recast_delay_pct += other.blue_recast_delay_pct;
+        self.song_recast_delay += other.song_recast_delay;
+        self.ninjutsu_recast_delay += other.ninjutsu_recast_delay;
         self.damage_taken_pct += other.damage_taken_pct;
         self.physical_damage_taken_pct += other.physical_damage_taken_pct;
         self.magic_damage_taken_pct += other.magic_damage_taken_pct;
@@ -461,6 +508,11 @@ impl EquipStats {
         self.quick_magic_pct += other.quick_magic_pct;
         self.snapshot_pct += other.snapshot_pct;
         self.rapid_shot_pct += other.rapid_shot_pct;
+        self.double_shot_pct += other.double_shot_pct;
+        self.triple_shot_pct += other.triple_shot_pct;
+        self.double_shot_damage_pct += other.double_shot_damage_pct;
+        self.triple_shot_damage_pct += other.triple_shot_damage_pct;
+        self.recycle += other.recycle;
         self.resist_fire += other.resist_fire;
         self.resist_ice += other.resist_ice;
         self.resist_wind += other.resist_wind;
@@ -623,8 +675,11 @@ pub fn extract_all_stats(description_en: &str) -> EquipStats {
     s.ranged_attack = signed(&format!(r"ranged attack{WS}*([+-]){WS}*([0-9]+)(?!%)"));
     s.ranged_accuracy = signed(&format!(r"ranged accuracy{WS}*([+-]){WS}*([0-9]+)"));
     // 属性別 Magic Atk. Bonus (`dark elemental "magic atk. bonus"+28`) は通常の魔攻に積まれない。
+    // プライム武器 (アウゲー/ダデュコ/テロパノ) は引用符なしの非省略形
+    // `Magic Attack Bonus +52` を使うため両形を受ける
+    // 後読みは引用符あり/なし両方の開始位置で属性別を除外する
     s.magic_attack = signed(&format!(
-        r#"(?<!elemental )"magic atk\.? bonus"{WS}*([+-]){WS}*([0-9]+)"#
+        r#"(?<!elemental )(?<!elemental ")"?magic at(?:k\.?|tack) bonus"?{WS}*([+-]){WS}*([0-9]+)"#
     ));
     s.magic_accuracy = signed(&format!(r"magic accuracy{WS}*([+-]){WS}*([0-9]+)"));
     // 装備の "Magic Accuracy skill +X" は通常の魔命と別枠。
@@ -694,6 +749,25 @@ pub fn extract_all_stats(description_en: &str) -> EquipStats {
     ));
     s.magic_affinity = signed(&format!(r"(?<![a-z])affinity{WS}*([+-]){WS}*([0-9]+)"));
 
+    // === マジックバースト / 詠唱系 ===
+    // II を先に判定する必要はない (I のパターンは "damage" 直後に符号を要求するため
+    // "damage ii" には一致しない)。数値なしの旧表記
+    // "Bonus damage added to magic burst" はどちらにも一致しない
+    s.magic_burst_damage_2 = signed(&format!(
+        r"magic burst damage{WS}*ii{WS}*([+-]){WS}*([0-9]+)"
+    ));
+    s.magic_burst_damage = signed(&format!(r"magic burst damage{WS}*([+-]){WS}*([0-9]+)"));
+    s.conserve_mp = signed(&format!(r#""conserve mp"{WS}*([+-]){WS}*([0-9]+)"#));
+    // 再詠唱間隔: 精霊/青は %、歌/忍術は秒 (符号込みで負数として抽出)
+    s.elemental_recast_delay_pct = signed(&format!(
+        r"elemental magic recast delay{WS}*([+-]){WS}*([0-9]+)%"
+    ));
+    s.blue_recast_delay_pct = signed(&format!(
+        r"blue magic recast delay{WS}*([+-]){WS}*([0-9]+)%"
+    ));
+    s.song_recast_delay = signed(&format!(r"song recast delay{WS}*([+-]){WS}*([0-9]+)"));
+    s.ninjutsu_recast_delay = signed(&format!(r"ninjutsu recast delay{WS}*([+-]){WS}*([0-9]+)"));
+
     // === 被ダメージ系 ===
     s.damage_taken_pct = signed(&format!(
         r"(?<!physical )(?<!magic )damage taken{WS}*([+-]){WS}*([0-9]+)%"
@@ -714,6 +788,22 @@ pub fn extract_all_stats(description_en: &str) -> EquipStats {
     s.quick_magic_pct = signed(&format!(r#""?quick magic"?{WS}*([+-]?){WS}*([0-9]+)%?"#));
     s.snapshot_pct = signed(&format!(r#""?snapshot"?{WS}*([+-]?){WS}*([0-9]+)%?"#));
     s.rapid_shot_pct = signed(&format!(r#""?rapid shot"?{WS}*([+-]?){WS}*([0-9]+)%?"#));
+
+    // === 遠隔プロパティ ===
+    // ダブル/トリプルショットは "+N%" 形式のみ対象。
+    // "Double Shot" damage+N (ダメージ増) や Enhances "..." effect (効果アップ) は
+    // 別プロパティのため一致させない
+    s.double_shot_pct = signed(&format!(r#""double shot"{WS}*([+-]){WS}*([0-9]+)%"#));
+    s.triple_shot_pct = signed(&format!(r#""triple shot"{WS}*([+-]){WS}*([0-9]+)%"#));
+    // ダメージ増は "damage +N" / "damage+N" の空白ゆれあり・% なし
+    s.double_shot_damage_pct = signed(&format!(
+        r#""double shot"{WS}*damage{WS}*([+-]){WS}*([0-9]+)%?"#
+    ));
+    s.triple_shot_damage_pct = signed(&format!(
+        r#""triple shot"{WS}*damage{WS}*([+-]){WS}*([0-9]+)%?"#
+    ));
+    // リサイクルは単位なし ("Recycle"+15)。数値なしの Adds "Recycle" effect は対象外
+    s.recycle = signed(&format!(r#""recycle"{WS}*([+-]){WS}*([0-9]+)"#));
 
     // === 属性レジスト ===
     let elem_resist = |elem: &str| {
@@ -920,9 +1010,14 @@ pub fn extract_skill_bonuses(description_en: &str) -> BTreeMap<&'static str, i32
 /// **並び順に意味がある。** 単純な順次置換なので、長い表記を先に置かないと
 /// 部分一致で壊れる (例: 「魔法クリティカルヒットII」を「魔法クリティカルヒット率」
 /// より先に、「攻」を最後に置く)。`web/js/constants.js` の順序をそのまま保つこと。
-static AUGMENT_JA_TO_EN: [(&str, &str); 76] = [
+static AUGMENT_JA_TO_EN: [(&str, &str); 86] = [
     ("ウェポンスキルのダメージ", "Weapon skill damage"),
     ("マジックバーストダメージ", "Magic burst damage"),
+    ("コンサーブMP", "\"Conserve MP\""),
+    ("精霊魔法の再詠唱間隔", "Elemental magic recast delay"),
+    ("青魔法の再詠唱間隔", "Blue magic recast delay"),
+    ("歌再詠唱間隔", "Song recast delay"),
+    ("忍術再詠唱間隔", "Ninjutsu recast delay"),
     ("魔法クリティカルヒットII", "Magic Crit. Hit Rate II"),
     ("魔法クリティカルヒット率", "Magic Critical hit rate"),
     ("物理ダメージ上限", "Physical damage limit"),
@@ -997,6 +1092,12 @@ static AUGMENT_JA_TO_EN: [(&str, &str); 76] = [
     // 連携ダメージ +N% (Mpaca 系オーグメント等) は内部的に Skillchain Bonus と同種扱い
     ("連携ダメージ", "\"Skillchain Bonus\""),
     ("トゥルーショット", "\"True Shot\""),
+    // ダメージ増を先に変換する (ダブルショット単体の部分一致回避)
+    ("ダブルショットダメージ", "\"Double Shot\" damage"),
+    ("ダブルショット", "\"Double Shot\""),
+    ("トリプルショットダメージ", "\"Triple Shot\" damage"),
+    ("トリプルショット", "\"Triple Shot\""),
+    ("リサイクル", "\"Recycle\""),
     ("アフィニティ", "Affinity"),
     ("ヘイスト", "Haste"),
     ("魔回避", "Magic Evasion"),
@@ -1240,6 +1341,76 @@ mod tests {
     // --- 空入力 -----------------------------------------------------------
 
     #[test]
+    fn double_triple_shot_and_recycle() {
+        let s = extract_all_stats(r#""Double Shot"+5% "Triple Shot"+10% "Recycle"+15"#);
+        assert_eq!(s.double_shot_pct, 5);
+        assert_eq!(s.triple_shot_pct, 10);
+        assert_eq!(s.recycle, 15);
+    }
+
+    #[test]
+    fn prime_weapon_unquoted_magic_attack_bonus() {
+        // テロパノセイバー (22188): プライム武器は引用符なしの
+        // "Magic Attack Bonus +52" 表記 (通常装備は `"Magic Atk. Bonus"+52`)
+        let s = extract_all_stats(
+            "DMG:157 Delay:233 Accuracy+32 Magic Accuracy+32 Magic Attack Bonus +52\nMagic damage +250 Sword skill +255\nParrying skill +255 Magic Accuracy skill +255\nHaste+5%\nPhysical damage limit +5%\nDamage taken -5%",
+        );
+        assert_eq!(s.magic_attack, 52);
+        assert_eq!(s.magic_damage, 250);
+        assert_eq!(s.magic_accuracy, 32);
+        // 属性別魔攻の除外は引用符なし形でも維持される
+        let s = extract_all_stats(r#"Dark Elemental "Magic Atk. Bonus"+28"#);
+        assert_eq!(s.magic_attack, 0);
+    }
+
+    #[test]
+    fn magic_burst_damage_and_ii() {
+        // 実データは "Magic burst damage +10" / "Magic Burst damage +7" /
+        // "Magic burst damage II +5" の表記ゆれがある
+        let s = extract_all_stats("Magic burst damage +10\nMagic burst damage II +5");
+        assert_eq!(s.magic_burst_damage, 10);
+        assert_eq!(s.magic_burst_damage_2, 5);
+        // 数値なしの旧表記は対象外
+        let s = extract_all_stats("Bonus damage added to magic burst");
+        assert_eq!(s.magic_burst_damage, 0);
+        assert_eq!(s.magic_burst_damage_2, 0);
+    }
+
+    #[test]
+    fn conserve_mp_and_recast_delays() {
+        let s = extract_all_stats(
+            "\"Conserve MP\"+6 Elemental magic recast delay -15%\nBlue magic recast delay -16%\nSong recast delay -3 Ninjutsu recast delay -1",
+        );
+        assert_eq!(s.conserve_mp, 6);
+        assert_eq!(s.elemental_recast_delay_pct, -15);
+        assert_eq!(s.blue_recast_delay_pct, -16);
+        assert_eq!(s.song_recast_delay, -3);
+        assert_eq!(s.ninjutsu_recast_delay, -1);
+    }
+
+    #[test]
+    fn double_triple_shot_damage() {
+        // 実データは "damage +11" (空白入り) と "damage+8" の両形がある
+        let s = extract_all_stats(r#""Double Shot" damage +11 "Triple Shot" damage+10"#);
+        assert_eq!(s.double_shot_damage_pct, 11);
+        assert_eq!(s.triple_shot_damage_pct, 10);
+        // ダメージ増は発動率 (+N%) には混入しない
+        assert_eq!(s.double_shot_pct, 0);
+        assert_eq!(s.triple_shot_pct, 0);
+    }
+
+    #[test]
+    fn double_shot_damage_and_effect_variants_are_excluded() {
+        // ダメージ増・効果アップ・数値なしリサイクルは発動率/軽減量の抽出対象外
+        let s = extract_all_stats(
+            r#""Double Shot" damage+8 Enhances "Triple Shot" effect Adds "Recycle" effect"#,
+        );
+        assert_eq!(s.double_shot_pct, 0);
+        assert_eq!(s.triple_shot_pct, 0);
+        assert_eq!(s.recycle, 0);
+    }
+
+    #[test]
     fn empty_description_yields_default() {
         assert_eq!(extract_all_stats(""), EquipStats::default());
     }
@@ -1390,6 +1561,13 @@ mod tests {
             true_shot,
             magic_critical_hit_2_pct,
             magic_affinity,
+            magic_burst_damage,
+            magic_burst_damage_2,
+            conserve_mp,
+            elemental_recast_delay_pct,
+            blue_recast_delay_pct,
+            song_recast_delay,
+            ninjutsu_recast_delay,
             damage_taken_pct,
             physical_damage_taken_pct,
             magic_damage_taken_pct,
@@ -1403,6 +1581,11 @@ mod tests {
             quick_magic_pct,
             snapshot_pct,
             rapid_shot_pct,
+            double_shot_pct,
+            triple_shot_pct,
+            double_shot_damage_pct,
+            triple_shot_damage_pct,
+            recycle,
             resist_fire,
             resist_ice,
             resist_wind,

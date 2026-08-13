@@ -175,7 +175,13 @@ export function StatusPanel() {
                     <CustomPropsetGrid set={customSet} userItems={propsets.userItems} view={view} />
                 </div>
             ) : (
-                <SubtabContents v={v} activeId={selection.slice(TEMPLATE_PREFIX.length)} />
+                <SubtabContents
+                    v={v}
+                    activeId={selection.slice(TEMPLATE_PREFIX.length)}
+                    showRangedWsRow={view?.rangedWsWeapon ?? false}
+                    songInstrument={view?.songInstrument ?? null}
+                    geoHandbell={view?.geoHandbell ?? false}
+                />
             )}
 
             <EffectiveSkillsSection>

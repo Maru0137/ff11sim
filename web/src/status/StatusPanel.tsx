@@ -2,8 +2,8 @@
 // 用途別ステータスはサブタブバーからプロパティセットのドロップダウンに
 // 置き換え (docs/adr/0015)。テンプレート (現行 19 タブ) の表示 JSX は
 // StatusTables.tsx の SubtabContents をそのまま使い、カスタムセットは
-// CustomPropsetGrid で描画する。選択は装備セットごとに記憶する
-// (selection-prefs、ローカル専用)。
+// CustomPropsetGrid で描画する。選択は装備セットレコードに載せて
+// 保存時に記憶する (equipState.propsetSelection)。
 import { useEffect, useMemo, useState, useSyncExternalStore } from 'react';
 import { statusStore } from './status-store';
 import {
@@ -14,17 +14,12 @@ import {
     EffectiveSkillsSection,
 } from './StatusTables';
 import { BreakdownModal } from './BreakdownModal';
-import { equipState, subscribeEquipState, getEquipStateVersion } from '../equip/equip-store';
+import { equipState, subscribeSlotsGeneration, getSlotsGeneration } from '../equip/equip-store';
 import { isShareMode } from '../share-ui';
 import { propsetsStore } from '../propsets/propsets-store';
 import { TEMPLATE_ITEM_IDS } from '../propsets/catalog';
 import { CustomPropsetGrid } from '../propsets/CustomPropsetGrid';
 import { PropsetManageModal } from '../propsets/PropsetManageModal';
-import {
-    equipSetPrefKey,
-    getSelectedPropsetId,
-    setSelectedPropsetId,
-} from '../propsets/selection-prefs';
 import '../../styles/propsets.css';
 
 const TEMPLATE_PREFIX = 'template:';
@@ -33,35 +28,33 @@ const DEFAULT_SELECTION = 'template:subtab-defense';
 export function StatusPanel() {
     const view = useSyncExternalStore(statusStore.subscribe, statusStore.get);
     const propsets = useSyncExternalStore(propsetsStore.subscribe, propsetsStore.get);
-    // editingEquipSetName (装備セット切替) の変化を拾う
-    useSyncExternalStore(subscribeEquipState, getEquipStateVersion);
+    // 装備セットの読み込み (セット切替・新規フォーム) の変化を拾う
+    const generation = useSyncExternalStore(subscribeSlotsGeneration, getSlotsGeneration);
     const [selection, setSelection] = useState(DEFAULT_SELECTION);
     const [modal, setModal] = useState<{ setId?: string } | null>(null);
     // 内訳モーダル (docs/adr/0016)。読み取り専用機能なので share mode でも開ける
     const [breakdown, setBreakdown] = useState<'status' | 'propset' | null>(null);
 
     const readOnly = isShareMode();
-    const currentSetKey = equipState.editingEquipSetName
-        ? equipSetPrefKey(
-              equipState.currentEquipChar,
-              equipState.currentEquipJob,
-              equipState.editingEquipSetName
-          )
-        : null;
 
-    // 装備セット切替時: 記憶していた選択を検証付きで復元
+    // 装備セット読み込み時: レコードに保存された選択を検証付きで復元
     useEffect(() => {
-        if (!currentSetKey) return;
-        const stored = getSelectedPropsetId(currentSetKey);
+        const stored = equipState.propsetSelection;
         if (!stored) {
             setSelection(DEFAULT_SELECTION);
             return;
         }
-        const valid = stored.startsWith(TEMPLATE_PREFIX)
-            ? TEMPLATE_PROPSETS.some((t) => t.id === stored.slice(TEMPLATE_PREFIX.length))
-            : propsetsStore.get().sets.some((s) => s.id === stored);
-        setSelection(valid ? stored : DEFAULT_SELECTION);
-    }, [currentSetKey]);
+        if (stored.startsWith(TEMPLATE_PREFIX)) {
+            const valid = TEMPLATE_PROPSETS.some(
+                (t) => t.id === stored.slice(TEMPLATE_PREFIX.length)
+            );
+            setSelection(valid ? stored : DEFAULT_SELECTION);
+            return;
+        }
+        // カスタムセットはロード完了後に判定する (ログイン時は Supabase から非同期に届く)
+        if (!propsets.loaded) return;
+        setSelection(propsets.sets.some((s) => s.id === stored) ? stored : DEFAULT_SELECTION);
+    }, [generation, propsets]);
 
     // 選択中のカスタムセットが削除されたら既定へフォールバック
     useEffect(() => {
@@ -73,9 +66,8 @@ export function StatusPanel() {
 
     const handleSelect = (id: string) => {
         setSelection(id);
-        if (currentSetKey && !readOnly) {
-            setSelectedPropsetId(currentSetKey, id);
-        }
+        // 次回の装備セット保存時にレコードへ載る
+        equipState.propsetSelection = id;
     };
 
     const v = (id: string): string | number => view?.values[id] ?? '-';

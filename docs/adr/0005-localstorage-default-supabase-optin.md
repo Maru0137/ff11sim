@@ -50,10 +50,11 @@ decision-makers: Akira Maruoka
   `(user_id, name, character_name, job)`。Supabase 側の unique 制約と一致させる。
 - API はすべて async。呼び出し側は `await` が必須。
 - 例外として **UI プリファレンス層** を認める（[ADR 0015](0015-property-sets.md) で追記）:
-  消えても実害のない端末ローカルの UI 状態（サイドバー開閉 `ff11sim_nav_collapsed`、
-  プロパティセット選択記憶 `ff11sim_propset_selection`）は facade を通さず
-  localStorage に直接保存し、Supabase には同期しない。頻繁な書き込みが
+  消えても実害のない端末ローカルの UI 状態（サイドバー開閉 `ff11sim_nav_collapsed`）は
+  facade を通さず localStorage に直接保存し、Supabase には同期しない。頻繁な書き込みが
   全件 upsert を誘発しないようにするためで、ユーザーデータ本体には適用しない。
+  （プロパティセット選択記憶は当初この層だったが、[ADR 0015](0015-property-sets.md) の
+  2026-08-13 改訂で装備セットレコードへ移動した。）
 
 ### Consequences
 
@@ -87,7 +88,7 @@ decision-makers: Akira Maruoka
   （[ADR 0001](0001-rust-wasm-static-site.md)）、Web 側の永続化はテスト対象外。
 * facade を迂回して localStorage を直接読む箇所が新たに追加されても検出できない。
   現状 `web/js/sync.js` は同期処理の性質上、また UI プリファレンス層
-  （`ff11sim_nav_collapsed` / `ff11sim_propset_selection`）は上記の例外規定により、
+  （`ff11sim_nav_collapsed`）は上記の例外規定により、
   意図的に localStorage を直接読み書きしている。
 
 ## Pros and Cons of the Options

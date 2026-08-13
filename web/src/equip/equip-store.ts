@@ -35,6 +35,12 @@ export const equipState = {
     currentEquipSlots: {} as Record<string, EquipSlotData | null | undefined>,
     /** 編集中セット名 (新規なら null) */
     editingEquipSetName: null as string | null,
+    /**
+     * プロパティセット選択 id ('template:subtab-*' またはカスタム UUID)。
+     * 装備セットの保存時にレコードへ載せて端末間同期する (docs/adr/0015)。
+     * null は未選択 (既定表示)
+     */
+    propsetSelection: null as string | null,
     /** "+" タブから新規作成中なら true */
     isNewEquipSet: false,
     /** 共有閲覧モード時のキャラクター snapshot (loadCharacters() に存在しないため)。null なら通常モード */

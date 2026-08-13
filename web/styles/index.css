@@ -856,7 +856,9 @@ input[type="checkbox"] {
 }
 .modal-box.modal-large {
     width: min(720px, 95vw);
-    max-height: 85vh;
+    /* dvh: モバイルのブラウザ UI (アドレスバー等) を除いた実可視領域基準。
+       モバイル用の .modal-box 側 (85dvh) と単位を揃える */
+    max-height: 85dvh;
     overflow-y: auto;
 }
 

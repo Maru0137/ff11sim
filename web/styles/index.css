@@ -796,7 +796,9 @@ input[type="checkbox"] {
     box-shadow: -2px 0 0 #f0c040;
 }
 
-@media (max-width: 600px) {
+/* モバイル閾値は 768px に統一 (AppShell breakpoint 'sm' / 各モーダルの
+   fullScreen 判定と同じ) */
+@media (max-width: 768px) {
     .container {
         grid-template-columns: 1fr;
     }
@@ -854,7 +856,9 @@ input[type="checkbox"] {
 }
 .modal-box.modal-large {
     width: min(720px, 95vw);
-    max-height: 85vh;
+    /* dvh: モバイルのブラウザ UI (アドレスバー等) を除いた実可視領域基準。
+       モバイル用の .modal-box 側 (85dvh) と単位を揃える */
+    max-height: 85dvh;
     overflow-y: auto;
 }
 
@@ -944,4 +948,41 @@ body.share-mode #btnCopyEquipSet,
 body.share-mode #btnDeleteEquipSet,
 body.share-mode #btnShareEquipSet {
     display: none !important;
+}
+
+/* ===== モバイル調整 ===== */
+@media (max-width: 768px) {
+    /* iOS Safari はフォント 16px 未満の入力にフォーカスすると自動ズームし、
+       ズームしたままモーダルのスクロールロックに入ると閉じるボタンが
+       画面外に出て操作不能になる。16px 以上にして自動ズーム自体を防ぐ。
+       (各所の 12-14px 指定より優先させるため !important) */
+    input,
+    select,
+    textarea {
+        font-size: 16px !important;
+    }
+
+    .view-content {
+        padding: 12px;
+    }
+
+    /* 名前入力とボタン群を 2 段に分け、入力欄の幅を確保する */
+    .equipset-toolbar {
+        flex-wrap: wrap;
+    }
+
+    .equipset-toolbar .form-group {
+        flex: 1 1 100%;
+    }
+
+    /* レガシーモーダルが縦に収まらない場合に内部スクロールさせる */
+    .modal-box {
+        max-height: 85dvh;
+        overflow-y: auto;
+    }
+
+    /* カスタムオーグヘルプの表は幅が足りないので横スクロールで逃がす */
+    .modal-box.modal-large {
+        overflow-x: auto;
+    }
 }

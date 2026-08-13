@@ -105,7 +105,10 @@ function cellText(v: BreakdownCell): string {
 }
 
 export function BreakdownModal({ mode, title, itemIds, view, onClose }: BreakdownModalProps) {
-    const isMobile = useMediaQuery('(max-width: 768px)') ?? false;
+    // getInitialValueInEffect: false — 初回レンダーから fullScreen を確定させる
+    const isMobile = useMediaQuery('(max-width: 768px)', false, {
+        getInitialValueInEffect: false,
+    });
     const [model, setModel] = useState<BreakdownModel | null>(null);
     const [failed, setFailed] = useState(false);
     const [hideEmpty, setHideEmpty] = useState(false);
@@ -143,6 +146,8 @@ export function BreakdownModal({ mode, title, itemIds, view, onClose }: Breakdow
             size="90%"
             zIndex={900}
             fullScreen={isMobile}
+            // スクロールロック中もピンチズーム/パンを許可 (iOS Safari 対策)
+            removeScrollProps={{ allowPinchZoom: true }}
         >
             {failed ? (
                 <div className="breakdown-empty">内訳を計算できませんでした</div>

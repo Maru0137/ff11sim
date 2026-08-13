@@ -35,7 +35,10 @@ export function PropsetManageModal({
     /** 指定時はそのカスタムセットの編集ビューで開く (「このセットを編集」用) */
     initialSetId?: string;
 }) {
-    const isMobile = useMediaQuery('(max-width: 768px)') ?? false;
+    // getInitialValueInEffect: false — 初回レンダーから fullScreen を確定させる
+    const isMobile = useMediaQuery('(max-width: 768px)', false, {
+        getInitialValueInEffect: false,
+    });
     const [view, setView] = useState<View>(() => {
         if (initialSetId) {
             const s = propsetsStore.get().sets.find((x) => x.id === initialSetId);
@@ -53,6 +56,8 @@ export function PropsetManageModal({
             // AppShell (zIndex 200) より上、レガシーモーダル (z-index 1000) より下
             zIndex={900}
             fullScreen={isMobile}
+            // スクロールロック中もピンチズーム/パンを許可 (iOS Safari 対策)
+            removeScrollProps={{ allowPinchZoom: true }}
         >
             {view.kind === 'list' ? (
                 <ListView

@@ -41,7 +41,8 @@ export function AppLayout({ views, activeView, children }: AppLayoutProps) {
                 breakpoint: 'sm',
                 collapsed: { mobile: !mobileOpened, desktop: false },
             }}
-            padding="lg"
+            // モバイルでは .view-content 側の padding と二重になるので詰める
+            padding={{ base: 'xs', sm: 'lg' }}
             transitionDuration={200}
             zIndex={SHELL_Z_INDEX}
         >

@@ -313,3 +313,57 @@
     background: #16213e;
     box-shadow: inset 3px 0 0 #f0c040;
 }
+
+/* ===== モバイル調整 ===== */
+@media (max-width: 768px) {
+    /* 4x4 配置を保ったまま、余白とフォントを詰めてセルの表示幅を稼ぐ */
+    .equip-grid-panel {
+        padding: 10px;
+    }
+
+    .equip-grid {
+        gap: 4px;
+    }
+
+    .equip-cell {
+        padding: 5px 6px;
+        min-height: 56px;
+        gap: 2px;
+    }
+
+    .equip-cell-slot {
+        font-size: 9px;
+    }
+
+    .equip-cell-name {
+        font-size: 11px;
+    }
+
+    .equip-cell-summary {
+        font-size: 10px;
+    }
+
+    /* 検索入力を 1 行占有させ、IL119 チェックと件数は下の行へ */
+    .equip-modal-search-row {
+        flex-wrap: wrap;
+    }
+
+    .equip-modal-query {
+        flex: 1 1 100%;
+    }
+
+    /* ラベルの固定幅 110px をやめ、select / input を全幅にして縦積みに */
+    .equip-modal-control-row > label {
+        width: auto;
+    }
+
+    .equip-modal-aug-path {
+        flex: 1 1 100%;
+        min-width: 0;
+    }
+
+    .equip-modal-custom-desc {
+        flex: 1 1 100%;
+        min-width: 0;
+    }
+}

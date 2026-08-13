@@ -199,7 +199,8 @@
     gap: 16px;
 }
 
-@media (max-width: 640px) {
+/* モバイル閾値は 768px に統一 */
+@media (max-width: 768px) {
     .propset-edit-cols {
         grid-template-columns: 1fr;
     }

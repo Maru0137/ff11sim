@@ -454,19 +454,23 @@ mod tests {
     }
 
     #[test]
-    fn mp_all_zero_when_main_job_has_no_mp() {
-        // War はメインジョブに MP グレードなし → 全ソースの MP 行が空
+    fn mp_excludes_race_main_mlv_when_main_job_has_no_mp() {
+        // メインジョブに MP グレードがない場合、種族・メインジョブ・ML の MP は
+        // 除外し、サポートジョブ以降のソースのみ合算する
+        // race(Tar A: 除外) + main(War: 0) + sub(Blm B@49:420/2=210) + mlv(除外) = 210
         let chara = Chara::builder()
             .race(Race::Tar)
             .main_job(Job::War, 99)
             .support_job(Job::Blm, 49)
-            .master_lv(0)
+            .master_lv(50)
             .build()
             .unwrap();
         let b = chara_breakdown(&chara);
-        for src in b.rows.keys() {
-            assert_eq!(cell(&b, src, "mp"), 0.0, "mp must be 0 for source {src}");
-        }
+        assert_eq!(cell(&b, SRC_RACE, "mp"), 0.0);
+        assert_eq!(cell(&b, SRC_MAIN_JOB, "mp"), 0.0);
+        assert_eq!(cell(&b, SRC_SUPPORT_JOB, "mp"), 210.0);
+        assert_eq!(cell(&b, SRC_MASTER_LEVEL, "mp"), 0.0);
+        assert_eq!(chara.status(StatusKind::Mp), 210);
     }
 
     #[test]

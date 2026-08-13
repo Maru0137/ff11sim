@@ -95,14 +95,17 @@ impl Chara {
 
     /// ステータス値のソース別分解。`status()` はこの合成 (`StatusParts::total`)。
     pub fn status_parts(&self, kind: StatusKind) -> StatusParts {
-        // For MP: if main job has no MP, all sources contribute 0 (equip included)
-        if kind == StatusKind::Mp && self.main_job.status_grade(StatusKind::Mp).is_none() {
-            return StatusParts::default();
-        }
+        // メインジョブに MP グレードがない場合、種族・メインジョブ・ML の MP は
+        // 加算されない (サポートジョブ・メリット・特性・装備分は有効)
+        let exclude_race_mlv =
+            kind == StatusKind::Mp && self.main_job.status_grade(StatusKind::Mp).is_none();
 
         // Race status
-        let grade_race = self.race.status_grade(kind);
-        let status_race = calc_status(kind, grade_race, self.main_lv);
+        let status_race = if exclude_race_mlv {
+            0.0
+        } else {
+            calc_status(kind, self.race.status_grade(kind), self.main_lv)
+        };
 
         // Main job status
         let status_main_job = match self.main_job.status_grade(kind) {
@@ -140,7 +143,11 @@ impl Chara {
             race: status_race,
             main_job: status_main_job,
             support_job: status_support_job,
-            mlv: calc_master_lv_bonus(kind, self.master_lv),
+            mlv: if exclude_race_mlv {
+                0
+            } else {
+                calc_master_lv_bonus(kind, self.master_lv)
+            },
             merit: self.merit_points.status_bonus(kind),
             trait_main,
             trait_support,
@@ -326,7 +333,8 @@ mod tests {
 
         assert_eq!(chara.status(StatusKind::Hp), 1945);
         assert_eq!(chara.status(StatusKind::Str), 147);
-        // War has no MP grade, so MP should be 0 (no MLV bonus either)
+        // メイン War に MP グレードなし → 種族・メイン・ML 分は除外。
+        // サポ Drg も MP グレードなしのため MP = 0
         assert_eq!(chara.status(StatusKind::Mp), 0);
     }
 

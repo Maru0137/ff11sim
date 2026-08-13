@@ -11,6 +11,16 @@ ff11sim is a FINAL FANTASY XI character, equipment and damage simulator. written
 3. Calculation character's status by setting race, jobs, levels and equipsets.
 4. Simulation damages by the character created by 3.
 
+## Documentation Policy
+
+- **ドメイン知識はリポジトリに記録する**: ゲーム仕様・計算式・検証結果などのナレッジは
+  `docs/knowledge/` の適切なパスに Markdown で記録する
+  (例: `docs/knowledge/status/magic_accuracy.md`)。エージェントのセッションメモリには
+  リポジトリに書けない情報のみを置き、リポジトリが記録すべき内容をメモリに残さない。
+- **設計判断は ADR に記録・追従する**: 設計上の決定は `docs/adr/` に MADR 形式で記録する。
+  設計に影響する変更を行うときは既存 ADR を確認し、実装との食い違いが生じる場合は
+  同じ変更の中で ADR を改訂 (または新規作成) して追従させる。
+
 ## Build and Test Commands
 
 All commands should be run from the `rust/` directory:

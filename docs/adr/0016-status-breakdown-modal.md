@@ -54,8 +54,20 @@ decision-makers: Akira Maruoka
   gift の `physical_attack` → 列キー `attack` のような写像は Rust 側で行い、
   JS には UI の列と 1:1 のキーだけを見せる。
 - カタログ（[ADR 0015](0015-property-sets.md)）の各項目に `breakdown` メタ
-  (`equipKey` / `charKey`) を追加。メタなし = 内訳非対応（武器スキルなどの文字列値）
-  として列から除外し、非対応は `BREAKDOWN_UNSUPPORTED_IDS` に明示する。
+  (`equipKey` / `charKey`) を追加。メタなし = 内訳非対応として列から除外し、
+  非対応は `BREAKDOWN_UNSUPPORTED_IDS` に明示する（実効魔命などのスロット依存合成値）。
+- スキル値列（同日改訂で対応）: breakdown メタに `skillKey`（魔法スキル: 固定キー）/
+  `weaponSlot`（武器スキル: スキル種別は装備中の武器から実行時解決）を追加。
+  装備行は `calculateEquipSetBonuses` の `per_slot_skill_bonuses`（全スロット別
+  スキルボーナス）から引き、武器スキル列では他の武器スロットの武器スキルボーナスを
+  除外する（equip-bonuses のバケツ分けと同一規則）。キャラ由来行は Rust の
+  `skill_<Key>` / `main_weapon_skill` 等の列で、`effective_skill_parts` により
+  基礎（素キャップまでの値）/ メリポ / ML に分解する（メリポ・ML はキャップ
+  引き上げのため、寄与は「キャップを 素 → +メリポ → +ML の順に広げたときの
+  表示値の増分」として帰属。キャラ値がキャップに届いていない分は 0）。
+  `effective_skill` は分解版への委譲。魔法系はギフト行も生成する。
+  表示値が '-'（ジョブ未習得 / 武器未装備）の列は装備ボーナスも適用されないため
+  装備行も抑制する。
 - 装備 16 部位の行は JS 側で完結する（`calculateEquipSetBonuses` の
   `per_slot_stats`）。抽出は元からスロット単位なので Rust 変更は不要。
 - モーダルの合計行はパネル表示値（`StatusView.values` / `propertyValues`）を
@@ -78,13 +90,17 @@ decision-makers: Akira Maruoka
 
 * `rust/src/breakdown.rs` の `mod tests`: 恒等式（基本 9 ステは
   `floor(Σキャラ行) + 装備 == StatusResult`、防御/回避/魔防/プロパティ列は
-  `Σ行 + 装備 == StatusResult`）、特性のメイン/サポ振り分け、メリポ/ギフトの行帰属を検証。
+  `Σ行 + 装備 == StatusResult`、スキル値列は `Σキャラ行 == 表示スキル値`）、
+  特性のメイン/サポ振り分け、メリポ/ギフトの行帰属を検証。
 * `web/src/propsets/catalog.test.ts`: 全カタログ項目が `breakdown` メタを持つか
   `BREAKDOWN_UNSUPPORTED_IDS` に明示されていることを強制（新項目追加時に対応可否の判断を要求）。
 * `web/src/status/breakdown.test.ts`: 列組み立て（非対応項目の除外、ユーザー定義項目、
-  デスの tenacity 非適用）と行×列モデル（0 → '-'、負値保持、小数保持、合計行の参照）を検証。
+  デスの tenacity 非適用、スキル値列の skillKey / weaponSlot メタ）と行×列モデル
+  （0 → '-'、負値保持、小数保持、合計行の参照、武器スキル列の他武器スロット除外、
+  表示 '-' 時の装備行抑制）を検証。
 * `web/src/equip/equip-bonuses.test.ts` / `web/src/propsets/user-item-values.test.ts`:
-  スロット別集計の総和が全体合算と一致することを実 WASM で検証。
+  スロット別集計（per_slot_stats の総和一致、per_slot_skill_bonuses のスロット別保持）を
+  実 WASM で検証。
 * `tests/smoke.spec.js`「内訳モーダルが開ける」: JS→WASM シグネチャとテーブル描画の生存確認。
 
 ## Pros and Cons of the Options
@@ -144,4 +160,7 @@ decision-makers: Akira Maruoka
 * [ADR 0010](0010-equipment-interpretation-in-rust.md) — 装備解釈を Rust に置く方針
 * [ADR 0014](0014-equipset-grid-modal.md) — Mantine Modal は React 専用モーダルに使い、開閉はローカル state
 * [ADR 0015](0015-property-sets.md) — プロパティセットとカタログ（本 ADR はカタログに breakdown メタを追加）
+* [魔命の用語規約と計算仕様](../knowledge/status/magic_accuracy.md) — 内訳非対応の実効魔命 (`macc_*`) の定義
 * モックレビュー: https://claude.ai/code/artifact/056afaa7-d584-4eb8-9ddb-b18a13a8577f
+* 改訂 (2026-08-13): スキル値列（武器スキル/魔法スキル）の内訳対応を追加
+  （`skillKey` / `weaponSlot` メタ、`per_slot_skill_bonuses`、Rust のスキル値列）。

@@ -44,6 +44,13 @@ pub struct StatusResult {
     pub mdef: i32,
     /// 回避総合値 (int(AGI/2) + スキル区分値 + equip + トレイト/ギフト/JPカテゴリ)
     pub evasion: i32,
+    /// 防御/魔防/回避の「素」(装備の防御系プロパティ抜きで解析計算した値。
+    /// 装備の VIT/AGI が基礎項を押し上げる分は含む)。
+    /// `素 + 装備プロパティ == 総合値` の恒等式をテストで担保する。
+    /// 左テーブルの「素」列用 (JS 側での差分計算を避ける)
+    pub def_base: i32,
+    pub mdef_base: i32,
+    pub evasion_base: i32,
     /// 魔法攻撃力総合値 (100 + equip + トレイト/ギフト/JPカテゴリ)
     pub magic_attack: i32,
     /// メイン攻撃力総合値
@@ -132,7 +139,12 @@ pub struct StatusResult {
     pub snapshot: i32,
     /// リサイクル総合値 (% — 矢弾消費せず遠隔攻撃の発動率)
     /// = ジョブ特性 Recycle (Rng/Cor) + ギフト「矢弾消費量軽減」(Cor)
+    ///   + JP カテゴリ「矢弾消費量軽減」(Cor)
     pub recycle: i32,
+    /// ダブルショット発動率のキャラ側加算 (% — JP カテゴリ「ダブルショット効果」(Rng) のみ)
+    pub double_shot_pct: i32,
+    /// トリプルショット発動率のキャラ側加算 (% — JP カテゴリ「トリプルショット効果」(Cor) のみ)
+    pub triple_shot_pct: i32,
     /// シールドマスタリー総合値 (盾防御発動時の TP ボーナス、ジョブ特性のみ War/Rdm/Pld)
     pub shield_mastery: i32,
     /// シールドマスタリー効果総合値 (Pld 専用、ギフト「シールドマスタリー効果アップ」のみ)
@@ -533,7 +545,7 @@ fn skill_kind_to_key(kind: SkillKind) -> &'static str {
 
 /// ジョブポイントギフトのスキル系ボーナス (累計 JP に応じた累積値) を返す。
 /// 武器スキル/防御スキルにギフトでの直接加算は無いため魔法・楽器・忍術・風水・歌系のみ対象。
-fn skill_gift_bonus(job: crate::job::Job, skill: SkillKind, total_jp: i32) -> i32 {
+pub(crate) fn skill_gift_bonus(job: crate::job::Job, skill: SkillKind, total_jp: i32) -> i32 {
     use crate::gift::Gift;
     let gift = match skill {
         SkillKind::Healing => Gift::HealingMagicSkill,
@@ -801,6 +813,10 @@ pub(crate) fn chara_to_status_result(chara: &Chara) -> StatusResult {
         + jp_cat.magic_defense;
     let evasion_total =
         calc_evasion(agi, eff_evasion_skill, chara.bonus_stats.evasion) + evasion_bonus;
+    // 「素」= 装備の防御系プロパティを 0 にして解析計算 (差分ではない)
+    let def_base = calc_defense(vit, chara.main_lv, 0) + defense_bonus;
+    let mdef_base = calc_magic_defense(0) + mdef_trait + gift.magic_defense + jp_cat.magic_defense;
+    let evasion_base = calc_evasion(agi, eff_evasion_skill, 0) + evasion_bonus;
     let magic_attack_total = calc_magic_attack(chara.bonus_stats.magic_attack) + magic_attack_bonus;
 
     // メイン攻撃/命中
@@ -850,6 +866,9 @@ pub(crate) fn chara_to_status_result(chara: &Chara) -> StatusResult {
         mnd: chara.status(StatusKind::Mnd),
         chr: chara.status(StatusKind::Chr),
         def: def_total,
+        def_base,
+        mdef_base,
+        evasion_base,
         mdef: mdef_total,
         evasion: evasion_total,
         magic_attack: magic_attack_total,
@@ -936,7 +955,13 @@ pub(crate) fn chara_to_status_result(chara: &Chara) -> StatusResult {
         // スナップショット 総合 = ギフト「スナップショット効果アップ」(Cor) のみ
         snapshot: chara.main_job.gift_value(Gift::SnapshotEffect, total_jp),
         // リサイクル 総合 = ジョブ特性 (Rng/Cor) + ギフト「矢弾消費量軽減」(Cor)
-        recycle: recycle_trait + chara.main_job.gift_value(Gift::AmmoCostReduction, total_jp),
+        //                + JP カテゴリ「矢弾消費量軽減」(Cor)
+        recycle: recycle_trait
+            + chara.main_job.gift_value(Gift::AmmoCostReduction, total_jp)
+            + jp_cat.recycle,
+        // ダブル/トリプルショット発動率のキャラ側加算 = JP カテゴリのみ (Rng/Cor)
+        double_shot_pct: jp_cat.double_shot,
+        triple_shot_pct: jp_cat.triple_shot,
         // シールドマスタリー 総合 = ジョブ特性 (War/Rdm/Pld) のみ
         shield_mastery: shield_mastery_trait,
         // シールドマスタリー効果 総合 = ギフト「シールドマスタリー効果アップ」(Pld) のみ

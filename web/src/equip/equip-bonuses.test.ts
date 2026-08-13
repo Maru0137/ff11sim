@@ -81,6 +81,17 @@ describe('calculateEquipSetBonuses', () => {
         expect(resultBody.skill_bonus_global.Club).toBeGreaterThan(0);
     });
 
+    it('全スロット別のスキルボーナス (per_slot_skill_bonuses) が返る', () => {
+        const result = calculateEquipSetBonuses({
+            slots: { main: { item_id: 21071 }, neck: { item_id: 21071 } },
+        });
+        // バケツ分け (main/global) と違い、生のスロットキーでどちらも持つ
+        expect(result.per_slot_skill_bonuses.main.Club).toBeGreaterThan(0);
+        expect(result.per_slot_skill_bonuses.neck.Club).toBe(
+            result.per_slot_skill_bonuses.main.Club
+        );
+    });
+
     it('武器スロット別の装備合計 (slot_stats) が返る', () => {
         const result = calculateEquipSetBonuses({
             slots: {

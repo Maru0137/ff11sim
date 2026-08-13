@@ -21,6 +21,15 @@ export interface BreakdownColumnSpec {
     totalId: string;
     /** ユーザー定義項目 ('user:<term>')。装備行はスロット別ユーザー値から引く */
     userItemId?: string;
+    /** スキル値列 (魔法スキル): per_slot_skill_bonuses のスキルキー ('Divine' 等) */
+    skillKey?: string;
+    /**
+     * 武器スキル値列: 対応する武器スロット。スキル種別は装備中の武器から
+     * 実行時に解決する (BreakdownInputs.weaponSkillKinds)。
+     * 他の武器スロットの武器スキルボーナスはそのスロット専用のため除外する
+     * (equip-bonuses のバケツ分けと同じ規則)
+     */
+    weaponSlot?: 'main' | 'sub' | 'ranged';
     /**
      * セル値の符号を反転して表示する (被ダメ系の「〜-」表記用。軽減 -30 → 30)。
      * 合計行はパネル表示値の参照なので反転済み (compute.ts と対で保つ)
@@ -92,6 +101,8 @@ export function buildPropsetColumns(itemIds: string[]): BreakdownColumnSpec[] {
             label: item.label,
             equipKey: item.breakdown.equipKey,
             charKey: item.breakdown.charKey,
+            skillKey: item.breakdown.skillKey,
+            weaponSlot: item.breakdown.weaponSlot,
             totalId: id,
         });
     }
@@ -123,10 +134,34 @@ export interface BreakdownInputs {
     totals: Record<string, string | number>;
     /** ソースキー → 補足ラベル (種族名、"ナ99 (ジョブ+特性)" 等) */
     charItemLabels: Partial<Record<string, string>>;
+    /** 装備スロット別スキルボーナス (equip-bonuses の per_slot_skill_bonuses) */
+    perSlotSkillBonuses?: Record<string, Record<string, number>>;
+    /** 武器スロット → 装備中武器のスキルキー (StatusView.weaponSkillKinds) */
+    weaponSkillKinds?: { main?: string | null; sub?: string | null; ranged?: string | null };
 }
+
+// 武器スキル列の除外判定用: 論理スロット (weaponSlot) → 生のスロットキー
+const WEAPON_SLOT_RAW = { main: 'main', sub: 'sub', ranged: 'range' } as const;
+const WEAPON_SLOT_KEYS = new Set<string>(Object.values(WEAPON_SLOT_RAW));
 
 export function buildBreakdownModel(inp: BreakdownInputs): BreakdownModel {
     const rows: BreakdownRow[] = [];
+
+    // スキル値列の装備セル解決。ジョブがスキルを持たない場合は装備ボーナスも
+    // 適用されない (表示値 '-') ため、合計が '-' の列は装備行も抑制する
+    const skillCellValue = (col: BreakdownColumnSpec, slotKey: string): number => {
+        if (inp.totals[col.totalId] === '-') return 0;
+        let skillKey = col.skillKey;
+        if (col.weaponSlot) {
+            // 武器スロット装備の武器スキルボーナスはそのスロット専用
+            if (WEAPON_SLOT_KEYS.has(slotKey) && slotKey !== WEAPON_SLOT_RAW[col.weaponSlot]) {
+                return 0;
+            }
+            skillKey = inp.weaponSkillKinds?.[col.weaponSlot] ?? undefined;
+        }
+        if (!skillKey) return 0;
+        return inp.perSlotSkillBonuses?.[slotKey]?.[skillKey] || 0;
+    };
 
     for (const def of SLOT_DEFS) {
         const slotStats = inp.perSlotStats?.[def.key];
@@ -135,6 +170,8 @@ export function buildBreakdownModel(inp: BreakdownInputs): BreakdownModel {
             let v = 0;
             if (col.userItemId) {
                 v = userValues?.[col.userItemId] || 0;
+            } else if (col.skillKey || col.weaponSlot) {
+                v = skillCellValue(col, def.key);
             } else if (col.equipKey) {
                 v = slotStats?.[col.equipKey] || 0;
             }

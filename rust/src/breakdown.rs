@@ -17,11 +17,12 @@ use crate::chara::Chara;
 use crate::gift::Gift;
 use crate::job::{Job, JobTrait};
 use crate::job_points::{calc_gift_bonuses, calc_jp_category_bonuses, calc_war_da_gift_bonus};
+use crate::skills::{SkillKind, effective_skill_parts};
 use crate::status::{
     StatusKind, calc_accuracy, calc_defense, calc_evasion, calc_magic_attack, calc_magic_defense,
     calc_main_attack, calc_ranged_accuracy, calc_ranged_attack,
 };
-use crate::wasm::combat_skills;
+use crate::wasm::{combat_skills, skill_gift_bonus};
 
 pub const SRC_BASE: &str = "base";
 pub const SRC_RACE: &str = "race";
@@ -40,6 +41,10 @@ pub const SRC_MASTER_LEVEL: &str = "master_level";
 #[derive(Debug, Default, Serialize)]
 pub struct StatusBreakdown {
     pub rows: BTreeMap<String, BTreeMap<String, f64>>,
+    /// サポートジョブの有効レベル (min(実レベル, メインLv/2 + ML/5)。
+    /// character_profile::to_chara で計算済みの値)。
+    /// 内訳モーダルのサポ行ラベル用 — JS 側での式の複製を避ける
+    pub support_effective_lv: Option<i32>,
 }
 
 #[derive(Default)]
@@ -211,6 +216,16 @@ pub fn chara_breakdown(chara: &Chara) -> StatusBreakdown {
         chara.main_job.gift_value(Gift::FastCastEffect, total_jp) as f64,
     );
 
+    // MB.ボーナス = ジョブ特性 MagicBurstBonus + ギフト「マジックバーストダメージアップ」
+    b.add_trait(chara, "magic_burst_bonus", JobTrait::MagicBurstBonus);
+    b.add(
+        SRC_GIFT,
+        "magic_burst_bonus",
+        chara.main_job.gift_value(Gift::MagicBurstDamage, total_jp) as f64,
+    );
+
+    b.add_trait(chara, "conserve_mp", JobTrait::ConserveMp);
+
     // --- 近接プロパティ ---
     b.add_trait(chara, "store_tp", JobTrait::StoreTp);
     if chara.main_job == Job::Sam {
@@ -254,13 +269,94 @@ pub fn chara_breakdown(chara: &Chara) -> StatusBreakdown {
 
     // --- 遠隔プロパティ / 待機・回復系 ---
     b.add_trait(chara, "rapid_shot", JobTrait::RapidShot);
+    b.add_trait(chara, "true_shot", JobTrait::TrueShot);
+    b.add(
+        SRC_GIFT,
+        "true_shot",
+        chara.main_job.gift_value(Gift::TrueshotEffect, total_jp) as f64,
+    );
+    b.add_trait(chara, "recycle", JobTrait::Recycle);
+    b.add(
+        SRC_GIFT,
+        "recycle",
+        chara.main_job.gift_value(Gift::AmmoCostReduction, total_jp) as f64,
+    );
+    b.add(SRC_JOB_POINTS, "recycle", jp_cat.recycle as f64);
+    // ダブル/トリプルショット発動率のキャラ側加算は JP カテゴリのみ (Rng/Cor)
+    b.add(SRC_JOB_POINTS, "double_shot", jp_cat.double_shot as f64);
+    b.add(SRC_JOB_POINTS, "triple_shot", jp_cat.triple_shot as f64);
     b.add_trait(chara, "regen", JobTrait::AutoRegen);
     b.add_trait(chara, "refresh", JobTrait::AutoRefresh);
 
     // --- 状態異常レジスト補正 (テナシティ) ---
     b.add_trait(chara, "tenacity", JobTrait::Tenacity);
 
-    StatusBreakdown { rows: b.rows }
+    // --- スキル値 ---
+    // キャラ由来行は effective_skill_parts で 基礎 (素キャップまで) / メリポ / ML に
+    // 分解する (メリポ/ML はキャップ引き上げの増分として帰属)。装備スロット分は
+    // JS 側の per_slot_skill_bonuses が持つ (equip-bonuses)。
+    let skill_parts = |kind: SkillKind| {
+        effective_skill_parts(
+            kind,
+            chara.main_job,
+            chara.main_lv,
+            chara.master_lv,
+            chara.support_job,
+            chara.support_lv,
+            chara.skills.get(kind),
+            &chara.merit_points,
+        )
+    };
+    let add_skill_rows = |b: &mut Builder, col: &str, kind: SkillKind| {
+        let p = skill_parts(kind);
+        b.add(SRC_BASE, col, p.base as f64);
+        b.add(SRC_MERIT, col, p.merit as f64);
+        b.add(SRC_MASTER_LEVEL, col, p.master_lv as f64);
+    };
+
+    // 武器スキル値 (resolve_weapon) にギフト加算は無いためキャラ 3 行のみ。
+    // 装備中の武器スロットだけ列を生成する (無装備は '-' 表示)。
+    for (weapon, col) in [
+        (cs.main_weapon, "main_weapon_skill"),
+        (cs.sub_weapon, "sub_weapon_skill"),
+        (cs.ranged_weapon, "ranged_weapon_skill"),
+    ] {
+        if let Some((kind, _)) = weapon {
+            add_skill_rows(&mut b, col, kind);
+        }
+    }
+
+    // 魔法系スキル値 (表示値 effective_skills = 基礎 + 装備 global + ギフト と対応)
+    const MAGIC_SKILL_COLS: [SkillKind; 14] = [
+        SkillKind::Divine,
+        SkillKind::Healing,
+        SkillKind::Enhancing,
+        SkillKind::Enfeebling,
+        SkillKind::Elemental,
+        SkillKind::Dark,
+        SkillKind::Summoning,
+        SkillKind::Ninjutsu,
+        SkillKind::Singing,
+        SkillKind::StringInstrument,
+        SkillKind::WindInstrument,
+        SkillKind::BlueMagic,
+        SkillKind::Geomancy,
+        SkillKind::Handbell,
+    ];
+    for kind in MAGIC_SKILL_COLS {
+        let col = format!("skill_{}", kind.key());
+        add_skill_rows(&mut b, &col, kind);
+        b.add(
+            SRC_GIFT,
+            &col,
+            skill_gift_bonus(chara.main_job, kind, total_jp) as f64,
+        );
+    }
+
+    StatusBreakdown {
+        rows: b.rows,
+        support_effective_lv: chara.support_lv,
+    }
 }
 
 #[cfg(test)]
@@ -395,6 +491,16 @@ mod tests {
         assert_eq!(sum("def") + chara.bonus_stats.def, total.def);
         assert_eq!(sum("evasion") + chara.bonus_stats.evasion, total.evasion);
         assert_eq!(sum("mdef") + chara.bonus_stats.magic_def_bonus, total.mdef);
+        // 左テーブル「素」列の恒等式: 素 (解析値) + 装備プロパティ == 総合値
+        assert_eq!(total.def_base + chara.bonus_stats.def, total.def);
+        assert_eq!(
+            total.evasion_base + chara.bonus_stats.evasion,
+            total.evasion
+        );
+        assert_eq!(
+            total.mdef_base + chara.bonus_stats.magic_def_bonus,
+            total.mdef
+        );
         // 魔回避は基礎なし: Σ行 == magic_evasion_bonus (装備は JS 側で加算)
         assert_eq!(sum("magic_evasion"), total.magic_evasion_bonus);
         // 基礎行が解析値であること (剰余ではない)
@@ -447,6 +553,8 @@ mod tests {
             .build()
             .unwrap();
         let b = chara_breakdown(&chara);
+        // サポ有効レベル: min(49, 99/2 + 0/5) = 49
+        assert_eq!(b.support_effective_lv, Some(49));
         assert_eq!(cell(&b, SRC_MAIN_JOB, "store_tp"), 0.0);
         assert_eq!(cell(&b, SRC_SUPPORT_JOB, "store_tp"), 15.0);
         // DoubleAttack は WAR メイン採用 → main 行に job_trait_total と同値
@@ -525,6 +633,74 @@ mod tests {
         assert!(total.fast_cast_pct > 0);
     }
 
+    /// スキル値列の恒等式: Σキャラ行 == 表示値 (装備スキルボーナスなし構成)
+    #[test]
+    fn skill_columns_identity() {
+        // 弱体はキャラ値をキャップ超過に設定し、メリポ rank8 (+16) と ML50 が
+        // それぞれの行に増分として現れる構成にする
+        let mut merit = MeritPoints::default();
+        merit.magic_skill_merits.insert("Enfeebling".to_string(), 8);
+        let mut skills = crate::skills::CharacterSkills::default();
+        skills.values[SkillKind::Enfeebling] = 999;
+        skills.values[SkillKind::Sword] = 999;
+        let chara = Chara::builder()
+            .race(Race::Hum)
+            .main_job(Job::Rdm, 99)
+            .support_job(Job::Whm, 49)
+            .master_lv(50)
+            .job_points(crate::job_points::JobPointCategories::all_maxed())
+            .merit_points(merit)
+            .skills(skills)
+            .bonus_stats(BonusStats {
+                main_weapon_skill_id: Some(3), // 片手剣
+                sub_weapon_skill_id: Some(2),  // 短剣
+                ..Default::default()
+            })
+            .build()
+            .unwrap();
+        let b = chara_breakdown(&chara);
+        let total = chara_to_status_result(&chara);
+        let sum = |col: &str| -> i32 {
+            b.rows
+                .values()
+                .map(|r| r.get(col).copied().unwrap_or(0.0))
+                .sum::<f64>() as i32
+        };
+
+        // 武器スキル列: 装備ボーナスなしなら基礎行 == 表示スキル値
+        assert_eq!(sum("main_weapon_skill"), total.main_weapon_skill_value);
+        assert_eq!(
+            sum("sub_weapon_skill"),
+            total.sub_weapon_skill_value.unwrap()
+        );
+        // レンジ武器なし → 列なし
+        assert_eq!(sum("ranged_weapon_skill"), 0);
+
+        // 魔法スキル列: Σ(基礎+ギフト) == effective_skills の表示値
+        // (RDM のギフトスキル込み。WHM サポの回復スキルも基礎に反映される)
+        for key in [
+            "Divine",
+            "Healing",
+            "Enhancing",
+            "Enfeebling",
+            "Elemental",
+            "Dark",
+        ] {
+            let expected = total.effective_skills.get(key).copied().unwrap_or(0);
+            assert_eq!(sum(&format!("skill_{key}")), expected, "skill_{key}");
+        }
+        assert!(sum("skill_Enfeebling") > 0);
+        // RDM/WHM が持たないスキルは全行 0
+        assert_eq!(sum("skill_Ninjutsu"), 0);
+
+        // メリポ (スキル上限アップ) と ML はキャップ引き上げの増分として独立の行になる
+        assert_eq!(cell(&b, SRC_MERIT, "skill_Enfeebling"), 16.0);
+        assert_eq!(cell(&b, SRC_MASTER_LEVEL, "skill_Enfeebling"), 50.0);
+        assert_eq!(cell(&b, SRC_MASTER_LEVEL, "main_weapon_skill"), 50.0);
+        // キャラ値がキャップに届かないスキル (デフォルト 0) では増分行は出ない
+        assert_eq!(cell(&b, SRC_MASTER_LEVEL, "skill_Divine"), 0.0);
+    }
+
     /// 主要プロパティ列の恒等式を一括検証 (装備なし構成)
     #[test]
     fn property_columns_identity() {
@@ -534,6 +710,9 @@ mod tests {
             (Job::Rdm, Some(Job::Whm)),
             (Job::Pld, Some(Job::Blu)),
             (Job::Thf, None),
+            (Job::Rng, Some(Job::Cor)),
+            (Job::Cor, Some(Job::Rng)),
+            (Job::Blm, Some(Job::Sch)),
         ] {
             let mut builder = Chara::builder()
                 .race(Race::Hum)
@@ -552,7 +731,9 @@ mod tests {
                     .map(|r| r.get(col).copied().unwrap_or(0.0))
                     .sum::<f64>() as i32
             };
-            let cases: [(&str, i32); 9] = [
+            let cases: [(&str, i32); 15] = [
+                ("magic_burst_bonus", total.magic_burst_damage),
+                ("conserve_mp", total.conserve_mp),
                 ("store_tp", total.store_tp),
                 ("double_attack", total.double_attack_pct),
                 ("triple_attack", total.triple_attack_pct),
@@ -560,6 +741,10 @@ mod tests {
                 ("skillchain_bonus", total.skillchain_bonus),
                 ("fast_cast", total.fast_cast_pct),
                 ("rapid_shot", total.rapid_shot_pct),
+                ("true_shot", total.trueshot),
+                ("recycle", total.recycle),
+                ("double_shot", total.double_shot_pct),
+                ("triple_shot", total.triple_shot_pct),
                 ("regen", total.regen),
                 ("refresh", total.refresh),
             ];

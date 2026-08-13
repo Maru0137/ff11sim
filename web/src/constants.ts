@@ -75,6 +75,10 @@ export const PROPSET_STORAGE_KEY = 'ff11sim_property_sets';
 export const AUGMENT_JA_TO_EN: [string, string][] = [
     ['ウェポンスキルのダメージ', 'Weapon skill damage'],
     ['マジックバーストダメージ', 'Magic burst damage'],
+    // 順序重要: 「マジックバースト命中」→「マジックバースト」の順。
+    // 「マジックバースト+N」(ソーサラストール系) は MB ダメージの表記揺れ
+    ['マジックバースト命中', 'Magic burst accuracy'],
+    ['マジックバースト', 'Magic burst damage'],
     ['魔法クリティカルヒットII', 'Magic Crit. Hit Rate II'],
     ['魔法クリティカルヒット率', 'Magic Critical hit rate'],
     ['物理ダメージ上限', 'Physical damage limit'],

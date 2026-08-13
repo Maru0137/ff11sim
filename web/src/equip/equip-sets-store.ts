@@ -11,11 +11,6 @@ import { equipState, createEmptySlots, notifySlotsLoaded, notifyEquipState } fro
 import type { EquipSlotData } from './equip-store';
 import { updateEquipEditStatus } from '../status/status-store';
 import { createStore } from '../store-utils';
-import {
-    equipSetPrefKey,
-    migrateSelectionKey,
-    removeSelectedPropsetId,
-} from '../propsets/selection-prefs';
 
 export interface CharacterSummary {
     name: string;
@@ -27,6 +22,8 @@ export interface EquipSet {
     character: string;
     job: string;
     slots: Record<string, EquipSlotData | null | undefined>;
+    /** プロパティセット選択 id。保存時の選択を記憶する (docs/adr/0015) */
+    propset_selection?: string;
 }
 
 export interface EquipSetsPanelState {
@@ -111,6 +108,7 @@ export async function refreshEquipSetPanel() {
 function applyEquipSet(equipSet: EquipSet | null) {
     if (equipSet) {
         equipState.editingEquipSetName = equipSet.name;
+        equipState.propsetSelection = equipSet.propset_selection ?? null;
         equipState.currentEquipSlots = { ...equipSet.slots };
         // 旧データは skill フィールドを持たないので item_id から補完
         const slots: Record<string, EquipSlotData | null | undefined> =
@@ -125,6 +123,7 @@ function applyEquipSet(equipSet: EquipSet | null) {
         patch({ editVisible: true, deleteVisible: true, nameInput: equipSet.name });
     } else {
         equipState.editingEquipSetName = null;
+        equipState.propsetSelection = null;
         equipState.currentEquipSlots = createEmptySlots();
         patch({ editVisible: true, deleteVisible: false, nameInput: '' });
     }
@@ -209,6 +208,15 @@ export async function saveEquipSet() {
     const sets: EquipSet[] = await loadEquipSets();
     const character = equipState.currentEquipChar;
     const job = equipState.currentEquipJob;
+    const record: EquipSet = {
+        name,
+        job,
+        character,
+        slots: { ...equipState.currentEquipSlots },
+        ...(equipState.propsetSelection
+            ? { propset_selection: equipState.propsetSelection }
+            : {}),
+    };
 
     if (equipState.editingEquipSetName) {
         // 既存セットの編集
@@ -222,13 +230,8 @@ export async function saveEquipSet() {
                     alert(`装備セット「${name}」は既に存在します。`);
                     return;
                 }
-                // 識別キーが変わるため、プロパティセット選択記憶を移し替える
-                migrateSelectionKey(
-                    equipSetPrefKey(character, job, equipState.editingEquipSetName),
-                    equipSetPrefKey(character, job, name)
-                );
             }
-            sets[idx] = { name, job, character, slots: { ...equipState.currentEquipSlots } };
+            sets[idx] = record;
         }
     } else {
         // 新規作成
@@ -236,7 +239,7 @@ export async function saveEquipSet() {
             alert(`装備セット「${name}」は既に存在します。`);
             return;
         }
-        sets.push({ name, job, character, slots: { ...equipState.currentEquipSlots } });
+        sets.push(record);
     }
 
     await saveEquipSets(sets);
@@ -267,6 +270,9 @@ export async function copyEquipSet() {
         job: equipState.currentEquipJob,
         character: equipState.currentEquipChar,
         slots: { ...equipState.currentEquipSlots },
+        ...(equipState.propsetSelection
+            ? { propset_selection: equipState.propsetSelection }
+            : {}),
     });
     await saveEquipSets(sets);
     await refreshTabs();
@@ -286,13 +292,6 @@ export async function deleteEquipSet() {
             )
     );
     await saveEquipSets(sets);
-    removeSelectedPropsetId(
-        equipSetPrefKey(
-            equipState.currentEquipChar,
-            equipState.currentEquipJob,
-            equipState.editingEquipSetName
-        )
-    );
     equipState.editingEquipSetName = null;
     await refreshTabs();
 }

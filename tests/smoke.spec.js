@@ -238,7 +238,7 @@ test('スロット検索で装備を選び、装備セットを保存できる',
   expect(errors).toEqual([]);
 });
 
-test('カスタムプロパティセットを作成でき、選択が装備セットごとに記憶される', async ({ page }) => {
+test('カスタムプロパティセットを作成でき、選択が装備セットの保存で記憶される', async ({ page }) => {
   const errors = collectErrors(page);
   // ユーザー定義項目の抽出対象となる「二刀流+5」をカスタム説明に仕込む
   await seedAndOpenEquipTab(page, {
@@ -264,7 +264,11 @@ test('カスタムプロパティセットを作成でき、選択が装備セ�
   await expect(grid.locator('.propset-cell', { hasText: 'ストアTP' })).toBeVisible();
   await expect(grid.locator('.propset-cell', { hasText: '二刀流' })).toContainText('5');
 
-  // 再読込後、同じ装備セットを開くと選択が復元される (装備セットごとの記憶)
+  // 装備セットを保存すると選択がレコードに載る (docs/adr/0015)
+  await page.click('#btnSaveEquipSet');
+  await page.waitForTimeout(1000);
+
+  // 再読込後、同じ装備セットを開くと保存した選択が復元される
   await page.reload();
   await page.waitForTimeout(3000);
   await page.click('[data-nav="equipsets"]');
@@ -273,6 +277,16 @@ test('カスタムプロパティセットを作成でき、選択が装備セ�
   await page.waitForTimeout(2000);
   await expect(page.locator('#propsetSelect option:checked')).toHaveText('スモークセット');
   await expect(page.locator('.propset-grid')).toBeVisible();
+
+  // 保存せずに選択を変えた場合は残らず、再読込で保存済みの選択に戻る
+  await page.selectOption('#propsetSelect', 'template:subtab-melee-auto');
+  await page.reload();
+  await page.waitForTimeout(3000);
+  await page.click('[data-nav="equipsets"]');
+  await page.selectOption('#equipSelectChar', 'smoke');
+  await page.selectOption('#equipSelectJob', 'War');
+  await page.waitForTimeout(2000);
+  await expect(page.locator('#propsetSelect option:checked')).toHaveText('スモークセット');
 
   expect(errors).toEqual([]);
 });

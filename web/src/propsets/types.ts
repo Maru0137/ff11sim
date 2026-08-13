@@ -1,6 +1,6 @@
 // プロパティセット (docs/adr/0015) のデータ形状。
-// 装備セットと違い id (UUID) で識別する: 選択記憶 (selection-prefs) が
-// セットを参照するため、リネームで参照が壊れないようにする。
+// 装備セットと違い id (UUID) で識別する: 選択記憶 (装備セットレコードの
+// propset_selection) がセットを参照するため、リネームで参照が壊れないようにする。
 
 export interface PropertySet {
     /** crypto.randomUUID() */

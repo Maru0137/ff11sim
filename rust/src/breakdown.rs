@@ -217,11 +217,17 @@ pub fn chara_breakdown(chara: &Chara) -> StatusBreakdown {
     );
 
     // MB.ボーナス = ジョブ特性 MagicBurstBonus + ギフト「マジックバーストダメージアップ」
+    //             + JP カテゴリ「マジックバーストダメージ」(Blm)
     b.add_trait(chara, "magic_burst_bonus", JobTrait::MagicBurstBonus);
     b.add(
         SRC_GIFT,
         "magic_burst_bonus",
         chara.main_job.gift_value(Gift::MagicBurstDamage, total_jp) as f64,
+    );
+    b.add(
+        SRC_JOB_POINTS,
+        "magic_burst_bonus",
+        jp_cat.magic_burst_damage as f64,
     );
 
     b.add_trait(chara, "conserve_mp", JobTrait::ConserveMp);

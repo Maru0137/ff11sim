@@ -1038,7 +1038,8 @@ pub(crate) fn chara_to_status_result(chara: &Chara) -> StatusResult {
             .gift_value(Gift::HealingMagicCastTime, total_jp),
         regen_amount: chara.main_job.gift_value(Gift::RegenAmount, total_jp),
         magic_burst_damage: chara.job_trait_total(JobTrait::MagicBurstBonus)
-            + chara.main_job.gift_value(Gift::MagicBurstDamage, total_jp),
+            + chara.main_job.gift_value(Gift::MagicBurstDamage, total_jp)
+            + jp_cat.magic_burst_damage,
         magic_damage: chara.job_trait_total(JobTrait::MagicAcumen)
             + chara.main_job.gift_value(Gift::MagicDamage, total_jp),
         elemental_celerity: chara.job_trait_total(JobTrait::ElementalCelerity)

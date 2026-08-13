@@ -46,7 +46,9 @@ decision-makers: Akira Maruoka
 選択: **1.2 + 2.2 + 3.2 + 4.2 + 5.2**。
 
 - テンプレート = 現行 19 タブ。表示 JSX（SubtabContents）は変更せず、
-  選択 id を `template:<subtab-id>` で参照する。
+  選択 id を `template:<subtab-id>` で参照する
+  （※ 表示 JSX 非変更の前提はその後 [ADR 0017](0017-propset-template-data-module.md) で
+  宣言的データモジュールに置換。表示内容・DOM id の互換は維持）。
   「複製して編集」は catalog.ts の `TEMPLATE_ITEM_IDS` でフラットな項目リストに
   変換する（表形式は再現しない。基本 9 ステ等カタログ外の行は落ちる）。
 - 旧タブバーにあった魔法系タブのジョブ連動フィルタ（該当魔法スキルを持たない
@@ -174,3 +176,6 @@ decision-makers: Akira Maruoka
   [ADR 0014](0014-equipset-grid-modal.md)（Mantine Modal / モーダル z-index / 共有モードの構造的除外）
 * 残課題: 数値を伴わない表記ゆれ（「二刀流効果アップ」等）の補完データ
   （[ADR 0004](0004-augment-data-managed-separately.md) の方式に倣った別ファイル）を導入するか。
+* 後続: [ADR 0016](0016-status-breakdown-modal.md)（カタログに breakdown メタを追加）、
+  [ADR 0017](0017-propset-template-data-module.md)（テンプレート描画を宣言的データ
+  モジュールに置換）。

@@ -123,8 +123,11 @@ JS 側の `items.json` 読み込みを廃止すると決めた。JS はもとデ
   期待値生成ハーネスを削除したため現在は実行できない**。期待値 JSON を用意すれば
   動く形で残してあり、抽出ロジックを大きく変えるときに変更前後を突き合わせる用途で使える。
   環境変数 (`JS_STATS` / `AUG_CONVERTED`) 未設定ならスキップする。
-* `add_covers_every_field_without_omission` / `set_from_map_roundtrips_every_field` —
-  78 項目の加算・キー対応の漏れを検出する。実際に 1 項目外して落ちることを確認済み。
+* `add_covers_every_field_without_omission` — 78 項目の加算漏れを検出する。
+  実際に 1 項目外して落ちることを確認済み。
+  （対だった `set_from_map_roundtrips_every_field` は、検証対象の `set_from_map` /
+  `set_by_key` が [ADR 0018](0018-equip-module-owns-interpretation.md) 手順 4 で
+  未使用になり削除されたため、2026-08-15 に一緒に削除した）
 * `rust/tests/` の 3 本（連携ボーナス / WS ダメージ / JA→EN 変換）。
   JS 時代は CI に入っていなかったが、`cargo test` で走るようになった。
 

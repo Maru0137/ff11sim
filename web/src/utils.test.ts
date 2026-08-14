@@ -13,16 +13,12 @@ vi.mock('./constants', () => ({
         },
     },
     JOB_MERIT_PLACEHOLDER_RE: /^\(空き\)$/,
-    AUGMENT_JA_TO_EN: [
-        ['飛攻', 'Rng.Atk.'],
-        ['命中', 'Accuracy'],
-    ],
 }));
 
 const {
     jpCategoryCost, jpJobTotal, jpDefaultRanks,
     jobMeritDefaultRanks, jobMeritCategoryName, isJobMeritPlaceholder, samStoreTpIndex,
-    formatBonus, formatPctBonus, convertAugmentJaToEn,
+    formatBonus, formatPctBonus,
 } = await import('./utils');
 
 describe('ジョブポイント (JP)', () => {
@@ -73,15 +69,5 @@ describe('数値フォーマッタ', () => {
         expect(formatPctBonus(5)).toBe('+5%');
         expect(formatPctBonus(-3)).toBe('-3%');
         expect(formatPctBonus(0)).toBe('-');
-    });
-});
-
-describe('convertAugmentJaToEn', () => {
-    it('変換テーブルの全エントリを置換する', () => {
-        expect(convertAugmentJaToEn('飛攻+25 命中+10')).toBe('Rng.Atk.+25 Accuracy+10');
-    });
-
-    it('該当なしなら原文のまま', () => {
-        expect(convertAugmentJaToEn('STR+5')).toBe('STR+5');
     });
 });

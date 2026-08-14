@@ -2,35 +2,14 @@
 // docs/tech-debt/inline-script-monolith.md の残課題 (WEAPON_SKILL_KEYS 事故の
 // 現場だった集計ロジックにユニットテストが無い) への対応。
 //
-// - WASM は node では file URL を fetch できないため、.wasm のバイト列を
-//   読んで initWasmRuntime に渡す (web/pkg のビルドが前提。CI では
-//   Build WASM ステップの後に実行される)
-// - constants は top-level await fetch を含むため必要な定数のみモックする
-import { describe, it, expect, beforeAll, vi } from 'vitest';
+// 集計の実体は Rust 側 (rust/src/equip.rs、docs/adr/0018)。ここでは WASM 境界を
+// 通した結果を検証する。WASM は node では file URL を fetch できないため、
+// .wasm のバイト列を読んで initWasmRuntime に渡す (web/pkg のビルドが前提。
+// CI では Build WASM ステップの後に実行される)。
+import { describe, it, expect, beforeAll } from 'vitest';
 import { readFileSync } from 'node:fs';
 
-vi.mock('../constants', () => ({
-    // equip-bonuses: 武器スキル判定用 (SkillKind 名は Rust 側と一致させる)
-    SKILL_KEYS_WEAPON: [
-        ['HandToHand', '格闘'], ['Dagger', '短剣'], ['Sword', '片手剣'],
-        ['GreatSword', '両手剣'], ['Axe', '片手斧'], ['GreatAxe', '両手斧'],
-        ['Scythe', '両手鎌'], ['Polearm', '両手槍'], ['Katana', '片手刀'],
-        ['GreatKatana', '両手刀'], ['Club', '片手棍'], ['Staff', '両手棍'],
-        ['Archery', '弓術'], ['Marksmanship', '射撃'], ['Throwing', '投てき'],
-    ],
-    // utils (convertAugmentJaToEn) 用: テストで使う変換のみ
-    AUGMENT_JA_TO_EN: [
-        ['命中', 'Accuracy'],
-        ['攻', 'Attack'],
-    ],
-    JP_CATEGORY_COUNT: 10,
-    JP_MAX_RANK: 20,
-    JOB_MERIT_GROUP_SIZE: 8,
-    JOB_MERIT_CATEGORIES: {},
-    JOB_MERIT_PLACEHOLDER_RE: /^カテゴリ\s*\d+$/,
-}));
-
-const { calculateEquipSetBonuses } = await import('./equip-bonuses');
+import { calculateEquipSetBonuses } from './equip-bonuses';
 
 beforeAll(async () => {
     const { initWasmRuntime } = await import('../../js/wasm.js');

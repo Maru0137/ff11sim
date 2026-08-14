@@ -104,8 +104,8 @@ impl SkillKind {
         }
     }
 
-    /// 戦闘スキル（武器 15 + 防御 4）かどうか
-    pub fn is_combat(self) -> bool {
+    /// 武器スキル（15 種）かどうか。`data/skills.json` の category: Weapon に対応する。
+    pub fn is_weapon(self) -> bool {
         matches!(
             self,
             SkillKind::HandToHand
@@ -123,11 +123,16 @@ impl SkillKind {
                 | SkillKind::Archery
                 | SkillKind::Marksmanship
                 | SkillKind::Throwing
-                | SkillKind::Guarding
-                | SkillKind::Evasion
-                | SkillKind::Shield
-                | SkillKind::Parrying
         )
+    }
+
+    /// 戦闘スキル（武器 15 + 防御 4）かどうか
+    pub fn is_combat(self) -> bool {
+        self.is_weapon()
+            || matches!(
+                self,
+                SkillKind::Guarding | SkillKind::Evasion | SkillKind::Shield | SkillKind::Parrying
+            )
     }
 
     /// 魔法スキルかどうか

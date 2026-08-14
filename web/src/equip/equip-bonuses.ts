@@ -1,123 +1,29 @@
-// 装備セットのステータス・スキルボーナス集計。DOM に依存しない純関数。
-// (旧 web/js/equip-bonuses.js の TS 化)
+// 装備セットのステータス・スキルボーナス集計の入口。
 //
-// 抽出・合算の実体は Rust 側 (docs/adr/0009, docs/adr/0010)。この層は
-// アイテム説明文・オーグメント・カスタム説明の 3 入力を WASM の抽出に流し、
-// スロット別バケツに振り分けるだけ。既知の互換挙動については
-// docs/tech-debt/equip-stats-js-quirks.md を参照 (挙動を変えないこと)。
-import {
-    get_item_by_id, extract_all_stats, extract_skill_bonuses,
-    sum_stats, empty_stats, isItemsLoaded,
-} from '../wasm';
-import { SKILL_KEYS_WEAPON } from '../constants';
-import { convertAugmentJaToEn } from '../utils';
-import { getAugmentText } from '../augments';
+// 実体は Rust 側 (rust/src/equip.rs、docs/adr/0018)。アイテム説明文・オグメント・
+// カスタム説明の 3 ソースの組み立ても、スロット別の振り分け (武器スロット装備の
+// 武器スキルはそのスロット専用、それ以外は全スロット共通) も Rust が持つ。
+// この層は「装備セットを渡して結果を受け取る」だけ。
+//
+// 既知の互換挙動については docs/tech-debt/equip-stats-js-quirks.md を参照
+// (挙動を変えないこと)。
+import { equip_set_bonuses, isItemsLoaded } from '../wasm';
 import type { EquipSlotData } from './equip-store';
-
-// 武器スキルのキー集合。以前は equip-stats.js が同じ一覧を自前で持っていたが、
-// 二重管理になるので data/skills.json (category: Weapon) 由来の定義から作る。
-const WEAPON_SKILL_KEYS = new Set(SKILL_KEYS_WEAPON.map(([key]) => key));
 
 interface EquipSetLike {
     slots?: Record<string, EquipSlotData | null | undefined>;
 }
 
-type SkillBonuses = Record<string, number>;
-type WeaponBucket = 'main' | 'sub' | 'ranged';
-
 export function calculateEquipSetBonuses(equipSet: EquipSetLike | null | undefined) {
     if (!equipSet || !equipSet.slots || !isItemsLoaded()) {
-        return empty_stats();
+        // 空セットとして扱う。全項目 0 の結果が同じ形で返るので、
+        // 参照側が未ロード時だけ形の違いを気にせずに済む
+        return equip_set_bonuses({ slots: {} });
     }
-    const slots = equipSet.slots;
-
-    const statsArray: unknown[] = [];
-    // 武器スロット (main/sub/range) ごとの装備合計を別途保持。
-    // 一部の装備ステ (例: 魔命スキル) は装備中スロットに依存して扱いが変わるため、
-    // UI で「メイン枠のみ表示」のような出し分けに使う。
-    const slotStatsBuckets: Record<WeaponBucket, unknown[]> = { main: [], sub: [], ranged: [] };
-    // 全スロット別の装備合計 (内訳モーダル用、docs/adr/0016)。
-    // キーは生のスロットキー ('range' のまま。slot_stats の 'ranged' とは別物)。
-    const perSlotBuckets: Record<string, unknown[]> = {};
-    // スキルボーナスをスロット別に集計:
-    // 武器スロット(main/sub/range)装備の「武器スキル」ボーナスはそのスロット専用。
-    // それ以外（非武器スロット装備すべて、武器スロット装備の非武器スキル）は全スロット共通。
-    const skillBonusBuckets: Record<WeaponBucket | 'global', SkillBonuses> = {
-        main: {}, sub: {}, ranged: {}, global: {},
-    };
-    // 全スロット別のスキルボーナス合計 (内訳モーダルのスキル値列用)。
-    // キーは生のスロットキー (per_slot_stats と同じく 'range' のまま)
-    const perSlotSkillBuckets: Record<string, SkillBonuses> = {};
-    const addSkillBonuses = (slotKey: string, bonuses: SkillBonuses | null | undefined) => {
-        if (!bonuses) return;
-        const targetSlot = (slotKey === 'range' ? 'ranged' : slotKey) as WeaponBucket;
-        const isWeaponSlot = (slotKey === 'main' || slotKey === 'sub' || slotKey === 'range');
-        const perSlot = (perSlotSkillBuckets[slotKey] ||= {});
-        for (const [k, v] of Object.entries(bonuses)) {
-            if (!v) continue;
-            perSlot[k] = (perSlot[k] || 0) + v;
-            if (isWeaponSlot && WEAPON_SKILL_KEYS.has(k)) {
-                skillBonusBuckets[targetSlot][k] = (skillBonusBuckets[targetSlot][k] || 0) + v;
-            } else {
-                skillBonusBuckets.global[k] = (skillBonusBuckets.global[k] || 0) + v;
-            }
-        }
-    };
-
-    for (const slotKey of Object.keys(slots)) {
-        const slotData = slots[slotKey];
-        if (!slotData) continue;
-
-        const item = get_item_by_id(slotData.item_id);
-
-        const targetWeaponBucket = (slotKey === 'range' ? 'ranged' : slotKey) as WeaponBucket;
-        const isWeaponSlot = (slotKey === 'main' || slotKey === 'sub' || slotKey === 'range');
-        const perSlot = (perSlotBuckets[slotKey] ||= []);
-
-        if (item && item.description_en) {
-            const stats = extract_all_stats(item.description_en);
-            statsArray.push(stats);
-            perSlot.push(stats);
-            if (isWeaponSlot) slotStatsBuckets[targetWeaponBucket].push(stats);
-            addSkillBonuses(slotKey, extract_skill_bonuses(item.description_en));
-        }
-
-        const augText = getAugmentText(slotData);
-        if (augText) {
-            const augEn = convertAugmentJaToEn(augText);
-            const augStats = extract_all_stats(augEn);
-            statsArray.push(augStats);
-            perSlot.push(augStats);
-            if (isWeaponSlot) slotStatsBuckets[targetWeaponBucket].push(augStats);
-            addSkillBonuses(slotKey, extract_skill_bonuses(augEn));
-        }
-
-        if (slotData.custom_description) {
-            const customEn = convertAugmentJaToEn(slotData.custom_description);
-            const customStats = extract_all_stats(customEn);
-            statsArray.push(customStats);
-            perSlot.push(customStats);
-            if (isWeaponSlot) slotStatsBuckets[targetWeaponBucket].push(customStats);
-            addSkillBonuses(slotKey, extract_skill_bonuses(customEn));
-        }
-    }
-
-    const result = sum_stats(statsArray);
-    result.skill_bonus_main = skillBonusBuckets.main;
-    result.skill_bonus_sub = skillBonusBuckets.sub;
-    result.skill_bonus_ranged = skillBonusBuckets.ranged;
-    result.skill_bonus_global = skillBonusBuckets.global;
-    // 武器スロット別装備合計 (魔命スキルなどスロット依存表示用)
-    result.slot_stats = {
-        main: sum_stats(slotStatsBuckets.main),
-        sub: sum_stats(slotStatsBuckets.sub),
-        ranged: sum_stats(slotStatsBuckets.ranged),
-    };
-    // 全スロット別装備合計 (内訳モーダル用)。装備のあるスロットのみ含む
-    result.per_slot_stats = Object.fromEntries(
-        Object.entries(perSlotBuckets).map(([key, arr]) => [key, sum_stats(arr)])
+    // undefined を null に寄せる。Rust 側は Option<Equip> で受けるため、
+    // 欠損スロットの表現を 1 つに揃えておく。
+    const slots = Object.fromEntries(
+        Object.entries(equipSet.slots).map(([key, data]) => [key, data ?? null])
     );
-    // 全スロット別スキルボーナス (内訳モーダルのスキル値列用)
-    result.per_slot_skill_bonuses = perSlotSkillBuckets;
-    return result;
+    return equip_set_bonuses({ slots });
 }

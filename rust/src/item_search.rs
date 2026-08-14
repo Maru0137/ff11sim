@@ -7,6 +7,9 @@
 //! 移植方針は解釈側と同じで挙動を変えない。JS の比較順序や undefined の扱いを
 //! そのまま再現する。
 //!
+//! 説明文の解釈は持たない (docs/adr/0018)。説明文ステータスソートは
+//! `equip_stats::extract_stat_from_description` を呼ぶ。
+//!
 //! JS に残すもの: `getFilterableProperties()` と `getOperators()`。
 //! どちらも items.json を参照せず、フィルタ UI の `<select>` を組み立てるための
 //! 静的なメタデータ (label を含む UI 文言) なので、DOM を作る側に置く方が自然。
@@ -111,71 +114,6 @@ pub struct SearchResult<'a> {
     pub offset: usize,
     pub limit: usize,
     pub has_more: bool,
-}
-
-/// 説明文からステータス値を取り出す。ソート用。
-/// 全角英数と `＋` `－` `―` を半角に直してから、最初に一致した値を返す。
-pub fn extract_stat_from_description(description: &str, stat_name: &str) -> i32 {
-    if description.is_empty() || stat_name.is_empty() {
-        return 0;
-    }
-    let normalized: String = description
-        .chars()
-        .map(|c| {
-            let code = c as u32;
-            match code {
-                0xFF21..=0xFF3A => char::from_u32(code - 0xFF21 + 0x41).unwrap_or(c),
-                0xFF41..=0xFF5A => char::from_u32(code - 0xFF41 + 0x61).unwrap_or(c),
-                0xFF10..=0xFF19 => char::from_u32(code - 0xFF10 + 0x30).unwrap_or(c),
-                0xFF0B => '+',
-                0xFF0D | 0x2015 => '-',
-                _ => c,
-            }
-        })
-        .flat_map(|c| c.to_uppercase())
-        .collect();
-    let needle = stat_name.to_uppercase();
-
-    // JS 側は `${stat}\s*(?::\s*)?([+\-]?)\s*(\d+)` を i フラグ付きで 1 回だけ照合する。
-    // 大小は両辺を大文字化して揃えてあるので、ここでは手で走査する。
-    let bytes: Vec<char> = normalized.chars().collect();
-    let pat: Vec<char> = needle.chars().collect();
-    let mut i = 0usize;
-    while i + pat.len() <= bytes.len() {
-        if bytes[i..i + pat.len()] != pat[..] {
-            i += 1;
-            continue;
-        }
-        let mut j = i + pat.len();
-        let skip_ws = |j: &mut usize| {
-            while *j < bytes.len() && bytes[*j].is_whitespace() {
-                *j += 1;
-            }
-        };
-        skip_ws(&mut j);
-        if j < bytes.len() && bytes[j] == ':' {
-            j += 1;
-            skip_ws(&mut j);
-        }
-        let mut sign = 1;
-        if j < bytes.len() && (bytes[j] == '+' || bytes[j] == '-') {
-            if bytes[j] == '-' {
-                sign = -1;
-            }
-            j += 1;
-        }
-        skip_ws(&mut j);
-        let start = j;
-        while j < bytes.len() && bytes[j].is_ascii_digit() {
-            j += 1;
-        }
-        if j > start {
-            let num: String = bytes[start..j].iter().collect();
-            return sign * num.parse::<i32>().unwrap_or(0);
-        }
-        i += 1;
-    }
-    0
 }
 
 /// 装備名末尾の `+N` を取り出す。HQ 品を上位に並べるために使う。
@@ -365,14 +303,14 @@ pub fn search(opts: &SearchOptions) -> SearchResult<'static> {
 
         // 優先 3: 通常のソート
         if opts.sort_by == "desc_stat" && !opts.desc_stat.is_empty() {
-            let av = extract_stat_from_description(
+            let av = crate::equip_stats::extract_stat_from_description(
                 a.description_ja
                     .as_deref()
                     .or(a.description_en.as_deref())
                     .unwrap_or(""),
                 &opts.desc_stat,
             );
-            let bv = extract_stat_from_description(
+            let bv = crate::equip_stats::extract_stat_from_description(
                 b.description_ja
                     .as_deref()
                     .or(b.description_en.as_deref())
@@ -467,35 +405,6 @@ mod tests {
         assert_eq!(extract_plus_value("Sword"), 0);
         // 末尾でない +N は対象外
         assert_eq!(extract_plus_value("+2 の何か"), 0);
-    }
-
-    #[test]
-    fn extract_stat_handles_colon_and_fullwidth() {
-        assert_eq!(extract_stat_from_description("DEF:77", "DEF"), 77);
-        assert_eq!(extract_stat_from_description("DMG:+165", "DMG"), 165);
-        assert_eq!(extract_stat_from_description("ＳＴＲ＋５", "STR"), 5);
-        assert_eq!(extract_stat_from_description("STR-3", "STR"), -3);
-        assert_eq!(extract_stat_from_description("防77", "防"), 77);
-        assert_eq!(extract_stat_from_description("Attack+10", "attack"), 10);
-        assert_eq!(extract_stat_from_description("なにもない", "STR"), 0);
-    }
-
-    // プロパティセットのユーザー定義項目 (日本語プロパティ名) が前提とする挙動
-    #[test]
-    fn extract_stat_handles_japanese_property_names() {
-        assert_eq!(extract_stat_from_description("二刀流+5", "二刀流"), 5);
-        assert_eq!(extract_stat_from_description("二刀流＋１０", "二刀流"), 10);
-        // 説明文の途中にあっても一致する
-        assert_eq!(
-            extract_stat_from_description("ダブルアタック+3 二刀流+2", "二刀流"),
-            2
-        );
-        // 複数一致は最初の 1 件のみ (合算しない)
-        assert_eq!(
-            extract_stat_from_description("二刀流+3 何か 二刀流+4", "二刀流"),
-            3
-        );
-        assert_eq!(extract_stat_from_description("ストアTP+5", "二刀流"), 0);
     }
 
     #[test]

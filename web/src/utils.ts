@@ -7,7 +7,6 @@ import {
     JOB_MERIT_GROUP_SIZE,
     JOB_MERIT_CATEGORIES,
     JOB_MERIT_PLACEHOLDER_RE,
-    AUGMENT_JA_TO_EN,
 } from './constants';
 
 // === ジョブポイント (JP) ===
@@ -59,11 +58,3 @@ export function formatPctBonus(value: number | null | undefined): string {
     return value > 0 ? `+${value}%` : `${value}%`;
 }
 
-// === オーグメント JA→EN 変換 ===
-export function convertAugmentJaToEn(text: string): string {
-    let result = text;
-    for (const [ja, en] of AUGMENT_JA_TO_EN as [string, string][]) {
-        result = result.replaceAll(ja, en);
-    }
-    return result;
-}

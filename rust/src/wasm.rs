@@ -1221,45 +1221,6 @@ pub fn calculate_status_breakdown(
 }
 
 // ---------------------------------------------------------------------------
-// 装備解釈 (docs/adr/0010)
-//
-// JS の equip-stats.js を置き換えるための境界。ロジックは持たず、
-// crate::equip_stats へ委譲して結果を JS のオブジェクト形式に変換するだけ。
-// 返す形は JS 実装に合わせ、値が 0 のキーは含めない。
-// ---------------------------------------------------------------------------
-
-/// 装備説明文からステータスを抽出する。JS の `extractAllStats` 互換。
-#[wasm_bindgen]
-pub fn extract_all_stats(description_en: &str) -> Result<JsValue, JsValue> {
-    let stats = crate::equip_stats::extract_all_stats(description_en);
-    let map: BTreeMap<&str, i32> = stats
-        .entries()
-        .into_iter()
-        .filter(|(_, v)| *v != 0)
-        .collect();
-    map.serialize(&object_serializer())
-        .map_err(|e| JsValue::from_str(&e.to_string()))
-}
-
-/// 装備説明文からスキルボーナスを抽出する。JS の `extractSkillBonuses` 互換。
-#[wasm_bindgen]
-pub fn extract_skill_bonuses(description_en: &str) -> Result<JsValue, JsValue> {
-    let skills = crate::equip_stats::extract_skill_bonuses(description_en);
-    skills
-        .serialize(&object_serializer())
-        .map_err(|e| JsValue::from_str(&e.to_string()))
-}
-
-/// 説明文から任意名のステータス値を 1 件抽出する。
-/// プロパティセットのユーザー定義項目用 (docs/adr/0015)。
-/// item_search のソート用抽出と同一ロジック:
-/// 全角正規化 + `名前[空白][:][±]数値` の最初の一致 (合算しない)。
-#[wasm_bindgen]
-pub fn extract_named_stat(description: &str, stat_name: &str) -> i32 {
-    crate::item_search::extract_stat_from_description(description, stat_name)
-}
-
-// ---------------------------------------------------------------------------
 // 装備検索 (docs/adr/0010)
 //
 // JS の item-search.js を置き換えるための境界。データは Rust 側が持つため、
@@ -1302,34 +1263,92 @@ pub fn item_count() -> usize {
     crate::items::ITEMS.len()
 }
 
-/// 複数の抽出結果を合算する。JS の `sumStats` 互換。
-/// 引数は `extract_all_stats` が返したオブジェクトの配列。
-/// 戻り値は **全項目を含む** (値 0 のキーも持つ)。JS 側が
-/// `result.hp` のように直接参照するため、欠けたキーがあると undefined になるので。
+/// 装備セット 1 つ分のステータス・スキルボーナスを合算する (docs/adr/0018)。
+///
+/// 引数は `{ slots: { <スロットキー>: EquipSlotData | null } }`。
+/// アイテム説明文・オグメント文・カスタム説明の 3 ソースの組み立てと、
+/// スロット別の振り分けは Rust 側 (`crate::equip`) が行う。
+///
+/// 戻り値は JS の `calculateEquipSetBonuses` と同じ平坦なオブジェクト:
+/// ステータス項目 (全項目、0 も含む) に加えて `skill_bonus_*` / `slot_stats` /
+/// `per_slot_stats` / `per_slot_skill_bonuses` を持つ。
 #[wasm_bindgen]
-pub fn sum_stats(stats_list: JsValue) -> Result<JsValue, JsValue> {
-    let items: Vec<BTreeMap<String, i32>> = serde_wasm_bindgen::from_value(stats_list)
-        .map_err(|e| JsValue::from_str(&format!("invalid stats list: {e}")))?;
+pub fn equip_set_bonuses(equip_set: JsValue) -> Result<JsValue, JsValue> {
+    let set: crate::equip::EquipSet = serde_wasm_bindgen::from_value(equip_set)
+        .map_err(|e| JsValue::from_str(&format!("invalid equip set: {e}")))?;
+    let b = set.bonuses();
 
-    let mut total = crate::equip_stats::EquipStats::default();
-    for map in &items {
-        let mut one = crate::equip_stats::EquipStats::default();
-        one.set_from_map(map);
-        total.add(&one);
-    }
-    let out: BTreeMap<&str, i32> = total.entries().into_iter().collect();
-    out.serialize(&object_serializer())
+    let stats_obj = |s: &crate::equip_stats::EquipStats| -> serde_json::Value {
+        s.entries()
+            .into_iter()
+            .map(|(k, v)| (k.to_string(), serde_json::Value::from(v)))
+            .collect::<serde_json::Map<_, _>>()
+            .into()
+    };
+    let skills_obj = |s: &crate::equip::SkillBonuses| -> serde_json::Value {
+        s.iter()
+            .map(|(k, v)| (k.to_string(), serde_json::Value::from(*v)))
+            .collect::<serde_json::Map<_, _>>()
+            .into()
+    };
+    // 合計は平坦に置く (JS 側が result.hp のように直接参照する)
+    let mut out = match stats_obj(&b.total) {
+        serde_json::Value::Object(m) => m,
+        _ => unreachable!("stats_obj は必ずオブジェクトを返す"),
+    };
+    out.insert("skill_bonus_main".into(), skills_obj(&b.skill_bonus_main));
+    out.insert("skill_bonus_sub".into(), skills_obj(&b.skill_bonus_sub));
+    out.insert(
+        "skill_bonus_ranged".into(),
+        skills_obj(&b.skill_bonus_ranged),
+    );
+    out.insert(
+        "skill_bonus_global".into(),
+        skills_obj(&b.skill_bonus_global),
+    );
+    out.insert(
+        "slot_stats".into(),
+        serde_json::json!({
+            "main": stats_obj(&b.main_stats),
+            "sub": stats_obj(&b.sub_stats),
+            "ranged": stats_obj(&b.ranged_stats),
+        }),
+    );
+    out.insert(
+        "per_slot_stats".into(),
+        b.per_slot_stats
+            .iter()
+            .map(|(k, v)| (k.clone(), stats_obj(v)))
+            .collect::<serde_json::Map<_, _>>()
+            .into(),
+    );
+    out.insert(
+        "per_slot_skill_bonuses".into(),
+        b.per_slot_skill_bonuses
+            .iter()
+            .map(|(k, v)| (k.clone(), skills_obj(v)))
+            .collect::<serde_json::Map<_, _>>()
+            .into(),
+    );
+
+    serde_json::Value::Object(out)
+        .serialize(&object_serializer())
         .map_err(|e| JsValue::from_str(&e.to_string()))
 }
 
-/// 全項目が 0 の抽出結果を返す。JS の `getEmptyStats` 互換。
+/// 装備セットのユーザー定義プロパティ値をスロット別に返す (docs/adr/0015, 0018)。
+///
+/// 引数は `equip_set_bonuses` と同じ装備セットと、抽出する日本語プロパティ名の配列。
+/// 戻り値は `{ <スロットキー>: { <プロパティ名>: 値 } }`。値 0 とそれしか無いスロットは
+/// 含めない (疎)。プロパティ名 → 表示 id の対応は UI 側の取り決めなので Rust は持たない。
 #[wasm_bindgen]
-pub fn empty_stats() -> Result<JsValue, JsValue> {
-    let out: BTreeMap<&str, i32> = crate::equip_stats::EquipStats::default()
-        .entries()
-        .into_iter()
-        .collect();
-    out.serialize(&object_serializer())
+pub fn equip_set_property_values(equip_set: JsValue, terms: JsValue) -> Result<JsValue, JsValue> {
+    let set: crate::equip::EquipSet = serde_wasm_bindgen::from_value(equip_set)
+        .map_err(|e| JsValue::from_str(&format!("invalid equip set: {e}")))?;
+    let terms: Vec<String> = serde_wasm_bindgen::from_value(terms)
+        .map_err(|e| JsValue::from_str(&format!("invalid terms: {e}")))?;
+    set.property_values(&terms)
+        .serialize(&object_serializer())
         .map_err(|e| JsValue::from_str(&e.to_string()))
 }
 

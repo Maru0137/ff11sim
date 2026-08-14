@@ -6,16 +6,14 @@
 // からは読み取り専用であることを明示するため。
 import init, {
     calculate_status_from_profile, calculate_status_breakdown, calculate_default_skills,
-    extract_all_stats, extract_skill_bonuses, extract_named_stat,
     search_items, get_item_by_id, item_count,
-    sum_stats, empty_stats,
+    equip_set_bonuses, equip_set_property_values,
 } from '../pkg/ff11sim.js';
 
 export {
     calculate_status_from_profile, calculate_status_breakdown, calculate_default_skills,
-    extract_all_stats, extract_skill_bonuses, extract_named_stat,
     search_items, get_item_by_id, item_count,
-    sum_stats, empty_stats,
+    equip_set_bonuses, equip_set_property_values,
 };
 
 let wasmReady = false;

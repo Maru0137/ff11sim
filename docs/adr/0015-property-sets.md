@@ -63,7 +63,17 @@ decision-makers: Akira Maruoka
   テーブル既出の項目（防御力/回避/魔防/魔回避/ヘイスト/被ダメージ系）は載せない。
 - ユーザー定義項目は「文字列+N」の完全前方一致・各テキスト最初の一致のみの最小仕様。
   抽出対象は description_ja + オーグメント文 + カスタム説明の 3 ソースで、
-  いずれも日本語のまま extract_named_stat に渡す（JA→EN 変換を通さない）。
+  いずれも日本語のまま扱う（JA→EN 変換を通さない）。
+  3 ソースの組み立てと抽出は当初 web 側 + `extract_named_stat`（WASM）だったが、
+  2026-08-14 に Rust の `EquipSet::property_values` へ移した
+  （[ADR 0018](0018-equip-module-owns-interpretation.md) 手順 3。
+  web が持つのは「プロパティ名 → 表示 id (`user:<term>`)」の対応だけ）。
+- 条件ラベル（`ペット:` `潜在能力:` `コンビネーション:` など）のコロン直後から行末までは
+  抽出対象から外す（2026-08-14 追加）。本体に常時乗る値ではないため
+  （`防21 ペット:命中+3 モクシャ+3` の命中・モクシャはどちらもペットのもの）。
+  ラベル判定は「非 ASCII 文字を含むこと」。英語説明文の `DMG:+165 Delay:+240 STR+10` を
+  誤認しないための条件で、日本語説明文ではコロン付きラベルが常に対象・条件を表す
+  （[docs/knowledge/items/description_labels.md](../knowledge/items/description_labels.md)）。
 - 選択記憶は装備セットレコードの `propset_selection`（値は `template:subtab-*` または
   カスタム UUID）。装備セットの保存時のみ書き込まれ、ログイン時は他のセット内容と
   同様に端末間同期される。保存していない選択変更はセット切替・リロードで失われる。
@@ -78,7 +88,10 @@ decision-makers: Akira Maruoka
 * Good: セット切替は StatusView.propertyValues（全項目を毎回計算）を引くだけで即時。
 * Good: ログイン時は選択記憶も装備セットと一緒に端末間で引き継がれる（2026-08-13 改訂）。
 * Bad: 全カタログ項目 + 全ユーザー定義項目を毎回計算するため、ユーザー定義項目が
-  増えると再計算コストが線形に増える（項目数 × スロット数 × 3 テキストの WASM 呼び出し）。
+  増えると再計算コストが線形に増える（項目数 × スロット数 × 3 テキストの抽出）。
+  WASM 呼び出し回数だけは装備セットあたり 1 回になった
+  （2026-08-14、[ADR 0018](0018-equip-module-owns-interpretation.md) 手順 3）。
+  抽出そのものの回数は変わらない。
 * Bad: カタログのリゾルバは compute.ts の式と一部重複する（derived で緩和）。
   compute.ts 側の表示式を変えるときはカタログとの不一致に注意が必要。
 * Bad: 「二刀流効果アップ」のような数値を伴わない表記ゆれは拾えない
@@ -90,9 +103,12 @@ decision-makers: Akira Maruoka
 
 ### Confirmation
 
-* `cargo test`（rust/src/item_search.rs の
+* `cargo test`（rust/src/equip_stats.rs の
   `extract_stat_handles_japanese_property_names`）が日本語プロパティ名の抽出仕様
   （全角正規化・途中一致・最初の一致のみ）を検証する。
+  条件ラベルの除外は `extract_stat_skips_conditional_label_scope`（ラベル配下を拾わない・
+  ラベルより前は拾う）、`conditional_label_scope_ends_at_line_break`（折り返し行は本体に戻る）、
+  `conditional_label_scope_ignores_ascii_labels`（英語の `DMG:` 等を誤認しない）で検証する。
 * `npm run test:unit`:
   - `web/src/propsets/catalog.test.ts` — カタログ id の一意性、`user:`/`template:`
     プレフィクスとの非衝突、除外項目（基本 9 + 左テーブル既出）の不在、

@@ -1,6 +1,8 @@
 // オーグメントデータの取得と参照 (旧 web/js/augments.js の TS 化)。
 // データソースは web/public/data/augments.json (docs/adr/0004)。
-// AUGMENT_JA_TO_EN は constants.js、convertAugmentJaToEn は utils.ts に定義。
+// getAugmentText はオーグメント文の表示 (装備カード / 選択モーダル) 用。
+// 解釈経路のオグメント文は Rust 側が同じ規則で解決する
+// (rust/src/equip.rs の Equip::augment_text、docs/adr/0018)。
 // スロット行のオーグメント UI は web/src/equip/EquipSlots.tsx。
 
 export interface AugmentRank {

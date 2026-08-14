@@ -70,35 +70,15 @@ impl Equip {
             .map(|r| r.text.as_str())
     }
 
-    /// 抽出に流す 3 ソースを英語表記で返す。順序は アイテム説明文 → オグメント → カスタム説明。
-    /// 空のソースは含めない。
+    /// 解釈に使う 3 ソースを日本語のまま返す。順序は
+    /// アイテム説明文 → オグメント → カスタム説明。空のソースは含めない。
     ///
-    /// オグメントとカスタム説明は元が日本語なので JA→EN 変換を通す。この変換は
-    /// 変換表に無い語を落とすため、日本語のまま扱う経路 (docs/adr/0015 の
-    /// ユーザー定義プロパティ) とは結果が食い違う。統一は docs/adr/0018 の
-    /// フォローアップとして別途扱う。
-    pub fn texts_en(&self) -> Vec<String> {
-        let mut texts = Vec::new();
-        if let Some(desc) = item_by_id(self.item_id).and_then(|i| i.description_en.as_deref())
-            && !desc.is_empty()
-        {
-            texts.push(desc.to_owned());
-        }
-        if let Some(aug) = self.augment_text() {
-            texts.push(equip_stats::convert_augment_ja_to_en(aug));
-        }
-        if let Some(custom) = self.custom_description.as_deref()
-            && !custom.is_empty()
-        {
-            texts.push(equip_stats::convert_augment_ja_to_en(custom));
-        }
-        texts
-    }
-
-    /// 抽出に流す 3 ソースを日本語のまま返す。順序と選び方は `texts_en` と同じ。
-    /// ユーザー定義プロパティ (docs/adr/0015) 用。任意の日本語プロパティ名を
-    /// 扱うため、JA→EN 変換を通すと変換表に無い語が消えてしまう。
-    pub fn texts_ja(&self) -> Vec<&str> {
+    /// 3 つとも元が日本語なので、そのまま並べられる (docs/adr/0019)。
+    /// 条件ラベル (`ペット:` `潜在能力:` など) の配下はここで落とすので、
+    /// 任意名を読む経路 (docs/adr/0015 のユーザー定義プロパティ) と
+    /// 固定項目を読む経路 (`normalized_texts`) が同じ規則で揃う。
+    /// `コンビネーション:` だけは常時扱いで残る。
+    pub fn texts_ja(&self) -> Vec<String> {
         let mut texts = Vec::new();
         if let Some(desc) = item_by_id(self.item_id).and_then(|i| i.description_ja.as_deref())
             && !desc.is_empty()
@@ -114,6 +94,22 @@ impl Equip {
             texts.push(custom);
         }
         texts
+            .into_iter()
+            .map(equip_stats::strip_conditional_labels)
+            .filter(|t| !t.trim().is_empty())
+            .collect()
+    }
+
+    /// `texts_ja` を、固定項目の抽出器が読める正規表記に寄せて返す (docs/adr/0019)。
+    ///
+    /// 正規表記が英語なのは抽出器が英語説明文からの移植 (docs/adr/0010) だからで、
+    /// 翻訳ではなく表記の正規化として扱う。表に無い表記は素通りするため、
+    /// 正規化層の語彙が足りないぶんは取りこぼしになる。
+    pub fn normalized_texts(&self) -> Vec<String> {
+        self.texts_ja()
+            .iter()
+            .map(|t| equip_stats::convert_augment_ja_to_en(t))
+            .collect()
     }
 }
 
@@ -178,7 +174,7 @@ impl EquipSet {
             // 装備のあるスロットは、抽出結果が空でもキーを持つ
             let per_slot = out.per_slot_stats.entry(slot_key.clone()).or_default();
 
-            for text in equip.texts_en() {
+            for text in equip.normalized_texts() {
                 let stats = equip_stats::extract_all_stats(&text);
                 out.total.add(&stats);
                 per_slot.add(&stats);
@@ -233,7 +229,7 @@ impl EquipSet {
             let Some(equip) = equip else { continue };
             for text in equip.texts_ja() {
                 for term in terms {
-                    let value = equip_stats::extract_stat_from_description(text, term);
+                    let value = equip_stats::extract_stat_from_description(&text, term);
                     if value == 0 {
                         continue;
                     }
@@ -286,25 +282,25 @@ mod tests {
     // --- Equip: 3 ソースの解決 -------------------------------------------
 
     #[test]
-    fn texts_en_collects_item_description() {
-        // ヒポメネソックス+1 (27410)
-        let texts = equip(27410).texts_en();
+    fn normalized_texts_collects_item_description() {
+        // ヒポメネソックス+1 (27410)。日本語説明文を正規化して読む (docs/adr/0019)
+        let texts = equip(27410).normalized_texts();
         assert_eq!(texts.len(), 1, "アイテム説明文のみ: {texts:?}");
         assert!(texts[0].contains("HP+13"), "{}", texts[0]);
     }
 
     #[test]
-    fn texts_en_converts_custom_description_to_en() {
-        let texts = custom("命中+10 ダブルアタック+3%").texts_en();
+    fn normalized_texts_normalizes_custom_description() {
+        let texts = custom("命中+10 ダブルアタック+3%").normalized_texts();
         assert_eq!(texts.len(), 1);
         assert!(texts[0].contains("Accuracy+10"), "{}", texts[0]);
         assert!(texts[0].contains("\"Double Attack\"+3%"), "{}", texts[0]);
     }
 
     #[test]
-    fn texts_en_skips_empty_sources() {
+    fn normalized_texts_skips_empty_sources() {
         // 存在しない item_id、オグメント未選択、カスタム説明なし
-        assert!(equip(0).texts_en().is_empty());
+        assert!(equip(0).normalized_texts().is_empty());
     }
 
     #[test]
@@ -407,6 +403,39 @@ mod tests {
         assert_eq!(v["body"]["二刀流"], 3);
         assert_eq!(v["body"]["命中"], 7, "ペット行の命中+10 は拾わない");
         assert_eq!(v["hands"]["二刀流"], 2);
+    }
+
+    // --- 条件ラベルの規則を両経路で共有する (docs/adr/0019 手順 3) ---------
+
+    #[test]
+    fn conditional_labels_are_excluded_from_both_paths() {
+        // イーガダブレット (11338): 防21 ペット:命中+3 モクシャ+3
+        let set = set(&[("body", equip(11338))]);
+        assert_eq!(set.bonuses().total.accuracy, 0, "ペット行は本体に乗らない");
+        assert!(
+            set.property_values(&terms(&["命中", "モクシャ"]))
+                .is_empty(),
+            "ユーザー定義プロパティ側も同じ"
+        );
+    }
+
+    #[test]
+    fn combination_is_counted_by_both_paths() {
+        // マガバンフロック (10464): ... 魔攻+7 魔防+5\nコンビネーション:魔命+5
+        // セット効果は常時扱いにする (docs/adr/0019)
+        let set = set(&[("body", equip(10464))]);
+        assert_eq!(set.bonuses().total.magic_accuracy, 5);
+        assert_eq!(set.property_values(&terms(&["魔命"]))["body"]["魔命"], 5);
+    }
+
+    #[test]
+    fn both_paths_agree_on_the_same_item() {
+        // フェリンマント (11555): DEX+4 CHR+4 命中+7 ペット:命中+10
+        let set = set(&[("back", equip(11555))]);
+        let stats = set.bonuses();
+        let props = set.property_values(&terms(&["命中"]));
+        assert_eq!(stats.total.accuracy, 7);
+        assert_eq!(props["back"]["命中"], 7, "経路 A と B で同じ値になる");
     }
 
     #[test]

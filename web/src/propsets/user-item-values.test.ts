@@ -62,7 +62,7 @@ describe('calculateUserPropertyValues', () => {
     });
 
     it('日本語テキストを JA→EN 変換せずそのまま抽出する', () => {
-        // 「命中」は convertAugmentJaToEn を通すと Accuracy に変換されて
+        // 「命中」は JA→EN 変換を通すと Accuracy に変換されて
         // しまう語。変換されていれば 0 になるので、10 が取れることが
         // 生の日本語テキストに対して抽出している証拠になる。
         const totals = calculateUserPropertyValues(
@@ -70,5 +70,16 @@ describe('calculateUserPropertyValues', () => {
             [userItem('命中')]
         );
         expect(totals['user:命中']).toBe(10);
+    });
+
+    it('条件ラベル配下 (ペット等) の値は拾わない', () => {
+        // イーガダブレット (11338) の説明文と同じ形。命中・モクシャはどちらも
+        // ペットのもので装備者には乗らない (docs/knowledge/items/description_labels.md)
+        const totals = calculateUserPropertyValues(
+            { body: { item_id: 0, custom_description: '防21 ペット:命中+3 モクシャ+3' } },
+            [userItem('命中'), userItem('モクシャ')]
+        );
+        expect(totals['user:命中']).toBe(0);
+        expect(totals['user:モクシャ']).toBe(0);
     });
 });

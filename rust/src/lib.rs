@@ -2,6 +2,7 @@ pub mod breakdown;
 pub mod chara;
 pub mod character_profile;
 pub mod data_loader;
+pub mod equip;
 pub mod equip_stats;
 pub mod gift;
 pub mod item_search;

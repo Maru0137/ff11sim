@@ -1,8 +1,17 @@
-//! 装備の説明文 (`description_en`) から数値を抽出する。
+//! 装備の説明文から数値を抽出する。説明文の解釈はこのモジュールが持つ (docs/adr/0018)。
 //!
-//! `web/js/equip-stats.js` からの移植 (docs/adr/0010)。
+//! 抽出は目的の違う 2 系統がある。
 //!
-//! # 移植方針: 挙動を変えない
+//! - `extract_all_stats` / `extract_skill_bonuses`: **英語**説明文から固定 26 種を
+//!   全一致合算する。ステータス計算用。`web/js/equip-stats.js` からの移植 (docs/adr/0010)
+//! - `extract_stat_from_description`: **日本語**テキストから呼び出し側が指定した 1 種を
+//!   最初の一致だけ取り出す。検索の説明文ステータスソートと、プロパティセットの
+//!   ユーザー定義項目 (docs/adr/0015) 用
+//!
+//! 2 系統は言語も抽出方式も条件セグメントの扱いも異なる。同じ装備で違う値が出うる。
+//! 統一は docs/adr/0018 のフォローアップとして別途扱う。
+//!
+//! # 移植方針: 挙動を変えない (英語側)
 //!
 //! JS 実装の挙動をそのまま再現する。既知の誤りも含めて移す。具体的には、
 //! 説明文に含まれる条件付きセグメント (`In Dynamis:` / `Unity Ranking:` /
@@ -337,112 +346,6 @@ impl EquipStats {
             ("resist_terror", self.resist_terror),
             ("resist_death", self.resist_death),
         ]
-    }
-
-    /// キー名 → 値のマップから値を取り込む。`entries()` と対になる操作で、
-    /// WASM 境界で JS から受け取ったオブジェクトを構造体に戻すのに使う。
-    /// 未知のキーは無視する。
-    pub fn set_from_map(&mut self, map: &BTreeMap<String, i32>) {
-        for (key, value) in map {
-            self.set_by_key(key, *value);
-        }
-    }
-
-    /// キー名を指定して値を設定する。`entries()` のキーと対応する。
-    fn set_by_key(&mut self, key: &str, v: i32) {
-        match key {
-            "hp" => self.hp = v,
-            "mp" => self.mp = v,
-            "str" => self.str_ = v,
-            "dex" => self.dex = v,
-            "vit" => self.vit = v,
-            "agi" => self.agi = v,
-            "int" => self.int = v,
-            "mnd" => self.mnd = v,
-            "chr" => self.chr = v,
-            "hp_pct" => self.hp_pct = v,
-            "mp_pct" => self.mp_pct = v,
-            "def" => self.def = v,
-            "attack" => self.attack = v,
-            "accuracy" => self.accuracy = v,
-            "evasion" => self.evasion = v,
-            "attack_pct" => self.attack_pct = v,
-            "ranged_attack" => self.ranged_attack = v,
-            "ranged_accuracy" => self.ranged_accuracy = v,
-            "magic_attack" => self.magic_attack = v,
-            "magic_accuracy" => self.magic_accuracy = v,
-            "magic_accuracy_skill" => self.magic_accuracy_skill = v,
-            "magic_evasion" => self.magic_evasion = v,
-            "magic_damage" => self.magic_damage = v,
-            "haste_pct" => self.haste_pct = v,
-            "store_tp" => self.store_tp = v,
-            "double_attack_pct" => self.double_attack_pct = v,
-            "triple_attack_pct" => self.triple_attack_pct = v,
-            "quad_attack_pct" => self.quad_attack_pct = v,
-            "double_attack_damage_pct" => self.double_attack_damage_pct = v,
-            "triple_attack_damage_pct" => self.triple_attack_damage_pct = v,
-            "critical_hit_rate_pct" => self.critical_hit_rate_pct = v,
-            "critical_hit_damage_pct" => self.critical_hit_damage_pct = v,
-            "weapon_skill_damage_pct" => self.weapon_skill_damage_pct = v,
-            "subtle_blow" => self.subtle_blow = v,
-            "subtle_blow_2" => self.subtle_blow_2 = v,
-            "tp_bonus" => self.tp_bonus = v,
-            "skillchain_bonus" => self.skillchain_bonus = v,
-            "physical_damage_limit_pct" => self.physical_damage_limit_pct = v,
-            "true_shot" => self.true_shot = v,
-            "magic_critical_hit_2_pct" => self.magic_critical_hit_2_pct = v,
-            "magic_affinity" => self.magic_affinity = v,
-            "magic_burst_damage" => self.magic_burst_damage = v,
-            "magic_burst_damage_2" => self.magic_burst_damage_2 = v,
-            "conserve_mp" => self.conserve_mp = v,
-            "elemental_recast_delay_pct" => self.elemental_recast_delay_pct = v,
-            "blue_recast_delay_pct" => self.blue_recast_delay_pct = v,
-            "song_recast_delay" => self.song_recast_delay = v,
-            "ninjutsu_recast_delay" => self.ninjutsu_recast_delay = v,
-            "damage_taken_pct" => self.damage_taken_pct = v,
-            "physical_damage_taken_pct" => self.physical_damage_taken_pct = v,
-            "magic_damage_taken_pct" => self.magic_damage_taken_pct = v,
-            "magic_def_bonus" => self.magic_def_bonus = v,
-            "dmg" => self.dmg = v,
-            "delay" => self.delay = v,
-            "regen" => self.regen = v,
-            "refresh" => self.refresh = v,
-            "regain" => self.regain = v,
-            "fast_cast_pct" => self.fast_cast_pct = v,
-            "quick_magic_pct" => self.quick_magic_pct = v,
-            "snapshot_pct" => self.snapshot_pct = v,
-            "rapid_shot_pct" => self.rapid_shot_pct = v,
-            "double_shot_pct" => self.double_shot_pct = v,
-            "triple_shot_pct" => self.triple_shot_pct = v,
-            "double_shot_damage_pct" => self.double_shot_damage_pct = v,
-            "triple_shot_damage_pct" => self.triple_shot_damage_pct = v,
-            "recycle" => self.recycle = v,
-            "resist_fire" => self.resist_fire = v,
-            "resist_ice" => self.resist_ice = v,
-            "resist_wind" => self.resist_wind = v,
-            "resist_earth" => self.resist_earth = v,
-            "resist_lightning" => self.resist_lightning = v,
-            "resist_water" => self.resist_water = v,
-            "resist_light" => self.resist_light = v,
-            "resist_dark" => self.resist_dark = v,
-            "resist_sleep" => self.resist_sleep = v,
-            "resist_paralysis" => self.resist_paralysis = v,
-            "resist_bind" => self.resist_bind = v,
-            "resist_silence" => self.resist_silence = v,
-            "resist_gravity" => self.resist_gravity = v,
-            "resist_slow" => self.resist_slow = v,
-            "resist_petrification" => self.resist_petrification = v,
-            "resist_stun" => self.resist_stun = v,
-            "resist_poison" => self.resist_poison = v,
-            "resist_charm" => self.resist_charm = v,
-            "resist_blind" => self.resist_blind = v,
-            "resist_curse" => self.resist_curse = v,
-            "resist_virus" => self.resist_virus = v,
-            "resist_amnesia" => self.resist_amnesia = v,
-            "resist_terror" => self.resist_terror = v,
-            "resist_death" => self.resist_death = v,
-            _ => {}
-        }
     }
 
     /// 別の `EquipStats` を項目ごとに加算する。JS の `sumStats` に対応。
@@ -1126,6 +1029,145 @@ pub fn convert_augment_ja_to_en(text: &str) -> String {
     result
 }
 
+// ---------------------------------------------------------------------------
+// 任意名の抽出 (日本語テキスト向け)
+//
+// 上の `extract_all_stats` が「英語説明文から固定 26 種を全一致合算」なのに対し、
+// こちらは「日本語テキストから呼び出し側が指定した 1 種を最初の一致だけ」取り出す。
+// 検索の説明文ステータスソート (item_search) と、プロパティセットのユーザー定義項目
+// (docs/adr/0015) が使う。もとは item_search.rs にあったが、説明文の解釈は
+// このモジュールが持つ (docs/adr/0018)。
+// ---------------------------------------------------------------------------
+/// 説明文中の「条件ラベル」の適用範囲 (`:` の直後から行末まで) を返す。
+///
+/// 日本語説明文では `ペット:` `潜在能力:` `右耳:` のようなコロン付きラベルが、
+/// その行の残り全体の適用対象・適用条件を表す
+/// (例: `防21 ペット:命中+3 モクシャ+3` の 命中/モクシャ はどちらもペットのもの)。
+/// キャラクター本体に常時乗る値ではないので、抽出の対象から外す。
+/// 範囲が行末までで折り返し行に及ばないのは、実データの折り返し行が
+/// 本体の効果に戻っているため (例 ＰＮチュリダル+2
+/// `オートマトン:魔命+9` / `ファストキャスト効果アップ`)。
+///
+/// ラベルの判定条件を「非 ASCII 文字を含むこと」にしているのは、英語説明文の
+/// `DMG:+165 Delay:+240 STR+10` のような `ステータス:値` 表記を条件ラベルと
+/// 誤認しないため (description_ja が無い装備は description_en で代替する)。
+/// ラベル自身は範囲に含めないので、`DEF:77` から `DEF` を引く従来の用法は残る。
+///
+/// 行の区切りは実際の改行とリテラルの `\n` の両方を見る。items.json の
+/// description_ja は改行をリテラルの `\n` で持つ (crate::items)。
+fn conditional_label_scopes(chars: &[char]) -> Vec<(usize, usize)> {
+    // リテラルの `\n` は大文字化を通った後なので `\N` になっている
+    let line_break_at = |i: usize| -> Option<usize> {
+        match chars.get(i) {
+            Some('\n') => Some(1),
+            Some('\\') if matches!(chars.get(i + 1), Some('n') | Some('N')) => Some(2),
+            _ => None,
+        }
+    };
+    let mut scopes = Vec::new();
+    // 現在のトークン (直前の空白/コロン/行頭以降) の開始位置と、非 ASCII を含むか
+    let mut token_start = 0usize;
+    let mut token_has_non_ascii = false;
+    let mut i = 0usize;
+    while i < chars.len() {
+        if let Some(width) = line_break_at(i) {
+            i += width;
+            token_start = i;
+            token_has_non_ascii = false;
+            continue;
+        }
+        let c = chars[i];
+        if c == ':' && i > token_start && token_has_non_ascii {
+            let mut end = i + 1;
+            while end < chars.len() && line_break_at(end).is_none() {
+                end += 1;
+            }
+            scopes.push((i + 1, end));
+            i = end;
+            continue;
+        }
+        if c == ':' || c.is_whitespace() {
+            token_start = i + 1;
+            token_has_non_ascii = false;
+        } else if !c.is_ascii() {
+            token_has_non_ascii = true;
+        }
+        i += 1;
+    }
+    scopes
+}
+
+/// 説明文からステータス値を取り出す。ソート用。
+/// 全角英数と `＋` `－` `―` を半角に直してから、最初に一致した値を返す。
+/// 条件ラベル (`ペット:` など) の配下は対象外 (`conditional_label_scopes`)。
+pub fn extract_stat_from_description(description: &str, stat_name: &str) -> i32 {
+    if description.is_empty() || stat_name.is_empty() {
+        return 0;
+    }
+    let normalized: String = description
+        .chars()
+        .map(|c| {
+            let code = c as u32;
+            match code {
+                0xFF21..=0xFF3A => char::from_u32(code - 0xFF21 + 0x41).unwrap_or(c),
+                0xFF41..=0xFF5A => char::from_u32(code - 0xFF41 + 0x61).unwrap_or(c),
+                0xFF10..=0xFF19 => char::from_u32(code - 0xFF10 + 0x30).unwrap_or(c),
+                0xFF0B => '+',
+                0xFF0D | 0x2015 => '-',
+                _ => c,
+            }
+        })
+        .flat_map(|c| c.to_uppercase())
+        .collect();
+    let needle = stat_name.to_uppercase();
+
+    // JS 側は `${stat}\s*(?::\s*)?([+\-]?)\s*(\d+)` を i フラグ付きで 1 回だけ照合する。
+    // 大小は両辺を大文字化して揃えてあるので、ここでは手で走査する。
+    let bytes: Vec<char> = normalized.chars().collect();
+    let pat: Vec<char> = needle.chars().collect();
+    let scopes = conditional_label_scopes(&bytes);
+    let mut i = 0usize;
+    while i + pat.len() <= bytes.len() {
+        if bytes[i..i + pat.len()] != pat[..] {
+            i += 1;
+            continue;
+        }
+        if scopes.iter().any(|&(s, e)| i >= s && i < e) {
+            i += 1;
+            continue;
+        }
+        let mut j = i + pat.len();
+        let skip_ws = |j: &mut usize| {
+            while *j < bytes.len() && bytes[*j].is_whitespace() {
+                *j += 1;
+            }
+        };
+        skip_ws(&mut j);
+        if j < bytes.len() && bytes[j] == ':' {
+            j += 1;
+            skip_ws(&mut j);
+        }
+        let mut sign = 1;
+        if j < bytes.len() && (bytes[j] == '+' || bytes[j] == '-') {
+            if bytes[j] == '-' {
+                sign = -1;
+            }
+            j += 1;
+        }
+        skip_ws(&mut j);
+        let start = j;
+        while j < bytes.len() && bytes[j].is_ascii_digit() {
+            j += 1;
+        }
+        if j > start {
+            let num: String = bytes[start..j].iter().collect();
+            return sign * num.parse::<i32>().unwrap_or(0);
+        }
+        i += 1;
+    }
+    0
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -1486,43 +1528,6 @@ mod tests {
         );
     }
 
-    #[test]
-    fn set_from_map_roundtrips_every_field() {
-        // entries() と set_by_key() の対応漏れを検出する。
-        // 全項目に値を入れた状態を entries() でマップ化し、set_from_map() で
-        // 復元して一致するかを見る。片方に無いキーがあると値が落ちる。
-        let original = all_fields_nonzero();
-        let map: BTreeMap<String, i32> = original
-            .entries()
-            .into_iter()
-            .map(|(k, v)| (k.to_string(), v))
-            .collect();
-
-        let mut restored = EquipStats::default();
-        restored.set_from_map(&map);
-
-        let dropped: Vec<&str> = original
-            .entries()
-            .iter()
-            .zip(restored.entries().iter())
-            .filter(|((_, v), (_, v2))| v != v2)
-            .map(|((k, _), _)| *k)
-            .collect();
-        assert!(
-            dropped.is_empty(),
-            "set_by_key() が対応していない項目がある: {dropped:?}"
-        );
-    }
-
-    #[test]
-    fn set_from_map_ignores_unknown_keys() {
-        let mut s = EquipStats::default();
-        let map: BTreeMap<String, i32> =
-            [("hp".to_string(), 5), ("no_such_key".to_string(), 99)].into();
-        s.set_from_map(&map);
-        assert_eq!(s.hp, 5);
-    }
-
     /// 全項目が非ゼロの `EquipStats` を作る。`add()` の網羅性検証に使う。
     fn all_fields_nonzero() -> EquipStats {
         let mut s = EquipStats::default();
@@ -1715,6 +1720,89 @@ mod tests {
             mismatches.is_empty(),
             "JS と {} 件の不一致がある (先頭 40 件を表示)",
             mismatches.len()
+        );
+    }
+
+    #[test]
+    fn extract_stat_handles_colon_and_fullwidth() {
+        assert_eq!(extract_stat_from_description("DEF:77", "DEF"), 77);
+        assert_eq!(extract_stat_from_description("DMG:+165", "DMG"), 165);
+        assert_eq!(extract_stat_from_description("ＳＴＲ＋５", "STR"), 5);
+        assert_eq!(extract_stat_from_description("STR-3", "STR"), -3);
+        assert_eq!(extract_stat_from_description("防77", "防"), 77);
+        assert_eq!(extract_stat_from_description("Attack+10", "attack"), 10);
+        assert_eq!(extract_stat_from_description("なにもない", "STR"), 0);
+    }
+
+    // プロパティセットのユーザー定義項目 (日本語プロパティ名) が前提とする挙動
+    #[test]
+    fn extract_stat_handles_japanese_property_names() {
+        assert_eq!(extract_stat_from_description("二刀流+5", "二刀流"), 5);
+        assert_eq!(extract_stat_from_description("二刀流＋１０", "二刀流"), 10);
+        // 説明文の途中にあっても一致する
+        assert_eq!(
+            extract_stat_from_description("ダブルアタック+3 二刀流+2", "二刀流"),
+            2
+        );
+        // 複数一致は最初の 1 件のみ (合算しない)
+        assert_eq!(
+            extract_stat_from_description("二刀流+3 何か 二刀流+4", "二刀流"),
+            3
+        );
+        assert_eq!(extract_stat_from_description("ストアTP+5", "二刀流"), 0);
+    }
+
+    // 条件ラベル配下 (ペット/潜在能力など) は本体の値ではないので拾わない
+    #[test]
+    fn extract_stat_skips_conditional_label_scope() {
+        // イーガダブレット (11338): ペット行の 命中/モクシャ はどちらもペットのもの
+        let iga = "防21 ペット:命中+3 モクシャ+3";
+        assert_eq!(extract_stat_from_description(iga, "命中"), 0);
+        assert_eq!(extract_stat_from_description(iga, "モクシャ"), 0);
+        // ラベルより前は本体の値として拾う (モエパパストーン 10817)
+        assert_eq!(
+            extract_stat_from_description("防5 CHR+5 ヘイスト+5% ペット:ヘイスト+5%", "ヘイスト"),
+            5
+        );
+        // ペット以外の条件ラベルも同じ扱い
+        assert_eq!(
+            extract_stat_from_description("防2 潜在能力:命中+50 飛命+50", "命中"),
+            0
+        );
+        assert_eq!(
+            extract_stat_from_description("右耳:ダブルアタック+7% モクシャ+5", "モクシャ"),
+            0
+        );
+        // ラベル自身は範囲に含めない (`ペット:命中` のような指定は従来どおり拾える)
+        assert_eq!(
+            extract_stat_from_description("ペット:命中+10", "ペット:命中"),
+            10
+        );
+    }
+
+    #[test]
+    fn conditional_label_scope_ends_at_line_break() {
+        // 折り返し行は本体の効果に戻る (ＰＮチュリダル+2 10727 と同じ形)
+        // description_ja の改行はリテラルの `\n` (crate::items)
+        let literal = r"防42 命中+9 オートマトン:魔命+9\n敵対心-2";
+        assert_eq!(extract_stat_from_description(literal, "敵対心"), -2);
+        assert_eq!(extract_stat_from_description(literal, "魔命"), 0);
+        // 実際の改行でも同じ
+        let real = "防42 命中+9 オートマトン:魔命+9\n敵対心-2";
+        assert_eq!(extract_stat_from_description(real, "敵対心"), -2);
+    }
+
+    #[test]
+    fn conditional_label_scope_ignores_ascii_labels() {
+        // description_ja が無い装備は description_en で代替するため、
+        // 英語の `ステータス:値` 表記を条件ラベルと誤認してはいけない
+        assert_eq!(
+            extract_stat_from_description("DMG:+165 Delay:+240 Accuracy+20", "Accuracy"),
+            20
+        );
+        assert_eq!(
+            extract_stat_from_description("DMG:+165 Delay:+240", "Delay"),
+            240
         );
     }
 }

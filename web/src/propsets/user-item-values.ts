@@ -1,49 +1,52 @@
-// ユーザー定義プロパティ項目の値計算 (docs/adr/0015)。
-// 装備説明文 (日本語) + オーグメント文 + カスタム説明の 3 ソースから
-// 「term+N」を extract_named_stat (WASM) で抽出してスロット横断で合算する。
-// 3 ソースの組み立ては calculateEquipSetBonuses (equip-bonuses.ts) の
-// ループと同じ構成だが、こちらは日本語テキストをそのまま渡す:
+// ユーザー定義プロパティ項目の値計算 (docs/adr/0015) の入口。
+//
+// 実体は Rust 側 (rust/src/equip.rs の EquipSet::property_values、docs/adr/0018)。
+// 装備説明文 (日本語) + オーグメント文 + カスタム説明の 3 ソースから「term+N」を
+// 抽出してスロット横断で合算する。ステータス計算の経路と違い、日本語のまま扱う:
 // - アイテムは description_en ではなく description_ja を使う
-// - オーグメント/カスタム文は元々日本語なので convertAugmentJaToEn を通さない
+// - オーグメント/カスタム文も JA→EN 変換を通さない (任意の日本語プロパティ名を
+//   扱うため。変換表に無い語が消えてしまう)
 //
 // 抽出は各テキストにつき最初の一致 1 件のみ (合算は装備・ソース間のみ)。
 // 「二刀流効果アップ」のような数値を伴わない表記は対象外 (将来
 // augments.json のような補完データで対応する)。
-import { get_item_by_id, extract_named_stat, isItemsLoaded } from '../wasm';
-import { getAugmentText } from '../augments';
+// 「ペット:命中+3 モクシャ+3」のような条件ラベル配下 (ラベルから行末まで) は
+// 本体に常時乗る値ではないため拾わない (docs/knowledge/items/description_labels.md)。
+//
+// この層が持つのは「プロパティ名 → 表示 id (`user:<term>`)」の対応だけ。
+// これは UI 側の取り決めなので Rust には持たせていない。
+import { equip_set_property_values, isItemsLoaded } from '../wasm';
 import type { EquipSlotData } from '../equip/equip-store';
 import type { UserPropertyItem } from './types';
 
 /**
  * スロット別のユーザー定義項目値 (内訳モーダル用、docs/adr/0016)。
- * 装備のあるスロットのみ含む。値 0 の項目はキーごと含まない (疎)。
+ * 寄与のあるスロットのみ含む。値 0 の項目はキーごと含まない (疎)。
  */
 export function calculateUserPropertyValuesPerSlot(
     slots: Record<string, EquipSlotData | null | undefined> | undefined,
     userItems: UserPropertyItem[]
 ): Record<string, Record<string, number>> {
+    if (!slots || userItems.length === 0 || !isItemsLoaded()) return {};
+
+    // undefined を null に寄せる (equip-bonuses.ts と同じ理由)
+    const normalized = Object.fromEntries(
+        Object.entries(slots).map(([key, data]) => [key, data ?? null])
+    );
+    const byTerm: Record<string, Record<string, number>> = equip_set_property_values(
+        { slots: normalized },
+        userItems.map((item) => item.term)
+    );
+
+    // term キーを表示 id に付け替える。同じ term の項目は同じ値になる
     const perSlot: Record<string, Record<string, number>> = {};
-    if (!slots || userItems.length === 0 || !isItemsLoaded()) return perSlot;
-
-    for (const slotKey of Object.keys(slots)) {
-        const slotData = slots[slotKey];
-        if (!slotData) continue;
-
-        const item = get_item_by_id(slotData.item_id);
-        const texts = [
-            item?.description_ja,
-            getAugmentText(slotData),
-            slotData.custom_description,
-        ];
-        for (const text of texts) {
-            if (!text) continue;
-            for (const userItem of userItems) {
-                const v = extract_named_stat(text, userItem.term);
-                if (!v) continue;
-                const bucket = (perSlot[slotKey] ||= {});
-                bucket[userItem.id] = (bucket[userItem.id] || 0) + v;
-            }
+    for (const [slotKey, values] of Object.entries(byTerm)) {
+        const bucket: Record<string, number> = {};
+        for (const item of userItems) {
+            const v = values[item.term];
+            if (v) bucket[item.id] = v;
         }
+        perSlot[slotKey] = bucket;
     }
     return perSlot;
 }

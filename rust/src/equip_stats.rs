@@ -1,15 +1,37 @@
 //! 装備の説明文から数値を抽出する。説明文の解釈はこのモジュールが持つ (docs/adr/0018)。
 //!
-//! 抽出は目的の違う 2 系統がある。
+//! # パイプライン (docs/adr/0019)
 //!
-//! - `extract_all_stats` / `extract_skill_bonuses`: **英語**説明文から固定 26 種を
-//!   全一致合算する。ステータス計算用。`web/js/equip-stats.js` からの移植 (docs/adr/0010)
-//! - `extract_stat_from_description`: **日本語**テキストから呼び出し側が指定した 1 種を
-//!   最初の一致だけ取り出す。検索の説明文ステータスソートと、プロパティセットの
-//!   ユーザー定義項目 (docs/adr/0015) 用
+//! 入力は **すべて日本語**。アイテムの `description_ja`・オグメント文・カスタム説明を
+//! 同じ扱いにする。
 //!
-//! 2 系統は言語も抽出方式も条件セグメントの扱いも異なる。同じ装備で違う値が出うる。
-//! 統一は docs/adr/0018 のフォローアップとして別途扱う。
+//! ```text
+//! 日本語テキスト
+//!   ↓ strip_conditional_labels   条件ラベル配下を落とす (コンビネーションは残す)
+//!   ├─ convert_augment_ja_to_en → extract_all_stats / extract_skill_bonuses
+//!   │    表記の正規化              固定 78 項目を全一致合算 (ステータス計算)
+//!   └─ そのまま               → extract_stat_from_description
+//!                                任意名を最初の 1 件だけ (検索ソート / docs/adr/0015)
+//! ```
+//!
+//! 抽出器が読む「正規表記」が英語なのは、`web/js/equip-stats.js` からの移植
+//! (docs/adr/0010) だからで、翻訳ではなく表記ゆれの正規化として扱う。
+//!
+//! 固定項目と任意名で抽出方式が違う (全一致合算 / 最初の 1 件) のは用途から来る仕様で、
+//! 揃えるべきものではない。読むテキストと条件ラベルの規則は共通なので、
+//! 同じ装備の同じ項目なら同じ値になる。
+//!
+//! # 英語説明文の扱い
+//!
+//! `description_en` は解釈に使わない。ただし `extract_all_stats` は英語表記も読めるため、
+//! **移行の参照実装**として残っている: `rust/tests/ja_en_conformance.rs` が
+//! 日本語経路の出力を `extract_all_stats(description_en)` と突き合わせ、
+//! 正規化層の抜けを検出する。JS リファレンス削除後 (docs/adr/0018) に失われていた
+//! 全件検証の後継でもある。
+//!
+//! そのため、英語入力でしか到達しない前処理 (属性アイコンの展開・`Pet:` セグメント除去・
+//! `Unity Ranking` の範囲最大値取り) は参照側のために残してある。日本語経路からは、
+//! 条件ラベルが前段で落ちているので到達しない。
 //!
 //! # 移植方針: 挙動を変えない (英語側)
 //!
@@ -17,8 +39,9 @@
 //! 説明文に含まれる条件付きセグメント (`In Dynamis:` / `Unity Ranking:` /
 //! `Right ear:` / `Set:` など 30 種以上) を JS は体系的に扱っておらず、
 //! Unity Ranking は無条件に加算され、`In Dynamis:` は無視されない。
-//! これを直すのは条件セグメント対応として別途扱う。移植時に挙動を変えると、
-//! JS 実装との全件突き合わせが「移植が正しいか」の判定に使えなくなるため。
+//! **日本語経路ではこれを条件ラベルの除去で解消した (docs/adr/0019)。**
+//! 上記の癖が残るのは参照用の英語入力だけで、`ja_en_conformance` はその差を
+//! 「意図した差」として数えている。
 //! 突き合わせは `conformance_with_js_over_all_items` テストで行う
 //! (移植元だった `web/test/equip-stats-extraction.test.js` は役目を終えて削除済み)。
 //!
@@ -905,16 +928,54 @@ pub fn extract_skill_bonuses(description_en: &str) -> BTreeMap<&'static str, i32
 }
 
 // ---------------------------------------------------------------------------
-// オーグメントの日本語表記 → 英語表記
+// 表記の正規化 (日本語表記 → 抽出器が読む正規表記)
 // ---------------------------------------------------------------------------
 
-/// 日本語のオーグメント表記を、抽出可能な英語表記へ置き換える対応表。
+/// 日本語表記を、抽出器が読める正規表記へ寄せる対応表。
+///
+/// 正規表記が英語なのは、抽出器が英語説明文からの移植 (docs/adr/0010) だからで、
+/// 「翻訳」ではなく表記ゆれの正規化として扱う (docs/adr/0019)。入力は
+/// アイテムの `description_ja`・オグメント文・カスタム説明のいずれも日本語。
 ///
 /// **並び順に意味がある。** 単純な順次置換なので、長い表記を先に置かないと
 /// 部分一致で壊れる (例: 「魔法クリティカルヒットII」を「魔法クリティカルヒット率」
-/// より先に、「攻」を最後に置く)。`web/js/constants.js` の順序をそのまま保つこと。
-static AUGMENT_JA_TO_EN: [(&str, &str); 88] = [
+/// より先に、「攻」を最後に置く)。
+static AUGMENT_JA_TO_EN: [(&str, &str); 138] = [
+    // --- ペット系ラベル (docs/adr/0019 手順 1 で追加) -----------------------
+    // 正規表記に寄せることで、既存の `Pet:` セグメント除去がそのまま効く。
+    ("呼び出しペット", "Pet"),
+    ("ペット", "Pet"),
+    ("召喚獣", "Avatar"),
+    ("オートマトン", "Automaton"),
+    ("飛竜", "Wyvern"),
+    // --- 武器・防御スキル (docs/adr/0019 手順 1 で追加) ---------------------
+    // 「スキル」で終わる表記。個別ステータス名 (「命中」「攻」など) より長いので
+    // 先に置く。魔法スキルは既存エントリが下方にある。
+    ("格闘スキル", "Hand-to-Hand skill"),
+    ("短剣スキル", "Dagger skill"),
+    ("両手剣スキル", "Great Sword skill"),
+    ("片手剣スキル", "Sword skill"),
+    ("両手斧スキル", "Great Axe skill"),
+    ("片手斧スキル", "Axe skill"),
+    ("両手鎌スキル", "Scythe skill"),
+    ("両手槍スキル", "Polearm skill"),
+    ("両手刀スキル", "Great Katana skill"),
+    ("片手刀スキル", "Katana skill"),
+    ("両手棍スキル", "Staff skill"),
+    ("片手棍スキル", "Club skill"),
+    ("弓術スキル", "Archery skill"),
+    ("射撃スキル", "Marksmanship skill"),
+    ("投てきスキル", "Throwing skill"),
+    ("ガードスキル", "Guarding skill"),
+    ("回避スキル", "Evasion skill"),
+    ("盾スキル", "Shield skill"),
+    ("受け流しスキル", "Parrying skill"),
+    ("魔命スキル", "Magic Accuracy skill"),
+    // --- 装備の基本表記 -----------------------------------------------------
+    // 日本語はコロンを使わない (「防77」「Ｄ130 隔196」) ので、コロン込みで置き換える。
+    // 「魔防」を先に置く必要があるため、ここでは扱わず下方の個別ステータスで扱う。
     ("ウェポンスキルのダメージ", "Weapon skill damage"),
+    ("ウェポンスキルの命中", "Weapon Skill Accuracy"),
     ("マジックバーストダメージ", "Magic burst damage"),
     // 順序重要: 「マジックバースト命中」→「マジックバースト」の順。
     // 「マジックバースト+N」(ソーサラストール系) は MB ダメージの表記揺れ
@@ -932,6 +993,9 @@ static AUGMENT_JA_TO_EN: [(&str, &str); 88] = [
     ("被魔法ダメージ", "Magic damage taken"),
     ("クリティカルヒットダメージ", "Critical hit damage"),
     ("クリティカルヒット率", "Critical hit rate"),
+    // 装備説明文は「率」を付けない (「クリティカルヒット+2%」)
+    ("魔法クリティカルヒット", "Magic Critical hit rate"),
+    ("クリティカルヒット", "Critical hit rate"),
     ("トリプルアタックダメージ", "Triple Attack damage"),
     ("トリプルアタック", "\"Triple Attack\""),
     ("ダブルアタックダメージ", "Double Attack damage"),
@@ -1006,15 +1070,50 @@ static AUGMENT_JA_TO_EN: [(&str, &str); 88] = [
     ("トリプルショット", "\"Triple Shot\""),
     ("リサイクル", "\"Recycle\""),
     ("アフィニティ", "Affinity"),
+    // --- 装備説明文にしか出ない表記 (docs/adr/0019 手順 1 で追加) -----------
+    // ユニティランクは範囲表記 (「HP+10～35」) を最大値に潰す前処理が
+    // 正規表記側にあるため、ラベルも正規化しておく必要がある
+    ("ユニティランク", "Unity Ranking"),
+    ("二刀流", "\"Dual Wield\""),
+    ("ヒーリングHP", "HP recovered while healing"),
+    ("ケアル回復量", "\"Cure\" potency"),
+    ("ヒーリングMP", "MP recovered while healing"),
+    ("ファストキャスト", "\"Fast Cast\""),
+    ("スナップショット", "\"Snapshot\""),
+    ("ラピッドショット", "\"Rapid Shot\""),
+    ("リフレシュ", "\"Refresh\""),
+    // 「被リジェネ」は受けるリジェネの強度で、自身のリジェネとは別物。
+    // 「リジェネ」より先に置いて誤マッチを防ぐ
+    ("被リジェネ", "Potency of \"Regen\" effects received"),
+    ("リジェネ", "\"Regen\""),
+    ("リゲイン", "\"Regain\""),
+    ("カウンター", "\"Counter\""),
+    ("敵対心", "Enmity"),
+    // 「属性魔攻」「属性魔命」は属性限定の値で、汎用の魔攻/魔命とは別物。
+    // 正規表記側 (Elemental 付き) にすると抽出器が同じ理由で除外する
+    ("属性魔攻", "Elemental \"Magic Atk. Bonus\""),
+    ("属性魔命", "Elemental Magic Accuracy"),
+    // 「風水魔法+N」は「スキル」を省いた表記 (EN は Geomancy skill)。
+    // 「風水魔法スキル」は上方にあるのでそちらが先に当たる
+    ("風水魔法", "Geomancy skill"),
+    // 「使用間隔」「攻撃間隔」の「隔」が下の Delay: に誤爆するのを防ぐ。
+    // 抽出対象ではないので無害な語に潰す
+    ("間隔", "interval"),
     ("ヘイスト", "Haste"),
     ("魔回避", "Magic Evasion"),
     ("飛攻", "Ranged Attack"),
     ("飛命", "Ranged Accuracy"),
     ("魔命", "Magic Accuracy"),
     ("魔攻", "\"Magic Atk. Bonus\""),
+    // 「魔防」は「防」より先に置く必要がある
+    ("魔防", "\"Magic Def. Bonus\""),
     ("回避", "Evasion"),
     ("命中", "Accuracy"),
     ("攻", "Attack"),
+    // 日本語はコロンを使わない (「防77」「Ｄ130 隔196」) ので、コロン込みで置き換える
+    ("防", "DEF:"),
+    ("Ｄ", "DMG:"),
+    ("隔", "Delay:"),
 ];
 
 /// 日本語のオーグメント表記を英語表記に変換する。
@@ -1055,7 +1154,19 @@ pub fn convert_augment_ja_to_en(text: &str) -> String {
 ///
 /// 行の区切りは実際の改行とリテラルの `\n` の両方を見る。items.json の
 /// description_ja は改行をリテラルの `\n` で持つ (crate::items)。
-fn conditional_label_scopes(chars: &[char]) -> Vec<(usize, usize)> {
+///
+/// # 例外: コンビネーション
+///
+/// `コンビネーション:` (セット装備数で発動する効果) だけは条件ラベルとして扱わず、
+/// 配下の値を常時のものとして読む。本ツールは装備セットを組むためのもので、
+/// セット効果は実際には発動していることが多いため (docs/adr/0019)。
+/// `コンビネーション(召喚獣のみ):` のような対象限定の変種は例外にしない。
+const ALWAYS_ON_LABEL: &str = "コンビネーション";
+
+/// 条件ラベル 1 件の位置。`(ラベル開始, コロンの次, 行末)`。
+type LabelScope = (usize, usize, usize);
+
+fn conditional_label_scopes(chars: &[char]) -> Vec<LabelScope> {
     // リテラルの `\n` は大文字化を通った後なので `\N` になっている
     let line_break_at = |i: usize| -> Option<usize> {
         match chars.get(i) {
@@ -1064,6 +1175,7 @@ fn conditional_label_scopes(chars: &[char]) -> Vec<(usize, usize)> {
             _ => None,
         }
     };
+    let always_on: Vec<char> = ALWAYS_ON_LABEL.chars().collect();
     let mut scopes = Vec::new();
     // 現在のトークン (直前の空白/コロン/行頭以降) の開始位置と、非 ASCII を含むか
     let mut token_start = 0usize;
@@ -1077,12 +1189,17 @@ fn conditional_label_scopes(chars: &[char]) -> Vec<(usize, usize)> {
             continue;
         }
         let c = chars[i];
-        if c == ':' && i > token_start && token_has_non_ascii {
+        // コンビネーションは常時扱いなので、ラベルとして扱わず読み飛ばすだけにする
+        if c == ':'
+            && i > token_start
+            && token_has_non_ascii
+            && chars[token_start..i] != always_on[..]
+        {
             let mut end = i + 1;
             while end < chars.len() && line_break_at(end).is_none() {
                 end += 1;
             }
-            scopes.push((i + 1, end));
+            scopes.push((token_start, i + 1, end));
             i = end;
             continue;
         }
@@ -1095,6 +1212,29 @@ fn conditional_label_scopes(chars: &[char]) -> Vec<(usize, usize)> {
         i += 1;
     }
     scopes
+}
+
+/// 条件ラベルとその配下 (ラベル開始から行末まで) を取り除いた文字列を返す。
+///
+/// `conditional_label_scopes` と同じ規則で、装備の解釈に流す前段として使う
+/// (docs/adr/0019)。ラベル自身も落とすのは、残しておくと後段の正規化で
+/// `ペット:` が `Pet:` になり、英語向けの `Pet:` セグメント除去が
+/// 次のコロンまで食う既知の癖 (docs/tech-debt/equip-stats-js-quirks.md) を
+/// 誘発するため。
+pub fn strip_conditional_labels(text: &str) -> String {
+    let chars: Vec<char> = text.chars().collect();
+    let scopes = conditional_label_scopes(&chars);
+    if scopes.is_empty() {
+        return text.to_owned();
+    }
+    let mut out = String::with_capacity(text.len());
+    let mut cursor = 0usize;
+    for (label_start, _, line_end) in scopes {
+        out.extend(&chars[cursor..label_start]);
+        cursor = line_end;
+    }
+    out.extend(&chars[cursor..]);
+    out
 }
 
 /// 説明文からステータス値を取り出す。ソート用。
@@ -1132,7 +1272,7 @@ pub fn extract_stat_from_description(description: &str, stat_name: &str) -> i32 
             i += 1;
             continue;
         }
-        if scopes.iter().any(|&(s, e)| i >= s && i < e) {
+        if scopes.iter().any(|&(_, s, e)| i >= s && i < e) {
             i += 1;
             continue;
         }
@@ -1803,6 +1943,64 @@ mod tests {
         assert_eq!(
             extract_stat_from_description("DMG:+165 Delay:+240", "Delay"),
             240
+        );
+    }
+
+    // --- 条件ラベルの除去 (docs/adr/0019 手順 3) --------------------------
+
+    #[test]
+    fn strip_conditional_labels_removes_label_and_rest_of_line() {
+        // ラベル自身も落とす。残すと後段の正規化で `Pet:` になり、
+        // 英語向けのセグメント除去が次のコロンまで食う癖を誘発する
+        assert_eq!(
+            strip_conditional_labels("防21 ペット:命中+3 モクシャ+3"),
+            "防21 "
+        );
+        // ラベルより前は残る
+        assert_eq!(
+            strip_conditional_labels("防5 CHR+5 ヘイスト+5% ペット:ヘイスト+5%"),
+            "防5 CHR+5 ヘイスト+5% "
+        );
+    }
+
+    #[test]
+    fn strip_conditional_labels_keeps_combination() {
+        // コンビネーションは常時扱い (docs/adr/0019)
+        let text = "防52 魔攻+7 魔防+5\\nコンビネーション:魔命+5";
+        assert_eq!(strip_conditional_labels(text), text);
+        // 固定項目の抽出器は正規化後のテキストを読む
+        assert_eq!(
+            extract_all_stats(&convert_augment_ja_to_en(text)).magic_accuracy,
+            5
+        );
+        assert_eq!(extract_stat_from_description(text, "魔命"), 5);
+        // 対象限定の変種は例外にしない
+        assert_eq!(
+            strip_conditional_labels("防10 コンビネーション(召喚獣のみ):魔攻+5"),
+            "防10 "
+        );
+    }
+
+    #[test]
+    fn strip_conditional_labels_is_line_scoped() {
+        // 折り返し行は本体の効果に戻る。description_ja の改行はリテラルの `\n`
+        assert_eq!(
+            strip_conditional_labels(r"防42 命中+9 オートマトン:魔命+9\n敵対心-2"),
+            r"防42 命中+9 \n敵対心-2"
+        );
+        assert_eq!(
+            strip_conditional_labels("防42 オートマトン:魔命+9\n敵対心-2"),
+            "防42 \n敵対心-2"
+        );
+    }
+
+    #[test]
+    fn strip_conditional_labels_leaves_plain_text_untouched() {
+        assert_eq!(strip_conditional_labels("防77 命中+8"), "防77 命中+8");
+        // 英語の `ステータス:値` はラベルではない
+        assert_eq!(
+            strip_conditional_labels("DMG:+165 Delay:+240 STR+10"),
+            "DMG:+165 Delay:+240 STR+10"
         );
     }
 }

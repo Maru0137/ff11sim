@@ -68,9 +68,13 @@ decision-makers: Akira Maruoka
   2026-08-14 に Rust の `EquipSet::property_values` へ移した
   （[ADR 0018](0018-equip-module-owns-interpretation.md) 手順 3。
   web が持つのは「プロパティ名 → 表示 id (`user:<term>`)」の対応だけ）。
-- 条件ラベル（`ペット:` `潜在能力:` `コンビネーション:` など）のコロン直後から行末までは
+- 条件ラベル（`ペット:` `潜在能力:` など）のコロン直後から行末までは
   抽出対象から外す（2026-08-14 追加）。本体に常時乗る値ではないため
   （`防21 ペット:命中+3 モクシャ+3` の命中・モクシャはどちらもペットのもの）。
+  **`コンビネーション:` は 2026-08-15 に例外として除外対象から外した**
+  （[ADR 0019](0019-japanese-as-single-interpretation-source.md)）。
+  除去はステータス計算と共通の処理（`equip_stats::strip_conditional_labels`）で行い、
+  両経路が同じ規則になる。
   ラベル判定は「非 ASCII 文字を含むこと」。英語説明文の `DMG:+165 Delay:+240 STR+10` を
   誤認しないための条件で、日本語説明文ではコロン付きラベルが常に対象・条件を表す
   （[docs/knowledge/items/description_labels.md](../knowledge/items/description_labels.md)）。

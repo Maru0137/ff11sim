@@ -94,8 +94,13 @@ wasm-pack build rust --target web --out-dir ../web/pkg
 計算ロジックのテスト（Rust）。`build/items.json` の生成が前提になります。
 
 ```bash
-cargo test --manifest-path rust/Cargo.toml
+cargo test --release --manifest-path rust/Cargo.toml
 ```
+
+`--release` を付けるのは `rust/tests/ja_en_conformance.rs` が全装備 (約 15,000 件) に
+正規表現抽出を 2 通りかけるためです。debug ビルドではこの 1 本だけで約 150 秒
+かかります (release では約 8 秒)。CI も release で実行します。
+個別のテストを回すだけなら `--release` は不要です。
 
 JS の静的検査。未定義識別子（削除したモジュールの参照残りなど）を検出します。
 `index.html` 内のインライン script も対象です。

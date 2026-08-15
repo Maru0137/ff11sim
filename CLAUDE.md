@@ -29,7 +29,8 @@ All commands should be run from the `rust/` directory:
 cargo build              # Build the project
 cargo build --release    # Build optimized release
 cargo run                # Run the binary
-cargo test               # Run all tests
+cargo test --release     # Run all tests (release is much faster: ja_en_conformance
+                         # scans ~15,000 items and takes ~150s in debug, ~8s in release)
 cargo test <test_name>   # Run a specific test (e.g., cargo test chara_builder)
 cargo fmt                # Format code
 cargo clippy             # Run linter

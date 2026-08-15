@@ -1,5 +1,5 @@
 [toolchain]
 channel = "1.93.1"
-components = ["rustfmt", "clippy"]
+components = ["rustfmt", "clippy", "rust-analyzer"]
 # wasm-pack がビルドに使う。宣言しておけば rustup target add が要らない。
 targets = ["wasm32-unknown-unknown"]

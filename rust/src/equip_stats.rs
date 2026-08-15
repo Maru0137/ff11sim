@@ -1651,7 +1651,8 @@ mod tests {
             .iter()
             .zip(doubled.entries().iter())
             .filter(|((k, v), (k2, v2))| {
-                debug_assert_eq!(k, k2);
+                // CI は release で走らせるので debug_assert! は使わない
+                assert_eq!(k, k2);
                 *v != 0 && *v2 != v * 2
             })
             .map(|((k, _), _)| *k)

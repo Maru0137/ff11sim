@@ -23,6 +23,7 @@ import {
     jobMeritDefaultRanks, jobMeritCategoryName, isJobMeritPlaceholder, samStoreTpIndex,
 } from '../utils';
 import { clampToMax, clampWithinGroup } from './limits';
+import { moveItem } from './reorder';
 import { charactersStore, reloadCharacterList } from './character-store';
 import type { CharacterRecord } from './character-store';
 
@@ -325,6 +326,9 @@ export function CharacterTab() {
     // フォームを開いた / 保存した時点の内容。これとの差が「未保存の変更」
     // (docs/adr/0020)。値を戻せば未保存でなくなる。
     const [baseline, setBaseline] = useState<string | null>(null);
+    // 一覧のドラッグ並び替えの進行状態
+    const [draggingName, setDraggingName] = useState<string | null>(null);
+    const [dragOverName, setDragOverName] = useState<string | null>(null);
     // ジョブ別ポイント (ジョブ別メリット + JP) のジョブセレクタ。
     // 同じ「どのジョブか」を指すので 1 つに統合した (docs/adr/0021)。
     // フォームを閉じても保持する (旧実装踏襲)。
@@ -410,6 +414,20 @@ export function CharacterTab() {
         if (form?.editingName === name) openForm(null);
     }
 
+    // ドラッグ並び替え (docs/adr/0022)。配列の順序がそのまま保存順になる。
+    // 編集中のフォームには触れないので、未保存ガードは掛けない。
+    async function moveCharacter(fromName: string, toName: string) {
+        const list = (await loadCharacters()) as CharacterRecord[];
+        const next = moveItem(
+            list,
+            list.findIndex((c) => c.name === fromName),
+            list.findIndex((c) => c.name === toName)
+        );
+        if (next === list) return;
+        await saveCharacters(next as CharacterRecord[]);
+        await reloadCharacterList();
+    }
+
     return (
         <div className="container">
             <div>
@@ -419,8 +437,47 @@ export function CharacterTab() {
                         <li className="empty-msg">キャラクターが登録されていません</li>
                     ) : (
                         characters.map((ch) => (
-                            <li key={ch.name}>
-                                <span>
+                            <li
+                                key={ch.name}
+                                className={[
+                                    ch.name === draggingName ? 'dragging' : '',
+                                    ch.name === dragOverName ? 'drag-over' : '',
+                                ].filter(Boolean).join(' ') || undefined}
+                                onDragOver={(e) => {
+                                    if (!draggingName) return;
+                                    e.preventDefault();
+                                    e.dataTransfer.dropEffect = 'move';
+                                    setDragOverName(ch.name);
+                                }}
+                                onDragLeave={() => setDragOverName(null)}
+                                onDrop={(e) => {
+                                    e.preventDefault();
+                                    const from = e.dataTransfer.getData('text/plain');
+                                    if (from) void moveCharacter(from, ch.name);
+                                    setDraggingName(null);
+                                    setDragOverName(null);
+                                }}
+                            >
+                                {/* 行全体を draggable にすると編集 / 削除ボタンが押しにくくなるため
+                                    ハンドルだけを掴めるようにする (PropsetManageModal と同じ) */}
+                                <span
+                                    className="char-drag-handle"
+                                    title="ドラッグで並び替え"
+                                    aria-label={`${ch.name} を並び替え`}
+                                    draggable
+                                    onDragStart={(e) => {
+                                        e.dataTransfer.effectAllowed = 'move';
+                                        e.dataTransfer.setData('text/plain', ch.name);
+                                        setDraggingName(ch.name);
+                                    }}
+                                    onDragEnd={() => {
+                                        setDraggingName(null);
+                                        setDragOverName(null);
+                                    }}
+                                >
+                                    ⠿
+                                </span>
+                                <span className="char-main">
                                     <span className="char-info">{ch.name}</span>
                                     <span className="char-race">{RACE_NAMES[ch.race] || ch.race}</span>
                                 </span>

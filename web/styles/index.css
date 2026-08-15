@@ -838,19 +838,52 @@ input[type="checkbox"] {
     display: flex;
     justify-content: space-between;
     align-items: center;
+    gap: 8px;
     padding: 8px 12px;
     background: #0f0f23;
+    border: 1px solid transparent;
     border-radius: 5px;
     margin-bottom: 4px;
-    cursor: pointer;
 }
 
 .char-list li:hover {
     background: #1a1a3e;
 }
 
+/* ドラッグ並び替え (docs/adr/0022)。行全体ではなくハンドルだけを掴めるようにする */
+.char-list .char-drag-handle {
+    flex-shrink: 0;
+    color: #667;
+    font-size: 14px;
+    line-height: 1;
+    cursor: grab;
+    user-select: none;
+}
+
+.char-list .char-drag-handle:active {
+    cursor: grabbing;
+}
+
+.char-list li:hover .char-drag-handle {
+    color: #aaa;
+}
+
+.char-list .char-main {
+    flex: 1;
+    min-width: 0;
+}
+
+.char-list li.dragging {
+    opacity: 0.4;
+}
+
+.char-list li.drag-over {
+    border-color: #f0c040;
+    background: #1a1a3e;
+}
+
 .char-list li.selected {
-    border: 1px solid #f0c040;
+    border-color: #f0c040;
 }
 
 .char-list .char-info {

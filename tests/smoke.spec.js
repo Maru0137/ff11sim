@@ -474,3 +474,41 @@ test('ログインボタンが表示され、クリックしてもエラーが�
 
   expect(errors).toEqual([]);
 });
+
+test('キャラクター一覧をドラッグで並び替えられ、編集して保存しても順番が変わらない', async ({ page }) => {
+  const errors = collectErrors(page);
+  // 並び順は「配列の順序 = 表示順 = 保存順」(docs/adr/0022)。ログイン中は
+  // position カラムで復元するが CI から Supabase は叩けないため、ここでは
+  // ゲスト (localStorage) 経路で「保存されること」「保存の副作用で動かないこと」を見る。
+  await page.goto('./');
+  await page.evaluate((chars) => {
+    localStorage.setItem('ff11sim_characters', JSON.stringify(chars));
+  }, ['あ', 'い', 'う'].map((name) => ({ ...makeCharacter(), name })));
+  await page.reload();
+  await page.waitForTimeout(3000);
+
+  const names = () => page.locator('#charList .char-info').allTextContents();
+  expect(await names()).toEqual(['あ', 'い', 'う']);
+
+  // ハンドルを掴んで「う」を先頭へ
+  await page.locator('#charList li').filter({ hasText: 'う' }).locator('.char-drag-handle')
+    .dragTo(page.locator('#charList li').filter({ hasText: 'あ' }));
+  await page.waitForTimeout(500);
+  expect(await names()).toEqual(['う', 'あ', 'い']);
+
+  // 並び順が永続化されている
+  await page.reload();
+  await page.waitForTimeout(3000);
+  expect(await names()).toEqual(['う', 'あ', 'い']);
+
+  // 編集して保存しても位置が動かない
+  await page.locator('#charList li').filter({ hasText: 'あ' })
+    .getByRole('button', { name: '編集' }).click();
+  await expect(page.locator('#charEditSection')).toBeVisible();
+  await page.selectOption('#charRace', 'Elv');
+  await page.click('#btnSaveChar');
+  await page.waitForTimeout(1000);
+  expect(await names()).toEqual(['う', 'あ', 'い']);
+
+  expect(errors).toEqual([]);
+});

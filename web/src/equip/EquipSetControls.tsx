@@ -5,12 +5,13 @@ import { JOBS, RACE_NAMES } from '../constants';
 import { equipState, subscribeEquipState, getEquipStateVersion } from './equip-store';
 import {
     equipSetsStore,
-    selectChar,
-    selectJob,
     selectSupportJob,
-    selectSet,
-    newSet,
-    reorderEquipSetTabs,
+    requestSelectChar,
+    requestSelectJob,
+    requestSelectSet,
+    requestNewSet,
+    requestReorderEquipSetTabs,
+    isEquipSetDirty,
 } from './equip-sets-store';
 
 interface JobDef {
@@ -28,6 +29,8 @@ export function EquipSetControls() {
     const [dragOverName, setDragOverName] = useState<string | null>(null);
 
     const tabBarVisible = !!(equipState.currentEquipChar && equipState.currentEquipJob);
+    // 未保存マーク (docs/adr/0020)。編集中のセット = アクティブタブに出す
+    const dirty = isEquipSetDirty();
 
     return (
         <>
@@ -37,7 +40,7 @@ export function EquipSetControls() {
                     <select
                         id="equipSelectChar"
                         value={equipState.currentEquipChar}
-                        onChange={(e) => selectChar(e.target.value)}
+                        onChange={(e) => requestSelectChar(e.target.value)}
                     >
                         <option value="">-- キャラクターを選択 --</option>
                         {state.characters.map((ch) => (
@@ -53,7 +56,7 @@ export function EquipSetControls() {
                         id="equipSelectJob"
                         disabled={!equipState.currentEquipChar}
                         value={equipState.currentEquipJob}
-                        onChange={(e) => selectJob(e.target.value)}
+                        onChange={(e) => requestSelectJob(e.target.value)}
                     >
                         <option value="">-- ジョブを選択 --</option>
                         {jobs.map((j) => (
@@ -96,7 +99,7 @@ export function EquipSetControls() {
                         ].filter(Boolean).join(' ')}
                         data-equipset-name={es.name}
                         draggable
-                        onClick={() => selectSet(es.name)}
+                        onClick={() => requestSelectSet(es.name)}
                         onDragStart={(e) => {
                             e.dataTransfer.effectAllowed = 'move';
                             e.dataTransfer.setData('text/plain', es.name);
@@ -114,14 +117,17 @@ export function EquipSetControls() {
                             setDragOverName(null);
                             const fromName = e.dataTransfer.getData('text/plain');
                             if (fromName && fromName !== es.name) {
-                                reorderEquipSetTabs(fromName, es.name);
+                                requestReorderEquipSetTabs(fromName, es.name);
                             }
                         }}
                     >
                         {es.name}
+                        {dirty && es.name === state.selectedName && (
+                            <span className="unsaved-dot" title="未保存の変更があります">●</span>
+                        )}
                     </button>
                 ))}
-                <button className="equipset-tab-add" onClick={newSet}>+</button>
+                <button className="equipset-tab-add" onClick={requestNewSet}>+</button>
             </div>
         </>
     );

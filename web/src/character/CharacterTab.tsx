@@ -5,9 +5,10 @@
 // 編集中状態を、1 つのフォーム状態 (FormState) に集約した。
 // スキル上限の追従 (ジョブレベル・スキルメリット変更時に、未カスタムの
 // スキル値だけ新デフォルトへ更新する) などの挙動は旧実装を踏襲。
-import { useState, useSyncExternalStore } from 'react';
+import { useEffect, useRef, useState, useSyncExternalStore } from 'react';
 import { calculate_default_skills } from '../wasm';
 import { loadCharacters, saveCharacters } from '../storage';
+import { guard, registerDirtyEditor } from '../dirty-guard';
 import {
     JOBS, RACE_NAMES, JP_CATEGORIES, JP_CATEGORY_COUNT, JP_MAX_RANK,
     JOB_MERIT_GROUP_SIZE, JOB_MERIT_MAX_RANK, JOB_MERIT_GROUP_MAX_TOTAL,
@@ -265,25 +266,52 @@ function formStateFor(character: CharacterRecord | null): FormState {
     };
 }
 
+export const CHARACTER_EDITOR_ID = 'characters';
+
 export function CharacterTab() {
     const characters = useSyncExternalStore(charactersStore.subscribe, charactersStore.get);
     const [form, setForm] = useState<FormState | null>(null);
+    // フォームを開いた / 保存した時点の内容。これとの差が「未保存の変更」
+    // (docs/adr/0020)。値を戻せば未保存でなくなる。
+    const [baseline, setBaseline] = useState<string | null>(null);
     // ジョブ別メリット / JP のジョブセレクタはフォームを閉じても保持 (旧実装踏襲)
     const [jmJob, setJmJob] = useState(jobs[0]?.key ?? '');
     const [jpJob, setJpJob] = useState(jobs[0]?.key ?? '');
 
+    const dirty = form !== null && JSON.stringify(form) !== baseline;
+
+    function openForm(next: FormState | null) {
+        setForm(next);
+        setBaseline(next && JSON.stringify(next));
+    }
+
     async function openEdit(name: string) {
         const list = await loadCharacters();
         const ch = (list as CharacterRecord[]).find((c) => c.name === name);
-        if (ch) setForm(formStateFor(ch));
+        if (ch) openForm(formStateFor(ch));
     }
 
-    async function save() {
-        if (!form) return;
+    // 未保存確認ダイアログから保存 / 破棄を呼べるように、最新の実装を渡す。
+    // 依存配列を空にできるよう ref 経由にする (毎レンダー登録し直さない)。
+    const editorRef = useRef({ dirty, form, save: async (): Promise<true | string> => true });
+    editorRef.current = { dirty, form, save };
+    useEffect(
+        () =>
+            registerDirtyEditor(CHARACTER_EDITOR_ID, {
+                label: () =>
+                    `キャラクター「${editorRef.current.form?.name.trim() || '(名称未設定)'}」`,
+                isDirty: () => editorRef.current.dirty,
+                save: () => editorRef.current.save(),
+                discard: () => openForm(null),
+            }),
+        []
+    );
+
+    async function save(): Promise<true | string> {
+        if (!form) return true;
         const name = form.name.trim();
         if (!name) {
-            alert('キャラクター名を入力してください。');
-            return;
+            return 'キャラクター名を入力してください。';
         }
         const job_levels = buildJobLevels(form);
         const merit_points = buildMeritPoints(form);
@@ -311,14 +339,15 @@ export function CharacterTab() {
             if (idx >= 0) list[idx] = record;
         } else {
             if (list.some((c) => c.name === name)) {
-                alert(`キャラクター「${name}」は既に存在します。`);
-                return;
+                return `キャラクター「${name}」は既に存在します。`;
             }
             list.push(record);
         }
         await saveCharacters(list);
         await reloadCharacterList();
-        setForm(null);
+        // 旧実装踏襲: 保存したらフォームを閉じる (= 未保存状態も解消)
+        openForm(null);
+        return true;
     }
 
     async function remove(name: string) {
@@ -326,7 +355,7 @@ export function CharacterTab() {
         const list = ((await loadCharacters()) as CharacterRecord[]).filter((c) => c.name !== name);
         await saveCharacters(list);
         await reloadCharacterList();
-        if (form?.editingName === name) setForm(null);
+        if (form?.editingName === name) openForm(null);
     }
 
     return (
@@ -344,7 +373,16 @@ export function CharacterTab() {
                                     <span className="char-race">{RACE_NAMES[ch.race] || ch.race}</span>
                                 </span>
                                 <span className="char-actions">
-                                    <button className="btn btn-primary btn-sm" onClick={() => openEdit(ch.name)}>
+                                    <button
+                                        className="btn btn-primary btn-sm"
+                                        onClick={() =>
+                                            guard(
+                                                `キャラクター「${ch.name}」の編集`,
+                                                () => void openEdit(ch.name),
+                                                { editorId: CHARACTER_EDITOR_ID }
+                                            )
+                                        }
+                                    >
                                         編集
                                     </button>
                                     <button className="btn btn-danger btn-sm" onClick={() => remove(ch.name)}>
@@ -356,7 +394,15 @@ export function CharacterTab() {
                     )}
                 </ul>
                 <div className="btn-group">
-                    <button className="btn btn-primary" id="btnNewChar" onClick={() => setForm(formStateFor(null))}>
+                    <button
+                        className="btn btn-primary"
+                        id="btnNewChar"
+                        onClick={() =>
+                            guard('新規キャラクターの作成', () => openForm(formStateFor(null)), {
+                                editorId: CHARACTER_EDITOR_ID,
+                            })
+                        }
+                    >
                         新規キャラクター
                     </button>
                 </div>
@@ -366,12 +412,21 @@ export function CharacterTab() {
                 <CharacterForm
                     form={form}
                     setForm={setForm}
+                    dirty={dirty}
                     jmJob={jmJob}
                     setJmJob={setJmJob}
                     jpJob={jpJob}
                     setJpJob={setJpJob}
-                    onSave={save}
-                    onCancel={() => setForm(null)}
+                    onSave={() => {
+                        void save().then((r) => {
+                            if (r !== true) alert(r);
+                        });
+                    }}
+                    onClose={() =>
+                        guard('編集フォームを閉じる', () => openForm(null), {
+                            editorId: CHARACTER_EDITOR_ID,
+                        })
+                    }
                 />
             )}
         </div>
@@ -381,15 +436,17 @@ export function CharacterTab() {
 interface CharacterFormProps {
     form: FormState;
     setForm: (f: FormState) => void;
+    /** 保存済みから変更されているか (保存ボタンの活性と未保存バッジに使う) */
+    dirty: boolean;
     jmJob: string;
     setJmJob: (v: string) => void;
     jpJob: string;
     setJpJob: (v: string) => void;
     onSave: () => void;
-    onCancel: () => void;
+    onClose: () => void;
 }
 
-function CharacterForm({ form, setForm, jmJob, setJmJob, jpJob, setJpJob, onSave, onCancel }: CharacterFormProps) {
+function CharacterForm({ form, setForm, dirty, jmJob, setJmJob, jpJob, setJpJob, onSave, onClose }: CharacterFormProps) {
     const jmData = form.jobMerits[jmJob] || { group1: jobMeritDefaultRanks(), group2: jobMeritDefaultRanks() };
     const jpNames: string[] =
         (JP_CATEGORIES as Record<string, string[]>)[jpJob] ||
@@ -532,7 +589,10 @@ function CharacterForm({ form, setForm, jmJob, setJmJob, jpJob, setJpJob, onSave
 
     return (
         <div id="charEditSection">
-            <h2 id="charEditTitle">{form.editingName ? 'キャラクター編集' : '新規キャラクター'}</h2>
+            <h2 id="charEditTitle">
+                {form.editingName ? 'キャラクター編集' : '新規キャラクター'}
+                {dirty && <span className="unsaved-badge">未保存</span>}
+            </h2>
             <div className="form-group">
                 <label htmlFor="charName">名前</label>
                 <input
@@ -723,8 +783,17 @@ function CharacterForm({ form, setForm, jmJob, setJmJob, jpJob, setJpJob, onSave
             </div>
 
             <div className="btn-group">
-                <button className="btn btn-primary" id="btnSaveChar" onClick={onSave}>保存</button>
-                <button className="btn btn-danger" id="btnCancelEdit" onClick={onCancel}>キャンセル</button>
+                <button
+                    className="btn btn-primary"
+                    id="btnSaveChar"
+                    disabled={!dirty}
+                    title={dirty ? undefined : '変更がありません'}
+                    onClick={onSave}
+                >
+                    保存
+                </button>
+                {/* 「破棄」ではなくフォームを閉じる操作。未保存ならガードが確認する */}
+                <button className="btn btn-neutral" id="btnCancelEdit" onClick={onClose}>閉じる</button>
             </div>
         </div>
     );

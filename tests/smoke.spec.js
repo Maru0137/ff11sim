@@ -341,6 +341,43 @@ test('キャラクターを UI から作成できる', async ({ page }) => {
   expect(errors).toEqual([]);
 });
 
+test('未保存の変更で保存ボタンが有効化され、タブ切替が確認ダイアログを挟む', async ({ page }) => {
+  const errors = collectErrors(page);
+  // 未保存判定 (docs/adr/0020) はストア 2 つ (equipSetsStore / equipState) の
+  // 変更通知が両方ツールバーへ届いて初めて成立する。配線が切れても単体テストでは
+  // 落ちないので、ここで経路ごと確認する。
+  await seedAndOpenEquipTab(page, { main: { item_id: 21071, skill: 11 } });
+
+  // 読み込み直後は未編集 = 保存は無効、複製・共有 (保存済み内容が対象) は有効
+  await expect(page.locator('#btnSaveEquipSet')).toBeDisabled();
+  await expect(page.locator('#btnCopyEquipSet')).toBeEnabled();
+
+  await page.fill('#equipSetName', 'smoke-set-edited');
+  await expect(page.locator('#btnSaveEquipSet')).toBeEnabled();
+  await expect(page.locator('#btnCopyEquipSet')).toBeDisabled();
+  await expect(page.locator('.equipset-tab.active .unsaved-dot')).toHaveCount(1);
+
+  // 値を戻せば未保存でなくなる (フラグではなくスナップショット比較)
+  await page.fill('#equipSetName', 'smoke-set');
+  await expect(page.locator('#btnSaveEquipSet')).toBeDisabled();
+
+  // 未保存のままセットを増やそうとするとダイアログが出て、キャンセルで留まる
+  await page.fill('#equipSetName', 'smoke-set-edited');
+  await page.click('.equipset-tab-add');
+  await expect(page.locator('#unsavedChangesModal')).toBeVisible();
+  await page.click('#btnUnsavedCancel');
+  await expect(page.locator('#unsavedChangesModal')).toHaveCount(0);
+  await expect(page.locator('#equipSetName')).toHaveValue('smoke-set-edited');
+
+  // 破棄して続行すると新規フォームへ移り、未保存の状態も持ち越さない
+  await page.click('.equipset-tab-add');
+  await page.click('#btnUnsavedDiscard');
+  await expect(page.locator('#equipSetName')).toHaveValue('');
+  await expect(page.locator('#btnSaveEquipSet')).toBeDisabled();
+
+  expect(errors).toEqual([]);
+});
+
 test('共有 URL (?share=) で装備セットが閲覧できる', async ({ page }) => {
   const errors = collectErrors(page);
   // Supabase REST をスタブし、共有閲覧モードの分岐 (通常初期化のスキップ・

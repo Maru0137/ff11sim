@@ -13,6 +13,7 @@ import {
     signInWithGoogle,
     signOut,
 } from './supabase-client';
+import { guard } from './dirty-guard';
 
 const subscribe = (callback: () => void): (() => void) => onAuthChange(callback);
 const getSnapshot = (): User | null => getCurrentUser();
@@ -35,7 +36,15 @@ export function AuthWidget() {
     return (
         <>
             <span className="auth-user">{name}</span>
-            <button type="button" className="auth-btn" onClick={() => signOut()}>
+            {/* ログアウトは保存先が Supabase → ローカルに切り替わり、一覧と
+                編集フォームが読み直されるので未保存の変更は失われる
+                (docs/adr/0020)。ログイン側は OAuth リダイレクトでページを
+                離れるため beforeunload が受け持つ。 */}
+            <button
+                type="button"
+                className="auth-btn"
+                onClick={() => guard('ログアウト', () => void signOut())}
+            >
                 ログアウト
             </button>
         </>

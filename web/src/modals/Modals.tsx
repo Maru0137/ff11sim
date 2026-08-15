@@ -1,9 +1,11 @@
-// index.html の 3 モーダル (共有 URL / インポート先選択 / カスタムオーグヘルプ)。
+// index.html の 3 モーダル (共有 URL / インポート先選択 / カスタムオーグヘルプ)
+// と、未保存確認ダイアログ (docs/adr/0020)。
 // 開閉は modal-store 経由 (開くきっかけがレガシー JS 側にもあるため)。
 // 旧実装との対応: 背景クリックで閉じるのはカスタムオーグヘルプのみ。
 import { useRef, useState, useSyncExternalStore } from 'react';
 import { JOBS, RACE_NAMES } from '../constants';
 import { loadEquipSets, saveEquipSets } from '../storage';
+import { UnsavedChangesModal } from './UnsavedChangesModal';
 import {
     modalsStore,
     closeCustomAugHelp,
@@ -29,6 +31,7 @@ export function Modals() {
                 />
             )}
             {state.customAugHelpOpen && <CustomAugHelpModal />}
+            <UnsavedChangesModal />
         </>
     );
 }

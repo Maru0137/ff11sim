@@ -74,6 +74,9 @@ export function AppLayout({ views, activeView, children }: AppLayoutProps) {
                                 label={collapsed ? undefined : v.label}
                                 leftSection={v.icon}
                                 onClick={() => {
+                                    // ビュー切替は display:none で state を保持する
+                                    // (App.tsx) ため編集内容は失われない。
+                                    // 未保存ガード (docs/adr/0020) は掛けない。
                                     navigate(v.view);
                                     closeMobile();
                                 }}

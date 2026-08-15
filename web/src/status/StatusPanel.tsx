@@ -14,7 +14,12 @@ import {
     EffectiveSkillsSection,
 } from './StatusTables';
 import { BreakdownModal } from './BreakdownModal';
-import { equipState, subscribeSlotsGeneration, getSlotsGeneration } from '../equip/equip-store';
+import {
+    equipState,
+    subscribeSlotsGeneration,
+    getSlotsGeneration,
+    notifyEquipState,
+} from '../equip/equip-store';
 import { isShareMode } from '../share-ui';
 import { propsetsStore } from '../propsets/propsets-store';
 import { TEMPLATE_ITEM_IDS } from '../propsets/catalog';
@@ -68,6 +73,8 @@ export function StatusPanel() {
         setSelection(id);
         // 次回の装備セット保存時にレコードへ載る
         equipState.propsetSelection = id;
+        // 保存対象なので未保存判定 (docs/adr/0020) に反映させる
+        notifyEquipState();
     };
 
     const v = (id: string): string | number => view?.values[id] ?? '-';

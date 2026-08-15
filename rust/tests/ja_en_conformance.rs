@@ -26,7 +26,8 @@
 use std::collections::BTreeMap;
 
 use ff11sim::equip_stats::{
-    convert_augment_ja_to_en, extract_all_stats, extract_skill_bonuses, strip_conditional_labels,
+    LabelScopeMode, convert_augment_ja_to_en, extract_all_stats, extract_skill_bonuses,
+    strip_conditional_labels,
 };
 use ff11sim::items::ITEMS;
 
@@ -130,7 +131,7 @@ fn ja_en_diffs_are_all_explainable() {
         compared += 1;
 
         // 実際のパイプラインと同じ順序: 条件ラベル除去 → 正規化 → 抽出 (docs/adr/0019)
-        let stripped = strip_conditional_labels(ja);
+        let stripped = strip_conditional_labels(ja, LabelScopeMode::Wrapped);
         let normalized = convert_augment_ja_to_en(&stripped);
         let from_en = extract_all_stats(en);
         let from_ja = extract_all_stats(&normalized);

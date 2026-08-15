@@ -74,6 +74,11 @@ pub struct StatusResult {
     pub magic_evasion_bonus: i32,
     /// Store TP 総合値 (装備 + ジョブ特性 + メリット + ギフト + JPカテゴリ)
     pub store_tp: i32,
+    /// 近接 1 ヒットあたりの得TP (docs/knowledge/status/tp.md)。
+    /// 二刀流・格闘とも両手で同じ値になるためメイン/サブ共通。素手でも算出する
+    pub tp_per_hit_melee: i32,
+    /// 遠隔 1 ヒットあたりの得TP (レンジ武器未装備時は None)
+    pub tp_per_hit_ranged: Option<i32>,
     /// ダブルアタック発動率総合値 (%) (装備 + ジョブ特性 + メリット + JPカテゴリ)
     pub double_attack_pct: i32,
     /// 連携ボーナス総合値 (%) (装備 + ジョブ特性 + ギフト)
@@ -666,7 +671,8 @@ pub(crate) fn combat_skills(chara: &Chara) -> CombatSkills {
 pub(crate) fn chara_to_status_result(chara: &Chara) -> StatusResult {
     use crate::status::{
         calc_accuracy, calc_defense, calc_evasion, calc_magic_attack, calc_magic_defense,
-        calc_main_attack, calc_ranged_accuracy, calc_ranged_attack, calc_sub_attack,
+        calc_main_attack, calc_melee_tp_delay, calc_ranged_accuracy, calc_ranged_attack,
+        calc_ranged_tp_delay, calc_sub_attack, calc_tp_per_hit,
     };
     let vit = chara.status(StatusKind::Vit);
     let agi = chara.status(StatusKind::Agi);
@@ -804,6 +810,15 @@ pub(crate) fn chara_to_status_result(chara: &Chara) -> StatusResult {
         + double_attack_trait
         + double_attack_merit
         + double_attack_gift;
+    // マーシャルアーツ / 二刀流 総合 = ジョブ特性 + ギフト + 装備。
+    // 特性・ギフトの MartialArts は短縮量を負値で持つのに対し装備テキストは「+N」= 短縮量
+    // なので、符号を合わせるため装備分は減算する
+    let martial_arts_total = martial_arts_trait
+        + chara.main_job.gift_value(Gift::MartialArtsEffect, total_jp)
+        - chara.bonus_stats.martial_arts;
+    let dual_wield_total = dual_wield_trait
+        + chara.main_job.gift_value(Gift::DualWieldEffect, total_jp)
+        + chara.bonus_stats.dual_wield;
 
     // 総合値の計算
     let def_total = calc_defense(vit, chara.main_lv, chara.bonus_stats.def) + defense_bonus;
@@ -855,6 +870,33 @@ pub(crate) fn chara_to_status_result(chara: &Chara) -> StatusResult {
         None => (None, None),
     };
 
+    // 得TP (docs/knowledge/status/tp.md)。マルチアタックは考慮しない 1 ヒットあたりの値。
+    // マーシャルアーツは短縮量を正値で渡す (総合値は負値保持のため反転)
+    let tp_per_hit_melee = calc_tp_per_hit(
+        calc_melee_tp_delay(
+            chara.bonus_stats.main_delay,
+            chara.bonus_stats.sub_delay,
+            is_h2h,
+            dual_wield_total,
+            -martial_arts_total,
+        ),
+        store_tp_total,
+    );
+    // 遠隔は実際に遠隔攻撃できる武器種のみ (楽器・風水鈴は攻撃しないので None)
+    let tp_per_hit_ranged = ranged_weapon
+        .filter(|(kind, _)| {
+            matches!(
+                kind,
+                SkillKind::Archery | SkillKind::Marksmanship | SkillKind::Throwing
+            )
+        })
+        .map(|_| {
+            calc_tp_per_hit(
+                calc_ranged_tp_delay(chara.bonus_stats.ranged_delay, chara.bonus_stats.ammo_delay),
+                store_tp_total,
+            )
+        });
+
     StatusResult {
         hp: chara.status(StatusKind::Hp),
         mp: chara.status(StatusKind::Mp),
@@ -886,6 +928,8 @@ pub(crate) fn chara_to_status_result(chara: &Chara) -> StatusResult {
         magic_accuracy_bonus,
         magic_evasion_bonus,
         store_tp: store_tp_total,
+        tp_per_hit_melee,
+        tp_per_hit_ranged,
         double_attack_pct: double_attack_pct_total,
         // 連携ボーナス総合 = 装備 + ジョブ特性 + ギフト
         skillchain_bonus: chara.bonus_stats.skillchain_bonus
@@ -912,11 +956,10 @@ pub(crate) fn chara_to_status_result(chara: &Chara) -> StatusResult {
         dead_aim: dead_aim_trait,
         // フェンサー 総合 = ジョブ特性ランク + ギフト「フェンサー効果アップ」(War/Bst)
         fencer: fencer_trait + chara.main_job.gift_value(Gift::FencerEffect, total_jp),
-        // マーシャルアーツ 総合 = ジョブ特性 + ギフト (Mnk/Pup)
-        martial_arts: martial_arts_trait
-            + chara.main_job.gift_value(Gift::MartialArtsEffect, total_jp),
-        // 二刀流 総合 = ジョブ特性 + ギフト (Thf/Dnc)
-        dual_wield: dual_wield_trait + chara.main_job.gift_value(Gift::DualWieldEffect, total_jp),
+        // マーシャルアーツ 総合 = ジョブ特性 + ギフト (Mnk/Pup) + 装備
+        martial_arts: martial_arts_total,
+        // 二刀流 総合 = ジョブ特性 + ギフト (Thf/Dnc) + 装備
+        dual_wield: dual_wield_total,
         // 残心 総合 = ジョブ特性 + ギフト (Sam)
         zanshin: zanshin_trait + chara.main_job.gift_value(Gift::ZanshinRate, total_jp),
         // スマイト 総合 = ジョブ特性 (War/Mnk/Drk/Drg/Pup) のみ
@@ -1700,6 +1743,64 @@ mod tests {
 
     /// SAM Lv99 + Store TP メリット 5 + 装備 Store TP+30 のケース。
     /// ジョブ特性 Store TP V (Lv90)=+30, メリット +5, 装備 +30 → 合計 +65
+    #[test]
+    fn test_tp_per_hit_dual_wield_and_ranged() {
+        // NIN99: 二刀流特性 35% + 装備 5% = 40%。
+        // 隔 = (227 + 201) × 60 / 100 / 2 = 128 → 基本値 61 + floor(-52×63/360) = 61 - 10 = 51
+        // 得TP = floor(51 × 110 / 100) = 56
+        let bonus = BonusStats {
+            store_tp: 10,
+            dual_wield: 5,
+            main_delay: 227,
+            sub_delay: 201,
+            ranged_delay: 90,
+            ammo_delay: 0,
+            main_weapon_skill_id: Some(9),    // 片手刀
+            sub_weapon_skill_id: Some(9),     // 片手刀
+            ranged_weapon_skill_id: Some(27), // 投てき
+            ..BonusStats::default()
+        };
+        let chara = Chara::builder()
+            .race(Race::Hum)
+            .main_job(Job::Nin, 99)
+            .master_lv(0)
+            .bonus_stats(bonus)
+            .build()
+            .expect("Failed to build Chara");
+        let result = chara_to_status_result(&chara);
+        assert_eq!(result.dual_wield, 40, "二刀流 = 特性 35 + 装備 5");
+        assert_eq!(result.tp_per_hit_melee, 56);
+        // 遠隔は隔 90 → 基本値 61 + floor(-90×63/360) = 61 - 16 = 45、×1.1 = 49
+        assert_eq!(result.tp_per_hit_ranged, Some(49));
+    }
+
+    #[test]
+    fn test_tp_per_hit_hand_to_hand_and_no_ranged() {
+        // MNK99 (JP なし): マーシャルアーツ特性 -200 + 装備 11 = -211。
+        // 隔 = (480 + 96 - 211) / 2 = 182 → 基本値 61 + floor(2×88/360) = 61
+        let bonus = BonusStats {
+            martial_arts: 11,
+            main_delay: 96,
+            main_weapon_skill_id: Some(1), // 格闘
+            ..BonusStats::default()
+        };
+        let chara = Chara::builder()
+            .race(Race::Hum)
+            .main_job(Job::Mnk, 99)
+            .master_lv(0)
+            .bonus_stats(bonus)
+            .build()
+            .expect("Failed to build Chara");
+        let result = chara_to_status_result(&chara);
+        assert_eq!(
+            result.martial_arts, -211,
+            "装備の「+N」は短縮量として減算する"
+        );
+        assert_eq!(result.tp_per_hit_melee, 61);
+        // レンジ未装備は None (UI ではダッシュ表示)
+        assert_eq!(result.tp_per_hit_ranged, None);
+    }
+
     #[test]
     fn test_sam_store_tp_total() {
         let merit = MeritPoints {

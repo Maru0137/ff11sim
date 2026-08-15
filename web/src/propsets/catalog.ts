@@ -37,6 +37,9 @@ export interface PropertyValueContext {
         doubleShotTotal: number;
         tripleShotTotal: number;
         conserveMpTotal: number;
+        /** 1 ヒットあたりの得TP (docs/knowledge/status/tp.md)。遠隔はレンジ武器未装備で null */
+        tpGainMelee: number;
+        tpGainRanged: number | null;
     };
 }
 
@@ -136,6 +139,10 @@ export const BUILTIN_PROPERTY_ITEMS: BuiltinPropertyItem[] = [
     { id: 'accuracy', label: '命中', category: '近接',
       resolve: (c) => numOrDash(c.totalStats.main_accuracy),
       breakdown: { equipKey: 'accuracy', charKey: 'accuracy' } },
+    // 得TP: 隔とストアTPからの導出値 (docs/knowledge/status/tp.md)。
+    // マルチアタックは考慮しない 1 ヒットあたりの値で、WS も同じ値を使う
+    { id: 'tp_gain', label: '得TP', category: '近接',
+      resolve: (c) => numOrDash(c.derived.tpGainMelee) },
     { id: 'store_tp', label: 'ストアTP', category: '近接',
       resolve: (c) => numOrDash(c.totalStats.store_tp),
       breakdown: { equipKey: 'store_tp', charKey: 'store_tp' } },
@@ -174,6 +181,9 @@ export const BUILTIN_PROPERTY_ITEMS: BuiltinPropertyItem[] = [
     { id: 'ranged_accuracy', label: '飛命', category: '遠隔',
       resolve: (c) => numOrDash(c.totalStats.ranged_accuracy),
       breakdown: { equipKey: 'ranged_accuracy', charKey: 'ranged_accuracy' } },
+    // 遠隔の得TP (レンジ武器の隔 + 矢弾の隔から算出。未装備時は '-')
+    { id: 'tp_gain_ranged', label: '得TP(遠隔)', category: '遠隔',
+      resolve: (c) => numOrDash(c.derived.tpGainRanged) },
     // Snapshot/Rapid Shot は装備テキストでも単位無し表記が標準 (compute.ts と同じ)
     { id: 'snapshot', label: 'スナップショット', category: '遠隔',
       resolve: (c) => numOrDash(c.equip.snapshot_pct),
@@ -347,6 +357,9 @@ export const BUILTIN_PROPERTY_ITEMS: BuiltinPropertyItem[] = [
  * このリストに明示すること (catalog.test.ts が網羅を検証する)。
  */
 export const BREAKDOWN_UNSUPPORTED_IDS: readonly string[] = [
+    // 得TP は隔とストアTPからの導出値で、装備スロットごとの加算に分解できない
+    'tp_gain',
+    'tp_gain_ranged',
     // 魔命スキルは特定スロットの装備分のみ計上するため、全スロット合算の
     // per_slot_stats (equipKey) と食い違う。実効魔命はさらにスキル値との合成値
     'macc_skill_main',
@@ -372,13 +385,13 @@ export const TEMPLATE_ITEM_IDS: Record<string, string[]> = {
     ],
     'subtab-melee-auto': [
         'main_weapon_skill', 'sub_weapon_skill', 'attack', 'accuracy',
-        'store_tp', 'subtle_blow', 'subtle_blow_2',
+        'tp_gain', 'store_tp', 'subtle_blow', 'subtle_blow_2',
         'double_attack', 'triple_attack', 'quad_attack',
         'da_damage', 'ta_damage', 'crit_rate', 'crit_damage', 'pdl',
     ],
     'subtab-ranged-auto': [
         'ranged_weapon_skill', 'ranged_attack', 'ranged_accuracy',
-        'store_tp', 'subtle_blow', 'subtle_blow_2',
+        'tp_gain_ranged', 'store_tp', 'subtle_blow', 'subtle_blow_2',
         'double_shot', 'triple_shot', 'double_shot_damage', 'triple_shot_damage',
         'crit_rate', 'crit_damage', 'pdl',
         'true_shot', 'recycle', 'snapshot', 'rapid_shot',
@@ -387,20 +400,21 @@ export const TEMPLATE_ITEM_IDS: Record<string, string[]> = {
         'main_weapon_skill', 'macc_skill_main', 'macc_main',
         'sub_weapon_skill', 'macc_skill_sub',
         'attack', 'accuracy',
-        'store_tp', 'subtle_blow', 'subtle_blow_2',
+        'tp_gain', 'store_tp', 'subtle_blow', 'subtle_blow_2',
         'double_attack', 'triple_attack', 'quad_attack', 'crit_rate', 'crit_damage',
         'ws_damage', 'tp_bonus', 'skillchain_bonus', 'pdl',
     ],
     'subtab-ranged-ws': [
         'ranged_weapon_skill', 'macc_skill_main', 'macc_ranged',
         'ranged_attack', 'ranged_accuracy',
-        'store_tp', 'subtle_blow', 'subtle_blow_2', 'crit_rate', 'crit_damage',
+        'tp_gain_ranged', 'store_tp', 'subtle_blow', 'subtle_blow_2', 'crit_rate', 'crit_damage',
         'ws_damage', 'tp_bonus', 'skillchain_bonus', 'pdl', 'true_shot',
     ],
     'subtab-elemental-ws': [
         'main_weapon_skill', 'macc_skill_main', 'macc_main',
         'ranged_weapon_skill', 'macc_ranged',
-        'magic_attack', 'magic_accuracy', 'store_tp', 'subtle_blow', 'subtle_blow_2',
+        'magic_attack', 'magic_accuracy',
+        'tp_gain', 'tp_gain_ranged', 'store_tp', 'subtle_blow', 'subtle_blow_2',
         'magic_damage', 'magic_affinity', 'magic_crit_2',
         'ws_damage', 'tp_bonus', 'skillchain_bonus',
     ],
@@ -408,7 +422,7 @@ export const TEMPLATE_ITEM_IDS: Record<string, string[]> = {
         'main_weapon_skill', 'macc_skill_main', 'macc_main',
         'sub_weapon_skill', 'macc_skill_sub',
         'attack', 'accuracy',
-        'store_tp', 'subtle_blow', 'subtle_blow_2',
+        'tp_gain', 'store_tp', 'subtle_blow', 'subtle_blow_2',
         'double_attack', 'triple_attack', 'quad_attack', 'crit_rate', 'crit_damage',
         'ws_damage', 'tp_bonus', 'skillchain_bonus', 'pdl',
         'magic_attack', 'magic_accuracy', 'magic_damage', 'magic_affinity', 'magic_crit_2',
@@ -416,7 +430,7 @@ export const TEMPLATE_ITEM_IDS: Record<string, string[]> = {
     'subtab-ranged-elemental-ws': [
         'ranged_weapon_skill', 'macc_skill_main', 'macc_ranged',
         'ranged_attack', 'ranged_accuracy',
-        'store_tp', 'subtle_blow', 'subtle_blow_2', 'crit_rate', 'crit_damage',
+        'tp_gain_ranged', 'store_tp', 'subtle_blow', 'subtle_blow_2', 'crit_rate', 'crit_damage',
         'ws_damage', 'tp_bonus', 'skillchain_bonus', 'pdl', 'true_shot',
         'magic_attack', 'magic_accuracy', 'magic_damage', 'magic_affinity', 'magic_crit_2',
     ],

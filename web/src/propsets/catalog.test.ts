@@ -79,6 +79,7 @@ describe('魔命スキル/実効魔命 (macc_*)', () => {
                 maccTotals: { main: 750, ranged: 610, enfeebling: 802, song: 0 },
                 trueShotTotal: 0, recycleTotal: 0,
                 doubleShotTotal: 0, tripleShotTotal: 0, conserveMpTotal: 0,
+                tpGainMelee: 87, tpGainRanged: null,
             },
         };
         expect(BUILTIN_ITEM_BY_ID.get('macc_skill_main')?.resolve(ctx)).toBe(228);
@@ -123,6 +124,37 @@ describe('魔命スキル/実効魔命 (macc_*)', () => {
                 `${subtabId}: 実効魔命項目が必要`
             ).toBe(true);
         }
+    });
+});
+
+describe('得TP (tp_gain)', () => {
+    const ctx = (tpGainMelee: number, tpGainRanged: number | null) => ({
+        equip: {},
+        totalStats: {},
+        derived: {
+            magicAttackTotal: 0, magicAccuracyTotal: 0, magicDamageTotal: 0,
+            wsDamagePct: 0, skillchainBonusTotal: 0, statusResists: {},
+            mainMaccSkill: 0, subMaccSkill: 0, maccTotals: {},
+            trueShotTotal: 0, recycleTotal: 0,
+            doubleShotTotal: 0, tripleShotTotal: 0, conserveMpTotal: 0,
+            tpGainMelee, tpGainRanged,
+        },
+    });
+
+    it('近接/遠隔の得TPを表示する (レンジ武器未装備は "-")', () => {
+        expect(BUILTIN_ITEM_BY_ID.get('tp_gain')?.resolve(ctx(87, 121))).toBe(87);
+        expect(BUILTIN_ITEM_BY_ID.get('tp_gain_ranged')?.resolve(ctx(87, 121))).toBe(121);
+        expect(BUILTIN_ITEM_BY_ID.get('tp_gain_ranged')?.resolve(ctx(87, null))).toBe('-');
+    });
+
+    it('オートアタック/遠隔/WS 系テンプレートに含まれる', () => {
+        const melee = ['subtab-melee-auto', 'subtab-melee-ws', 'subtab-melee-elemental-ws'];
+        const ranged = ['subtab-ranged-auto', 'subtab-ranged-ws', 'subtab-ranged-elemental-ws'];
+        for (const id of melee) expect(TEMPLATE_ITEM_IDS[id], id).toContain('tp_gain');
+        for (const id of ranged) expect(TEMPLATE_ITEM_IDS[id], id).toContain('tp_gain_ranged');
+        // 属性WS はメイン・レンジ両方を撃てるため両方持つ
+        expect(TEMPLATE_ITEM_IDS['subtab-elemental-ws']).toContain('tp_gain');
+        expect(TEMPLATE_ITEM_IDS['subtab-elemental-ws']).toContain('tp_gain_ranged');
     });
 });
 

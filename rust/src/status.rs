@@ -271,6 +271,24 @@ pub struct BonusStats {
     /// 装備品の Fast Cast 合計 (%)
     #[serde(default)]
     pub fast_cast_pct: i32,
+    /// 装備品の二刀流合計 (% — 攻撃間隔短縮率)
+    #[serde(default)]
+    pub dual_wield: i32,
+    /// 装備品のマーシャルアーツ合計 (格闘攻撃間隔の短縮量。装備テキストどおり正値)
+    #[serde(default)]
+    pub martial_arts: i32,
+    /// メイン武器の隔 (説明文の `隔` 値。得TP算出に使う)
+    #[serde(default)]
+    pub main_delay: i32,
+    /// サブ武器の隔 (武器以外を装備している場合は 0)
+    #[serde(default)]
+    pub sub_delay: i32,
+    /// レンジ武器の隔
+    #[serde(default)]
+    pub ranged_delay: i32,
+    /// 矢弾の隔 (遠隔の得TPにのみ効く)
+    #[serde(default)]
+    pub ammo_delay: i32,
     /// 装備メイン武器のスキル種別 ID（アイテム JSON の `skill` フィールド値、未装備時は None）
     #[serde(default)]
     pub main_weapon_skill_id: Option<i32>,
@@ -473,6 +491,57 @@ pub fn calc_ranged_accuracy(agi: i32, weapon_skill: i32, equip_ranged_accuracy: 
         + equip_ranged_accuracy
 }
 
+/// 1 ヒットあたりの得TPを計算する (docs/knowledge/status/tp.md)。
+///
+/// 隔から基本値を求め、ストアTPを掛ける。どちらも小数点以下切り捨て、
+/// 基本値の下限は 40。`delay` は武器構成ごとに `calc_melee_tp_delay` /
+/// `calc_ranged_tp_delay` で求めた値を渡す。
+pub fn calc_tp_per_hit(delay: i32, store_tp: i32) -> i32 {
+    // 隔 180 以下の項は負になるので、0 方向丸めの `/` ではなく floor (div_euclid) を使う
+    let base = if delay <= 180 {
+        61 + ((delay - 180) * 63).div_euclid(360)
+    } else if delay <= 540 {
+        61 + ((delay - 180) * 88).div_euclid(360)
+    } else if delay <= 630 {
+        149 + ((delay - 540) * 20).div_euclid(360)
+    } else if delay <= 720 {
+        154 + ((delay - 630) * 28).div_euclid(360)
+    } else if delay <= 900 {
+        161 + ((delay - 720) * 24).div_euclid(360)
+    } else {
+        173 + ((delay - 900) * 28).div_euclid(360)
+    };
+    (base.max(40) * (100 + store_tp)).div_euclid(100)
+}
+
+/// 近接の得TPに使う隔を求める (docs/knowledge/status/tp.md)。
+///
+/// - 格闘 (素手含む): (480 + メイン武器の隔 − マーシャルアーツ) ÷ 2
+/// - 二刀流 (サブスロットに隔を持つ武器): (メイン隔 + サブ隔) × (100 − 二刀流) ÷ 100 ÷ 2
+/// - それ以外: メイン武器の隔
+///
+/// `martial_arts` は短縮量を正値で渡す (StatusResult は負値で保持するため呼び出し側で反転する)。
+pub fn calc_melee_tp_delay(
+    main_delay: i32,
+    sub_delay: i32,
+    is_h2h: bool,
+    dual_wield: i32,
+    martial_arts: i32,
+) -> i32 {
+    if is_h2h {
+        (480 + main_delay - martial_arts) / 2
+    } else if sub_delay > 0 {
+        (main_delay + sub_delay) * (100 - dual_wield) / 100 / 2
+    } else {
+        main_delay
+    }
+}
+
+/// 遠隔の得TPに使う隔を求める。矢弾の隔は攻撃間隔には効かないが得TPには加算される。
+pub fn calc_ranged_tp_delay(ranged_delay: i32, ammo_delay: i32) -> i32 {
+    ranged_delay + ammo_delay
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -602,5 +671,55 @@ mod tests {
         assert_eq!(ranged_accuracy_skill_term(400), 200 + 180); // 380 (近接と同値)
         assert_eq!(ranged_accuracy_skill_term(600), 200 + 360); // 560 (近接 540 と差が出る)
         assert_eq!(ranged_accuracy_skill_term(800), 200 + 540); // 740
+    }
+
+    #[test]
+    fn test_calc_tp_per_hit_ranges() {
+        // 各区間の起点と終点 (docs/knowledge/status/tp.md の表)
+        assert_eq!(calc_tp_per_hit(180, 0), 61);
+        assert_eq!(calc_tp_per_hit(181, 0), 61); // 61 + floor(1×88/360)
+        assert_eq!(calc_tp_per_hit(233, 0), 73); // 61 + floor(53×88/360) = 61 + 12
+        assert_eq!(calc_tp_per_hit(540, 0), 149); // 61 + floor(360×88/360) = 61 + 88
+        assert_eq!(calc_tp_per_hit(541, 0), 149);
+        assert_eq!(calc_tp_per_hit(630, 0), 154); // 149 + floor(90×20/360) = 149 + 5
+        assert_eq!(calc_tp_per_hit(631, 0), 154);
+        assert_eq!(calc_tp_per_hit(720, 0), 161); // 154 + floor(90×28/360) = 154 + 7
+        assert_eq!(calc_tp_per_hit(721, 0), 161);
+        assert_eq!(calc_tp_per_hit(900, 0), 173); // 161 + floor(180×24/360) = 161 + 12
+        assert_eq!(calc_tp_per_hit(901, 0), 173);
+        assert_eq!(calc_tp_per_hit(999, 0), 180); // 173 + floor(99×28/360) = 173 + 7
+        // 隔 180 以下は係数 63/360 で緩やかに下がる (切り捨ては floor)
+        assert_eq!(calc_tp_per_hit(160, 0), 57); // 61 + floor(-20×63/360) = 61 - 4
+        assert_eq!(calc_tp_per_hit(170, 0), 59); // 61 + floor(-1.75) = 61 - 2
+    }
+
+    #[test]
+    fn test_calc_tp_per_hit_floor_and_store_tp() {
+        // 基本値の下限 40 (隔 1 でも 40 を下回らない)
+        assert_eq!(calc_tp_per_hit(1, 0), 40);
+        // ストアTP適用は小数点以下切り捨て: 隔 233 (基本 73) × 1.5 = 109.5 → 109
+        assert_eq!(calc_tp_per_hit(233, 50), 109);
+        assert_eq!(calc_tp_per_hit(233, 100), 146);
+    }
+
+    #[test]
+    fn test_calc_melee_tp_delay() {
+        // サブに武器なし: メインの隔そのまま
+        assert_eq!(calc_melee_tp_delay(233, 0, false, 0, 0), 233);
+        // 二刀流: (201 + 227) × (100-35) / 100 / 2 = floor(27820/200) = 139
+        assert_eq!(calc_melee_tp_delay(201, 227, false, 35, 0), 139);
+        // 二刀流 0%: (201 + 227) / 2 = 214
+        assert_eq!(calc_melee_tp_delay(201, 227, false, 0, 0), 214);
+        // 格闘: (480 + 96 - 200) / 2 = 188
+        assert_eq!(calc_melee_tp_delay(96, 0, true, 0, 200), 188);
+        // 素手 (武器の隔 0、マーシャルアーツなし): 480 / 2 = 240
+        assert_eq!(calc_melee_tp_delay(0, 0, true, 0, 0), 240);
+    }
+
+    #[test]
+    fn test_calc_ranged_tp_delay() {
+        // レンジ武器の隔 + 矢弾の隔
+        assert_eq!(calc_ranged_tp_delay(432, 120), 552);
+        assert_eq!(calc_ranged_tp_delay(0, 0), 0);
     }
 }

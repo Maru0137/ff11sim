@@ -141,6 +141,14 @@ export function buildBonusStats(
         ranged_attack: equip.ranged_attack || 0,
         ranged_accuracy: equip.ranged_accuracy || 0,
         store_tp: equip.store_tp || 0,
+        dual_wield: equip.dual_wield || 0,
+        martial_arts: equip.martial_arts || 0,
+        // 得TPの隔は武器スロット別に渡す (合計値では武器の隔を取り出せない)。
+        // 矢弾は slot_stats に無いため per_slot_stats から引く
+        main_delay: equip.slot_stats?.main?.delay || 0,
+        sub_delay: equip.slot_stats?.sub?.delay || 0,
+        ranged_delay: equip.slot_stats?.ranged?.delay || 0,
+        ammo_delay: equip.per_slot_stats?.ammo?.delay || 0,
         double_attack_pct: equip.double_attack_pct || 0,
         skillchain_bonus: equip.skillchain_bonus || 0,
         triple_attack_pct: equip.triple_attack_pct || 0,
@@ -289,6 +297,11 @@ export async function computeStatusView(): Promise<StatusView | null> {
             V[id] = numOrDash(total);
         }
 
+        // 得TP (1 ヒットあたり、docs/knowledge/status/tp.md)。近接は二刀流・格闘とも
+        // 両手で同じ値、遠隔はレンジ武器未装備なら null
+        const tpGainMelee = totalStats.tp_per_hit_melee;
+        const tpGainRanged = totalStats.tp_per_hit_ranged;
+
         // ----- Tab 2: オートアタック (近接) -----
         V.statAaMainSkill = formatWeaponSkill(totalStats.main_weapon_skill, totalStats.main_weapon_skill_value);
         V.statAaMainAtk = numOrDash(totalStats.main_attack);
@@ -296,6 +309,7 @@ export async function computeStatusView(): Promise<StatusView | null> {
         V.statAaSubSkill = formatWeaponSkill(totalStats.sub_weapon_skill, totalStats.sub_weapon_skill_value);
         V.statAaSubAtk = totalStats.sub_attack != null ? totalStats.sub_attack : '-';
         V.statAaSubAcc = totalStats.sub_accuracy != null ? totalStats.sub_accuracy : '-';
+        V.statAaTpGain = numOrDash(tpGainMelee);
         V.statAaStp = numOrDash(totalStats.store_tp);
         V.statAaDa = pctOrDash(totalStats.double_attack_pct);
         V.statAaTa = pctOrDash(totalStats.triple_attack_pct);
@@ -319,6 +333,7 @@ export async function computeStatusView(): Promise<StatusView | null> {
         V.statRaSkill = formatWeaponSkill(totalStats.ranged_weapon_skill, totalStats.ranged_weapon_skill_value);
         V.statRaAtk = totalStats.ranged_attack != null ? totalStats.ranged_attack : '-';
         V.statRaAcc = totalStats.ranged_accuracy != null ? totalStats.ranged_accuracy : '-';
+        V.statRaTpGain = numOrDash(tpGainRanged);
         V.statRaStp = numOrDash(totalStats.store_tp);
         V.statRaSb = numOrDash(totalStats.subtle_blow);
         V.statRaSb2 = numOrDash(equip.subtle_blow_2);
@@ -362,6 +377,7 @@ export async function computeStatusView(): Promise<StatusView | null> {
         V.statMwsSubAtk = totalStats.sub_attack != null ? totalStats.sub_attack : '-';
         V.statMwsSubAcc = totalStats.sub_accuracy != null ? totalStats.sub_accuracy : '-';
         V.statMwsSubMaccSkill = numOrDash(subMaccSkill);
+        V.statMwsTpGain = numOrDash(tpGainMelee);
         V.statMwsStp = numOrDash(totalStats.store_tp);
         V.statMwsSb = numOrDash(totalStats.subtle_blow);
         V.statMwsSb2 = numOrDash(equip.subtle_blow_2);
@@ -381,6 +397,7 @@ export async function computeStatusView(): Promise<StatusView | null> {
         V.statRwsAcc = totalStats.ranged_accuracy != null ? totalStats.ranged_accuracy : '-';
         V.statRwsMaccSkill = numOrDash(mainMaccSkill);
         V.statRwsMaccTotal = numOrDash(maccTotals.ranged);
+        V.statRwsTpGain = numOrDash(tpGainRanged);
         V.statRwsStp = numOrDash(totalStats.store_tp);
         V.statRwsSb = numOrDash(totalStats.subtle_blow);
         V.statRwsSb2 = numOrDash(equip.subtle_blow_2);
@@ -399,6 +416,8 @@ export async function computeStatusView(): Promise<StatusView | null> {
         V.statEwsRangedSkill = formatWeaponSkill(totalStats.ranged_weapon_skill, totalStats.ranged_weapon_skill_value);
         V.statEwsRangedMaccTotal = numOrDash(maccTotals.ranged);
         V.statEwsMatk = numOrDash(magicAttackTotal);
+        V.statEwsTpGain = numOrDash(tpGainMelee);
+        V.statEwsRangedTpGain = numOrDash(tpGainRanged);
         V.statEwsStp = numOrDash(totalStats.store_tp);
         V.statEwsSb = numOrDash(totalStats.subtle_blow);
         V.statEwsSb2 = numOrDash(equip.subtle_blow_2);
@@ -423,6 +442,7 @@ export async function computeStatusView(): Promise<StatusView | null> {
         V.statMewsMdmg = numOrDash(magicDamageTotal);
         V.statMewsAff = numOrDash(equip.magic_affinity);
         V.statMewsMcrit2 = pctOrDash(equip.magic_critical_hit_2_pct);
+        V.statMewsTpGain = numOrDash(tpGainMelee);
         V.statMewsStp = numOrDash(totalStats.store_tp);
         V.statMewsSb = numOrDash(totalStats.subtle_blow);
         V.statMewsSb2 = numOrDash(equip.subtle_blow_2);
@@ -447,6 +467,7 @@ export async function computeStatusView(): Promise<StatusView | null> {
         V.statRewsMdmg = numOrDash(magicDamageTotal);
         V.statRewsAff = numOrDash(equip.magic_affinity);
         V.statRewsMcrit2 = pctOrDash(equip.magic_critical_hit_2_pct);
+        V.statRewsTpGain = numOrDash(tpGainRanged);
         V.statRewsStp = numOrDash(totalStats.store_tp);
         V.statRewsSb = numOrDash(totalStats.subtle_blow);
         V.statRewsSb2 = numOrDash(equip.subtle_blow_2);
@@ -577,6 +598,8 @@ export async function computeStatusView(): Promise<StatusView | null> {
                 doubleShotTotal,
                 tripleShotTotal,
                 conserveMpTotal,
+                tpGainMelee,
+                tpGainRanged,
             },
         };
         for (const item of BUILTIN_PROPERTY_ITEMS) {

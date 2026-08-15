@@ -164,6 +164,7 @@ export const TEMPLATE_PROPSET_DEFS: TemplatePropsetDef[] = [
                 ],
             },
             simpleTable([
+                ['得TP', 'statAaTpGain'],
                 ['ストアTP', 'statAaStp'],
                 ['モクシャ', 'statAaSb'],
                 ['モクシャII', 'statAaSb2'],
@@ -193,6 +194,7 @@ export const TEMPLATE_PROPSET_DEFS: TemplatePropsetDef[] = [
                 rows: [{ label: 'レンジ', cells: ['statRaSkill', 'statRaAtk', 'statRaAcc'] }],
             },
             simpleTable([
+                ['得TP', 'statRaTpGain'],
                 ['ストアTP', 'statRaStp'],
                 ['モクシャ', 'statRaSb'],
                 ['モクシャII', 'statRaSb2'],
@@ -237,6 +239,7 @@ export const TEMPLATE_PROPSET_DEFS: TemplatePropsetDef[] = [
                 ],
             },
             simpleTable([
+                ['得TP', 'statMwsTpGain'],
                 ['ストアTP', 'statMwsStp'],
                 ['モクシャ', 'statMwsSb'],
                 ['モクシャII', 'statMwsSb2'],
@@ -274,6 +277,7 @@ export const TEMPLATE_PROPSET_DEFS: TemplatePropsetDef[] = [
                 ] }],
             },
             simpleTable([
+                ['得TP', 'statRwsTpGain'],
                 ['ストアTP', 'statRwsStp'],
                 ['モクシャ', 'statRwsSb'],
                 ['モクシャII', 'statRwsSb2'],
@@ -309,14 +313,24 @@ export const TEMPLATE_PROPSET_DEFS: TemplatePropsetDef[] = [
                     ] },
                 ],
             },
-            simpleTable([
-                ['ストアTP', 'statEwsStp'],
-                ['モクシャ', 'statEwsSb'],
-                ['モクシャII', 'statEwsSb2'],
-                ['WSD', 'statEwsWsdmg'],
-                ['TPボーナス', 'statEwsTpb'],
-                ['連携ボーナス', 'statEwsScb'],
-            ]),
+            // 得TP はメイン基準とレンジ基準で別物なので 2 列持つ
+            // (simpleTable は列ごとの表示条件を持てないため明示的に書く)
+            {
+                columns: [
+                    { label: '得TP' },
+                    { label: '得TP(レンジ)', visibleIf: 'rangedWs' },
+                    { label: 'ストアTP' },
+                    { label: 'モクシャ' },
+                    { label: 'モクシャII' },
+                    { label: 'WSD' },
+                    { label: 'TPボーナス' },
+                    { label: '連携ボーナス' },
+                ],
+                rows: [{ cells: [
+                    'statEwsTpGain', 'statEwsRangedTpGain', 'statEwsStp',
+                    'statEwsSb', 'statEwsSb2', 'statEwsWsdmg', 'statEwsTpb', 'statEwsScb',
+                ] }],
+            },
             simpleTable([
                 ['魔攻', 'statEwsMatk'],
                 ['魔法ダメージ+', 'statEwsMdmg'],
@@ -349,6 +363,7 @@ export const TEMPLATE_PROPSET_DEFS: TemplatePropsetDef[] = [
                 ],
             },
             simpleTable([
+                ['得TP', 'statMewsTpGain'],
                 ['ストアTP', 'statMewsStp'],
                 ['モクシャ', 'statMewsSb'],
                 ['モクシャII', 'statMewsSb2'],
@@ -389,6 +404,7 @@ export const TEMPLATE_PROPSET_DEFS: TemplatePropsetDef[] = [
                 ] }],
             },
             simpleTable([
+                ['得TP', 'statRewsTpGain'],
                 ['ストアTP', 'statRewsStp'],
                 ['モクシャ', 'statRewsSb'],
                 ['モクシャII', 'statRewsSb2'],

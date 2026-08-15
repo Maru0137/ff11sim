@@ -213,6 +213,10 @@ pub struct EquipStats {
     pub weapon_skill_damage_pct: i32,
     pub subtle_blow: i32,
     pub subtle_blow_2: i32,
+    /// 二刀流+ (攻撃間隔の短縮率 %)。得TPの隔算出に使う
+    pub dual_wield: i32,
+    /// マーシャルアーツ+ (格闘の攻撃間隔短縮量)。装備テキストどおり正値で持つ
+    pub martial_arts: i32,
     pub tp_bonus: i32,
     pub skillchain_bonus: i32,
     pub physical_damage_limit_pct: i32,
@@ -314,6 +318,8 @@ impl EquipStats {
             ("weapon_skill_damage_pct", self.weapon_skill_damage_pct),
             ("subtle_blow", self.subtle_blow),
             ("subtle_blow_2", self.subtle_blow_2),
+            ("dual_wield", self.dual_wield),
+            ("martial_arts", self.martial_arts),
             ("tp_bonus", self.tp_bonus),
             ("skillchain_bonus", self.skillchain_bonus),
             ("physical_damage_limit_pct", self.physical_damage_limit_pct),
@@ -412,6 +418,8 @@ impl EquipStats {
         self.weapon_skill_damage_pct += other.weapon_skill_damage_pct;
         self.subtle_blow += other.subtle_blow;
         self.subtle_blow_2 += other.subtle_blow_2;
+        self.dual_wield += other.dual_wield;
+        self.martial_arts += other.martial_arts;
         self.tp_bonus += other.tp_bonus;
         self.skillchain_bonus += other.skillchain_bonus;
         self.physical_damage_limit_pct += other.physical_damage_limit_pct;
@@ -665,6 +673,12 @@ pub fn extract_all_stats(description_en: &str) -> EquipStats {
     // モクシャ II を先に判定する (モクシャの部分一致回避)
     s.subtle_blow_2 = signed(&format!(r#""subtle blow ii"{WS}*([+-]){WS}*([0-9]+)"#));
     s.subtle_blow = signed(&format!(r#""subtle blow"{WS}*([+-]){WS}*([0-9]+)"#));
+
+    // 得TPの隔算出に使う 2 項目 (docs/knowledge/status/tp.md)。
+    // 数値を持たない「二刀流効果アップ」「マーシャルアーツ効果アップ」表記は
+    // 符号を要求するこのパターンには一致しない
+    s.dual_wield = signed(&format!(r#""dual wield"{WS}*([+-]){WS}*([0-9]+)"#));
+    s.martial_arts = signed(&format!(r#""martial arts"{WS}*([+-]){WS}*([0-9]+)"#));
 
     // TP ボーナス。ペットや特定アビ専用の修飾語が直前にある場合は除外する。
     s.tp_bonus = signed(&format!(
@@ -944,7 +958,7 @@ pub fn extract_skill_bonuses(description_en: &str) -> BTreeMap<&'static str, i32
 /// **並び順に意味がある。** 単純な順次置換なので、長い表記を先に置かないと
 /// 部分一致で壊れる (例: 「魔法クリティカルヒットII」を「魔法クリティカルヒット率」
 /// より先に、「攻」を最後に置く)。
-static AUGMENT_JA_TO_EN: [(&str, &str); 138] = [
+static AUGMENT_JA_TO_EN: [(&str, &str); 139] = [
     // --- ペット系ラベル (docs/adr/0019 手順 1 で追加) -----------------------
     // 正規表記に寄せることで、既存の `Pet:` セグメント除去がそのまま効く。
     ("呼び出しペット", "Pet"),
@@ -1079,6 +1093,7 @@ static AUGMENT_JA_TO_EN: [(&str, &str); 138] = [
     // 正規表記側にあるため、ラベルも正規化しておく必要がある
     ("ユニティランク", "Unity Ranking"),
     ("二刀流", "\"Dual Wield\""),
+    ("マーシャルアーツ", "\"Martial Arts\""),
     ("ヒーリングHP", "HP recovered while healing"),
     ("ケアル回復量", "\"Cure\" potency"),
     ("ヒーリングMP", "MP recovered while healing"),
@@ -1601,6 +1616,23 @@ mod tests {
     }
 
     #[test]
+    fn dual_wield_and_martial_arts() {
+        let s = extract_all_stats("\"Dual Wield\"+5 \"Martial Arts\"+11");
+        assert_eq!(s.dual_wield, 5);
+        assert_eq!(s.martial_arts, 11);
+        // 日本語の正規化経由でも同じ結果になる
+        let s = extract_all_stats(&convert_augment_ja_to_en("二刀流+5 マーシャルアーツ+11"));
+        assert_eq!(s.dual_wield, 5);
+        assert_eq!(s.martial_arts, 11);
+        // 数値を持たない「効果アップ」「性能アップ」表記は拾わない
+        let s = extract_all_stats(&convert_augment_ja_to_en(
+            "二刀流効果アップ 二刀流性能アップ マーシャルアーツ効果アップV",
+        ));
+        assert_eq!(s.dual_wield, 0);
+        assert_eq!(s.martial_arts, 0);
+    }
+
+    #[test]
     fn magic_burst_accuracy_is_not_accuracy() {
         // "Magic burst accuracy+20" (Peda. M.Board +2 等) は MB命中であり、
         // 命中にも MB ダメージにも合算しない
@@ -1753,6 +1785,8 @@ mod tests {
             weapon_skill_damage_pct,
             subtle_blow,
             subtle_blow_2,
+            dual_wield,
+            martial_arts,
             tp_bonus,
             skillchain_bonus,
             physical_damage_limit_pct,

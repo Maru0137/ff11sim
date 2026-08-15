@@ -13,7 +13,7 @@ use std::collections::BTreeMap;
 use serde::Deserialize;
 use strum::IntoEnumIterator;
 
-use crate::equip_stats::{self, EquipStats};
+use crate::equip_stats::{self, EquipStats, LabelScopeMode};
 use crate::items::{augments_by_item_id, item_by_id};
 use crate::skills::SkillKind;
 
@@ -78,24 +78,30 @@ impl Equip {
     /// 任意名を読む経路 (docs/adr/0015 のユーザー定義プロパティ) と
     /// 固定項目を読む経路 (`normalized_texts`) が同じ規則で揃う。
     /// `コンビネーション:` だけは常時扱いで残る。
+    ///
+    /// ラベルの適用範囲はソースによって変える。アイテム説明文の改行はゲーム内表示の
+    /// 折り返しなのでラベルは次のラベル/文末まで及ぶが、オグメント文の改行は
+    /// wiki の `<br>` 由来で効果 1 件ごとの区切りなので行末まで
+    /// (docs/knowledge/items/description_labels.md)。カスタム説明はユーザーが
+    /// 行単位で書くのでオグメント文に揃える。
     pub fn texts_ja(&self) -> Vec<String> {
         let mut texts = Vec::new();
         if let Some(desc) = item_by_id(self.item_id).and_then(|i| i.description_ja.as_deref())
             && !desc.is_empty()
         {
-            texts.push(desc);
+            texts.push((desc, LabelScopeMode::Wrapped));
         }
         if let Some(aug) = self.augment_text() {
-            texts.push(aug);
+            texts.push((aug, LabelScopeMode::PerLine));
         }
         if let Some(custom) = self.custom_description.as_deref()
             && !custom.is_empty()
         {
-            texts.push(custom);
+            texts.push((custom, LabelScopeMode::PerLine));
         }
         texts
             .into_iter()
-            .map(equip_stats::strip_conditional_labels)
+            .map(|(text, mode)| equip_stats::strip_conditional_labels(text, mode))
             .filter(|t| !t.trim().is_empty())
             .collect()
     }
@@ -426,6 +432,42 @@ mod tests {
         let set = set(&[("body", equip(10464))]);
         assert_eq!(set.bonuses().total.magic_accuracy, 5);
         assert_eq!(set.property_values(&terms(&["魔命"]))["body"]["魔命"], 5);
+    }
+
+    #[test]
+    fn pet_label_with_fullwidth_colon_is_excluded() {
+        // 寵愛総面 (24182): 本体 命中+42 魔命+42 飛命+42、Rank30 オグメントが
+        // 「命中+30 飛命+30 魔命+30 / ペット：命中+30 魔命+30 / ...」。
+        // 全角コロンをラベルと認識できず、ペットの命中/魔命が本体に乗っていた
+        let mut e = equip(24182);
+        e.aug_path = Some(0);
+        e.aug_rank = Some(30);
+        let b = set(&[("head", e)]).bonuses();
+        assert_eq!(b.total.accuracy, 72);
+        assert_eq!(b.total.magic_accuracy, 72);
+        assert_eq!(b.total.ranged_accuracy, 72);
+    }
+
+    #[test]
+    fn item_description_label_covers_wrapped_lines() {
+        // ＦＯチュリダル+4 (24047): 本体 ヘイスト+6%、オートマトン行の折り返しに
+        // 「ヘイスト+5% 被ダメージ-6%」がある。どちらもペットのもの
+        let b = set(&[("legs", equip(24047))]).bonuses();
+        assert_eq!(b.total.haste_pct, 6);
+        assert_eq!(b.total.damage_taken_pct, 0);
+    }
+
+    #[test]
+    fn augment_label_stops_at_the_line_end() {
+        // ジャストクラウン (24165) の Rank30 オグメント:
+        // 「命中+30 魔命+30 / ペット:命中+30 魔命+30 / ストアTP+7 / トリプルアタック+4%」。
+        // オグメント文の改行は効果ごとの区切りなので、3・4 行目は本体に乗る
+        let mut e = equip(24165);
+        e.aug_path = Some(0);
+        e.aug_rank = Some(30);
+        let b = set(&[("head", e)]).bonuses();
+        assert_eq!(b.total.store_tp, 7);
+        assert_eq!(b.total.triple_attack_pct, 4);
     }
 
     #[test]

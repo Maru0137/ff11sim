@@ -21,6 +21,10 @@
 //! 揃えるべきものではない。読むテキストと条件ラベルの規則は共通なので、
 //! 同じ装備の同じ項目なら同じ値になる。
 //!
+//! 条件ラベルの適用範囲だけはソースによって変わる (`LabelScopeMode`)。改行が
+//! 表示上の折り返しか効果の区切りかが、アイテム説明文とオグメント文で違うため
+//! (docs/knowledge/items/description_labels.md)。
+//!
 //! # 英語説明文の扱い
 //!
 //! `description_en` は解釈に使わない。ただし `extract_all_stats` は英語表記も読めるため、
@@ -1137,20 +1141,18 @@ pub fn convert_augment_ja_to_en(text: &str) -> String {
 // (docs/adr/0015) が使う。もとは item_search.rs にあったが、説明文の解釈は
 // このモジュールが持つ (docs/adr/0018)。
 // ---------------------------------------------------------------------------
-/// 説明文中の「条件ラベル」の適用範囲 (`:` の直後から行末まで) を返す。
+/// 説明文中の「条件ラベル」の適用範囲を返す。
 ///
 /// 日本語説明文では `ペット:` `潜在能力:` `右耳:` のようなコロン付きラベルが、
-/// その行の残り全体の適用対象・適用条件を表す
+/// それ以降の適用対象・適用条件を表す
 /// (例: `防21 ペット:命中+3 モクシャ+3` の 命中/モクシャ はどちらもペットのもの)。
 /// キャラクター本体に常時乗る値ではないので、抽出の対象から外す。
-/// 範囲が行末までで折り返し行に及ばないのは、実データの折り返し行が
-/// 本体の効果に戻っているため (例 ＰＮチュリダル+2
-/// `オートマトン:魔命+9` / `ファストキャスト効果アップ`)。
 ///
 /// ラベルの判定条件を「非 ASCII 文字を含むこと」にしているのは、英語説明文の
 /// `DMG:+165 Delay:+240 STR+10` のような `ステータス:値` 表記を条件ラベルと
 /// 誤認しないため (description_ja が無い装備は description_en で代替する)。
 /// ラベル自身は範囲に含めないので、`DEF:77` から `DEF` を引く従来の用法は残る。
+/// コロンは半角 `:` と全角 `：` の両方を見る (オグメント文に全角の `ペット：` がある)。
 ///
 /// 行の区切りは実際の改行とリテラルの `\n` の両方を見る。items.json の
 /// description_ja は改行をリテラルの `\n` で持つ (crate::items)。
@@ -1161,12 +1163,30 @@ pub fn convert_augment_ja_to_en(text: &str) -> String {
 /// 配下の値を常時のものとして読む。本ツールは装備セットを組むためのもので、
 /// セット効果は実際には発動していることが多いため (docs/adr/0019)。
 /// `コンビネーション(召喚獣のみ):` のような対象限定の変種は例外にしない。
+/// ただし直前のラベルの区切りにはなる (`LabelScopeMode::Wrapped`)。
 const ALWAYS_ON_LABEL: &str = "コンビネーション";
 
-/// 条件ラベル 1 件の位置。`(ラベル開始, コロンの次, 行末)`。
+/// 条件ラベルの適用範囲。ソースによって改行の意味が違うので使い分ける
+/// (docs/knowledge/items/description_labels.md)。
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum LabelScopeMode {
+    /// 改行はゲーム内表示の折り返しで、効果の区切りではない。ラベルの効力は
+    /// **次のラベルかテキスト末尾まで**及ぶ。items.json の `description_ja` 用。
+    ///
+    /// 例 (近衛騎士リバリ): `防1 サンドリア王国軍支配エリア:` の配下は
+    /// 次行の `インビジ効果アップ スニーク効果アップ` と、その次行の `移動速度+12%`。
+    Wrapped,
+    /// 改行が効果 1 件ごとの区切り。ラベルの効力は**行末まで**。
+    /// augments.json のオグメント文 (改行は wiki の `<br>` 由来) とカスタム説明用。
+    ///
+    /// 例 (ネオアニメーター): `ペット:攻+15` の次行の `攻+5` は本体の効果。
+    PerLine,
+}
+
+/// 条件ラベル 1 件の位置。`(ラベル開始, コロンの次, 範囲の終わり)`。
 type LabelScope = (usize, usize, usize);
 
-fn conditional_label_scopes(chars: &[char]) -> Vec<LabelScope> {
+fn conditional_label_scopes(chars: &[char], mode: LabelScopeMode) -> Vec<LabelScope> {
     // リテラルの `\n` は大文字化を通った後なので `\N` になっている
     let line_break_at = |i: usize| -> Option<usize> {
         match chars.get(i) {
@@ -1175,8 +1195,11 @@ fn conditional_label_scopes(chars: &[char]) -> Vec<LabelScope> {
             _ => None,
         }
     };
+    let is_colon = |c: char| c == ':' || c == '：';
     let always_on: Vec<char> = ALWAYS_ON_LABEL.chars().collect();
     let mut scopes = Vec::new();
+    // Wrapped で終わりが未確定のラベル `(ラベル開始, コロンの次)`
+    let mut open: Option<(usize, usize)> = None;
     // 現在のトークン (直前の空白/コロン/行頭以降) の開始位置と、非 ASCII を含むか
     let mut token_start = 0usize;
     let mut token_has_non_ascii = false;
@@ -1189,21 +1212,30 @@ fn conditional_label_scopes(chars: &[char]) -> Vec<LabelScope> {
             continue;
         }
         let c = chars[i];
-        // コンビネーションは常時扱いなので、ラベルとして扱わず読み飛ばすだけにする
-        if c == ':'
-            && i > token_start
-            && token_has_non_ascii
-            && chars[token_start..i] != always_on[..]
-        {
-            let mut end = i + 1;
-            while end < chars.len() && line_break_at(end).is_none() {
-                end += 1;
+        if is_colon(c) && i > token_start && token_has_non_ascii {
+            // 新しいラベルは、コンビネーションであっても直前のラベルの区切りになる
+            if let Some((label_start, value_start)) = open.take() {
+                scopes.push((label_start, value_start, token_start));
             }
-            scopes.push((token_start, i + 1, end));
-            i = end;
-            continue;
+            // コンビネーションは常時扱いなので、ラベルとして扱わず読み飛ばすだけにする
+            if chars[token_start..i] != always_on[..] {
+                match mode {
+                    LabelScopeMode::Wrapped => open = Some((token_start, i + 1)),
+                    LabelScopeMode::PerLine => {
+                        let mut end = i + 1;
+                        while end < chars.len() && line_break_at(end).is_none() {
+                            end += 1;
+                        }
+                        scopes.push((token_start, i + 1, end));
+                        i = end;
+                        token_start = end;
+                        token_has_non_ascii = false;
+                        continue;
+                    }
+                }
+            }
         }
-        if c == ':' || c.is_whitespace() {
+        if is_colon(c) || c.is_whitespace() {
             token_start = i + 1;
             token_has_non_ascii = false;
         } else if !c.is_ascii() {
@@ -1211,19 +1243,22 @@ fn conditional_label_scopes(chars: &[char]) -> Vec<LabelScope> {
         }
         i += 1;
     }
+    if let Some((label_start, value_start)) = open {
+        scopes.push((label_start, value_start, chars.len()));
+    }
     scopes
 }
 
-/// 条件ラベルとその配下 (ラベル開始から行末まで) を取り除いた文字列を返す。
+/// 条件ラベルとその配下を取り除いた文字列を返す。範囲は `mode` に従う。
 ///
 /// `conditional_label_scopes` と同じ規則で、装備の解釈に流す前段として使う
 /// (docs/adr/0019)。ラベル自身も落とすのは、残しておくと後段の正規化で
 /// `ペット:` が `Pet:` になり、英語向けの `Pet:` セグメント除去が
 /// 次のコロンまで食う既知の癖 (docs/tech-debt/equip-stats-js-quirks.md) を
 /// 誘発するため。
-pub fn strip_conditional_labels(text: &str) -> String {
+pub fn strip_conditional_labels(text: &str, mode: LabelScopeMode) -> String {
     let chars: Vec<char> = text.chars().collect();
-    let scopes = conditional_label_scopes(&chars);
+    let scopes = conditional_label_scopes(&chars, mode);
     if scopes.is_empty() {
         return text.to_owned();
     }
@@ -1265,7 +1300,10 @@ pub fn extract_stat_from_description(description: &str, stat_name: &str) -> i32 
     // 大小は両辺を大文字化して揃えてあるので、ここでは手で走査する。
     let bytes: Vec<char> = normalized.chars().collect();
     let pat: Vec<char> = needle.chars().collect();
-    let scopes = conditional_label_scopes(&bytes);
+    // 生テキストを渡すのはアイテム説明文ソート (crate::item_search) だけなので Wrapped 固定。
+    // ユーザー定義プロパティ (crate::equip) はソースごとに除去済みのテキストを渡すため、
+    // ここでラベルが見つかることはない。
+    let scopes = conditional_label_scopes(&bytes, LabelScopeMode::Wrapped);
     let mut i = 0usize;
     while i + pat.len() <= bytes.len() {
         if bytes[i..i + pat.len()] != pat[..] {
@@ -1922,15 +1960,18 @@ mod tests {
     }
 
     #[test]
-    fn conditional_label_scope_ends_at_line_break() {
-        // 折り返し行は本体の効果に戻る (ＰＮチュリダル+2 10727 と同じ形)
-        // description_ja の改行はリテラルの `\n` (crate::items)
-        let literal = r"防42 命中+9 オートマトン:魔命+9\n敵対心-2";
-        assert_eq!(extract_stat_from_description(literal, "敵対心"), -2);
-        assert_eq!(extract_stat_from_description(literal, "魔命"), 0);
+    fn conditional_label_scope_covers_wrapped_lines() {
+        // アイテム説明文の改行は表示上の折り返しなので、続きの行もラベル配下
+        // (ＦＯチュリダル+4 24047 と同じ形)。改行はリテラルの `\n` (crate::items)
+        let literal = r"ヘイスト+6%\nオートマトン:MP+110\n被ダメージ-6%\nコンビネーション:魔命+5";
+        assert_eq!(extract_stat_from_description(literal, "被ダメージ"), 0);
+        // ラベルより前は本体の値として拾う
+        assert_eq!(extract_stat_from_description(literal, "ヘイスト"), 6);
+        // コンビネーションは常時扱いで、直前のラベルの区切りにもなる
+        assert_eq!(extract_stat_from_description(literal, "魔命"), 5);
         // 実際の改行でも同じ
-        let real = "防42 命中+9 オートマトン:魔命+9\n敵対心-2";
-        assert_eq!(extract_stat_from_description(real, "敵対心"), -2);
+        let real = "ヘイスト+6%\nオートマトン:MP+110\n被ダメージ-6%";
+        assert_eq!(extract_stat_from_description(real, "被ダメージ"), 0);
     }
 
     #[test]
@@ -1950,17 +1991,32 @@ mod tests {
     // --- 条件ラベルの除去 (docs/adr/0019 手順 3) --------------------------
 
     #[test]
-    fn strip_conditional_labels_removes_label_and_rest_of_line() {
+    fn strip_conditional_labels_removes_label_and_its_scope() {
         // ラベル自身も落とす。残すと後段の正規化で `Pet:` になり、
         // 英語向けのセグメント除去が次のコロンまで食う癖を誘発する
         assert_eq!(
-            strip_conditional_labels("防21 ペット:命中+3 モクシャ+3"),
+            strip_conditional_labels("防21 ペット:命中+3 モクシャ+3", LabelScopeMode::Wrapped),
             "防21 "
         );
         // ラベルより前は残る
         assert_eq!(
-            strip_conditional_labels("防5 CHR+5 ヘイスト+5% ペット:ヘイスト+5%"),
+            strip_conditional_labels(
+                "防5 CHR+5 ヘイスト+5% ペット:ヘイスト+5%",
+                LabelScopeMode::Wrapped
+            ),
             "防5 CHR+5 ヘイスト+5% "
+        );
+    }
+
+    #[test]
+    fn strip_conditional_labels_reads_fullwidth_colon() {
+        // 慈悲/慈愛/寵愛装束の Rank30 オグメントだけが全角の `ペット：` で書かれている
+        assert_eq!(
+            strip_conditional_labels(
+                "命中+30 飛命+30 魔命+30\nペット：命中+30 魔命+30",
+                LabelScopeMode::PerLine
+            ),
+            "命中+30 飛命+30 魔命+30\n"
         );
     }
 
@@ -1968,7 +2024,10 @@ mod tests {
     fn strip_conditional_labels_keeps_combination() {
         // コンビネーションは常時扱い (docs/adr/0019)
         let text = "防52 魔攻+7 魔防+5\\nコンビネーション:魔命+5";
-        assert_eq!(strip_conditional_labels(text), text);
+        assert_eq!(
+            strip_conditional_labels(text, LabelScopeMode::Wrapped),
+            text
+        );
         // 固定項目の抽出器は正規化後のテキストを読む
         assert_eq!(
             extract_all_stats(&convert_augment_ja_to_en(text)).magic_accuracy,
@@ -1977,30 +2036,64 @@ mod tests {
         assert_eq!(extract_stat_from_description(text, "魔命"), 5);
         // 対象限定の変種は例外にしない
         assert_eq!(
-            strip_conditional_labels("防10 コンビネーション(召喚獣のみ):魔攻+5"),
+            strip_conditional_labels(
+                "防10 コンビネーション(召喚獣のみ):魔攻+5",
+                LabelScopeMode::Wrapped
+            ),
             "防10 "
         );
     }
 
     #[test]
-    fn strip_conditional_labels_is_line_scoped() {
-        // 折り返し行は本体の効果に戻る。description_ja の改行はリテラルの `\n`
+    fn wrapped_scope_covers_following_lines() {
+        // アイテム説明文の改行は表示上の折り返しで、ラベルの効力は続きの行にも及ぶ。
+        // 近衛騎士リバリ (11356) はラベル行に値が無く、配下が次の 2 行に分かれている
         assert_eq!(
-            strip_conditional_labels(r"防42 命中+9 オートマトン:魔命+9\n敵対心-2"),
-            r"防42 命中+9 \n敵対心-2"
+            strip_conditional_labels(
+                r"防1 サンドリア王国軍支配エリア:\nインビジ効果アップ\n移動速度+12%",
+                LabelScopeMode::Wrapped
+            ),
+            "防1 "
         );
+    }
+
+    #[test]
+    fn wrapped_scope_ends_at_the_next_label() {
+        // ＦＯチュリダル+4 (24047) の抜粋。コンビネーションは常時扱いだが区切りにはなる
+        let text =
+            r"ヘイスト+6%\nオートマトン:MP+110\nヘイスト+5% 被ダメージ-6%\nコンビネーション:命中+";
         assert_eq!(
-            strip_conditional_labels("防42 オートマトン:魔命+9\n敵対心-2"),
-            "防42 \n敵対心-2"
+            strip_conditional_labels(text, LabelScopeMode::Wrapped),
+            r"ヘイスト+6%\nコンビネーション:命中+"
+        );
+    }
+
+    #[test]
+    fn per_line_scope_stops_at_the_line_end() {
+        // オグメント文の改行は効果 1 件ごとの区切りなので、続きの行は本体の効果
+        assert_eq!(
+            strip_conditional_labels("ペット:攻+15\n攻+5", LabelScopeMode::PerLine),
+            "\n攻+5"
+        );
+        // description_ja の改行はリテラルの `\n`
+        assert_eq!(
+            strip_conditional_labels(
+                r"防42 命中+9 オートマトン:魔命+9\n敵対心-2",
+                LabelScopeMode::PerLine
+            ),
+            r"防42 命中+9 \n敵対心-2"
         );
     }
 
     #[test]
     fn strip_conditional_labels_leaves_plain_text_untouched() {
-        assert_eq!(strip_conditional_labels("防77 命中+8"), "防77 命中+8");
+        assert_eq!(
+            strip_conditional_labels("防77 命中+8", LabelScopeMode::Wrapped),
+            "防77 命中+8"
+        );
         // 英語の `ステータス:値` はラベルではない
         assert_eq!(
-            strip_conditional_labels("DMG:+165 Delay:+240 STR+10"),
+            strip_conditional_labels("DMG:+165 Delay:+240 STR+10", LabelScopeMode::Wrapped),
             "DMG:+165 Delay:+240 STR+10"
         );
     }

@@ -42,6 +42,21 @@ export function getItemAugments(itemId: number): AugmentInfo | null {
     return augmentData[String(itemId)] || null;
 }
 
+/**
+ * 装備選択時に自動で入れるオーグメント。タイプが 1 つしか無い装備は
+ * 選ぶ余地が無く、実用上ほぼ最高ランクなのでそれを既定値にする。
+ * タイプが複数ある装備はユーザーに選ばせる (null を返す)。
+ */
+export function getDefaultAugmentSelection(
+    augInfo: AugmentInfo | null | undefined
+): { path: number; rank: number } | null {
+    if (!augInfo || augInfo.paths.length !== 1) return null;
+    const ranks = augInfo.paths[0].ranks;
+    if (!ranks || ranks.length === 0) return null;
+    const best = ranks.reduce((a, r) => (r.rank > a.rank ? r : a));
+    return { path: 0, rank: best.rank };
+}
+
 export function getAugmentText(slotData: AugmentSlotData | null | undefined): string | null {
     if (!slotData || slotData.aug_path == null || slotData.aug_rank == null) return null;
     const augInfo = getItemAugments(slotData.item_id);

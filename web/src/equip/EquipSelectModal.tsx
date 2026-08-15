@@ -14,7 +14,7 @@ import { Modal } from '@mantine/core';
 import { useMediaQuery } from '@mantine/hooks';
 import { searchItems, isItemsLoaded } from '../wasm';
 import type { SearchResultItem, SearchResults } from '../wasm';
-import { getItemAugments, getAugmentText } from '../augments';
+import { getItemAugments, getAugmentText, getDefaultAugmentSelection } from '../augments';
 import { updateEquipEditStatus } from '../status/status-store';
 import { openCustomAugHelp } from '../modals/modal-store';
 import { isShareMode } from '../share-ui';
@@ -109,14 +109,15 @@ export function EquipSelectModal({ slot, onClose }: { slot: SlotDef; onClose: ()
     }
 
     function selectItem(item: SearchResultItem) {
+        const defaultAug = getDefaultAugmentSelection(getItemAugments(item.id));
         getSlots()[slot.key] = {
             item_id: item.id,
             name_en: item.en,
             name_ja: item.ja,
             description_ja: item.description_ja || '',
             skill: item.skill != null ? item.skill : null,
-            aug_path: null,
-            aug_rank: null,
+            aug_path: defaultAug ? defaultAug.path : null,
+            aug_rank: defaultAug ? defaultAug.rank : null,
         };
         updateEquipEditStatus();
     }

@@ -362,140 +362,369 @@ input[type="checkbox"] {
     display: none;
 }
 
-.merit-section {
-    margin-top: 20px;
-    padding: 15px;
-    background: #0f0f23;
-    border-radius: 5px;
+/* ===== キャラクター編集フォーム (docs/adr/0021) =====
+   入力欄の幅は「入る値」で決め、列数は画面幅に追従させる。
+   セクションは <details> で畳み、スクロールしても保存できるようアクションバーを固定する。 */
+
+/* --- 数値入力: 2-3 桁が入る固定幅。スピナーは幅を食うので隠す (↑↓ キーは効く) --- */
+#charEditSection input[type="number"] {
+    width: 62px;
+    padding: 4px 6px;
+    font-size: 13px;
+    text-align: right;
+    -moz-appearance: textfield;
+    appearance: textfield;
 }
 
-.merit-grid {
-    display: grid;
-    grid-template-columns: repeat(3, 1fr);
-    gap: 10px;
-}
-
-.merit-item {
-    display: flex;
-    flex-direction: column;
-}
-
-.merit-item label {
-    font-size: 12px;
-    margin-bottom: 3px;
-}
-
-.merit-item input {
-    width: 100%;
-    padding: 5px;
-    font-size: 12px;
-}
-
-.jp-section {
-    margin-top: 20px;
-    padding: 15px;
-    background: #0f0f23;
-    border-radius: 5px;
-}
-
-.jp-section-header {
-    display: flex;
-    align-items: center;
-    gap: 12px;
-    flex-wrap: wrap;
-    margin-bottom: 12px;
-}
-
-.jp-section-header h3 {
+#charEditSection input[type="number"]::-webkit-outer-spin-button,
+#charEditSection input[type="number"]::-webkit-inner-spin-button {
+    -webkit-appearance: none;
     margin: 0;
 }
 
-.jp-section-header select {
+/* --- 固定のアクションバー --- */
+.char-action-bar {
+    position: sticky;
+    top: 0;
+    z-index: 5;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    flex-wrap: wrap;
+    margin: -20px -20px 16px;
+    padding: 12px 20px;
+    background: #16213e;
+    border-bottom: 2px solid #f0c040;
+    box-shadow: 0 6px 14px rgba(0, 0, 0, 0.45);
+}
+
+.char-action-title {
+    color: #f0c040;
+    font-size: 16px;
+    font-weight: 600;
+}
+
+.char-action-spacer {
+    flex: 1;
+}
+
+.char-action-bar .btn {
+    padding: 6px 14px;
+    font-size: 13px;
+}
+
+/* --- 開閉式セクション --- */
+.char-section {
+    background: #0f0f23;
+    border: 1px solid #232840;
+    border-radius: 5px;
+    margin-top: 10px;
+}
+
+.char-section > summary {
+    list-style: none;
+    cursor: pointer;
+    padding: 11px 15px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    flex-wrap: wrap;
+}
+
+.char-section > summary::-webkit-details-marker {
+    display: none;
+}
+
+.char-section > summary:hover {
+    background: #141833;
+}
+
+.char-section > summary:focus-visible {
+    outline: 2px solid #f0c040;
+    outline-offset: -2px;
+}
+
+.char-section-caret {
+    color: #f0c040;
+    font-size: 10px;
+    flex-shrink: 0;
+    transition: transform 0.15s ease;
+}
+
+.char-section[open] > summary .char-section-caret {
+    transform: rotate(90deg);
+}
+
+.char-section-title {
+    color: #f0c040;
+    font-size: 14px;
+    font-weight: 600;
+}
+
+.char-section-summary {
+    color: #7a8199;
+    font-size: 12px;
+    margin-left: auto;
+    text-align: right;
+}
+
+.char-section-summary b {
+    color: #8ab4f8;
+    font-weight: 600;
+}
+
+.char-section-body {
+    padding: 0 15px 15px;
+}
+
+/* --- セクション内のサブグループ --- */
+.char-subgroup {
+    margin-top: 14px;
+}
+
+.char-subgroup:first-child {
+    margin-top: 0;
+}
+
+.char-subgroup-head {
+    display: flex;
+    align-items: baseline;
+    gap: 9px;
+    flex-wrap: wrap;
+    margin-bottom: 7px;
+    padding-bottom: 5px;
+    border-bottom: 1px solid #232840;
+}
+
+.char-subgroup-title {
+    color: #8ab4f8;
+    font-size: 13px;
+    font-weight: bold;
+}
+
+.char-subgroup-hint {
+    color: #6f7793;
+    font-size: 11.5px;
+}
+
+.char-subgroup-total {
+    margin-left: auto;
+    color: #7a8199;
+    font-size: 11.5px;
+}
+
+.char-subgroup-total b {
+    color: #8ab4f8;
+}
+
+.char-group-row {
+    display: flex;
+    align-items: baseline;
+    gap: 8px;
+    margin: 10px 0 5px;
+}
+
+.char-group-title {
+    color: #9aa3bd;
+    font-size: 12px;
+    font-weight: bold;
+}
+
+.char-group-total {
+    color: #667;
+    font-size: 11px;
+}
+
+.char-empty-note {
+    color: #666;
+    font-size: 12px;
+}
+
+/* --- 基本情報 (名前・種族) --- */
+.char-basic-row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 16px;
+    align-items: flex-end;
+}
+
+.char-basic-row .form-group {
+    margin-bottom: 0;
+}
+
+.char-field-name {
+    max-width: 280px;
+}
+
+.char-field-race {
+    max-width: 200px;
+}
+
+/* --- ジョブ別ポイントの共有セレクタ --- */
+.char-job-picker {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    flex-wrap: wrap;
+    background: #16213e;
+    border: 1px solid #2a3350;
+    border-radius: 5px;
+    padding: 8px 12px;
+}
+
+.char-job-picker label {
+    margin: 0;
+    font-size: 12.5px;
+}
+
+.char-job-select {
+    width: auto;
+    min-width: 160px;
     padding: 5px 8px;
     font-size: 13px;
 }
 
-.jp-total-display {
-    font-size: 13px;
-    color: #8ab4f8;
+.char-job-picker-hint {
+    color: #6f7793;
+    font-size: 11.5px;
     margin-left: auto;
 }
 
-.jp-grid {
-    display: grid;
-    grid-template-columns: repeat(2, 1fr);
-    gap: 10px;
-}
-
-.jp-item {
+/* --- 数値フィールド: ラベル / 入力 / 「/ 最大値」を 1 行に --- */
+.merit-item,
+.jp-item,
+.skill-item {
     display: flex;
-    flex-direction: column;
-}
-
-.jp-item label {
-    font-size: 12px;
-    margin-bottom: 3px;
-}
-
-.jp-item input {
-    width: 100%;
-    padding: 5px;
-    font-size: 12px;
-}
-
-.skill-section {
-    margin-top: 20px;
-    padding: 15px;
-    background: #0f0f23;
-    border-radius: 5px;
-}
-
-.skill-section-header {
-    display: flex;
+    flex-direction: row;
     align-items: center;
-    gap: 12px;
-    margin-bottom: 12px;
-    flex-wrap: wrap;
+    justify-content: space-between;
+    gap: 8px;
+    min-width: 0;
+    background: #16213e;
+    border: 1px solid #2a3350;
+    border-radius: 5px;
+    padding: 4px 6px 4px 10px;
 }
 
-.skill-section-header h3 {
-    margin: 0;
+.merit-item label,
+.jp-item label,
+.skill-item label {
+    flex: 1;
+    min-width: 0;
+    margin-bottom: 0;
+    font-size: 12.5px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
 }
 
-.skill-group-title {
-    font-size: 13px;
+.merit-item input,
+.jp-item input,
+.skill-item input {
+    flex: 0 0 auto;
+}
+
+/* 上限に達した欄は分母を強調する。上限 0 は「達成」ではないので付けない */
+.field-max {
+    flex-shrink: 0;
+    min-width: 2.4em;
+    color: #6f7793;
+    font-size: 11.5px;
+    font-variant-numeric: tabular-nums;
+}
+
+.skill-item .field-max {
+    min-width: 3.2em;
+}
+
+.at-cap .field-max {
     color: #8ab4f8;
-    margin: 12px 0 6px;
-    font-weight: bold;
+}
+
+/* 上限 0 = Lv1 以上のジョブに該当スキルのランクが無い。0 しか入らないので閉じる */
+.skill-item-zero {
+    background: #131a2e;
+    border-color: #232840;
+}
+
+.skill-item-zero label,
+.skill-item-zero .field-max {
+    color: #5c6480;
+}
+
+#charEditSection input:disabled {
+    background: #10152a;
+    color: #5c6480;
+    border-color: #232840;
+    cursor: not-allowed;
+}
+
+/* --- グリッド: ラベルの長さに応じた最小幅で列数を自動調整 --- */
+.merit-grid,
+.jp-grid,
+.skill-grid {
+    display: grid;
+    gap: 6px;
+    grid-template-columns: repeat(auto-fill, minmax(var(--col-min, 190px), 1fr));
+}
+
+.merit-grid-narrow {
+    --col-min: 175px;
+}
+
+.merit-grid-wide {
+    --col-min: 255px;
+}
+
+.jp-grid {
+    --col-min: 275px;
 }
 
 .skill-grid {
+    --col-min: 200px;
+}
+
+/* --- ジョブレベル: 22 行のテーブルをやめてチップのグリッドに --- */
+.job-grid {
     display: grid;
-    grid-template-columns: repeat(3, 1fr);
-    gap: 8px;
+    gap: 6px;
+    grid-template-columns: repeat(auto-fill, minmax(215px, 1fr));
 }
 
-.skill-item {
+.job-chip {
     display: flex;
-    flex-direction: column;
+    align-items: center;
+    gap: 5px;
+    min-width: 0;
+    padding: 4px 8px;
+    background: #16213e;
+    border: 1px solid #2a3350;
+    border-radius: 5px;
 }
 
-.skill-item label {
-    font-size: 12px;
-    margin-bottom: 3px;
-    display: flex;
-    justify-content: space-between;
+.job-chip-name {
+    flex: 1;
+    min-width: 0;
+    color: #aaa;
+    font-size: 12.5px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
 }
 
-.skill-item .skill-cap {
-    color: #888;
-    font-size: 11px;
+.job-chip.is-leveled .job-chip-name {
+    color: #eee;
+    font-weight: 600;
 }
 
-.skill-item input {
-    width: 100%;
-    padding: 5px;
-    font-size: 12px;
+.job-chip-tag {
+    margin: 0;
+    color: #667;
+    font-size: 10px;
+}
+
+#charEditSection .job-chip input[type="number"] {
+    width: 48px;
 }
 
 /* Character registration */
@@ -597,41 +826,6 @@ input[type="checkbox"] {
 .equipset-toolbar .btn-group {
     margin-top: 0;
     flex-shrink: 0;
-}
-
-.job-level-table {
-    width: 100%;
-    border-collapse: collapse;
-    margin-top: 10px;
-}
-
-.job-level-table th,
-.job-level-table td {
-    padding: 4px 8px;
-    text-align: center;
-    border-bottom: 1px solid #333;
-}
-
-.job-level-table th {
-    color: #f0c040;
-    font-size: 12px;
-}
-
-.job-level-table td {
-    font-size: 13px;
-}
-
-.job-level-table input {
-    width: 60px;
-    padding: 4px;
-    font-size: 12px;
-    text-align: center;
-}
-
-.job-level-table .job-name {
-    color: #aaa;
-    text-align: left;
-    font-weight: bold;
 }
 
 .char-list {

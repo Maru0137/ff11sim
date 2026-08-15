@@ -6,12 +6,15 @@
 // スキル上限の追従 (ジョブレベル・スキルメリット変更時に、未カスタムの
 // スキル値だけ新デフォルトへ更新する) などの挙動は旧実装を踏襲。
 import { useEffect, useRef, useState, useSyncExternalStore } from 'react';
+import type { ReactNode } from 'react';
 import { calculate_default_skills } from '../wasm';
 import { loadCharacters, saveCharacters } from '../storage';
 import { guard, registerDirtyEditor } from '../dirty-guard';
 import {
-    JOBS, RACE_NAMES, JP_CATEGORIES, JP_CATEGORY_COUNT, JP_MAX_RANK,
+    JOBS, RACE_NAMES, JP_CATEGORIES, JP_CATEGORY_COUNT, JP_MAX_RANK, JP_MAX_TOTAL,
     JOB_MERIT_GROUP_SIZE, JOB_MERIT_MAX_RANK, JOB_MERIT_GROUP_MAX_TOTAL,
+    MERIT_BASE_MAX_RANK, MERIT_SKILL_MAX_RANK, MERIT_OTHER_MAX_RANK,
+    MERIT_OTHER_GROUP_MAX_TOTAL,
     SKILL_KEYS_WEAPON, SKILL_KEYS_DEFENSE, SKILL_KEYS_MAGIC,
     ALL_SKILL_KEYS, COMBAT_SKILL_KEYS, MAGIC_SKILL_KEYS,
 } from '../constants';
@@ -19,6 +22,7 @@ import {
     jpJobTotal, jpDefaultRanks,
     jobMeritDefaultRanks, jobMeritCategoryName, isJobMeritPlaceholder, samStoreTpIndex,
 } from '../utils';
+import { clampToMax, clampWithinGroup } from './limits';
 import { charactersStore, reloadCharacterList } from './character-store';
 import type { CharacterRecord } from './character-store';
 
@@ -251,8 +255,21 @@ function formStateFor(character: CharacterRecord | null): FormState {
     jobs.forEach((job) => {
         jobPoints[job.key] = jpDefaultRanks();
     });
-    // 旧実装踏襲: 新規時のスキル上限はメリットポイント抜き (ゼロ) で算出する
-    const skillDefaults = computeSkillDefaults({ race: 'Hum', job_levels: defaultJobLevels });
+    // フォームが持つスキルメリット (既定 8 = 上限 +16) を含めて上限を算出する。
+    // 旧実装はここだけメリット抜きで計算しており、表示上の「上限」が実際のキャップより
+    // 16 低かった。入力を上限でクランプするようになった (docs/adr/0021) ため、
+    // ずれていると本来入る値が弾かれてしまう。
+    const skillDefaults = computeSkillDefaults({
+        race: 'Hum',
+        job_levels: defaultJobLevels,
+        merit_points: {
+            hp: 15, mp: 15, str_: 15, dex: 15, vit: 15, agi: 15, int: 15, mnd: 15, chr: 15,
+            combat_skill_merits: Object.fromEntries(
+                (COMBAT_SKILL_KEYS as SkillKeyPair[]).map(([k]) => [k, MERIT_SKILL_MAX_RANK])),
+            magic_skill_merits: Object.fromEntries(
+                (MAGIC_SKILL_KEYS as SkillKeyPair[]).map(([k]) => [k, MERIT_SKILL_MAX_RANK])),
+        },
+    });
     const skills: Record<string, number> = {};
     allSkillKeys.forEach(([k]) => {
         skills[k] = skillDefaults[k] || 0;
@@ -268,15 +285,50 @@ function formStateFor(character: CharacterRecord | null): FormState {
 
 export const CHARACTER_EDITOR_ID = 'characters';
 
+// 開閉式セクション (docs/adr/0021)。既定で開くのは基本情報とジョブレベルだけ。
+const SECTIONS = [
+    { id: 'basic', label: '基本情報' },
+    { id: 'joblv', label: 'ジョブレベル' },
+    { id: 'merit', label: 'メリットポイント (共通)' },
+    { id: 'jobpt', label: 'ジョブ別ポイント' },
+    { id: 'skill', label: 'スキル値' },
+] as const;
+
+type SectionId = (typeof SECTIONS)[number]['id'];
+
+const OPEN_SECTIONS_KEY = 'ff11sim_char_sections';
+const DEFAULT_OPEN: SectionId[] = ['basic', 'joblv'];
+
+function loadOpenSections(): SectionId[] {
+    try {
+        const raw = localStorage.getItem(OPEN_SECTIONS_KEY);
+        if (!raw) return DEFAULT_OPEN;
+        const ids = JSON.parse(raw) as unknown;
+        if (!Array.isArray(ids)) return DEFAULT_OPEN;
+        return SECTIONS.map((s) => s.id).filter((id) => ids.includes(id));
+    } catch {
+        return DEFAULT_OPEN;
+    }
+}
+
+function saveOpenSections(ids: SectionId[]) {
+    try {
+        localStorage.setItem(OPEN_SECTIONS_KEY, JSON.stringify(ids));
+    } catch {
+        // localStorage が使えなくても開閉自体は動くので握りつぶす
+    }
+}
+
 export function CharacterTab() {
     const characters = useSyncExternalStore(charactersStore.subscribe, charactersStore.get);
     const [form, setForm] = useState<FormState | null>(null);
     // フォームを開いた / 保存した時点の内容。これとの差が「未保存の変更」
     // (docs/adr/0020)。値を戻せば未保存でなくなる。
     const [baseline, setBaseline] = useState<string | null>(null);
-    // ジョブ別メリット / JP のジョブセレクタはフォームを閉じても保持 (旧実装踏襲)
-    const [jmJob, setJmJob] = useState(jobs[0]?.key ?? '');
-    const [jpJob, setJpJob] = useState(jobs[0]?.key ?? '');
+    // ジョブ別ポイント (ジョブ別メリット + JP) のジョブセレクタ。
+    // 同じ「どのジョブか」を指すので 1 つに統合した (docs/adr/0021)。
+    // フォームを閉じても保持する (旧実装踏襲)。
+    const [targetJob, setTargetJob] = useState(jobs[0]?.key ?? '');
 
     const dirty = form !== null && JSON.stringify(form) !== baseline;
 
@@ -413,10 +465,8 @@ export function CharacterTab() {
                     form={form}
                     setForm={setForm}
                     dirty={dirty}
-                    jmJob={jmJob}
-                    setJmJob={setJmJob}
-                    jpJob={jpJob}
-                    setJpJob={setJpJob}
+                    targetJob={targetJob}
+                    setTargetJob={setTargetJob}
                     onSave={() => {
                         void save().then((r) => {
                             if (r !== true) alert(r);
@@ -433,54 +483,165 @@ export function CharacterTab() {
     );
 }
 
+
 interface CharacterFormProps {
     form: FormState;
     setForm: (f: FormState) => void;
     /** 保存済みから変更されているか (保存ボタンの活性と未保存バッジに使う) */
     dirty: boolean;
-    jmJob: string;
-    setJmJob: (v: string) => void;
-    jpJob: string;
-    setJpJob: (v: string) => void;
+    /** ジョブ別メリットとジョブポイントで共有する対象ジョブ */
+    targetJob: string;
+    setTargetJob: (v: string) => void;
     onSave: () => void;
     onClose: () => void;
 }
 
-function CharacterForm({ form, setForm, dirty, jmJob, setJmJob, jpJob, setJpJob, onSave, onClose }: CharacterFormProps) {
-    const jmData = form.jobMerits[jmJob] || { group1: jobMeritDefaultRanks(), group2: jobMeritDefaultRanks() };
+const MERIT_BASE_TOTAL_MAX = MERIT_BASE_KEYS.length * MERIT_BASE_MAX_RANK;
+const MERIT_SKILL_TOTAL_MAX = ALL_SKILL_KEYS.length * MERIT_SKILL_MAX_RANK;
+
+/** フォーカスで中身を全選択する。デフォルト値を消してから打ち直す手間を省く (docs/adr/0021) */
+function selectAll(e: React.FocusEvent<HTMLInputElement>) {
+    e.target.select();
+}
+
+interface NumFieldProps {
+    id: string;
+    label: string;
+    /** 文字列で受けるのは、入力途中の空欄を許すフィールドがあるため */
+    value: string | number;
+    max: number;
+    onChange: (raw: string) => void;
+    /** merit-item | jp-item | skill-item */
+    variant: string;
+    disabled?: boolean;
+    title?: string;
+}
+
+/** ラベル・数値入力・「/ 最大値」を 1 行に並べる共通フィールド (docs/adr/0021) */
+function NumField({ id, label, value, max, onChange, variant, disabled, title }: NumFieldProps) {
+    const num = typeof value === 'number' ? value : parseNum(value);
+    // 上限 0 は「達成」ではないので強調しない
+    const atCap = max > 0 && num >= max;
+    return (
+        <div className={atCap ? `${variant} at-cap` : variant}>
+            <label htmlFor={id} title={title || label}>{label}</label>
+            <input
+                type="number"
+                id={id}
+                min={0}
+                max={max}
+                value={value}
+                disabled={disabled}
+                title={title}
+                onFocus={selectAll}
+                onChange={(e) => onChange(e.target.value)}
+            />
+            <span className="field-max">/ {max}</span>
+        </div>
+    );
+}
+
+interface SectionProps {
+    id: SectionId;
+    label: string;
+    summary?: ReactNode;
+    open: boolean;
+    onToggle: (id: SectionId, open: boolean) => void;
+    children: ReactNode;
+}
+
+function Section({ id, label, summary, open, onToggle, children }: SectionProps) {
+    return (
+        <details
+            className="char-section"
+            data-section={id}
+            open={open}
+            onToggle={(e) => onToggle(id, e.currentTarget.open)}
+        >
+            <summary>
+                <span className="char-section-caret" aria-hidden="true">▶</span>
+                <span className="char-section-title">{label}</span>
+                {summary != null && <span className="char-section-summary">{summary}</span>}
+            </summary>
+            <div className="char-section-body">{children}</div>
+        </details>
+    );
+}
+
+/** 親セクション内の小見出し + 右肩の合計表示 */
+function SubGroup({ title, hint, total, children }: {
+    title: string;
+    hint?: string;
+    total?: ReactNode;
+    children: ReactNode;
+}) {
+    return (
+        <div className="char-subgroup">
+            <div className="char-subgroup-head">
+                <span className="char-subgroup-title">{title}</span>
+                {hint && <span className="char-subgroup-hint">{hint}</span>}
+                {total != null && <span className="char-subgroup-total">{total}</span>}
+            </div>
+            {children}
+        </div>
+    );
+}
+
+function CharacterForm({ form, setForm, dirty, targetJob, setTargetJob, onSave, onClose }: CharacterFormProps) {
+    const [openSections, setOpenSections] = useState<SectionId[]>(loadOpenSections);
+
+    function toggleSection(id: SectionId, open: boolean) {
+        setOpenSections((prev) => {
+            const has = prev.includes(id);
+            if (open === has) return prev;
+            const next = open ? [...prev, id] : prev.filter((s) => s !== id);
+            saveOpenSections(next);
+            return next;
+        });
+    }
+    const isOpen = (id: SectionId) => openSections.includes(id);
+
+    const jmData = form.jobMerits[targetJob] || { group1: jobMeritDefaultRanks(), group2: jobMeritDefaultRanks() };
     const jpNames: string[] =
-        (JP_CATEGORIES as Record<string, string[]>)[jpJob] ||
+        (JP_CATEGORIES as Record<string, string[]>)[targetJob] ||
         new Array(JP_CATEGORY_COUNT).fill('').map((_, i) => `カテゴリ${i + 1}`);
-    const jpRanks = form.jobPoints[jpJob] || jpDefaultRanks();
+    const jpRanks = form.jobPoints[targetJob] || jpDefaultRanks();
 
     function setJobMerit(group: 'group1' | 'group2', idx: number, raw: string) {
-        let v = parseNum(raw);
-        v = Math.max(0, Math.min(JOB_MERIT_MAX_RANK, v));
-        // グループ合計が JOB_MERIT_GROUP_MAX_TOTAL を超えないようにクランプ
         const ranks = jmData[group];
-        const otherSum = ranks.reduce((s, r, i) => s + (i === idx ? 0 : r || 0), 0);
-        const allowed = Math.max(0, JOB_MERIT_GROUP_MAX_TOTAL - otherSum);
-        if (v > allowed) v = allowed;
-        const next = {
-            ...jmData,
-            [group]: ranks.map((r, i) => (i === idx ? v : r)),
-        };
-        setForm({ ...form, jobMerits: { ...form.jobMerits, [jmJob]: next } });
+        const v = clampWithinGroup(ranks, idx, parseNum(raw), JOB_MERIT_MAX_RANK, JOB_MERIT_GROUP_MAX_TOTAL);
+        const next = { ...jmData, [group]: ranks.map((r, i) => (i === idx ? v : r)) };
+        setForm({ ...form, jobMerits: { ...form.jobMerits, [targetJob]: next } });
     }
 
     function setJpRank(idx: number, raw: string) {
-        let v = parseNum(raw);
-        v = Math.max(0, Math.min(JP_MAX_RANK, v));
+        const v = clampToMax(parseNum(raw), JP_MAX_RANK);
         setForm({
             ...form,
-            jobPoints: { ...form.jobPoints, [jpJob]: jpRanks.map((r, i) => (i === idx ? v : r)) },
+            jobPoints: { ...form.jobPoints, [targetJob]: jpRanks.map((r, i) => (i === idx ? v : r)) },
         });
     }
 
+    function setMeritBase(key: string, raw: string) {
+        // 入力途中の空欄を潰さないよう、空文字はそのまま保持する
+        const v = raw === '' ? '' : String(clampToMax(parseNum(raw), MERIT_BASE_MAX_RANK));
+        setForm({ ...form, meritBase: { ...form.meritBase, [key]: v } });
+    }
+
+    function setMeritOther(key: string, raw: string) {
+        if (raw === '') {
+            setForm({ ...form, meritOther: { ...form.meritOther, [key]: '' } });
+            return;
+        }
+        // 各項目 0-5 に加えてグループ合計にも上限がある (docs/knowledge/status/merit_points.md)
+        const ranks = MERIT_OTHER_KEYS.map(([k]) => parseNum(form.meritOther[k]));
+        const idx = MERIT_OTHER_KEYS.findIndex(([k]) => k === key);
+        const v = clampWithinGroup(ranks, idx, parseNum(raw), MERIT_OTHER_MAX_RANK, MERIT_OTHER_GROUP_MAX_TOTAL);
+        setForm({ ...form, meritOther: { ...form.meritOther, [key]: String(v) } });
+    }
+
     function setMeritSkill(key: string, raw: string) {
-        let v = parseNum(raw);
-        if (v < 0) v = 0;
-        if (v > 8) v = 8;
+        const v = clampToMax(parseNum(raw), MERIT_SKILL_MAX_RANK);
         // スキルメリットはスキル上限に影響するため、上限を再計算して追従させる
         setForm(withFollowedDefaults({
             ...form,
@@ -489,23 +650,26 @@ function CharacterForm({ form, setForm, dirty, jmJob, setJmJob, jpJob, setJpJob,
     }
 
     function setJobLevel(jobKey: string, field: 'level' | 'masterLv', raw: string) {
+        const max = field === 'level' ? 99 : 50;
+        const v = raw === '' ? '' : String(clampToMax(parseNum(raw), max));
         // ジョブレベル / ML はスキル上限に影響するため、上限を再計算して追従させる
         setForm(withFollowedDefaults({
             ...form,
             jobLevels: {
                 ...form.jobLevels,
-                [jobKey]: { ...form.jobLevels[jobKey], [field]: raw },
+                [jobKey]: { ...form.jobLevels[jobKey], [field]: v },
             },
         }));
     }
 
     function setSkill(key: string, raw: string) {
-        let v = parseNum(raw);
-        if (v < 0) v = 0;
+        // 上限を超える値は入力させない。上限はジョブレベル由来なので欄ごとに違う
+        const v = clampToMax(parseNum(raw), form.skillDefaults[key] || 0);
         setForm({ ...form, skills: { ...form.skills, [key]: v } });
     }
 
-    function resetSkillsToDefault() {
+    /** 33 欄すべてを現在の上限で埋める */
+    function setSkillsToCap() {
         const next = withFollowedDefaults(form);
         const skills = { ...next.skills };
         allSkillKeys.forEach(([k]) => {
@@ -514,275 +678,121 @@ function CharacterForm({ form, setForm, dirty, jmJob, setJmJob, jpJob, setJpJob,
         setForm({ ...next, skills });
     }
 
-    function meritSkillGrid(keys: SkillKeyPair[]) {
+    function meritSkillGrid(keys: SkillKeyPair[], groupLabel: string) {
+        const groupMax = keys.length * MERIT_SKILL_MAX_RANK;
+        const total = keys.reduce((s, [k]) => s + (form.meritSkills[k] ?? MERIT_SKILL_MAX_RANK), 0);
         return (
-            <div className="merit-grid">
-                {keys.map(([key, ja]) => (
-                    <div className="merit-item" key={key}>
-                        <label htmlFor={`meritSkill_${key}`}>{ja}</label>
-                        <input
-                            type="number"
+            <>
+                <div className="char-group-row">
+                    <span className="char-group-title">{groupLabel}</span>
+                    <span className="char-group-total">計 {total} / {groupMax}pt</span>
+                </div>
+                <div className="merit-grid merit-grid-narrow">
+                    {keys.map(([key, ja]) => (
+                        <NumField
+                            key={key}
+                            variant="merit-item"
                             id={`meritSkill_${key}`}
-                            min={0}
-                            max={8}
-                            value={form.meritSkills[key] != null ? form.meritSkills[key] : 8}
-                            onChange={(e) => setMeritSkill(key, e.target.value)}
+                            label={ja}
+                            max={MERIT_SKILL_MAX_RANK}
+                            value={form.meritSkills[key] ?? MERIT_SKILL_MAX_RANK}
+                            title={`${ja}スキル上限アップ (ランク × 2 が上限に加算される)`}
+                            onChange={(raw) => setMeritSkill(key, raw)}
                         />
-                    </div>
-                ))}
-            </div>
+                    ))}
+                </div>
+            </>
         );
     }
 
-    function skillGrid(keys: SkillKeyPair[]) {
+    function skillGrid(keys: SkillKeyPair[], groupLabel: string) {
         return (
-            <div className="skill-grid">
-                {keys.map(([key, ja]) => {
-                    const cap = form.skillDefaults[key] || 0;
-                    const value = form.skills[key] != null ? form.skills[key] : cap;
-                    return (
-                        <div className="skill-item" key={key}>
-                            <label htmlFor={`skill_${key}`}>
-                                <span>{ja}</span>
-                                <span className="skill-cap">上限 {cap}</span>
-                            </label>
-                            <input
-                                type="number"
+            <>
+                <div className="char-group-row">
+                    <span className="char-group-title">{groupLabel}</span>
+                </div>
+                <div className="skill-grid">
+                    {keys.map(([key, ja]) => {
+                        const cap = form.skillDefaults[key] || 0;
+                        const value = form.skills[key] ?? cap;
+                        return (
+                            <NumField
+                                key={key}
+                                variant={cap === 0 ? 'skill-item skill-item-zero' : 'skill-item'}
                                 id={`skill_${key}`}
-                                min={0}
+                                label={ja}
+                                max={cap}
                                 value={value}
-                                onChange={(e) => setSkill(key, e.target.value)}
+                                // 上限 0 = Lv>0 のジョブに該当スキルのランクが無い。0 しか入らないので閉じる
+                                disabled={cap === 0}
+                                title={cap === 0
+                                    ? `${ja}: Lv1 以上のジョブに該当スキルがないため上限 0`
+                                    : `${ja}: 上限 ${cap} (Lv1 以上のジョブのうち最大のキャップ + スキルメリット × 2)`}
+                                onChange={(raw) => setSkill(key, raw)}
                             />
-                        </div>
-                    );
-                })}
-            </div>
+                        );
+                    })}
+                </div>
+            </>
         );
     }
 
     function jobMeritGrid(group: 'group1' | 'group2') {
         const items = [];
         for (let i = 0; i < JOB_MERIT_GROUP_SIZE; i++) {
-            if (isJobMeritPlaceholder(jmJob, group, i)) continue;
+            if (isJobMeritPlaceholder(targetJob, group, i)) continue;
+            const name = jobMeritCategoryName(targetJob, group, i);
             items.push(
-                <div className="jp-item" key={i}>
-                    <label htmlFor={`jm_${group}_${i}`}>{jobMeritCategoryName(jmJob, group, i)}</label>
-                    <input
-                        type="number"
-                        id={`jm_${group}_${i}`}
-                        min={0}
-                        max={JOB_MERIT_MAX_RANK}
-                        value={jmData[group][i]}
-                        onChange={(e) => setJobMerit(group, i, e.target.value)}
-                    />
-                </div>
+                <NumField
+                    key={i}
+                    variant="jp-item"
+                    id={`jm_${group}_${i}`}
+                    label={name}
+                    max={JOB_MERIT_MAX_RANK}
+                    value={jmData[group][i]}
+                    onChange={(raw) => setJobMerit(group, i, raw)}
+                />
             );
         }
         if (items.length === 0) {
-            return <div style={{ color: '#666', fontSize: 12 }}>(項目なし)</div>;
+            return <div className="char-empty-note">(項目なし)</div>;
         }
-        return items;
+        return <div className="jp-grid">{items}</div>;
     }
 
     const groupTotal = (group: 'group1' | 'group2') =>
         jmData[group].reduce((s, v) => s + (v || 0), 0);
 
+    const meritBaseTotal = MERIT_BASE_KEYS.reduce((s, [key]) => s + parseNum(form.meritBase[key]), 0);
+    const meritSkillTotal = allSkillKeys.reduce(
+        (s, [k]) => s + (form.meritSkills[k] ?? MERIT_SKILL_MAX_RANK), 0);
+    const meritOtherTotal = MERIT_OTHER_KEYS.reduce((s, [key]) => s + parseNum(form.meritOther[key]), 0);
+    const jpTotal = jpJobTotal(jpRanks);
+    const zeroCapCount = allSkillKeys.filter(([k]) => !form.skillDefaults[k]).length;
+    const targetJobName = jobs.find((j) => j.key === targetJob)?.name ?? targetJob;
+
+    const jobSelect = (
+        <select
+            id="targetJobSelector"
+            className="char-job-select"
+            value={targetJob}
+            onChange={(e) => setTargetJob(e.target.value)}
+        >
+            {jobs.map((j) => (
+                <option key={j.key} value={j.key}>{j.name}</option>
+            ))}
+        </select>
+    );
+
     return (
         <div id="charEditSection">
-            <h2 id="charEditTitle">
-                {form.editingName ? 'キャラクター編集' : '新規キャラクター'}
+            {/* スクロールしても保存できるよう上端に固定する (docs/adr/0021) */}
+            <div className="char-action-bar">
+                <span className="char-action-title" id="charEditTitle">
+                    {form.editingName ? 'キャラクター編集' : '新規キャラクター'}
+                </span>
                 {dirty && <span className="unsaved-badge">未保存</span>}
-            </h2>
-            <div className="form-group">
-                <label htmlFor="charName">名前</label>
-                <input
-                    type="text"
-                    id="charName"
-                    placeholder="キャラクター名"
-                    value={form.name}
-                    onChange={(e) => setForm({ ...form, name: e.target.value })}
-                />
-            </div>
-            <div className="form-group">
-                <label htmlFor="charRace">種族</label>
-                <select
-                    id="charRace"
-                    value={form.race}
-                    onChange={(e) => setForm(withFollowedDefaults({ ...form, race: e.target.value }))}
-                >
-                    <option value="Hum">ヒューム</option>
-                    <option value="Elv">エルヴァーン</option>
-                    <option value="Tar">タルタル</option>
-                    <option value="Mit">ミスラ</option>
-                    <option value="Gal">ガルカ</option>
-                </select>
-            </div>
-
-            <h3>ジョブレベル</h3>
-            <table className="job-level-table">
-                <thead>
-                    <tr>
-                        <th>ジョブ</th>
-                        <th>Lv</th>
-                        <th>MLv</th>
-                    </tr>
-                </thead>
-                <tbody id="jobLevelTable">
-                    {jobs.map((job) => (
-                        <tr key={job.key}>
-                            <td className="job-name">{job.key}</td>
-                            <td>
-                                <input
-                                    type="number"
-                                    id={`jl_${job.key}_lv`}
-                                    min={0}
-                                    max={99}
-                                    value={form.jobLevels[job.key]?.level ?? '0'}
-                                    onChange={(e) => setJobLevel(job.key, 'level', e.target.value)}
-                                />
-                            </td>
-                            <td>
-                                <input
-                                    type="number"
-                                    id={`jl_${job.key}_mlv`}
-                                    min={0}
-                                    max={50}
-                                    value={form.jobLevels[job.key]?.masterLv ?? '0'}
-                                    onChange={(e) => setJobLevel(job.key, 'masterLv', e.target.value)}
-                                />
-                            </td>
-                        </tr>
-                    ))}
-                </tbody>
-            </table>
-
-            <div className="merit-section">
-                <h3>メリットポイント (0-15)</h3>
-                <div className="merit-grid">
-                    {MERIT_BASE_KEYS.map(([key, id, label]) => (
-                        <div className="merit-item" key={key}>
-                            <label htmlFor={id}>{label}</label>
-                            <input
-                                type="number"
-                                id={id}
-                                min={0}
-                                max={15}
-                                value={form.meritBase[key]}
-                                onChange={(e) =>
-                                    setForm({ ...form, meritBase: { ...form.meritBase, [key]: e.target.value } })
-                                }
-                            />
-                        </div>
-                    ))}
-                </div>
-            </div>
-
-            <div className="merit-section">
-                <h3>メリットポイント (スキル)</h3>
-                <div className="skill-group-title">武器スキル (0-8)</div>
-                {meritSkillGrid(SKILL_KEYS_WEAPON as SkillKeyPair[])}
-                <div className="skill-group-title">防御スキル (0-8)</div>
-                {meritSkillGrid(SKILL_KEYS_DEFENSE as SkillKeyPair[])}
-                <div className="skill-group-title">魔法スキル (0-8)</div>
-                {meritSkillGrid(MAGIC_SKILL_KEYS as SkillKeyPair[])}
-            </div>
-
-            <div className="merit-section">
-                <h3>メリットポイント (その他)</h3>
-                <div className="merit-grid">
-                    {MERIT_OTHER_KEYS.map(([key, id, label]) => (
-                        <div className="merit-item" key={key}>
-                            <label htmlFor={id}>{label}</label>
-                            <input
-                                type="number"
-                                id={id}
-                                min={0}
-                                max={5}
-                                value={form.meritOther[key]}
-                                onChange={(e) =>
-                                    setForm({ ...form, meritOther: { ...form.meritOther, [key]: e.target.value } })
-                                }
-                            />
-                        </div>
-                    ))}
-                </div>
-            </div>
-
-            <div className="jp-section">
-                <div className="jp-section-header">
-                    <h3>ジョブ別メリットポイント (各項目0-5)</h3>
-                    <select id="jobMeritJobSelector" value={jmJob} onChange={(e) => setJmJob(e.target.value)}>
-                        {jobs.map((j) => (
-                            <option key={j.key} value={j.key}>{j.name}</option>
-                        ))}
-                    </select>
-                </div>
-                <div className="skill-group-title">
-                    グループ1{' '}
-                    <span style={{ color: '#888', fontSize: 12 }}>
-                        (<span id="jobMeritGroup1Total">{groupTotal('group1')}</span> / 10)
-                    </span>
-                </div>
-                <div className="jp-grid" id="jobMeritGroup1Grid">{jobMeritGrid('group1')}</div>
-                <div className="skill-group-title">
-                    グループ2{' '}
-                    <span style={{ color: '#888', fontSize: 12 }}>
-                        (<span id="jobMeritGroup2Total">{groupTotal('group2')}</span> / 10)
-                    </span>
-                </div>
-                <div className="jp-grid" id="jobMeritGroup2Grid">{jobMeritGrid('group2')}</div>
-            </div>
-
-            <div className="jp-section">
-                <div className="jp-section-header">
-                    <h3>ジョブポイント (0-20)</h3>
-                    <select id="jpJobSelector" value={jpJob} onChange={(e) => setJpJob(e.target.value)}>
-                        {jobs.map((j) => (
-                            <option key={j.key} value={j.key}>{j.name}</option>
-                        ))}
-                    </select>
-                    <span className="jp-total-display">
-                        合計: <span id="jpTotalDisplay">{jpJobTotal(jpRanks)}</span> / 2100
-                    </span>
-                </div>
-                <div className="jp-grid" id="jpCategoryGrid">
-                    {jpRanks.map((rank, i) => (
-                        <div className="jp-item" key={i}>
-                            <label htmlFor={`jp_cat_${i}`}>{jpNames[i] || `カテゴリ${i + 1}`}</label>
-                            <input
-                                type="number"
-                                id={`jp_cat_${i}`}
-                                min={0}
-                                max={JP_MAX_RANK}
-                                value={rank}
-                                onChange={(e) => setJpRank(i, e.target.value)}
-                            />
-                        </div>
-                    ))}
-                </div>
-            </div>
-
-            <div className="skill-section">
-                <div className="skill-section-header">
-                    <h3>スキル値</h3>
-                    <button
-                        className="btn btn-primary btn-sm"
-                        id="btnResetSkillsToDefault"
-                        type="button"
-                        onClick={resetSkillsToDefault}
-                    >
-                        全て最大値に戻す
-                    </button>
-                </div>
-                <div className="skill-group-title">武器スキル</div>
-                {skillGrid(SKILL_KEYS_WEAPON as SkillKeyPair[])}
-                <div className="skill-group-title">防御スキル</div>
-                {skillGrid(SKILL_KEYS_DEFENSE as SkillKeyPair[])}
-                <div className="skill-group-title">魔法スキル</div>
-                {skillGrid(SKILL_KEYS_MAGIC as SkillKeyPair[])}
-            </div>
-
-            <div className="btn-group">
+                <span className="char-action-spacer" />
                 <button
                     className="btn btn-primary"
                     id="btnSaveChar"
@@ -795,7 +805,229 @@ function CharacterForm({ form, setForm, dirty, jmJob, setJmJob, jpJob, setJpJob,
                 {/* 「破棄」ではなくフォームを閉じる操作。未保存ならガードが確認する */}
                 <button className="btn btn-neutral" id="btnCancelEdit" onClick={onClose}>閉じる</button>
             </div>
+
+            <Section
+                id="basic"
+                label="基本情報"
+                summary={`${form.name.trim() || '(名称未設定)'} / ${RACE_NAMES[form.race] || form.race}`}
+                open={isOpen('basic')}
+                onToggle={toggleSection}
+            >
+                <div className="char-basic-row">
+                    <div className="form-group">
+                        <label htmlFor="charName">名前</label>
+                        <input
+                            type="text"
+                            id="charName"
+                            className="char-field-name"
+                            placeholder="キャラクター名"
+                            value={form.name}
+                            onChange={(e) => setForm({ ...form, name: e.target.value })}
+                        />
+                    </div>
+                    <div className="form-group">
+                        <label htmlFor="charRace">種族</label>
+                        <select
+                            id="charRace"
+                            className="char-field-race"
+                            value={form.race}
+                            onChange={(e) => setForm(withFollowedDefaults({ ...form, race: e.target.value }))}
+                        >
+                            <option value="Hum">ヒューム</option>
+                            <option value="Elv">エルヴァーン</option>
+                            <option value="Tar">タルタル</option>
+                            <option value="Mit">ミスラ</option>
+                            <option value="Gal">ガルカ</option>
+                        </select>
+                    </div>
+                </div>
+            </Section>
+
+            <Section id="joblv" label="ジョブレベル" open={isOpen('joblv')} onToggle={toggleSection}>
+                <div className="job-grid" id="jobLevelGrid">
+                    {jobs.map((job) => {
+                        const jl = form.jobLevels[job.key];
+                        const lv = jl?.level ?? '0';
+                        return (
+                            <div className={parseNum(lv) > 0 ? 'job-chip is-leveled' : 'job-chip'} key={job.key}>
+                                <span className="job-chip-name" title={job.name}>{job.name}</span>
+                                <label className="job-chip-tag" htmlFor={`jl_${job.key}_lv`}>Lv</label>
+                                <input
+                                    type="number"
+                                    id={`jl_${job.key}_lv`}
+                                    min={0}
+                                    max={99}
+                                    value={lv}
+                                    onFocus={selectAll}
+                                    onChange={(e) => setJobLevel(job.key, 'level', e.target.value)}
+                                />
+                                <label className="job-chip-tag" htmlFor={`jl_${job.key}_mlv`}>ML</label>
+                                <input
+                                    type="number"
+                                    id={`jl_${job.key}_mlv`}
+                                    min={0}
+                                    max={50}
+                                    value={jl?.masterLv ?? '0'}
+                                    onFocus={selectAll}
+                                    onChange={(e) => setJobLevel(job.key, 'masterLv', e.target.value)}
+                                />
+                            </div>
+                        );
+                    })}
+                </div>
+            </Section>
+
+            <Section
+                id="merit"
+                label="メリットポイント (共通)"
+                summary={
+                    <>
+                        基礎 <b>{meritBaseTotal}</b>/{MERIT_BASE_TOTAL_MAX}pt ・
+                        スキル <b>{meritSkillTotal}</b>/{MERIT_SKILL_TOTAL_MAX}pt ・
+                        その他 <b>{meritOtherTotal}</b>/{MERIT_OTHER_GROUP_MAX_TOTAL}pt
+                    </>
+                }
+                open={isOpen('merit')}
+                onToggle={toggleSection}
+            >
+                <SubGroup
+                    title="基礎ステータス"
+                    hint={`各 0-${MERIT_BASE_MAX_RANK}`}
+                    total={<>計 <b>{meritBaseTotal}</b> / {MERIT_BASE_TOTAL_MAX}pt</>}
+                >
+                    <div className="merit-grid merit-grid-narrow">
+                        {MERIT_BASE_KEYS.map(([key, id, label]) => (
+                            <NumField
+                                key={key}
+                                variant="merit-item"
+                                id={id}
+                                label={label}
+                                max={MERIT_BASE_MAX_RANK}
+                                value={form.meritBase[key]}
+                                onChange={(raw) => setMeritBase(key, raw)}
+                            />
+                        ))}
+                    </div>
+                </SubGroup>
+
+                <SubGroup
+                    title="スキル"
+                    hint={`各 0-${MERIT_SKILL_MAX_RANK}`}
+                    total={<>計 <b>{meritSkillTotal}</b> / {MERIT_SKILL_TOTAL_MAX}pt</>}
+                >
+                    {meritSkillGrid(SKILL_KEYS_WEAPON as SkillKeyPair[], '武器スキル')}
+                    {meritSkillGrid(SKILL_KEYS_DEFENSE as SkillKeyPair[], '防御スキル')}
+                    {meritSkillGrid(MAGIC_SKILL_KEYS as SkillKeyPair[], '魔法スキル')}
+                </SubGroup>
+
+                <SubGroup
+                    title="その他"
+                    hint={`各 0-${MERIT_OTHER_MAX_RANK} ・ 合計 ${MERIT_OTHER_GROUP_MAX_TOTAL}pt まで`}
+                    total={<>計 <b>{meritOtherTotal}</b> / {MERIT_OTHER_GROUP_MAX_TOTAL}pt</>}
+                >
+                    <div className="merit-grid merit-grid-wide">
+                        {MERIT_OTHER_KEYS.map(([key, id, label]) => (
+                            <NumField
+                                key={key}
+                                variant="merit-item"
+                                id={id}
+                                label={label}
+                                max={MERIT_OTHER_MAX_RANK}
+                                value={form.meritOther[key]}
+                                onChange={(raw) => setMeritOther(key, raw)}
+                            />
+                        ))}
+                    </div>
+                </SubGroup>
+            </Section>
+
+            <Section
+                id="jobpt"
+                label="ジョブ別ポイント"
+                summary={
+                    <>
+                        {targetJobName} ・ G1 <b>{groupTotal('group1')}</b>/{JOB_MERIT_GROUP_MAX_TOTAL}{' '}
+                        G2 <b>{groupTotal('group2')}</b>/{JOB_MERIT_GROUP_MAX_TOTAL} ・
+                        JP <b>{jpTotal}</b>/{JP_MAX_TOTAL}
+                    </>
+                }
+                open={isOpen('jobpt')}
+                onToggle={toggleSection}
+            >
+                {/* ジョブ別メリットと JP は同じ「どのジョブか」を指すのでセレクタを共有する */}
+                <div className="char-job-picker">
+                    <label htmlFor="targetJobSelector">対象ジョブ</label>
+                    {jobSelect}
+                    <span className="char-job-picker-hint">
+                        ジョブ別メリットとジョブポイントの両方に効きます
+                    </span>
+                </div>
+
+                <SubGroup title="ジョブ別メリットポイント" hint={`各項目 0-${JOB_MERIT_MAX_RANK} ・ グループ合計 ${JOB_MERIT_GROUP_MAX_TOTAL}pt まで`}>
+                    <div className="char-group-row">
+                        <span className="char-group-title">グループ1</span>
+                        <span className="char-group-total">
+                            計 <span id="jobMeritGroup1Total">{groupTotal('group1')}</span> / {JOB_MERIT_GROUP_MAX_TOTAL}pt
+                        </span>
+                    </div>
+                    {jobMeritGrid('group1')}
+                    <div className="char-group-row">
+                        <span className="char-group-title">グループ2</span>
+                        <span className="char-group-total">
+                            計 <span id="jobMeritGroup2Total">{groupTotal('group2')}</span> / {JOB_MERIT_GROUP_MAX_TOTAL}pt
+                        </span>
+                    </div>
+                    {jobMeritGrid('group2')}
+                </SubGroup>
+
+                <SubGroup
+                    title="ジョブポイント"
+                    hint={`各 0-${JP_MAX_RANK}`}
+                    total={<>計 <span id="jpTotalDisplay">{jpTotal}</span> / {JP_MAX_TOTAL}pt</>}
+                >
+                    <div className="jp-grid" id="jpCategoryGrid">
+                        {jpRanks.map((rank, i) => (
+                            <NumField
+                                key={i}
+                                variant="jp-item"
+                                id={`jp_cat_${i}`}
+                                label={jpNames[i] || `カテゴリ${i + 1}`}
+                                max={JP_MAX_RANK}
+                                value={rank}
+                                onChange={(raw) => setJpRank(i, raw)}
+                            />
+                        ))}
+                    </div>
+                </SubGroup>
+            </Section>
+
+            <Section
+                id="skill"
+                label="スキル値"
+                summary={
+                    <>
+                        {allSkillKeys.length} 項目
+                        {zeroCapCount > 0 && <> ・ 上限 0 が <b>{zeroCapCount}</b> 件</>}
+                    </>
+                }
+                open={isOpen('skill')}
+                onToggle={toggleSection}
+            >
+                <div className="char-subgroup-head">
+                    <button
+                        className="btn btn-primary btn-sm"
+                        id="btnResetSkillsToDefault"
+                        type="button"
+                        onClick={setSkillsToCap}
+                    >
+                        全て上限値にする
+                    </button>
+                    <span className="char-subgroup-hint">上限を超える値は入力できません</span>
+                </div>
+                {skillGrid(SKILL_KEYS_WEAPON as SkillKeyPair[], '武器スキル')}
+                {skillGrid(SKILL_KEYS_DEFENSE as SkillKeyPair[], '防御スキル')}
+                {skillGrid(SKILL_KEYS_MAGIC as SkillKeyPair[], '魔法スキル')}
+            </Section>
         </div>
     );
 }
-

@@ -6,6 +6,11 @@
 // list() / save(arr) の 2 関数のみを公開。Supabase 側は save 時に
 // 既存と差分を取って upsert / delete する。
 //
+// 配列の順序が一覧の表示順そのもの (docs/adr/0022)。localStorage は JSON 配列なので
+// そのまま保たれるが、Supabase 側は position カラムに配列インデックスを書き、
+// list() で order('position') して復元する。position は行の列であって data jsonb には
+// 入れないため、UI 側が扱うレコードの形は変わらない。
+//
 // データ形状の型は any のまま (UI 層の CharacterRecord とデータ由来 jsonb の
 // 突き合わせは tsify 等での型自動生成時にまとめて行う)。
 
@@ -38,13 +43,15 @@ class SupabaseCharacterRepo implements CharacterRepo {
         if (!user) return [];
         const { data, error } = await supabase
             .from('characters')
-            .select('name, data')
-            .eq('user_id', user.id);
+            .select('name, position, data')
+            .eq('user_id', user.id)
+            .order('position');
         if (error) {
             console.error('SupabaseCharacterRepo.list failed:', error);
             return [];
         }
-        // data jsonb には name 以外の全フィールドを格納している
+        // data jsonb には name 以外の全フィールドを格納している。
+        // position は並び順の復元にだけ使い、レコードには載せない。
         return data.map((row) => ({ name: row.name, ...row.data }));
     }
 
@@ -67,10 +74,11 @@ class SupabaseCharacterRepo implements CharacterRepo {
             if (error) throw error;
         }
 
-        // upsert: 全件 (data に name 以外を入れて user_id+name で onConflict)
-        const rows = characters.map((c) => {
+        // upsert: 全件 (data に name 以外を入れて user_id+name で onConflict)。
+        // 配列インデックスを position として保存し、list() の並び順を確定させる。
+        const rows = characters.map((c, index) => {
             const { name, ...rest } = c;
-            return { user_id: user.id, name, data: rest };
+            return { user_id: user.id, name, position: index, data: rest };
         });
         if (rows.length > 0) {
             const { error } = await supabase

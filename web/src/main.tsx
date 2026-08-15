@@ -20,6 +20,7 @@ import { initEquipSetPanel, refreshEquipSetPanel } from './equip/equip-sets-stor
 import { reloadCharacterList } from './character/character-store';
 import { loadPropsets } from './propsets/propsets-store';
 import { updateEquipEditStatus } from './status/status-store';
+import { isAnyDirty } from './dirty-guard';
 import { App } from './App';
 // ログイン時の localStorage → Supabase 同期 (import の副作用で登録)
 import './sync';
@@ -73,6 +74,14 @@ export async function startApp() {
         // repo が Local/Supabase で切り替わるため取り直し、ユーザー定義項目の値を再計算
         await loadPropsets();
         await updateEquipEditStatus();
+    });
+
+    // 未保存の編集があるままページを離れる (リロード / タブを閉じる /
+    // ログインの OAuth リダイレクト) 場合はブラウザ標準の確認を出す
+    // (docs/adr/0020)。文言はブラウザが決めるためカスタムできない。
+    window.addEventListener('beforeunload', (e) => {
+        if (!isAnyDirty()) return;
+        e.preventDefault();
     });
 
     // sync.js が localStorage → Supabase アップロード完了時に発火

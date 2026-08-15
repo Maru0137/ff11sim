@@ -7,10 +7,18 @@
 // compute.ts / share-ui.js などの読み手には影響しない。
 import { get_item_by_id } from '../wasm';
 import { loadCharacters, loadEquipSets, saveEquipSets } from '../storage';
-import { equipState, createEmptySlots, notifySlotsLoaded, notifyEquipState } from './equip-store';
+import {
+    equipState,
+    createEmptySlots,
+    notifySlotsLoaded,
+    notifyEquipState,
+    SLOT_DEFS,
+} from './equip-store';
 import type { EquipSlotData } from './equip-store';
 import { updateEquipEditStatus } from '../status/status-store';
 import { createStore } from '../store-utils';
+import { equipSetSnapshot } from './equip-set-snapshot';
+import { guard, registerDirtyEditor } from '../dirty-guard';
 
 export interface CharacterSummary {
     name: string;
@@ -58,6 +66,51 @@ function patch(p: Partial<EquipSetsPanelState>) {
 
 export function setNameInput(v: string) {
     patch({ nameInput: v });
+}
+
+// ===== 未保存編集の追跡 (docs/adr/0020) =====
+
+const SLOT_KEYS = SLOT_DEFS.map((s) => s.key);
+
+/** 最後に読み込んだ / 保存した内容のスナップショット */
+let savedSnapshot = '';
+/** 「破棄して続行」で戻す先。null = 新規フォームの空状態 */
+let savedSet: EquipSet | null = null;
+
+function currentSnapshot(): string {
+    return equipSetSnapshot(
+        {
+            name: equipSetsStore.get().nameInput,
+            slots: equipState.currentEquipSlots,
+            propsetSelection: equipState.propsetSelection,
+        },
+        SLOT_KEYS
+    );
+}
+
+/**
+ * 編集フォームの内容が保存済みから変わっているか。
+ * 値を戻せば false に戻る (フラグではなくスナップショット比較)。
+ * 共有閲覧モードは保存系 UI 自体が無いので常に false。
+ */
+export function isEquipSetDirty(): boolean {
+    const state = equipSetsStore.get();
+    if (!state.editVisible || state.shareMode) return false;
+    return currentSnapshot() !== savedSnapshot;
+}
+
+export const EQUIP_EDITOR_ID = 'equipsets';
+
+registerDirtyEditor(EQUIP_EDITOR_ID, {
+    label: () => `装備セット「${equipSetsStore.get().nameInput.trim() || '(名称未設定)'}」`,
+    isDirty: isEquipSetDirty,
+    save: () => saveEquipSet(),
+    discard: () => applyEquipSet(savedSet),
+});
+
+/** 編集内容が失われる装備セット側の操作を確認ダイアログ経由にする */
+function guardEquipSet(action: string, proceed: () => void, onCancel?: () => void) {
+    guard(action, proceed, { editorId: EQUIP_EDITOR_ID, onCancel });
 }
 
 // ===== 読み込み =====
@@ -127,6 +180,11 @@ function applyEquipSet(equipSet: EquipSet | null) {
         equipState.currentEquipSlots = createEmptySlots();
         patch({ editVisible: true, deleteVisible: false, nameInput: '' });
     }
+    // 読み込み直後 = 未編集。以降の変更はこのスナップショットとの差で判定する。
+    // スロットの値オブジェクトは装備選択モーダルが直接書き換えるため、
+    // 「破棄」で戻す控えは複製して持つ。
+    savedSet = equipSet ? structuredClone(equipSet) : null;
+    savedSnapshot = currentSnapshot();
     // スロット行 (React) に読み込みを通知し、検索テキスト等を選択名へリセット
     notifySlotsLoaded();
     updateEquipEditStatus();
@@ -153,10 +211,31 @@ export function newSet() {
     applyEquipSet(null);
 }
 
+// ===== UI から呼ぶ入口 (未保存ならダイアログを挟む) =====
+// selectSet / newSet 側は refreshTabs 等の内部再読込からも呼ばれるため、
+// ガードは呼び出し口をラップする形で足す。
+
+export function requestSelectSet(name: string) {
+    guardEquipSet(`装備セット「${name}」へ切り替え`, () => void selectSet(name));
+}
+
+export function requestNewSet() {
+    guardEquipSet('新しい装備セットの作成', newSet);
+}
+
+export function requestReorderEquipSetTabs(fromName: string, toName: string) {
+    // 並べ替え後は移動したセットを読み直すため、編集内容は失われる
+    guardEquipSet(`装備セット「${fromName}」の並べ替え`, () =>
+        void reorderEquipSetTabs(fromName, toName)
+    );
+}
+
 export function hideEditForm() {
     patch({ editVisible: false, selectedName: null });
     equipState.editingEquipSetName = null;
     equipState.isNewEquipSet = false;
+    savedSet = null;
+    savedSnapshot = '';
 }
 
 /** 共有閲覧モード: 共有された装備セットを編集フォームに流し込む (share-ui.js から呼ばれる) */
@@ -198,11 +277,14 @@ export function showShareLoadError(message: string) {
 
 // ===== 保存・複製・削除・並べ替え =====
 
-export async function saveEquipSet() {
+/**
+ * 編集内容を保存する。成功なら true、保存できないときは理由を返す
+ * (未保存確認ダイアログが「保存して続行」の可否判定に使う)。
+ */
+export async function saveEquipSet(): Promise<true | string> {
     const name = equipSetsStore.get().nameInput.trim();
     if (!name) {
-        alert('装備セット名を入力してください。');
-        return;
+        return '装備セット名を入力してください。';
     }
 
     const sets: EquipSet[] = await loadEquipSets();
@@ -227,8 +309,7 @@ export async function saveEquipSet() {
             // 改名時は名前の重複を検査
             if (name !== equipState.editingEquipSetName) {
                 if (sets.some((s) => s.character === character && s.job === job && s.name === name)) {
-                    alert(`装備セット「${name}」は既に存在します。`);
-                    return;
+                    return `装備セット「${name}」は既に存在します。`;
                 }
             }
             sets[idx] = record;
@@ -236,15 +317,16 @@ export async function saveEquipSet() {
     } else {
         // 新規作成
         if (sets.some((s) => s.character === character && s.job === job && s.name === name)) {
-            alert(`装備セット「${name}」は既に存在します。`);
-            return;
+            return `装備セット「${name}」は既に存在します。`;
         }
         sets.push(record);
     }
 
     await saveEquipSets(sets);
     await refreshTabs();
+    // 保存した内容を読み直すことで未保存フラグも解除される (applyEquipSet)
     await selectSet(name);
+    return true;
 }
 
 export async function copyEquipSet() {
@@ -345,4 +427,16 @@ export function selectJob(value: string) {
 export function selectSupportJob(value: string) {
     equipState.currentEquipSupportJob = value;
     updateEquipEditStatus();
+}
+
+// キャラ / ジョブの変更はタブを組み直して先頭セットを読み直すため編集内容が失われる。
+// キャンセル時は notifyEquipState で controlled な select を元の値へ描き戻す
+// (state が変わらないと React は再描画せず、DOM だけ新しい選択のまま残る)。
+
+export function requestSelectChar(value: string) {
+    guardEquipSet(`キャラクターの変更`, () => selectChar(value), notifyEquipState);
+}
+
+export function requestSelectJob(value: string) {
+    guardEquipSet(`ジョブの変更`, () => selectJob(value), notifyEquipState);
 }

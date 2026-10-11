@@ -34,6 +34,6 @@ export async function initWasmRuntime(wasmBytes) {
     await init(wasmBytes ? { module_or_path: wasmBytes } : undefined);
     wasmReady = true;
     // 装備データは WASM の初期化と同時に使えるようになる。
-    // 以前は items.json の fetch 完了で立てていたフラグ (docs/adr/0009)。
+    // 以前は items.json の fetch 完了で立てていたフラグ (docs/internal/adr/0009)。
     itemsLoaded = item_count() > 0;
 }

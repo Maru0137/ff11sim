@@ -1,4 +1,4 @@
-//! ステータス / プロパティ値のソース別内訳 (docs/adr/0016)。
+//! ステータス / プロパティ値のソース別内訳 (docs/internal/adr/0016)。
 //!
 //! `chara_to_status_result` (wasm.rs) と同じソース分解を「行」として公開する。
 //! 集計ロジック本体は `Chara::status_parts` / `Chara::job_trait_breakdown` /

@@ -120,8 +120,8 @@ item_search.rs  検索（説明文ステータスソートで equip_stats の抽
   `equip_set_property_values(equipSet, terms)` を追加し、web 側の 2 つの組み立てループを
   1 回の呼び出しに置き換える。`get_item_by_id` などデータ参照 API は変更しない。
 - `getAugmentText`（web）は装備カードとモーダルの表示にも使っているため残す
-  （[EquipGrid.tsx](../../web/src/equip/EquipGrid.tsx) /
-  [EquipSelectModal.tsx](../../web/src/equip/EquipSelectModal.tsx)）。解釈の入力としては使わない。
+  （[EquipGrid.tsx](../../../web/src/equip/EquipGrid.tsx) /
+  [EquipSelectModal.tsx](../../../web/src/equip/EquipSelectModal.tsx)）。解釈の入力としては使わない。
 - 英語経路（`description_en` + JA→EN 変換）と日本語経路（生の日本語）の統一は
   **本 ADR では決めない**。本 ADR は置き場所だけを決める。統一は別 ADR で扱う
   （More Information 参照）。
@@ -167,7 +167,7 @@ item_search.rs  検索（説明文ステータスソートで equip_stats の抽
 * Good: 経路 A と B の差（言語・抽出方式・条件ラベルの扱い）が Rust の 1 モジュール内に
   並んで見えるようになり、次の統一判断の材料になる。
 * Good: JA→EN 変換表（88 件）の二重管理が解消する。手順 2 で web 側が未使用になり削除した。
-  `docs/tech-debt/mirrored-constants-in-tests.md` が挙げる「定義を 2 箇所に持つ」型の
+  `docs/internal/tech-debt/mirrored-constants-in-tests.md` が挙げる「定義を 2 箇所に持つ」型の
   問題が 1 つ減る。
 * Bad: web から Rust への移動量が大きい。とくに `equip-bonuses.ts` のスロット別集計規則
   （武器スロット × 武器スキルの振り分け）は暗黙知が多く、移す際に落としやすい。
@@ -281,6 +281,6 @@ item_search.rs  検索（説明文ステータスソートで equip_stats の抽
   （オグメントとカスタム説明は元から日本語で、経路 A のためだけに
   `convertAugmentJaToEn` の変換テーブルを通しており、そこが欠損源になる。
   またユーザー定義プロパティは任意語を扱うため原理的に英語へ寄せられない）。
-  条件ラベルの扱いは [docs/knowledge/items/description_labels.md](../knowledge/items/description_labels.md)、
-  英語側に残る既知の癖は [docs/tech-debt/equip-stats-js-quirks.md](../tech-debt/equip-stats-js-quirks.md) を参照。
+  条件ラベルの扱いは [docs/internal/knowledge/items/description_labels.md](../knowledge/items/description_labels.md)、
+  英語側に残る既知の癖は [docs/internal/tech-debt/equip-stats-js-quirks.md](../tech-debt/equip-stats-js-quirks.md) を参照。
   本 ADR の完了後に別 ADR で扱う。

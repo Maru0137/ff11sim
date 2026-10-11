@@ -143,7 +143,7 @@ JS 側の `items.json` 読み込みを廃止すると決めた。JS はもとデ
 * 検索の応答性は実測していない。キーストロークごとに WASM 境界を越えて最大 50 件を
   返す設計のままで、体感で問題が出たら選択肢 2 に退避する。
 * 名前ソートは JS の `localeCompare` に対しコードポイント順としたため一致しない。
-  意図的な非互換として `docs/tech-debt/equip-stats-js-quirks.md` に記録している。
+  意図的な非互換として `docs/internal/tech-debt/equip-stats-js-quirks.md` に記録している。
 
 ## Pros and Cons of the Options
 
@@ -187,5 +187,5 @@ JS 側の `items.json` 読み込みを廃止すると決めた。JS はもとデ
   `web/test/*.test.js`
 * 移植先: `rust/src/equip_stats.rs`、`rust/src/item_search.rs`、`rust/tests/`
 * 移植中に見つかった JS 実装の癖と、意図的に受け入れた非互換:
-  `docs/tech-debt/equip-stats-js-quirks.md`
-* テストが実装の定数をミラーしていた問題: `docs/tech-debt/mirrored-constants-in-tests.md`
+  `docs/internal/tech-debt/equip-stats-js-quirks.md`
+* テストが実装の定数をミラーしていた問題: `docs/internal/tech-debt/mirrored-constants-in-tests.md`

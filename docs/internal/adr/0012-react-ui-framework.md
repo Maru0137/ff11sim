@@ -22,7 +22,7 @@ Web フロントエンドは素の ES Modules 約 3,500 行（index.html / searc
 
 * **状態→DOM 同期の宣言化** — 手動 DOM 同期は過去に状態と DOM の不整合による
   本番障害を起こした
-  （[docs/tech-debt/inline-script-monolith.md](../tech-debt/inline-script-monolith.md)）
+  （[docs/internal/tech-debt/inline-script-monolith.md](../tech-debt/inline-script-monolith.md)）
 * **可視化（テーブル・グラフ）エコシステム** — ソート・フィルタ付きの結果
   テーブル（ヘッドレステーブル）、ダメージ分布・DPS 曲線などのグラフを見据える
 * **段階的移行が可能なこと** — 動いている約 3,500 行を全面書き換えせず、
@@ -149,8 +149,8 @@ Web フロントエンドは素の ES Modules 約 3,500 行（index.html / searc
   サイト）、[ADR 0011](0011-vite-build-toolchain.md)（本 ADR は同 ADR が
   保留した「UI フレームワークの採用は別 ADR」を実行するもの）
 * 手動 DOM 同期による本番障害の記録:
-  [docs/tech-debt/inline-script-monolith.md](../tech-debt/inline-script-monolith.md)
+  [docs/internal/tech-debt/inline-script-monolith.md](../tech-debt/inline-script-monolith.md)
 * TanStack Table v9 の Svelte 5 対応（案 2.3 の評価根拠）:
   <https://tanstack.com/blog/announcing-tanstack-table-v9>
 * 移行順序の計画と TypeScript 化との順序関係:
-  [docs/roadmap/react-migration.md](../roadmap/react-migration.md)
+  [docs/internal/roadmap/react-migration.md](../roadmap/react-migration.md)

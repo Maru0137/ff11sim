@@ -96,7 +96,7 @@ decision-makers: Akira Maruoka
   メリットその他の合計上限は**既存コードに無かった制約**で、今回追加する
   （それまでは各欄 `max={5}` だけで合計 25 まで振れた）。
   上限の値は `web/src/constants.ts` に置き、根拠は
-  [docs/knowledge/status/merit_points.md](../knowledge/status/merit_points.md) に記録する。
+  [docs/internal/knowledge/status/merit_points.md](../knowledge/status/merit_points.md) に記録する。
 - **新規キャラクターのスキル上限を実態に合わせる**: 旧実装は新規作成時だけ
   `computeSkillDefaults()` をメリットポイント抜きで呼んでおり、
   フォームが既定で持つスキルメリット 8（上限 +16）が反映されず、
@@ -275,5 +275,5 @@ decision-makers: Akira Maruoka
 * [ADR 0013](0013-sidebar-spa-mantine.md) — サイドバー SPA とモバイル閾値 768px
 * [ADR 0020](0020-unsaved-changes-guard.md) — 未保存ガードと保存ボタンの活性
   （アクションバーの保存ボタン・未保存バッジ、および読み込み時にクランプしない根拠）
-* [docs/knowledge/status/merit_points.md](../knowledge/status/merit_points.md) —
+* [docs/internal/knowledge/status/merit_points.md](../knowledge/status/merit_points.md) —
   メリットポイントの上限（項目ごと / グループ合計）とスキルメリットの効果

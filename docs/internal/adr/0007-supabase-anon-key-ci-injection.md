@@ -113,4 +113,4 @@ anon key は設計上公開される値であり、漏洩自体が直接の被�
 
 * 保存先の切り替え: [ADR 0005](0005-localstorage-default-supabase-optin.md)
 * 公開 SELECT を許す例外テーブル: [ADR 0008](0008-equipset-sharing.md)
-* セットアップ手順: [web/README.md](../../web/README.md)
+* セットアップ手順: [web/README.md](../../../web/README.md)

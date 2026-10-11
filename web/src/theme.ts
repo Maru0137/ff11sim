@@ -1,4 +1,4 @@
-// Mantine テーマ (docs/adr/0013)。既存のダーク配色 (index.css) を
+// Mantine テーマ (docs/internal/adr/0013)。既存のダーク配色 (index.css) を
 // Mantine の CSS 変数側にも反映し、Mantine コンポーネントと手書き CSS が
 // 同じ見た目になるようにする。
 import { createTheme, type CSSVariablesResolver } from '@mantine/core';

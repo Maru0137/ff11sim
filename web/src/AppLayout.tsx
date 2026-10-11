@@ -1,4 +1,4 @@
-// 左サイドバーレイアウト (docs/adr/0013)。
+// 左サイドバーレイアウト (docs/internal/adr/0013)。
 // - デスクトップ: 240px ⇔ 56px アイコンレール (折りたたみ状態は localStorage)
 // - モバイル (< sm): ハンバーガーで開閉するオーバーレイ表示
 // 共有閲覧モード (?share=) ではこのレイアウト自体を使わない (App.tsx で分岐)。
@@ -76,7 +76,7 @@ export function AppLayout({ views, activeView, children }: AppLayoutProps) {
                                 onClick={() => {
                                     // ビュー切替は display:none で state を保持する
                                     // (App.tsx) ため編集内容は失われない。
-                                    // 未保存ガード (docs/adr/0020) は掛けない。
+                                    // 未保存ガード (docs/internal/adr/0020) は掛けない。
                                     navigate(v.view);
                                     closeMobile();
                                 }}

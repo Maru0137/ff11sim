@@ -4,7 +4,7 @@ FINAL FANTASY XI character, equipment and damage simulator - Web UI
 
 ## ローカル開発サーバーの起動方法
 
-ビルドツールチェーンは Vite です (`docs/adr/0011`)。事前に「装備データの生成」
+ビルドツールチェーンは Vite です (`docs/internal/adr/0011`)。事前に「装備データの生成」
 「WebAssembly のビルド」(後述) と `npm ci` を済ませてください。
 
 ```bash
@@ -26,7 +26,7 @@ npm run preview  # dist/ を http://localhost:8000 で配信
 ## 装備データの生成（最初に必要）
 
 `build/items.json` は上流 ([Windower/Resources](https://github.com/Windower/Resources)) から
-生成する派生物で、git 管理外です (`docs/adr/0003`)。**チェックアウト直後は存在しないため、
+生成する派生物で、git 管理外です (`docs/internal/adr/0003`)。**チェックアウト直後は存在しないため、
 まずこれを生成してください。**
 
 ```bash
@@ -41,11 +41,11 @@ CI と同じコマンドで、以下を一括で行います。
 - `build/_build_metadata.json` (ビルドのメタ情報) の出力。`web/public/data/` の symlink 経由で配信される
 
 > **`cargo build` / `cargo test` より先に実行する必要があります。**
-> 装備データは `include_str!` で Rust のバイナリに埋め込まれるため (`docs/adr/0009`)、
+> 装備データは `include_str!` で Rust のバイナリに埋め込まれるため (`docs/internal/adr/0009`)、
 > `build/items.json` が無いとコンパイルが通りません。
 > `scripts/scrape_augments.py` も装備名の逆引きに使います。
 >
-> `web/` の外に置くのは、ブラウザがこれを読まないためです (`docs/adr/0010`)。
+> `web/` の外に置くのは、ブラウザがこれを読まないためです (`docs/internal/adr/0010`)。
 > `web/` に置くと Pages に配信され、WASM に埋め込んだものと合わせて
 > 同じデータを二重に配ることになります。
 
@@ -141,7 +141,7 @@ web/
 
 ### 装備が検索できない・装備セットのステータスが 0 になる
 
-装備データは WASM に埋め込まれている (`docs/adr/0009`) ため、ブラウザは
+装備データは WASM に埋め込まれている (`docs/internal/adr/0009`) ため、ブラウザは
 `items.json` を読まない。データが古い/無い場合は Rust の再ビルドが必要。
 
 ```bash
@@ -151,7 +151,7 @@ cd rust && wasm-pack build --target web --out-dir ../web/pkg  # WASM 再ビル�
 
 ### 公開サイトの装備データを確認したい
 
-`items.json` は配信物に含まれない (`docs/adr/0010`) ため、URL では取得できない。
+`items.json` は配信物に含まれない (`docs/internal/adr/0010`) ため、URL では取得できない。
 CI が実行ごとに artifact として残しているので、そこから取得する。
 
 1. 公開サイトの `data/_build_metadata.json` を開き、`commit` を確認する

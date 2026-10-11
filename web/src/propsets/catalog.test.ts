@@ -38,7 +38,7 @@ describe('BUILTIN_PROPERTY_ITEMS', () => {
     });
 
     it('全項目が breakdown メタを持つか、非対応リストに明示されている', () => {
-        // 新項目を追加したら内訳対応可否を必ず判断する (docs/adr/0016)。
+        // 新項目を追加したら内訳対応可否を必ず判断する (docs/internal/adr/0016)。
         // 対応するなら breakdown メタを、非対応なら BREAKDOWN_UNSUPPORTED_IDS を更新。
         for (const item of BUILTIN_PROPERTY_ITEMS) {
             const supported = item.breakdown !== undefined;

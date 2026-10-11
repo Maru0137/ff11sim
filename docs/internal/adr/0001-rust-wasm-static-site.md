@@ -169,4 +169,4 @@ JavaScript の数値は f64 のみで、整数と実数の区別が言語に存�
 * データテーブルの共有方法: [ADR 0002](0002-shared-table-data-json.md)
 * 装備データの供給: [ADR 0003](0003-items-json-generated-in-ci.md)
 * 永続化: [ADR 0005](0005-localstorage-default-supabase-optin.md)
-* 計算式の仕様ドキュメント: [docs/knowledge/status/](../knowledge/status/)
+* 計算式の仕様ドキュメント: [docs/internal/knowledge/status/](../knowledge/status/)

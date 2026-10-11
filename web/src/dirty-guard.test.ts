@@ -1,4 +1,4 @@
-// 未保存ガード (docs/adr/0020) の分岐を検証する。
+// 未保存ガード (docs/internal/adr/0020) の分岐を検証する。
 // 「保存できないときに移動してしまう」「破棄したのに dirty が残る」といった
 // 事故は UI からは気づきにくいので、ここで押さえる。
 import { describe, it, expect, beforeEach, vi } from 'vitest';

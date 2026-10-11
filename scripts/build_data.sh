@@ -15,12 +15,12 @@
 #   temp_resources/*.lua           上流からのダウンロードキャッシュ
 #
 # items.json を web/ の外に置くのは、ブラウザがこれを読まなくなったため
-# (docs/adr/0009 / docs/adr/0010)。Rust が include_str! で埋め込むので、
+# (docs/internal/adr/0009 / docs/internal/adr/0010)。Rust が include_str! で埋め込むので、
 # web/ に置くと同じデータを二重に配ることになる。
 #
 # _build_metadata.json は次回の変化判定で配信サイト経由で読むため配信される必要が
 # あるが、生成物なので出力先は build/ に統一する。配信は web/public/data/ に置いた
-# 追跡済み symlink 経由で行う。web/public/data/ の他のファイルと同じ方式 (docs/adr/0002)。
+# 追跡済み symlink 経由で行う。web/public/data/ の他のファイルと同じ方式 (docs/internal/adr/0002)。
 # これで web/public/data/ の中身はすべて git 管理下になり、生成物と混ざらない。
 #
 # 環境変数:
@@ -36,7 +36,7 @@
 #
 # メタデータをこのスクリプトで書く理由:
 #   _build_metadata.json は「この生成物が何から作られたか」の記録である。
-#   データを作る処理と同じ場所で書けば、生成物とメタデータがずれない (docs/adr/0003)。
+#   データを作る処理と同じ場所で書けば、生成物とメタデータがずれない (docs/internal/adr/0003)。
 #
 set -euo pipefail
 

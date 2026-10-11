@@ -30,7 +30,7 @@ export interface EquipSet {
     character: string;
     job: string;
     slots: Record<string, EquipSlotData | null | undefined>;
-    /** プロパティセット選択 id。保存時の選択を記憶する (docs/adr/0015) */
+    /** プロパティセット選択 id。保存時の選択を記憶する (docs/internal/adr/0015) */
     propset_selection?: string;
 }
 
@@ -68,7 +68,7 @@ export function setNameInput(v: string) {
     patch({ nameInput: v });
 }
 
-// ===== 未保存編集の追跡 (docs/adr/0020) =====
+// ===== 未保存編集の追跡 (docs/internal/adr/0020) =====
 
 const SLOT_KEYS = SLOT_DEFS.map((s) => s.key);
 

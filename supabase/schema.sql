@@ -70,7 +70,7 @@ create table public.shared_equipsets (
 create index shared_equipsets_user_id_idx on public.shared_equipsets (user_id);
 
 -- ---------------------------------------------------------------------------
--- 6. property_sets: プロパティセット (docs/adr/0015)
+-- 6. property_sets: プロパティセット (docs/internal/adr/0015)
 --    カスタムセット + ユーザー定義項目の PropsetDoc を 1 ユーザー 1 行で格納
 -- ---------------------------------------------------------------------------
 create table public.property_sets (

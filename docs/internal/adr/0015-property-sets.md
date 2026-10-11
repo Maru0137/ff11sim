@@ -77,7 +77,7 @@ decision-makers: Akira Maruoka
   両経路が同じ規則になる。
   ラベル判定は「非 ASCII 文字を含むこと」。英語説明文の `DMG:+165 Delay:+240 STR+10` を
   誤認しないための条件で、日本語説明文ではコロン付きラベルが常に対象・条件を表す
-  （[docs/knowledge/items/description_labels.md](../knowledge/items/description_labels.md)）。
+  （[docs/internal/knowledge/items/description_labels.md](../knowledge/items/description_labels.md)）。
 - 選択記憶は装備セットレコードの `propset_selection`（値は `template:subtab-*` または
   カスタム UUID）。装備セットの保存時のみ書き込まれ、ログイン時は他のセット内容と
   同様に端末間同期される。保存していない選択変更はセット切替・リロードで失われる。

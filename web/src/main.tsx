@@ -44,7 +44,7 @@ export async function startApp() {
     );
 
     await Promise.all([
-        // items.json の fetch は廃止。WASM に埋め込まれている (docs/adr/0009)。
+        // items.json の fetch は廃止。WASM に埋め込まれている (docs/internal/adr/0009)。
         initWasmRuntime(),
         loadAugmentData(),
     ]);
@@ -78,7 +78,7 @@ export async function startApp() {
 
     // 未保存の編集があるままページを離れる (リロード / タブを閉じる /
     // ログインの OAuth リダイレクト) 場合はブラウザ標準の確認を出す
-    // (docs/adr/0020)。文言はブラウザが決めるためカスタムできない。
+    // (docs/internal/adr/0020)。文言はブラウザが決めるためカスタムできない。
     window.addEventListener('beforeunload', (e) => {
         if (!isAnyDirty()) return;
         e.preventDefault();

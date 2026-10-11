@@ -1,8 +1,8 @@
 //! 連携ボーナス (Skillchain Bonus) の 4 ソース合算検証。
 //!
-//! `web/test/skillchain-bonus.test.js` からの移植 (docs/adr/0010 手順 5)。
+//! `web/test/skillchain-bonus.test.js` からの移植 (docs/internal/adr/0010 手順 5)。
 //! 元のテストは JS の装備解釈と、ジョブ特性・ギフトを JS 側で再実装したものを
-//! 使っていた。装備解釈が Rust に移り (docs/adr/0010)、特性とギフトは元々
+//! 使っていた。装備解釈が Rust に移り (docs/internal/adr/0010)、特性とギフトは元々
 //! Rust にあるため、突き合わせる意味が無くなったので Rust 側へ移した。
 //!
 //! ソース:
@@ -53,7 +53,7 @@ fn source1_augment_skillchain_damage() {
     // ムパカキャップ Default rank 30。「連携ダメージ+15%」相当。
     // オーグメントは日本語表記なので、JA→EN 変換を経ずに英語表記へ至る経路が
     // 現状は無い。ここでは英語表記に直したテキストで抽出を確認する
-    // (JA→EN 変換自体の移植は docs/adr/0010 手順 5 の残作業)。
+    // (JA→EN 変換自体の移植は docs/internal/adr/0010 手順 5 の残作業)。
     let text = augment_text(23758, "Default", 30);
     assert!(text.contains("連携ダメージ"), "想定した表記が無い: {text}");
 

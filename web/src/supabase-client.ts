@@ -1,5 +1,5 @@
 // Supabase クライアントの初期化と認証ユーティリティ。
-// SDK は npm 依存 (lockfile でバージョン固定) を Vite がバンドルする (docs/adr/0011)。
+// SDK は npm 依存 (lockfile でバージョン固定) を Vite がバンドルする (docs/internal/adr/0011)。
 // (旧 web/js/supabase-client.js の TS 化。config.js は CI が生成するため
 //  web/js/ に残る — .github/workflows/*.yml のパスと合わせること)
 //

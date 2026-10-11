@@ -1,4 +1,4 @@
-// 検索結果テーブル。TanStack Table v9 (ヘッドレス) を使う (docs/adr/0012)。
+// 検索結果テーブル。TanStack Table v9 (ヘッドレス) を使う (docs/internal/adr/0012)。
 //
 // 検索・ソート・ページングはすべて WASM (rust/src/item_search.rs) が実行
 // 済みなので、TanStack の役割は列定義とソート状態の表現のみ。

@@ -6,7 +6,7 @@
 // 行クリックで装備を差し替えるが、続けてオーグメント等を設定できるよう
 // モーダルは閉じない。
 //
-// Mantine コンポーネントは Modal のみ (docs/adr/0013 の段階導入)。
+// Mantine コンポーネントは Modal のみ (docs/internal/adr/0013 の段階導入)。
 // 内部の入力は index.css の既存手書きパターン (素の input/select) に乗せ、
 // Mantine input 系と裸の select/input グローバルルールの干渉を避ける。
 import { useEffect, useRef, useState, useSyncExternalStore } from 'react';

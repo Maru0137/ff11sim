@@ -1,14 +1,14 @@
 # 装備ステータス抽出 (JS 実装) の既知の癖・バグ
 
-> このディレクトリ (`docs/tech-debt/`) は、実装が抱えている既知の問題と、
+> このディレクトリ (`docs/internal/tech-debt/`) は、実装が抱えている既知の問題と、
 > 直すときの手がかりを置く場所である。
-> FF11 のドメイン知識 (計算仕様) は `docs/knowledge/`、
-> 設計判断とその理由は `docs/adr/` に置く。
+> FF11 のドメイン知識 (計算仕様) は `docs/internal/knowledge/`、
+> 設計判断とその理由は `docs/internal/adr/` に置く。
 
-`web/js/equip-stats.js` を Rust へ移植する過程 (docs/adr/0010) で見つかった、
+`web/js/equip-stats.js` を Rust へ移植する過程 (docs/internal/adr/0010) で見つかった、
 JS 実装の誤った挙動をまとめる。
 
-移植は「挙動を変えない」方針 (docs/adr/0010 の案 3) で進めているため、
+移植は「挙動を変えない」方針 (docs/internal/adr/0010 の案 3) で進めているため、
 **ここに挙げた挙動は Rust 側でもそのまま再現している**。既存テストを移植の
 検証に使うには挙動を固定する必要があるため。修正は移植完了後に別途行う。
 

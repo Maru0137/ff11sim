@@ -1,6 +1,6 @@
-//! 装備の説明文から数値を抽出する。説明文の解釈はこのモジュールが持つ (docs/adr/0018)。
+//! 装備の説明文から数値を抽出する。説明文の解釈はこのモジュールが持つ (docs/internal/adr/0018)。
 //!
-//! # パイプライン (docs/adr/0019)
+//! # パイプライン (docs/internal/adr/0019)
 //!
 //! 入力は **すべて日本語**。アイテムの `description_ja`・オグメント文・カスタム説明を
 //! 同じ扱いにする。
@@ -11,11 +11,11 @@
 //!   ├─ convert_augment_ja_to_en → extract_all_stats / extract_skill_bonuses
 //!   │    表記の正規化              固定 78 項目を全一致合算 (ステータス計算)
 //!   └─ そのまま               → extract_stat_from_description
-//!                                任意名を最初の 1 件だけ (検索ソート / docs/adr/0015)
+//!                                任意名を最初の 1 件だけ (検索ソート / docs/internal/adr/0015)
 //! ```
 //!
 //! 抽出器が読む「正規表記」が英語なのは、`web/js/equip-stats.js` からの移植
-//! (docs/adr/0010) だからで、翻訳ではなく表記ゆれの正規化として扱う。
+//! (docs/internal/adr/0010) だからで、翻訳ではなく表記ゆれの正規化として扱う。
 //!
 //! 固定項目と任意名で抽出方式が違う (全一致合算 / 最初の 1 件) のは用途から来る仕様で、
 //! 揃えるべきものではない。読むテキストと条件ラベルの規則は共通なので、
@@ -23,14 +23,14 @@
 //!
 //! 条件ラベルの適用範囲だけはソースによって変わる (`LabelScopeMode`)。改行が
 //! 表示上の折り返しか効果の区切りかが、アイテム説明文とオグメント文で違うため
-//! (docs/knowledge/items/description_labels.md)。
+//! (docs/internal/knowledge/items/description_labels.md)。
 //!
 //! # 英語説明文の扱い
 //!
 //! `description_en` は解釈に使わない。ただし `extract_all_stats` は英語表記も読めるため、
 //! **移行の参照実装**として残っている: `rust/tests/ja_en_conformance.rs` が
 //! 日本語経路の出力を `extract_all_stats(description_en)` と突き合わせ、
-//! 正規化層の抜けを検出する。JS リファレンス削除後 (docs/adr/0018) に失われていた
+//! 正規化層の抜けを検出する。JS リファレンス削除後 (docs/internal/adr/0018) に失われていた
 //! 全件検証の後継でもある。
 //!
 //! そのため、英語入力でしか到達しない前処理 (属性アイコンの展開・`Pet:` セグメント除去・
@@ -43,7 +43,7 @@
 //! 説明文に含まれる条件付きセグメント (`In Dynamis:` / `Unity Ranking:` /
 //! `Right ear:` / `Set:` など 30 種以上) を JS は体系的に扱っておらず、
 //! Unity Ranking は無条件に加算され、`In Dynamis:` は無視されない。
-//! **日本語経路ではこれを条件ラベルの除去で解消した (docs/adr/0019)。**
+//! **日本語経路ではこれを条件ラベルの除去で解消した (docs/internal/adr/0019)。**
 //! 上記の癖が残るのは参照用の英語入力だけで、`ja_en_conformance` はその差を
 //! 「意図した差」として数えている。
 //! 突き合わせは `conformance_with_js_over_all_items` テストで行う
@@ -549,7 +549,7 @@ fn match_signed(text: &str, pattern: &str) -> i32 {
 ///
 /// 非グローバルなので、`In Dynamis: DEF:22` のような条件付きの値は
 /// 先に書かれた無条件の値があれば拾われない。これは条件を解釈した結果ではなく
-/// 偶然そうなっているだけである (docs/tech-debt/equip-stats-js-quirks.md)。
+/// 偶然そうなっているだけである (docs/internal/tech-debt/equip-stats-js-quirks.md)。
 fn match_colon(text: &str, pattern: &str) -> i32 {
     re(pattern)
         .captures(text)
@@ -674,7 +674,7 @@ pub fn extract_all_stats(description_en: &str) -> EquipStats {
     s.subtle_blow_2 = signed(&format!(r#""subtle blow ii"{WS}*([+-]){WS}*([0-9]+)"#));
     s.subtle_blow = signed(&format!(r#""subtle blow"{WS}*([+-]){WS}*([0-9]+)"#));
 
-    // 得TPの隔算出に使う 2 項目 (docs/knowledge/status/tp.md)。
+    // 得TPの隔算出に使う 2 項目 (docs/internal/knowledge/status/tp.md)。
     // 数値を持たない「二刀流効果アップ」「マーシャルアーツ効果アップ」表記は
     // 符号を要求するこのパターンには一致しない
     s.dual_wield = signed(&format!(r#""dual wield"{WS}*([+-]){WS}*([0-9]+)"#));
@@ -951,22 +951,22 @@ pub fn extract_skill_bonuses(description_en: &str) -> BTreeMap<&'static str, i32
 
 /// 日本語表記を、抽出器が読める正規表記へ寄せる対応表。
 ///
-/// 正規表記が英語なのは、抽出器が英語説明文からの移植 (docs/adr/0010) だからで、
-/// 「翻訳」ではなく表記ゆれの正規化として扱う (docs/adr/0019)。入力は
+/// 正規表記が英語なのは、抽出器が英語説明文からの移植 (docs/internal/adr/0010) だからで、
+/// 「翻訳」ではなく表記ゆれの正規化として扱う (docs/internal/adr/0019)。入力は
 /// アイテムの `description_ja`・オグメント文・カスタム説明のいずれも日本語。
 ///
 /// **並び順に意味がある。** 単純な順次置換なので、長い表記を先に置かないと
 /// 部分一致で壊れる (例: 「魔法クリティカルヒットII」を「魔法クリティカルヒット率」
 /// より先に、「攻」を最後に置く)。
 static AUGMENT_JA_TO_EN: [(&str, &str); 139] = [
-    // --- ペット系ラベル (docs/adr/0019 手順 1 で追加) -----------------------
+    // --- ペット系ラベル (docs/internal/adr/0019 手順 1 で追加) -----------------------
     // 正規表記に寄せることで、既存の `Pet:` セグメント除去がそのまま効く。
     ("呼び出しペット", "Pet"),
     ("ペット", "Pet"),
     ("召喚獣", "Avatar"),
     ("オートマトン", "Automaton"),
     ("飛竜", "Wyvern"),
-    // --- 武器・防御スキル (docs/adr/0019 手順 1 で追加) ---------------------
+    // --- 武器・防御スキル (docs/internal/adr/0019 手順 1 で追加) ---------------------
     // 「スキル」で終わる表記。個別ステータス名 (「命中」「攻」など) より長いので
     // 先に置く。魔法スキルは既存エントリが下方にある。
     ("格闘スキル", "Hand-to-Hand skill"),
@@ -1088,7 +1088,7 @@ static AUGMENT_JA_TO_EN: [(&str, &str); 139] = [
     ("トリプルショット", "\"Triple Shot\""),
     ("リサイクル", "\"Recycle\""),
     ("アフィニティ", "Affinity"),
-    // --- 装備説明文にしか出ない表記 (docs/adr/0019 手順 1 で追加) -----------
+    // --- 装備説明文にしか出ない表記 (docs/internal/adr/0019 手順 1 で追加) -----------
     // ユニティランクは範囲表記 (「HP+10～35」) を最大値に潰す前処理が
     // 正規表記側にあるため、ラベルも正規化しておく必要がある
     ("ユニティランク", "Unity Ranking"),
@@ -1153,8 +1153,8 @@ pub fn convert_augment_ja_to_en(text: &str) -> String {
 // 上の `extract_all_stats` が「英語説明文から固定 26 種を全一致合算」なのに対し、
 // こちらは「日本語テキストから呼び出し側が指定した 1 種を最初の一致だけ」取り出す。
 // 検索の説明文ステータスソート (item_search) と、プロパティセットのユーザー定義項目
-// (docs/adr/0015) が使う。もとは item_search.rs にあったが、説明文の解釈は
-// このモジュールが持つ (docs/adr/0018)。
+// (docs/internal/adr/0015) が使う。もとは item_search.rs にあったが、説明文の解釈は
+// このモジュールが持つ (docs/internal/adr/0018)。
 // ---------------------------------------------------------------------------
 /// 説明文中の「条件ラベル」の適用範囲を返す。
 ///
@@ -1176,13 +1176,13 @@ pub fn convert_augment_ja_to_en(text: &str) -> String {
 ///
 /// `コンビネーション:` (セット装備数で発動する効果) だけは条件ラベルとして扱わず、
 /// 配下の値を常時のものとして読む。本ツールは装備セットを組むためのもので、
-/// セット効果は実際には発動していることが多いため (docs/adr/0019)。
+/// セット効果は実際には発動していることが多いため (docs/internal/adr/0019)。
 /// `コンビネーション(召喚獣のみ):` のような対象限定の変種は例外にしない。
 /// ただし直前のラベルの区切りにはなる (`LabelScopeMode::Wrapped`)。
 const ALWAYS_ON_LABEL: &str = "コンビネーション";
 
 /// 条件ラベルの適用範囲。ソースによって改行の意味が違うので使い分ける
-/// (docs/knowledge/items/description_labels.md)。
+/// (docs/internal/knowledge/items/description_labels.md)。
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum LabelScopeMode {
     /// 改行はゲーム内表示の折り返しで、効果の区切りではない。ラベルの効力は
@@ -1267,9 +1267,9 @@ fn conditional_label_scopes(chars: &[char], mode: LabelScopeMode) -> Vec<LabelSc
 /// 条件ラベルとその配下を取り除いた文字列を返す。範囲は `mode` に従う。
 ///
 /// `conditional_label_scopes` と同じ規則で、装備の解釈に流す前段として使う
-/// (docs/adr/0019)。ラベル自身も落とすのは、残しておくと後段の正規化で
+/// (docs/internal/adr/0019)。ラベル自身も落とすのは、残しておくと後段の正規化で
 /// `ペット:` が `Pet:` になり、英語向けの `Pet:` セグメント除去が
-/// 次のコロンまで食う既知の癖 (docs/tech-debt/equip-stats-js-quirks.md) を
+/// 次のコロンまで食う既知の癖 (docs/internal/tech-debt/equip-stats-js-quirks.md) を
 /// 誘発するため。
 pub fn strip_conditional_labels(text: &str, mode: LabelScopeMode) -> String {
     let chars: Vec<char> = text.chars().collect();
@@ -1429,7 +1429,7 @@ mod tests {
         // Pet セグメントの後に続く "DEF:" などのラベルまで消える。
         // node で確認: "HP+100\nPet: X\nDEF:10" → "HP+100\n:10"
         // 実データでは Lion Tamer (17961, DEF) と Neo Animator (21433, DMG) の 2 件が該当する。
-        // 挙動を変えないという移植方針 (docs/adr/0010) に従い、そのまま再現する。
+        // 挙動を変えないという移植方針 (docs/internal/adr/0010) に従い、そのまま再現する。
         let out = normalize("HP+100\nPet: Accuracy+15\nDEF:10");
         assert_eq!(out, "HP+100\n:10");
     }
@@ -1569,7 +1569,7 @@ mod tests {
         // JS は最初の符号付き値 (-30) を採用する。"to +30" は "All BP" が
         // 直前に無いためマッチしない。Unity Ranking のような最大値採用は行わない。
         // 対象: id 26120 (JS でも全項目 -30 になる)
-        // 挙動を変えない方針 (docs/adr/0010) によりそのまま再現する。
+        // 挙動を変えない方針 (docs/internal/adr/0010) によりそのまま再現する。
         let s = extract_all_stats(&desc(26120));
         assert_eq!(
             (s.str_, s.dex, s.vit, s.agi, s.int, s.mnd, s.chr),
@@ -1851,7 +1851,7 @@ mod tests {
     //
     // 移植時に JS 実装との一致を全 items.json に対して検証した。手書きの
     // アサーションより遥かに広い範囲を押さえられるため、移植の完了判定は
-    // これで行った (docs/adr/0010 の Confirmation)。全 15,504 件で不一致 0。
+    // これで行った (docs/internal/adr/0010 の Confirmation)。全 15,504 件で不一致 0。
     //
     // **移植元の JS 実装と期待値生成ハーネスは削除済みなので、現在この比較は
     // 実行できない。** 期待値 JSON を別途用意すれば動く形で残してある。
@@ -2022,7 +2022,7 @@ mod tests {
         );
     }
 
-    // --- 条件ラベルの除去 (docs/adr/0019 手順 3) --------------------------
+    // --- 条件ラベルの除去 (docs/internal/adr/0019 手順 3) --------------------------
 
     #[test]
     fn strip_conditional_labels_removes_label_and_its_scope() {
@@ -2056,7 +2056,7 @@ mod tests {
 
     #[test]
     fn strip_conditional_labels_keeps_combination() {
-        // コンビネーションは常時扱い (docs/adr/0019)
+        // コンビネーションは常時扱い (docs/internal/adr/0019)
         let text = "防52 魔攻+7 魔防+5\\nコンビネーション:魔命+5";
         assert_eq!(
             strip_conditional_labels(text, LabelScopeMode::Wrapped),

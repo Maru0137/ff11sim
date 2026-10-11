@@ -2,7 +2,7 @@
 //
 // jobKanji / slotJa は結果テーブル専用の略記 (戦/モ/…、遠隔/耳/…) であり、
 // constants.js の共有テーブル (戦士/レンジャー/左耳…) と表示テキストが
-// 意図的に異なる (docs/tech-debt/inline-script-monolith.md)。統一するなら
+// 意図的に異なる (docs/internal/tech-debt/inline-script-monolith.md)。統一するなら
 // 略記フィールドをデータ側に追加してから。
 
 const JOB_KANJI: Record<string, string> = {

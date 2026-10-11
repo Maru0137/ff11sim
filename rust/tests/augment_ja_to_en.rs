@@ -1,7 +1,7 @@
 //! オーグメントの日本語→英語 変換が JS 実装と一致するかを検証する。
 //!
 //! `web/js/utils.js` の `convertAugmentJaToEn` と `web/js/constants.js` の
-//! `AUGMENT_JA_TO_EN` を Rust へ移した (docs/adr/0010 手順 5)。
+//! `AUGMENT_JA_TO_EN` を Rust へ移した (docs/internal/adr/0010 手順 5)。
 //!
 //! 変換は単純な順次置換であり **並び順に意味がある** ため、表の順序が崩れると
 //! 部分一致で壊れる。全オーグメントテキストで JS の出力と突き合わせることで

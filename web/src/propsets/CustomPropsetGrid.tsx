@@ -1,4 +1,4 @@
-// カスタムプロパティセットの表示グリッド (docs/adr/0015)。
+// カスタムプロパティセットの表示グリッド (docs/internal/adr/0015)。
 // テンプレート (SubtabContents) の表形式と違い、項目のフラットな
 // ラベル/値セルを並べるだけ。値は StatusView.propertyValues から引く。
 import type { StatusView } from '../status/compute';

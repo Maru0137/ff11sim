@@ -1,4 +1,4 @@
-// 組み込みプロパティ項目カタログ (docs/adr/0015)。
+// 組み込みプロパティ項目カタログ (docs/internal/adr/0015)。
 // 値はリゾルバ関数で {equip, totalStats, derived} から算出する。
 // StatusView.values の DOM id を参照しないのは、同一プロパティが
 // サブタブごとに別 id (statAaStp / statMwsStp ...) で重複しており、
@@ -37,13 +37,13 @@ export interface PropertyValueContext {
         doubleShotTotal: number;
         tripleShotTotal: number;
         conserveMpTotal: number;
-        /** 1 ヒットあたりの得TP (docs/knowledge/status/tp.md)。遠隔はレンジ武器未装備で null */
+        /** 1 ヒットあたりの得TP (docs/internal/knowledge/status/tp.md)。遠隔はレンジ武器未装備で null */
         tpGainMelee: number;
         tpGainRanged: number | null;
     };
 }
 
-/** 内訳モーダル (docs/adr/0016) 用のソース分解メタ */
+/** 内訳モーダル (docs/internal/adr/0016) 用のソース分解メタ */
 export interface PropertyBreakdownMeta {
     /** 装備スロット行: per_slot_stats (extract_all_stats) のキー */
     equipKey?: string;
@@ -139,7 +139,7 @@ export const BUILTIN_PROPERTY_ITEMS: BuiltinPropertyItem[] = [
     { id: 'accuracy', label: '命中', category: '近接',
       resolve: (c) => numOrDash(c.totalStats.main_accuracy),
       breakdown: { equipKey: 'accuracy', charKey: 'accuracy' } },
-    // 得TP: 隔とストアTPからの導出値 (docs/knowledge/status/tp.md)。
+    // 得TP: 隔とストアTPからの導出値 (docs/internal/knowledge/status/tp.md)。
     // マルチアタックは考慮しない 1 ヒットあたりの値で、WS も同じ値を使う
     { id: 'tp_gain', label: '得TP', category: '近接',
       resolve: (c) => numOrDash(c.derived.tpGainMelee) },

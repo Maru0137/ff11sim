@@ -121,8 +121,8 @@ async function syncLocalToSupabase(user: User): Promise<{ uploaded: number }> {
     return { uploaded: charsToUpload.length + setsToUpload.length };
 }
 
-// プロパティセット (docs/adr/0015) の同期。競合解決は他と同じ Supabase 優先:
-// 行が既にあればローカル doc はアップロードしない (docs/adr/0006)。
+// プロパティセット (docs/internal/adr/0015) の同期。競合解決は他と同じ Supabase 優先:
+// 行が既にあればローカル doc はアップロードしない (docs/internal/adr/0006)。
 async function syncLocalPropsetsToSupabase(user: User): Promise<{ uploaded: number }> {
     const flagKey = propsetSyncFlagKey(user.id);
     if (localStorage.getItem(flagKey)) return { uploaded: 0 };

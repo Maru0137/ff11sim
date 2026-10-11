@@ -1,4 +1,4 @@
-// 装備セットの未保存判定 (docs/adr/0020) のスナップショット比較を検証する。
+// 装備セットの未保存判定 (docs/internal/adr/0020) のスナップショット比較を検証する。
 import { describe, it, expect } from 'vitest';
 import { equipSetSnapshot } from './equip-set-snapshot';
 import type { EquipSlotData } from './equip-store';

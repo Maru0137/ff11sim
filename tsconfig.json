@@ -10,7 +10,7 @@
         "verbatimModuleSyntax": true,
         "skipLibCheck": true,
         // 既存 JS (web/js/) は import はできるが型検査しない。
-        // TS 化は段階的移行の最終フェーズ (docs/roadmap/react-migration.md)。
+        // TS 化は段階的移行の最終フェーズ (docs/internal/roadmap/react-migration.md)。
         "allowJs": true,
         "checkJs": false,
         "lib": ["esnext", "dom", "dom.iterable"],

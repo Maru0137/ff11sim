@@ -1,4 +1,4 @@
--- characters テーブルに position カラムを追加 (一覧の並び順保存用、docs/adr/0022)
+-- characters テーブルに position カラムを追加 (一覧の並び順保存用、docs/internal/adr/0022)
 --
 -- これまで SupabaseCharacterRepo.list() は ORDER BY 無しで SELECT していたため、
 -- ログイン中はキャラクターの並び順がそもそも保存されていなかった。

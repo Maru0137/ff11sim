@@ -1,4 +1,4 @@
-// プロパティセット管理モーダル (docs/adr/0015)。
+// プロパティセット管理モーダル (docs/internal/adr/0015)。
 // StatusPanel のローカル state で開閉する (ADR 0014: React 専用モーダルに
 // modal-store は使わない)。1 枚の Modal 内で一覧 ⇄ 編集をビュー状態機械で
 // 切り替え、モーダルの重なり (z-index 梯子) を増やさない。

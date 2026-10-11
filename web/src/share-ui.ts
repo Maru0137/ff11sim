@@ -1,6 +1,6 @@
 // 装備セット共有の UI 層ロジック (旧 web/js/share-ui.js の TS 化。DOM 操作なし)。
 // 共有 URL の発行 (作成側)・共有閲覧モード (?share=<uuid>)・インポート (閲覧側)。
-// Supabase との読み書きは share.ts (docs/adr/0008)、表示は React 側
+// Supabase との読み書きは share.ts (docs/internal/adr/0008)、表示は React 側
 // (App.tsx の共有ヘッダ / modals / EquipSetToolbar)。
 import { loadCharacters } from './storage';
 import { getCurrentUser } from './supabase-client';

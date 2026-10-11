@@ -64,7 +64,7 @@ jobs:
         with:
           python-version: '3.11'
 
-      # 装備データは include_str! でバイナリに埋め込まれるため (docs/adr/0009)、
+      # 装備データは include_str! でバイナリに埋め込まれるため (docs/internal/adr/0009)、
       # items.json が無いとコンパイルできない。テストの前に生成する必要がある。
       - name: Resolve upstream digest
         id: upstream

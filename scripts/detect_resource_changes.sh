@@ -15,7 +15,7 @@
 # 判定方法:
 #   上流の代表値には blob SHA を使う (理由は upstream_common.sh を参照)。
 #   前回ビルド時の blob SHA は配信済みサイトの _build_metadata.json に記録してある
-#   (docs/adr/0003)。取得に失敗した場合は changed=true に倒し、
+#   (docs/internal/adr/0003)。取得に失敗した場合は changed=true に倒し、
 #   「判定できないならビルドする」安全側の挙動にする。
 #
 set -euo pipefail

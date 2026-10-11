@@ -74,7 +74,7 @@ pub struct StatusResult {
     pub magic_evasion_bonus: i32,
     /// Store TP 総合値 (装備 + ジョブ特性 + メリット + ギフト + JPカテゴリ)
     pub store_tp: i32,
-    /// 近接 1 ヒットあたりの得TP (docs/knowledge/status/tp.md)。
+    /// 近接 1 ヒットあたりの得TP (docs/internal/knowledge/status/tp.md)。
     /// 二刀流・格闘とも両手で同じ値になるためメイン/サブ共通。素手でも算出する
     pub tp_per_hit_melee: i32,
     /// 遠隔 1 ヒットあたりの得TP (レンジ武器未装備時は None)
@@ -870,7 +870,7 @@ pub(crate) fn chara_to_status_result(chara: &Chara) -> StatusResult {
         None => (None, None),
     };
 
-    // 得TP (docs/knowledge/status/tp.md)。マルチアタックは考慮しない 1 ヒットあたりの値。
+    // 得TP (docs/internal/knowledge/status/tp.md)。マルチアタックは考慮しない 1 ヒットあたりの値。
     // マーシャルアーツは短縮量を正値で渡す (総合値は負値保持のため反転)
     let tp_per_hit_melee = calc_tp_per_hit(
         calc_melee_tp_delay(
@@ -1225,7 +1225,7 @@ pub fn calculate_status_from_profile(
 }
 
 /// キャラクター由来 (種族/メイン/サポ/メリポ/JP/ギフト/ML/基礎) のソース別内訳を返す
-/// WASM 関数 (docs/adr/0016)。入力は calculate_status_from_profile と同一。
+/// WASM 関数 (docs/internal/adr/0016)。入力は calculate_status_from_profile と同一。
 /// bonus_stats (装備合算) は「基礎」行の計算 (装備込み VIT・有効スキル等) に必要。
 #[wasm_bindgen]
 pub fn calculate_status_breakdown(
@@ -1264,10 +1264,10 @@ pub fn calculate_status_breakdown(
 }
 
 // ---------------------------------------------------------------------------
-// 装備検索 (docs/adr/0010)
+// 装備検索 (docs/internal/adr/0010)
 //
 // JS の item-search.js を置き換えるための境界。データは Rust 側が持つため、
-// JS は items.json を読まなくてよくなる (docs/adr/0009)。
+// JS は items.json を読まなくてよくなる (docs/internal/adr/0009)。
 //
 // なお getFilterableProperties() / getOperators() は移していない。items.json を
 // 参照せずフィルタ UI の <select> を組み立てるだけの静的メタデータであり、
@@ -1306,7 +1306,7 @@ pub fn item_count() -> usize {
     crate::items::ITEMS.len()
 }
 
-/// 装備セット 1 つ分のステータス・スキルボーナスを合算する (docs/adr/0018)。
+/// 装備セット 1 つ分のステータス・スキルボーナスを合算する (docs/internal/adr/0018)。
 ///
 /// 引数は `{ slots: { <スロットキー>: EquipSlotData | null } }`。
 /// アイテム説明文・オグメント文・カスタム説明の 3 ソースの組み立てと、
@@ -1379,7 +1379,7 @@ pub fn equip_set_bonuses(equip_set: JsValue) -> Result<JsValue, JsValue> {
         .map_err(|e| JsValue::from_str(&e.to_string()))
 }
 
-/// 装備セットのユーザー定義プロパティ値をスロット別に返す (docs/adr/0015, 0018)。
+/// 装備セットのユーザー定義プロパティ値をスロット別に返す (docs/internal/adr/0015, 0018)。
 ///
 /// 引数は `equip_set_bonuses` と同じ装備セットと、抽出する日本語プロパティ名の配列。
 /// 戻り値は `{ <スロットキー>: { <プロパティ名>: 値 } }`。値 0 とそれしか無いスロットは

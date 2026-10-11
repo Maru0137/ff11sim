@@ -188,7 +188,7 @@ flowchart TD
 * Bad: ローカル開発では生成が必要で、実行しないと装備検索・装備セットが動かない
   （`scripts/build_data.sh` 一発で済むが、チェックアウト直後は必ず要る）。
 * ~~Bad: `web/test/*.test.js` は実際の `items.json` を読む作りのため CI で走らせられない。~~
-  → 解消済み。テストは Rust へ移し (docs/adr/0010)、`items.json` は
+  → 解消済み。テストは Rust へ移し (docs/internal/adr/0010)、`items.json` は
   `include_str!` で埋め込まれるため `cargo test` で走るようになった。
 * Good: `schedule` により、こちらに push がなくても 1 日 1 回は上流の更新が取り込まれる。
   配信データの陳腐化は最大 1 日程度に収まる。
@@ -290,7 +290,7 @@ flowchart TD
 * Bad: ローカル開発で手動生成が要る。生成しないと装備検索と装備セットが動かない。
 * ~~Bad: 生成物が git にないため、それを読むテストを CI に組み込みにくい。~~
   → 解消済み。テストを Rust へ移し、生成物は `include_str!` で埋め込まれるため
-  `cargo test` で走る (docs/adr/0010)。
+  `cargo test` で走る (docs/internal/adr/0010)。
 * Bad: どの時点のデータで配信されていたかが、そのままでは追跡できない
   （`_build_metadata.json` を別途出力することで補っている）。
 

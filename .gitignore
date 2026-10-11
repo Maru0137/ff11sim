@@ -9,3 +9,11 @@ temp_resources/
 node_modules/
 test-results/
 playwright-report/
+
+# Secrets (never commit)
+.env
+.env.*
+*.local.*
+
+# OS
+.DS_Store

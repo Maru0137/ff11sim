@@ -1,4 +1,4 @@
-// React / TS 層から使う WASM ファサードの型付きラッパー (docs/adr/0012)。
+// React / TS 層から使う WASM ファサードの型付きラッパー (docs/internal/adr/0012)。
 // web/js/wasm.js (生成物 ../pkg を import する唯一のモジュール) を包み、
 // 型はこのファイルで与える。web/pkg の .d.ts は全引数・返値が any のため
 // 安全性に寄与しない。ここの型は Rust 側の serde 属性と手で突き合わせている:
@@ -16,7 +16,7 @@ import { search_items, item_count, initWasmRuntime } from '../js/wasm.js';
 // 検索以外の WASM 関数の再エクスポート。web/src/ からの WASM 参照は
 // すべてこのファイルを経由する。シグネチャは pkg の .d.ts 由来で実質 any —
 // 型付けは Rust 側での型自動生成 (tsify 等) 導入時にまとめて行う
-// (docs/roadmap/react-migration.md の残課題)。
+// (docs/internal/roadmap/react-migration.md の残課題)。
 export {
     calculate_status_from_profile,
     calculate_status_breakdown,

@@ -1,4 +1,4 @@
-/* 内訳モーダル (docs/adr/0016)。BreakdownModal から直接 import する
+/* 内訳モーダル (docs/internal/adr/0016)。BreakdownModal から直接 import する
    スコープ付きスタイル (propsets.css と同じ方式)。 */
 
 .breakdown-controls {

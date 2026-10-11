@@ -1,6 +1,6 @@
 //! SAM99 属性 WS 構成での装備合計 WS ダメージ% 検証。
 //!
-//! `web/test/ws-damage-sam-elemental.test.js` からの移植 (docs/adr/0010 手順 5)。
+//! `web/test/ws-damage-sam-elemental.test.js` からの移植 (docs/internal/adr/0010 手順 5)。
 //!
 //! 装備セットは 3 つの経路からステータスを拾う。すべて合算されることを確認する。
 //!   1. 装備の説明文 (`description_en`)
@@ -9,7 +9,7 @@
 //!
 //! 元の JS テストは `AUGMENT_JA_TO_EN` を 32 エントリだけコピーして持っており、
 //! 実装の 76 エントリに対して 44 件欠けていた
-//! (docs/tech-debt/mirrored-constants-in-tests.md の事例 2)。
+//! (docs/internal/tech-debt/mirrored-constants-in-tests.md の事例 2)。
 //! 移植版は実装の `convert_augment_ja_to_en` を直接呼ぶため、この問題は起きない。
 
 use ff11sim::equip_stats::{EquipStats, convert_augment_ja_to_en, extract_all_stats};
@@ -117,7 +117,7 @@ fn sum_equip_set() -> EquipStats {
 
 /// 2 つの `EquipStats` を項目ごとに足す。
 /// JS の `sumStats` に対応する処理で、まだ Rust 側に実装が無いためここで持つ
-/// (index.html がまだ JS の sumStats を使っている。docs/adr/0010 手順 5 の残作業)。
+/// (index.html がまだ JS の sumStats を使っている。docs/internal/adr/0010 手順 5 の残作業)。
 fn add_stats(a: &EquipStats, b: &EquipStats) -> EquipStats {
     let mut out = a.clone();
     out.hp += b.hp;

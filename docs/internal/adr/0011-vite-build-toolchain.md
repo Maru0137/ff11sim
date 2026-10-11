@@ -143,6 +143,6 @@ dev サーバ・TypeScript・ユニットテストといった将来の改善が
 * Vite 構成に適合させる対象: [ADR 0002](0002-shared-table-data-json.md)
   （データ JSON のシンボリックリンク）、
   [ADR 0007](0007-supabase-anon-key-ci-injection.md)（config.js の CI 注入）
-* 先行するモジュール化の背景: [docs/tech-debt/inline-script-monolith.md](../tech-debt/inline-script-monolith.md)
+* 先行するモジュール化の背景: [docs/internal/tech-debt/inline-script-monolith.md](../tech-debt/inline-script-monolith.md)
 * UI フレームワークの採用は別決定として
   [ADR 0012](0012-react-ui-framework.md) で React を採用した

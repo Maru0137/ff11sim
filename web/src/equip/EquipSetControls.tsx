@@ -29,7 +29,7 @@ export function EquipSetControls() {
     const [dragOverName, setDragOverName] = useState<string | null>(null);
 
     const tabBarVisible = !!(equipState.currentEquipChar && equipState.currentEquipJob);
-    // 未保存マーク (docs/adr/0020)。編集中のセット = アクティブタブに出す
+    // 未保存マーク (docs/internal/adr/0020)。編集中のセット = アクティブタブに出す
     const dirty = isEquipSetDirty();
 
     return (

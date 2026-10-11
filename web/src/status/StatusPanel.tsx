@@ -1,6 +1,6 @@
 // 装備編集タブのステータス表示パネル。
 // 用途別ステータスはサブタブバーからプロパティセットのドロップダウンに
-// 置き換え (docs/adr/0015)。テンプレート (現行 19 タブ) の表示 JSX は
+// 置き換え (docs/internal/adr/0015)。テンプレート (現行 19 タブ) の表示 JSX は
 // StatusTables.tsx の SubtabContents をそのまま使い、カスタムセットは
 // CustomPropsetGrid で描画する。選択は装備セットレコードに載せて
 // 保存時に記憶する (equipState.propsetSelection)。
@@ -37,7 +37,7 @@ export function StatusPanel() {
     const generation = useSyncExternalStore(subscribeSlotsGeneration, getSlotsGeneration);
     const [selection, setSelection] = useState(DEFAULT_SELECTION);
     const [modal, setModal] = useState<{ setId?: string } | null>(null);
-    // 内訳モーダル (docs/adr/0016)。読み取り専用機能なので share mode でも開ける
+    // 内訳モーダル (docs/internal/adr/0016)。読み取り専用機能なので share mode でも開ける
     const [breakdown, setBreakdown] = useState<'status' | 'propset' | null>(null);
 
     const readOnly = isShareMode();
@@ -73,7 +73,7 @@ export function StatusPanel() {
         setSelection(id);
         // 次回の装備セット保存時にレコードへ載る
         equipState.propsetSelection = id;
-        // 保存対象なので未保存判定 (docs/adr/0020) に反映させる
+        // 保存対象なので未保存判定 (docs/internal/adr/0020) に反映させる
         notifyEquipState();
     };
 

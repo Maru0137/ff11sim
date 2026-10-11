@@ -1,8 +1,8 @@
 // calculateEquipSetBonuses の実 WASM 込みテスト。
-// docs/tech-debt/inline-script-monolith.md の残課題 (WEAPON_SKILL_KEYS 事故の
+// docs/internal/tech-debt/inline-script-monolith.md の残課題 (WEAPON_SKILL_KEYS 事故の
 // 現場だった集計ロジックにユニットテストが無い) への対応。
 //
-// 集計の実体は Rust 側 (rust/src/equip.rs、docs/adr/0018)。ここでは WASM 境界を
+// 集計の実体は Rust 側 (rust/src/equip.rs、docs/internal/adr/0018)。ここでは WASM 境界を
 // 通した結果を検証する。WASM は node では file URL を fetch できないため、
 // .wasm のバイト列を読んで initWasmRuntime に渡す (web/pkg のビルドが前提。
 // CI では Build WASM ステップの後に実行される)。

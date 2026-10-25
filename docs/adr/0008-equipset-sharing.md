@@ -4,7 +4,7 @@ date: 2026-08-02
 decision-makers: Akira Maruoka
 ---
 
-# 0008. 装備セット共有は公開 SELECT の `shared_equipsets` テーブルとキャラクタースナップショットで実現する
+# 0008. 装備セット共有は `shared_equipsets` テーブルとキャラクタースナップショットで実現し、閲覧は共有 ID で 1 件だけ読む関数に絞る
 
 ## Context and Problem Statement
 
@@ -38,10 +38,17 @@ URL 埋め込み（選択肢 1）は、16 スロット分の装備とオーグ�
 「自分の行のみ」と「公開行は全員」の 2 条件で複雑化する。共有は独立した不変のレコードとする。
 
 - `shared_equipsets` テーブルを `equipsets` とは別に用意する。
+- 閲覧は `get_shared_equipset(share_id uuid)`（`security definer`）だけを通す。
+  共有 ID が一致する 1 件の `name` / `character_name` / `job` / `data` / `created_at` を返し、
+  `user_id` は返さない。anon と authenticated に実行権限を与える。未ログインでも URL を知っていれば閲覧できる。
 - RLS は次の 3 ポリシー:
-  * SELECT: `using (true)` — 未ログインを含む全員が読める。URL を知っていれば閲覧可。
+  * SELECT: `using (auth.uid() = user_id)` — 作成者だけが自分の行を読める。
+    作成時の `insert ... returning id` と作成者の DELETE が行を読む権限を要するため。
   * INSERT: `with check (auth.uid() = user_id)` — 認証ユーザーのみ作成可（スパム抑止）。
   * DELETE: `using (auth.uid() = user_id)` — 作成者のみ削除可。
+- 2026-10-18 の改訂: 当初は SELECT を `using (true)` にしていた。この形では、クライアントに
+  埋め込まれた anon キーで ID を絞らない `select *` を送ると、URL を知らない人でも全員の共有を
+  `user_id` ごと取得できた。共有 ID の推測しにくさは、ID で絞る読み出しにしか効かない。
 - `name` / `character_name` / `job` は列に展開し、`slots` などは `data` jsonb に格納する。
   キャラクタースナップショットは `data.character` に入れる。
 - 共有 URL は `<origin><pathname>?share=<uuid>`。
@@ -56,9 +63,9 @@ URL 埋め込み（選択肢 1）は、16 スロット分の装備とオーグ�
 * Good: 閲覧にログインが要らない。
 * Good: 作成者と同じ数値が再現される。「見えている数値が作成者の意図した数値」になる。
 * Good: 共有レコードが独立しているため、元セットの編集・削除が共有を壊さない。
-* Bad: **実質的に公開データである。** キャラクター名・種族・レベル・スキル・
-  メリット/ジョブポイントが、URL を知る全員に読める。UUID による難推測性のみが
-  アクセス制御であり、認可はかかっていない。
+* Bad: **URL を知る人には公開データである。** キャラクター名・種族・レベル・スキル・
+  メリット/ジョブポイントが、URL を知る全員に読める。URL を知らない人に対しては、
+  UUID の推測しにくさと、ID で 1 件だけを返す関数がアクセス制御になる。認可はかかっていない。
 * Bad: 誤って共有した場合、取り消しは DELETE のみ。既に閲覧・保存された分は取り戻せない。
 * Bad: 共有レコードは増え続ける。期限切れ削除や上限の仕組みがなく、GC もない。
 * Bad: 共有一覧・管理画面がないため、作成者が自分の共有を後から把握・削除する手段が
@@ -68,10 +75,12 @@ URL 埋め込み（選択肢 1）は、16 スロット分の装備とオーグ�
 
 ### Confirmation
 
-* `supabase/schema.sql` および `supabase/migrations/002_shared_equipsets.sql` が
-  `shared_equipsets` に対して以下のポリシーを定義している:
-  `for select using (true)` / `for insert with check (auth.uid() = user_id)` /
-  `for delete using (auth.uid() = user_id)`。
+* `supabase/schema.sql` と `supabase/migrations/005_shared_equipsets_read_by_id.sql`・
+  `006_shared_equipsets_drop_public_read.sql` が、`shared_equipsets` に対して次を定義している:
+  `for select using (auth.uid() = user_id)` / `for insert with check (auth.uid() = user_id)` /
+  `for delete using (auth.uid() = user_id)` と、関数 `get_shared_equipset(uuid)`。
+* `web/src/share.ts` の `loadSharedEquipSet()` はテーブルを直接 select せず、
+  `get_shared_equipset` を呼ぶ。
 * `web/js/share.js` の `createShare()` は `getCurrentUser()` が null なら
   例外を投げ、未ログインでの作成を防ぐ（RLS と二重の防御）。
 * `loadSharedEquipSet()` は `data.character` を `characterSnapshot` として分離して返し、

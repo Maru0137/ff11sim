@@ -56,6 +56,13 @@ React Router はビューを unmount する志向のため「display:none 切替
 
 - ルートは `#/characters` / `#/equipsets` / `#/search`。不正・空 hash は
   characters（共有閲覧モードは equipsets 固定）にフォールバックする
+- 2026-10-25 の注記: 装備検索画面は、ルート `#/search` の後ろに検索条件を載せた
+  `#/search?...` も受け付ける（[仕様書 0005 AC1・AC41・AC42](../specs/0005-item-search.md)）。
+  検索のたびに URL を検索条件を載せたものに履歴を積まずに置き換え、その URL を開くと
+  同じ検索条件の 1 ページ目を表示する。ハッシュで画面を判定するときは `?` 以降を見ない。
+  ルートが 3 つで、hash の手動同期（2.1）で画面を判定する決定は変えない。
+  検索条件を URL の文字列にする形式と、装備検索画面を生成した後にハッシュの検索条件が
+  変わったときの扱いは決まっていない（仕様書 0005 の D6）
 - 検索ビューは初回表示まで遅延マウントする（SearchPage は mount 時に
   全件検索を走らせるため）
 - search.html は `location.replace('./#/search')` のリダイレクトシムとして
@@ -106,6 +113,9 @@ React Router はビューを unmount する志向のため「display:none 切替
   - 共有 URL（?share=）でサイドバーのナビが出ないこと
     （`[data-nav]` の toHaveCount(0)）
 * hash 解決の純関数は `web/src/routing.test.ts`（Vitest）が検証する
+* `#/search?...`（仕様書 0005 AC41・AC42）は未実装（仕様書 0005 の受け入れ基準と実装の差。
+  issue 化予定）。今の `web/src/routing.ts` の `parseHash` は `?` 以降を含めてルート名と
+  照合するため、`#/search?...` を装備検索画面と判定できない
 * Mantine 依存は package.json + lockfile で固定され `npm audit` の対象
   （[ADR 0011](0011-vite-build-toolchain.md) と同じ仕組み）
 * 「新規レイアウト UI に Mantine を使う」こと自体を強制する機械的チェックは
@@ -133,7 +143,9 @@ React Router はビューを unmount する志向のため「display:none 切替
 * Good: ビューのマウント管理を自前で握れるため、「アンマウントしない」
   既存挙動をそのまま維持できる
 * Bad: ネスト・パラメータ付きルート等が必要になったら作り直しになる
-  （現時点の 3 ビューでは不要 — YAGNI）
+  （現時点の 3 ビューでは不要 — YAGNI）。2026-10-25 に `#/search?...`（検索条件の
+  クエリ）が加わったが、ルートは増えず、画面の判定で `?` 以降を見ないだけで済むため、
+  作り直しには当たらない見込み（推論。実装は仕様書 0005 の D6 で決める）
 
 #### 2.2. React Router（HashRouter）
 

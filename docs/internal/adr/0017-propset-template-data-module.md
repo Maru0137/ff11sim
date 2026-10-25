@@ -42,9 +42,23 @@ decision-makers: Akira Maruoka
   他モジュールを import しない純データモジュールとして保つ。
 - セル値は `StatusView.values` の id を参照し、描画時の DOM id にもそのまま使う
   （`null` はダッシュ固定セル）。
-- 条件表示はフラグ名参照（`TemplateFlag = 'rangedWs' | 'songString' | 'songWind'
-  | 'geoHandbell'`）。`visibleIf` はテーブル・行・列のどのレベルにも付けられ、
+- 条件表示はフラグ名参照（`TemplateFlag = 'rangedWeapon' | 'rangedWs' | 'songString'
+  | 'songWind' | 'geoHandbell'`）。`visibleIf` はテーブル・行・列のどのレベルにも付けられ、
   StatusTables.tsx の `SubtabContents` が StatusView 由来の props からフラグを解決する。
+  `rangedWeapon` は 2026-10-25 の改訂で追加した（下の「改訂 (2026-10-25)」）。
+- フラグと [仕様書 0003](../specs/0003-status-view-management.md) の用語「表示条件」の 4 つの
+  対応は次のとおり。どのテンプレートのどの表・行・列にどのフラグを付けるかは
+  [仕様書 0003 の AC7](../specs/0003-status-view-management.md) に従う。
+
+  | 表示条件（仕様書 0003） | フラグ | 真になるとき |
+  |---|---|---|
+  | 遠隔攻撃武器 | `rangedWeapon` | 遠隔攻撃に使う武器（レンジスロットの武器。レンジスロットが空なら矢弾スロットの投てき武器）の武器スキルが弓術・射撃・投てきのどれか |
+  | レンジ WS 武器 | `rangedWs` | レンジスロットの装備の武器スキルが弓術または射撃 |
+  | 楽器の種類 | `songString` / `songWind` | レンジスロットの装備が弦楽器 / 管楽器（条件 1 つを、列ごとに指定する楽器で 2 つのフラグに分ける） |
+  | 風水鈴 | `geoHandbell` | レンジスロットの装備のスキルが風水鈴 |
+
+  遠隔攻撃テンプレートの「武器スキル・攻撃・命中」の表には `rangedWeapon` を付ける
+  （当初は `rangedWs` を付けており、矢弾スロットの投てき武器で遠隔攻撃するときに表が出なかった）。
 - 描画は汎用レンダラ（`TemplateTable`）1 つ。`TEMPLATE_PROPSETS` /
   `TEMPLATE_PROPSET_GROUPS` は template-defs から StatusTables 経由で再エクスポートし、
   参照側（StatusPanel / PropsetManageModal）は変更しない。
@@ -76,6 +90,12 @@ decision-makers: Akira Maruoka
 * `tests/smoke.spec.js`「保存済みキャラクターのステータスが 0 でなく表示される」:
   `#propsetSelect` でのテンプレート選択 → `#subtab-melee-auto` の active クラス切替
   （DOM 互換の生存確認）を検証する。
+
+未実装（仕様書 0003 の受け入れ基準と実装の差。issue 化予定）:
+
+* `rangedWeapon` フラグ（[仕様書 0003 の AC7](../specs/0003-status-view-management.md)）。
+  `web/src/status/template-defs.ts` の `TemplateFlag` はまだ `rangedWs` ほか 3 つだけで、
+  遠隔攻撃テンプレートの表（`template-defs.ts:192`）には `rangedWs` が付いている。
 
 検証されていないもの:
 
@@ -119,3 +139,16 @@ decision-makers: Akira Maruoka
   「表示 JSX（SubtabContents）は変更せず」を置き換える（表示内容の互換は維持）。
 * [ADR 0016](0016-status-breakdown-modal.md) — 内訳モーダル。テンプレートの列と
   カタログ項目の対応（TEMPLATE_ITEM_IDS）は内訳の列構成にも使われる。
+* [仕様書 0003 ステータスビューの管理](../specs/0003-status-view-management.md) — テンプレートの
+  一覧（AC1）・表示条件（用語「表示条件」・AC7）・定義との優先順位（AC8: 定義が AC と食い違えば
+  AC が正で、定義を直す）。
+* 改訂 (2026-10-25): `TemplateFlag` に `rangedWeapon`（遠隔攻撃に使う武器が弓術・射撃・投てき。
+  矢弾スロットの投てき武器を含む）を加え、仕様書 0003 の表示条件 4 つとフラグの対応を
+  Decision Outcome に書いた。元の決定は、遠隔攻撃テンプレートの表も他のレンジ行と同じ
+  `rangedWs`（レンジスロットが弓術・射撃のときだけ）で出し分けることだった。仕様書 0003 の
+  grill（0003-Q5。2026-10-18 の 5 回目の問いの Q12 で 0007 の武器スキル値の求め方とあわせて再確認）で、矢弾スロットの投てき武器で遠隔攻撃するときも
+  遠隔攻撃テンプレートの表を出すと決めたため改めた。レンジスロットに武器があるとき矢弾スロットに
+  投てき武器を着けられないことはユーザーが弓・銃・投てき武器で確かめた
+  （[docs/internal/knowledge/items/equipment_slots.md](../knowledge/items/equipment_slots.md)）。
+  楽器・風水鈴・釣り竿をレンジに着けたときは未確認（仕様書 0003 の D4）。
+  Neutral の「条件フラグの追加は 3 箇所への追記」はこの追加にも当てはまる。

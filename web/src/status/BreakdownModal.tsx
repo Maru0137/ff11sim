@@ -1,4 +1,4 @@
-// ステータス / プロパティセットの内訳モーダル (docs/adr/0016)。
+// ステータス / プロパティセットの内訳モーダル (docs/internal/adr/0016)。
 // ADR 0014 の方針どおり Mantine は Modal のみ使い、中身は手書き CSS
 // (styles/breakdown.css) に乗せる。開閉は StatusPanel のローカル state。
 // 内訳の計算 (WASM 呼び出し含む) はモーダルを開いた時に遅延実行する。

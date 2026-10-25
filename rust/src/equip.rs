@@ -1,4 +1,4 @@
-//! 装備 (装備セットの 1 枠) と装備セット。概念モデルと責務は docs/adr/0018 を参照。
+//! 装備 (装備セットの 1 枠) と装備セット。概念モデルと責務は docs/internal/adr/0018 を参照。
 //!
 //! - `EquipSet` がエンティティ (集約ルート)、`Equip` は値オブジェクト。
 //!   `Equip` は識別子を持たず、属性がすべて等しければ交換可能。
@@ -45,7 +45,7 @@ impl WeaponSlot {
 ///
 /// web の `EquipSlotData` のうち解釈に必要なフィールドだけを受け取る。
 /// `name_en` / `name_ja` / `description_ja` / `skill` は `item_id` から引ける
-/// マスタのコピーなので持たない (docs/adr/0018)。
+/// マスタのコピーなので持たない (docs/internal/adr/0018)。
 #[derive(Debug, Clone, Default, PartialEq, Eq, Deserialize)]
 #[serde(default)]
 pub struct Equip {
@@ -54,7 +54,7 @@ pub struct Equip {
     pub aug_path: Option<usize>,
     /// オグメントランクの選択
     pub aug_rank: Option<i32>,
-    /// ユーザーが自由に書ける説明文。実行時にしか解釈できない (docs/adr/0010)
+    /// ユーザーが自由に書ける説明文。実行時にしか解釈できない (docs/internal/adr/0010)
     pub custom_description: Option<String>,
 }
 
@@ -73,16 +73,16 @@ impl Equip {
     /// 解釈に使う 3 ソースを日本語のまま返す。順序は
     /// アイテム説明文 → オグメント → カスタム説明。空のソースは含めない。
     ///
-    /// 3 つとも元が日本語なので、そのまま並べられる (docs/adr/0019)。
+    /// 3 つとも元が日本語なので、そのまま並べられる (docs/internal/adr/0019)。
     /// 条件ラベル (`ペット:` `潜在能力:` など) の配下はここで落とすので、
-    /// 任意名を読む経路 (docs/adr/0015 のユーザー定義プロパティ) と
+    /// 任意名を読む経路 (docs/internal/adr/0015 のユーザー定義プロパティ) と
     /// 固定項目を読む経路 (`normalized_texts`) が同じ規則で揃う。
     /// `コンビネーション:` だけは常時扱いで残る。
     ///
     /// ラベルの適用範囲はソースによって変える。アイテム説明文の改行はゲーム内表示の
     /// 折り返しなのでラベルは次のラベル/文末まで及ぶが、オグメント文の改行は
     /// wiki の `<br>` 由来で効果 1 件ごとの区切りなので行末まで
-    /// (docs/knowledge/items/description_labels.md)。カスタム説明はユーザーが
+    /// (docs/internal/knowledge/items/description_labels.md)。カスタム説明はユーザーが
     /// 行単位で書くのでオグメント文に揃える。
     pub fn texts_ja(&self) -> Vec<String> {
         let mut texts = Vec::new();
@@ -106,9 +106,9 @@ impl Equip {
             .collect()
     }
 
-    /// `texts_ja` を、固定項目の抽出器が読める正規表記に寄せて返す (docs/adr/0019)。
+    /// `texts_ja` を、固定項目の抽出器が読める正規表記に寄せて返す (docs/internal/adr/0019)。
     ///
-    /// 正規表記が英語なのは抽出器が英語説明文からの移植 (docs/adr/0010) だからで、
+    /// 正規表記が英語なのは抽出器が英語説明文からの移植 (docs/internal/adr/0010) だからで、
     /// 翻訳ではなく表記の正規化として扱う。表に無い表記は素通りするため、
     /// 正規化層の語彙が足りないぶんは取りこぼしになる。
     pub fn normalized_texts(&self) -> Vec<String> {
@@ -133,7 +133,7 @@ pub struct EquipSet {
 /// 装備セットの合算結果。
 ///
 /// スロット別の内訳を分けて持つのは、表示側がスロット依存の出し分け
-/// (武器スロットのみの魔命スキル、内訳モーダル docs/adr/0016) に使うため。
+/// (武器スロットのみの魔命スキル、内訳モーダル docs/internal/adr/0016) に使うため。
 #[derive(Debug, Clone, Default)]
 pub struct EquipSetBonuses {
     /// 全スロット合計
@@ -217,7 +217,7 @@ impl EquipSet {
         out
     }
 
-    /// ユーザー定義プロパティ (docs/adr/0015) のスロット別の値を返す。
+    /// ユーザー定義プロパティ (docs/internal/adr/0015) のスロット別の値を返す。
     ///
     /// `terms` は抽出する日本語プロパティ名。戻り値は スロットキー → プロパティ名 → 値。
     /// 値 0 は持たず、値のないスロットはキーごと含まない (疎)。表示側が
@@ -289,7 +289,7 @@ mod tests {
 
     #[test]
     fn normalized_texts_collects_item_description() {
-        // ヒポメネソックス+1 (27410)。日本語説明文を正規化して読む (docs/adr/0019)
+        // ヒポメネソックス+1 (27410)。日本語説明文を正規化して読む (docs/internal/adr/0019)
         let texts = equip(27410).normalized_texts();
         assert_eq!(texts.len(), 1, "アイテム説明文のみ: {texts:?}");
         assert!(texts[0].contains("HP+13"), "{}", texts[0]);
@@ -394,7 +394,7 @@ mod tests {
         assert_eq!(sum, b.total.accuracy);
     }
 
-    // --- EquipSet: ユーザー定義プロパティ (docs/adr/0015) ------------------
+    // --- EquipSet: ユーザー定義プロパティ (docs/internal/adr/0015) ------------------
 
     fn terms(list: &[&str]) -> Vec<String> {
         list.iter().map(|s| s.to_string()).collect()
@@ -411,7 +411,7 @@ mod tests {
         assert_eq!(v["hands"]["二刀流"], 2);
     }
 
-    // --- 条件ラベルの規則を両経路で共有する (docs/adr/0019 手順 3) ---------
+    // --- 条件ラベルの規則を両経路で共有する (docs/internal/adr/0019 手順 3) ---------
 
     #[test]
     fn conditional_labels_are_excluded_from_both_paths() {
@@ -428,7 +428,7 @@ mod tests {
     #[test]
     fn combination_is_counted_by_both_paths() {
         // マガバンフロック (10464): ... 魔攻+7 魔防+5\nコンビネーション:魔命+5
-        // セット効果は常時扱いにする (docs/adr/0019)
+        // セット効果は常時扱いにする (docs/internal/adr/0019)
         let set = set(&[("body", equip(10464))]);
         assert_eq!(set.bonuses().total.magic_accuracy, 5);
         assert_eq!(set.property_values(&terms(&["魔命"]))["body"]["魔命"], 5);
@@ -497,7 +497,7 @@ mod tests {
 
     #[test]
     fn property_values_takes_first_match_per_text() {
-        // テキストごとに最初の 1 件のみ (docs/adr/0015)
+        // テキストごとに最初の 1 件のみ (docs/internal/adr/0015)
         let v =
             set(&[("body", custom("二刀流+3 何か 二刀流+4"))]).property_values(&terms(&["二刀流"]));
         assert_eq!(v["body"]["二刀流"], 3);

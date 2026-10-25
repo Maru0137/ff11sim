@@ -1,6 +1,6 @@
-// ユーザー定義プロパティ項目の値計算 (docs/adr/0015) の入口。
+// ユーザー定義プロパティ項目の値計算 (docs/internal/adr/0015) の入口。
 //
-// 実体は Rust 側 (rust/src/equip.rs の EquipSet::property_values、docs/adr/0018)。
+// 実体は Rust 側 (rust/src/equip.rs の EquipSet::property_values、docs/internal/adr/0018)。
 // 装備説明文 (日本語) + オーグメント文 + カスタム説明の 3 ソースから「term+N」を
 // 抽出してスロット横断で合算する。ステータス計算の経路と違い、日本語のまま扱う:
 // - アイテムは description_en ではなく description_ja を使う
@@ -13,8 +13,8 @@
 // 「ペット:命中+3 モクシャ+3」のような条件ラベル配下は本体に常時乗る値ではないため
 // 拾わない。適用範囲はソースで変わり、アイテム説明文は次のラベル/末尾まで、
 // オーグメント文とカスタム説明は行末まで。この規則はステータス計算と共通で、
-// コンビネーションだけは常時扱いで拾う (docs/adr/0019、
-// docs/knowledge/items/description_labels.md)。
+// コンビネーションだけは常時扱いで拾う (docs/internal/adr/0019、
+// docs/internal/knowledge/items/description_labels.md)。
 //
 // この層が持つのは「プロパティ名 → 表示 id (`user:<term>`)」の対応だけ。
 // これは UI 側の取り決めなので Rust には持たせていない。
@@ -23,7 +23,7 @@ import type { EquipSlotData } from '../equip/equip-store';
 import type { UserPropertyItem } from './types';
 
 /**
- * スロット別のユーザー定義項目値 (内訳モーダル用、docs/adr/0016)。
+ * スロット別のユーザー定義項目値 (内訳モーダル用、docs/internal/adr/0016)。
  * 寄与のあるスロットのみ含む。値 0 の項目はキーごと含まない (疎)。
  */
 export function calculateUserPropertyValuesPerSlot(

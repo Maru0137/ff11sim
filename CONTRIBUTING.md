@@ -66,9 +66,9 @@ scripts/build_data.sh
 ```
 
 `build/items.json` は上流の [Windower/Resources](https://github.com/Windower/Resources) から
-生成する派生物で、git では管理していません（[ADR 0003](docs/adr/0003-items-json-generated-in-ci.md)）。
+生成する派生物で、git では管理していません（[ADR 0003](docs/internal/adr/0003-items-json-generated-in-ci.md)）。
 **Rust のビルドより先に実行する必要があります。** 装備データは `include_str!` でバイナリに
-埋め込むため（[ADR 0009](docs/adr/0009-embed-item-data-in-binary.md)）、これが無いとコンパイルが通りません。
+埋め込むため（[ADR 0009](docs/internal/adr/0009-embed-item-data-in-binary.md)）、これが無いとコンパイルが通りません。
 
 生成物は 3 つです。
 
@@ -136,7 +136,7 @@ npm run test:smoke
 
 ### 4. ローカルでの Web ページ確認
 
-Vite の dev サーバを起動します (`docs/adr/0011`)。
+Vite の dev サーバを起動します (`docs/internal/adr/0011`)。
 
 ```bash
 npm run dev
@@ -164,9 +164,12 @@ http://localhost:8000 を開きます（Supabase のリダイレクト許可リ�
 ├── data/                  Rust と Web が共有するテーブルデータ (ADR 0002)
 ├── scripts/               装備データの生成・検証
 ├── docs/
-│   ├── adr/               設計判断の記録
-│   ├── knowledge/         FF11 のゲーム仕様と計算式などのナレッジベース
-│   └── tech-debt/         既知の負債・意図的に残した非互換
+│   ├── internal/          開発者向けの文書
+│   │   ├── adr/           設計判断の記録
+│   │   ├── knowledge/     FF11 のゲーム仕様と計算式などのナレッジベース
+│   │   ├── roadmap/       移行などの計画
+│   │   └── tech-debt/     既知の負債・意図的に残した非互換
+│   └── public/            外部に公開するドキュメントのソース
 ├── supabase/              スキーマ定義
 └── .github/workflows/     CI (test.yml / deploy.yml)
 ```
@@ -220,13 +223,13 @@ CI では実行しています。
 ### ADRの運用
 
 アーキテクチャの選択、依存関係の追加、横断的な規約など、**非自明でトレードオフのある決定**は
-[docs/adr/](docs/adr/) に記録します。既存の ADR と矛盾する変更を入れる場合は、
+[docs/internal/adr/](docs/internal/adr/) に記録します。既存の ADR と矛盾する変更を入れる場合は、
 先に該当 ADR を読み、必要なら supersede してください。
 
 ### ナレッジベースの運用
 
 計算式を実装・修正したときは、根拠（wiki の URL など）と具体的な計算例を
-[docs/knowledge/](docs/knowledge/) に残してください。後から式の妥当性を検証できなくなるためです。
+[docs/internal/knowledge/](docs/internal/knowledge/) に残してください。後から式の妥当性を検証できなくなるためです。
 
 ### CI/CD
 

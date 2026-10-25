@@ -4,7 +4,7 @@
 // (body.share-mode #btnSaveEquipSet 等) が id を参照するため id を維持する。
 //
 // 保存は未編集なら無効、複製・共有は「保存済みの内容」に対する操作なので
-// 未保存の変更があるときに無効化する (docs/adr/0020)。
+// 未保存の変更があるときに無効化する (docs/internal/adr/0020)。
 import { useSyncExternalStore } from 'react';
 import {
     equipSetsStore,

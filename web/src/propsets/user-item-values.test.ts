@@ -74,7 +74,7 @@ describe('calculateUserPropertyValues', () => {
 
     it('条件ラベル配下 (ペット等) の値は拾わない', () => {
         // イーガダブレット (11338) の説明文と同じ形。命中・モクシャはどちらも
-        // ペットのもので装備者には乗らない (docs/knowledge/items/description_labels.md)
+        // ペットのもので装備者には乗らない (docs/internal/knowledge/items/description_labels.md)
         const totals = calculateUserPropertyValues(
             { body: { item_id: 0, custom_description: '防21 ペット:命中+3 モクシャ+3' } },
             [userItem('命中'), userItem('モクシャ')]

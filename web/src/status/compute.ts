@@ -53,7 +53,7 @@ export interface StatusView {
     /** 旧 DOM id → 表示値 */
     values: Record<string, string | number>;
     effectiveSkills: EffectiveSkillEntry[];
-    /** プロパティ項目 id (カタログ / 'user:<term>') → 表示値 (docs/adr/0015) */
+    /** プロパティ項目 id (カタログ / 'user:<term>') → 表示値 (docs/internal/adr/0015) */
     propertyValues: Record<string, string | number>;
     /** レンジスロットが WS を撃てる武器 (弓術/射撃) か。WS 系テンプレートのレンジ行表示に使う */
     rangedWsWeapon: boolean;
@@ -297,7 +297,7 @@ export async function computeStatusView(): Promise<StatusView | null> {
             V[id] = numOrDash(total);
         }
 
-        // 得TP (1 ヒットあたり、docs/knowledge/status/tp.md)。近接は二刀流・格闘とも
+        // 得TP (1 ヒットあたり、docs/internal/knowledge/status/tp.md)。近接は二刀流・格闘とも
         // 両手で同じ値、遠隔はレンジ武器未装備なら null
         const tpGainMelee = totalStats.tp_per_hit_melee;
         const tpGainRanged = totalStats.tp_per_hit_ranged;
@@ -577,7 +577,7 @@ export async function computeStatusView(): Promise<StatusView | null> {
             });
         });
 
-        // プロパティ項目値 (docs/adr/0015)。カスタムセットの表示用に
+        // プロパティ項目値 (docs/internal/adr/0015)。カスタムセットの表示用に
         // 全カタログ項目 + 全ユーザー定義項目を毎回計算する (選択に依存しない)。
         const propertyValues: Record<string, string | number> = {};
         const propertyCtx: PropertyValueContext = {

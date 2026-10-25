@@ -28,7 +28,7 @@ export default [
     },
   },
   {
-    // React / TypeScript 層 (web/src/、docs/adr/0012)。
+    // React / TypeScript 層 (web/src/、docs/internal/adr/0012)。
     // no-undef は付けない: TS では未定義識別子を tsc (npm run typecheck) が
     // 検出し、core の no-undef は誤検知源になる (typescript-eslint の推奨)。
     // 既存 JS 層の no-undef と同じ目的 (参照漏れ検出) は typecheck が担う。

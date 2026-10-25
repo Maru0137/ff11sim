@@ -1,6 +1,6 @@
 //! 装備データ (`items.json` / `augments.json`) をバイナリに埋め込み、参照可能にする。
 //!
-//! 設計判断は docs/adr/0009 を参照。要点:
+//! 設計判断は docs/internal/adr/0009 を参照。要点:
 //! - `items.json` は上流から生成する派生物で git 管理外だが、`include_str!` は
 //!   コンパイル時に存在すればよい。`scripts/build_web_data.sh` を `cargo build` より
 //!   前に走らせることが前提になる。
@@ -8,7 +8,7 @@
 //!   Rust 側にデータを寄せても利用者の負担は増えない。
 //!
 //! `items.json` は `build/` に生成する。`web/` の外に置くのは、ブラウザが
-//! これを読まなくなったため (docs/adr/0010 手順 5 完了)。`web/` に置いたままだと
+//! これを読まなくなったため (docs/internal/adr/0010 手順 5 完了)。`web/` に置いたままだと
 //! Pages に配信され、WASM に埋め込んだものと合わせて同じデータを二重に配ることになる。
 
 use std::collections::HashMap;
@@ -31,7 +31,7 @@ pub enum ItemCategory {
 /// `jobs` / `slots` / `races` を enum にしていないのは、いずれも既存の enum と
 /// 綴りや粒度が一致しないため。`jobs` は `"WAR"` 形式で `Job::War` と綴りが違い、
 /// `races` は `"Hum_M"` / `"Hum_F"` と性別まで分かれていて `Race` (5 種) に写せない。
-/// 型付けは解釈の移植 (docs/adr/0010) で扱う。
+/// 型付けは解釈の移植 (docs/internal/adr/0010) で扱う。
 #[derive(Debug, Clone, Deserialize, Serialize)]
 pub struct Item {
     pub id: u32,
@@ -105,7 +105,7 @@ pub fn item_by_id(id: u32) -> Option<&'static Item> {
 // ---------------------------------------------------------------------------
 
 /// オーグメントのランク 1 段階。`text` は日本語表記のまま保持する
-/// (解釈は docs/adr/0010 の移植対象)。
+/// (解釈は docs/internal/adr/0010 の移植対象)。
 #[derive(Debug, Clone, Deserialize, Serialize)]
 pub struct AugmentRank {
     pub rank: i32,
@@ -217,7 +217,7 @@ mod tests {
     #[test]
     fn augment_target_items_exist_in_items() {
         // オーグメント定義があるのに装備データに存在しない ID は、
-        // augments.json が古い可能性を示す (docs/adr/0004 の既知の弱点)。
+        // augments.json が古い可能性を示す (docs/internal/adr/0004 の既知の弱点)。
         let missing: Vec<u32> = AUGMENTS
             .keys()
             .copied()

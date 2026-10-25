@@ -1,9 +1,9 @@
 //! 日本語説明文からの抽出を、英語説明文からの抽出と全件突き合わせる
-//! (docs/adr/0019)。
+//! (docs/internal/adr/0019)。
 //!
 //! 装備解釈の入力を `description_ja` に一本化したので、正規化層
 //! (`convert_augment_ja_to_en`) の語彙が足りているかを機械的に確かめる。
-//! JS リファレンス削除後 (docs/adr/0018) に失われていた全件検証の後継でもある。
+//! JS リファレンス削除後 (docs/internal/adr/0018) に失われていた全件検証の後継でもある。
 //!
 //! **完全一致は目標にしない。** 差は次の 4 種類で、どれも英語に合わせて再現するのは
 //! 誤りの移植になる:
@@ -130,7 +130,7 @@ fn ja_en_diffs_are_all_explainable() {
         }
         compared += 1;
 
-        // 実際のパイプラインと同じ順序: 条件ラベル除去 → 正規化 → 抽出 (docs/adr/0019)
+        // 実際のパイプラインと同じ順序: 条件ラベル除去 → 正規化 → 抽出 (docs/internal/adr/0019)
         let stripped = strip_conditional_labels(ja, LabelScopeMode::Wrapped);
         let normalized = convert_augment_ja_to_en(&stripped);
         let from_en = extract_all_stats(en);

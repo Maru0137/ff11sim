@@ -264,7 +264,7 @@ test('カスタムプロパティセットを作成でき、選択が装備セ�
   await expect(grid.locator('.propset-cell', { hasText: 'ストアTP' })).toBeVisible();
   await expect(grid.locator('.propset-cell', { hasText: '二刀流' })).toContainText('5');
 
-  // 装備セットを保存すると選択がレコードに載る (docs/adr/0015)
+  // 装備セットを保存すると選択がレコードに載る (docs/internal/adr/0015)
   await page.click('#btnSaveEquipSet');
   await page.waitForTimeout(1000);
 
@@ -343,7 +343,7 @@ test('キャラクターを UI から作成できる', async ({ page }) => {
 
 test('未保存の変更で保存ボタンが有効化され、タブ切替が確認ダイアログを挟む', async ({ page }) => {
   const errors = collectErrors(page);
-  // 未保存判定 (docs/adr/0020) はストア 2 つ (equipSetsStore / equipState) の
+  // 未保存判定 (docs/internal/adr/0020) はストア 2 つ (equipSetsStore / equipState) の
   // 変更通知が両方ツールバーへ届いて初めて成立する。配線が切れても単体テストでは
   // 落ちないので、ここで経路ごと確認する。
   await seedAndOpenEquipTab(page, { main: { item_id: 21071, skill: 11 } });
@@ -393,7 +393,7 @@ test('共有 URL (?share=) で装備セットが閲覧できる', async ({ page 
     },
     created_at: '2026-01-01T00:00:00Z',
   };
-  // 閲覧は ID で 1 件だけ返す関数を通す (docs/adr/0008)。テーブルを直接読みに来たら
+  // 閲覧は ID で 1 件だけ返す関数を通す (docs/internal/adr/0008)。テーブルを直接読みに来たら
   // 全件取得できる経路に戻ったということなので失敗させる。
   let directTableRead = false;
   await page.route('**/rest/v1/shared_equipsets*', (route) => {
@@ -488,7 +488,7 @@ test('ログインボタンが表示され、クリックしてもエラーが�
 
 test('キャラクター一覧をドラッグで並び替えられ、編集して保存しても順番が変わらない', async ({ page }) => {
   const errors = collectErrors(page);
-  // 並び順は「配列の順序 = 表示順 = 保存順」(docs/adr/0022)。ログイン中は
+  // 並び順は「配列の順序 = 表示順 = 保存順」(docs/internal/adr/0022)。ログイン中は
   // position カラムで復元するが CI から Supabase は叩けないため、ここでは
   // ゲスト (localStorage) 経路で「保存されること」「保存の副作用で動かないこと」を見る。
   await page.goto('./');

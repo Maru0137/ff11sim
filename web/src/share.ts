@@ -93,7 +93,7 @@ export async function createShare(
  */
 export async function loadSharedEquipSet(id: string): Promise<SharedEquipSetResult> {
     // テーブルを直接 select させると ID で絞らない一括取得もできてしまうので、
-    // ID を引数に取る関数だけを使う (docs/adr/0008)
+    // ID を引数に取る関数だけを使う (docs/internal/adr/0008)
     const { data, error } = await supabase
         .rpc('get_shared_equipset', { share_id: id })
         .maybeSingle<{

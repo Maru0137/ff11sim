@@ -13,7 +13,7 @@ import {
 export type ValueGetter = (id: string) => string | number;
 
 // プロパティセット選択 UI (StatusPanel / PropsetManageModal) 向けの再エクスポート。
-// 一覧の実体は template-defs.ts (表示順 = 配列順、docs/adr/0015)
+// 一覧の実体は template-defs.ts (表示順 = 配列順、docs/internal/adr/0015)
 export { TEMPLATE_PROPSET_GROUPS } from './template-defs';
 export { TEMPLATE_PROPSET_DEFS as TEMPLATE_PROPSETS } from './template-defs';
 

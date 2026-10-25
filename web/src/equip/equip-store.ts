@@ -37,7 +37,7 @@ export const equipState = {
     editingEquipSetName: null as string | null,
     /**
      * プロパティセット選択 id ('template:subtab-*' またはカスタム UUID)。
-     * 装備セットの保存時にレコードへ載せて端末間同期する (docs/adr/0015)。
+     * 装備セットの保存時にレコードへ載せて端末間同期する (docs/internal/adr/0015)。
      * null は未選択 (既定表示)
      */
     propsetSelection: null as string | null,

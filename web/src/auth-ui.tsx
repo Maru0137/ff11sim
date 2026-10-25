@@ -1,4 +1,4 @@
-// ログイン UI (docs/adr/0012)。
+// ログイン UI (docs/internal/adr/0012)。
 // 未ログイン: 「Google でログイン」ボタン
 // ログイン中: 表示名 + 「ログアウト」ボタン
 //
@@ -38,7 +38,7 @@ export function AuthWidget() {
             <span className="auth-user">{name}</span>
             {/* ログアウトは保存先が Supabase → ローカルに切り替わり、一覧と
                 編集フォームが読み直されるので未保存の変更は失われる
-                (docs/adr/0020)。ログイン側は OAuth リダイレクトでページを
+                (docs/internal/adr/0020)。ログイン側は OAuth リダイレクトでページを
                 離れるため beforeunload が受け持つ。 */}
             <button
                 type="button"

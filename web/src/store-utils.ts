@@ -1,6 +1,6 @@
 // React 島とレガシー JS 層の橋渡しに使う最小の外部ストア。
 // レガシー側は set/get を直接呼び、React 側は useSyncExternalStore で購読する
-// (docs/roadmap/react-migration.md の「既存ストアへの接続」規約)。
+// (docs/internal/roadmap/react-migration.md の「既存ストアへの接続」規約)。
 export interface Store<T> {
     get: () => T;
     set: (next: T) => void;

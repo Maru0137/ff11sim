@@ -1,13 +1,13 @@
-//! 装備検索。`web/js/item-search.js` からの移植 (docs/adr/0010)。
+//! 装備検索。`web/js/item-search.js` からの移植 (docs/internal/adr/0010)。
 //!
-//! [ADR 0009](../../docs/adr/0009-embed-item-data-in-binary.md) で装備データを
+//! [ADR 0009](../../docs/internal/adr/0009-embed-item-data-in-binary.md) で装備データを
 //! バイナリに埋め込み JS 側の `items.json` 読み込みを廃止すると決めたため、
 //! 検索も Rust 側に持つ必要がある。
 //!
 //! 移植方針は解釈側と同じで挙動を変えない。JS の比較順序や undefined の扱いを
 //! そのまま再現する。
 //!
-//! 説明文の解釈は持たない (docs/adr/0018)。説明文ステータスソートは
+//! 説明文の解釈は持たない (docs/internal/adr/0018)。説明文ステータスソートは
 //! `equip_stats::extract_stat_from_description` を呼ぶ。
 //!
 //! JS に残すもの: `getFilterableProperties()` と `getOperators()`。

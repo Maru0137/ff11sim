@@ -1,4 +1,4 @@
-/* プロパティセット UI (docs/adr/0015)。
+/* プロパティセット UI (docs/internal/adr/0015)。
    セレクタ (StatusPanel)・表示グリッド (CustomPropsetGrid)・
    管理モーダル (PropsetManageModal) のスコープ付きスタイル。
    コンポーネントから直接 import する (equip-grid.css と同じ方式)。 */

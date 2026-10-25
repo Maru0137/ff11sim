@@ -1,5 +1,5 @@
 // 装備セット編集の「保存済みからの変更有無」を判定するスナップショット
-// (docs/adr/0020)。
+// (docs/internal/adr/0020)。
 //
 // スロットはキー順が読み込み経路で変わる (保存レコードの展開順 / 空スロット
 // 生成順) ため、キーの並びに依存しないよう slotKeys の順で正規化する。
@@ -26,7 +26,7 @@ function slotFingerprint(data: EquipSlotData | null | undefined): unknown {
 export interface EquipSetSnapshotInput {
     name: string;
     slots: Record<string, EquipSlotData | null | undefined>;
-    /** プロパティセット選択 (docs/adr/0015)。保存レコードに載るので比較対象 */
+    /** プロパティセット選択 (docs/internal/adr/0015)。保存レコードに載るので比較対象 */
     propsetSelection: string | null;
 }
 

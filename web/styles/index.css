@@ -231,7 +231,7 @@ h1 {
     padding: 20px;
 }
 
-/* 用途別ステータス表示 (プロパティセット、docs/adr/0015)。
+/* 用途別ステータス表示 (プロパティセット、docs/internal/adr/0015)。
    選択 UI は styles/propsets.css (.propset-selector)。
    コンテンツ枠はタブ接続前提だった旧サブタブから流用しているため
    クラス名は status-subtab-content のまま。 */
@@ -362,7 +362,7 @@ input[type="checkbox"] {
     display: none;
 }
 
-/* ===== キャラクター編集フォーム (docs/adr/0021) =====
+/* ===== キャラクター編集フォーム (docs/internal/adr/0021) =====
    入力欄の幅は「入る値」で決め、列数は画面幅に追従させる。
    セクションは <details> で畳み、スクロールしても保存できるようアクションバーを固定する。 */
 
@@ -762,7 +762,7 @@ input[type="checkbox"] {
 }
 
 /* 中立操作 (未保存確認の「キャンセル」/ フォームの「閉じる」)。
-   保存でも破壊でもない選択肢を色で区別する (docs/adr/0020) */
+   保存でも破壊でもない選択肢を色で区別する (docs/internal/adr/0020) */
 .btn-neutral {
     background: #4a4a5e;
 }
@@ -784,7 +784,7 @@ input[type="checkbox"] {
     margin-top: 15px;
 }
 
-/* ===== 未保存の変更の表示 (docs/adr/0020) ===== */
+/* ===== 未保存の変更の表示 (docs/internal/adr/0020) ===== */
 .unsaved-badge {
     font-size: 11px;
     color: #f0c040;
@@ -850,7 +850,7 @@ input[type="checkbox"] {
     background: #1a1a3e;
 }
 
-/* ドラッグ並び替え (docs/adr/0022)。行全体ではなくハンドルだけを掴めるようにする */
+/* ドラッグ並び替え (docs/internal/adr/0022)。行全体ではなくハンドルだけを掴めるようにする */
 .char-list .char-drag-handle {
     flex-shrink: 0;
     color: #667;

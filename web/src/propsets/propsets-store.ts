@@ -1,4 +1,4 @@
-// プロパティセットの状態管理 (docs/adr/0015)。
+// プロパティセットの状態管理 (docs/internal/adr/0015)。
 // createStore + 命令的 async 関数の規約は equip-sets-store.ts に合わせる。
 //
 // 不変条件: このモジュールは status-store / compute を import しない

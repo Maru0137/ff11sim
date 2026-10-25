@@ -258,7 +258,7 @@ function formStateFor(character: CharacterRecord | null): FormState {
     });
     // フォームが持つスキルメリット (既定 8 = 上限 +16) を含めて上限を算出する。
     // 旧実装はここだけメリット抜きで計算しており、表示上の「上限」が実際のキャップより
-    // 16 低かった。入力を上限でクランプするようになった (docs/adr/0021) ため、
+    // 16 低かった。入力を上限でクランプするようになった (docs/internal/adr/0021) ため、
     // ずれていると本来入る値が弾かれてしまう。
     const skillDefaults = computeSkillDefaults({
         race: 'Hum',
@@ -286,7 +286,7 @@ function formStateFor(character: CharacterRecord | null): FormState {
 
 export const CHARACTER_EDITOR_ID = 'characters';
 
-// 開閉式セクション (docs/adr/0021)。既定で開くのは基本情報とジョブレベルだけ。
+// 開閉式セクション (docs/internal/adr/0021)。既定で開くのは基本情報とジョブレベルだけ。
 const SECTIONS = [
     { id: 'basic', label: '基本情報' },
     { id: 'joblv', label: 'ジョブレベル' },
@@ -324,13 +324,13 @@ export function CharacterTab() {
     const characters = useSyncExternalStore(charactersStore.subscribe, charactersStore.get);
     const [form, setForm] = useState<FormState | null>(null);
     // フォームを開いた / 保存した時点の内容。これとの差が「未保存の変更」
-    // (docs/adr/0020)。値を戻せば未保存でなくなる。
+    // (docs/internal/adr/0020)。値を戻せば未保存でなくなる。
     const [baseline, setBaseline] = useState<string | null>(null);
     // 一覧のドラッグ並び替えの進行状態
     const [draggingName, setDraggingName] = useState<string | null>(null);
     const [dragOverName, setDragOverName] = useState<string | null>(null);
     // ジョブ別ポイント (ジョブ別メリット + JP) のジョブセレクタ。
-    // 同じ「どのジョブか」を指すので 1 つに統合した (docs/adr/0021)。
+    // 同じ「どのジョブか」を指すので 1 つに統合した (docs/internal/adr/0021)。
     // フォームを閉じても保持する (旧実装踏襲)。
     const [targetJob, setTargetJob] = useState(jobs[0]?.key ?? '');
 
@@ -414,7 +414,7 @@ export function CharacterTab() {
         if (form?.editingName === name) openForm(null);
     }
 
-    // ドラッグ並び替え (docs/adr/0022)。配列の順序がそのまま保存順になる。
+    // ドラッグ並び替え (docs/internal/adr/0022)。配列の順序がそのまま保存順になる。
     // 編集中のフォームには触れないので、未保存ガードは掛けない。
     async function moveCharacter(fromName: string, toName: string) {
         const list = (await loadCharacters()) as CharacterRecord[];
@@ -556,7 +556,7 @@ interface CharacterFormProps {
 const MERIT_BASE_TOTAL_MAX = MERIT_BASE_KEYS.length * MERIT_BASE_MAX_RANK;
 const MERIT_SKILL_TOTAL_MAX = ALL_SKILL_KEYS.length * MERIT_SKILL_MAX_RANK;
 
-/** フォーカスで中身を全選択する。デフォルト値を消してから打ち直す手間を省く (docs/adr/0021) */
+/** フォーカスで中身を全選択する。デフォルト値を消してから打ち直す手間を省く (docs/internal/adr/0021) */
 function selectAll(e: React.FocusEvent<HTMLInputElement>) {
     e.target.select();
 }
@@ -574,7 +574,7 @@ interface NumFieldProps {
     title?: string;
 }
 
-/** ラベル・数値入力・「/ 最大値」を 1 行に並べる共通フィールド (docs/adr/0021) */
+/** ラベル・数値入力・「/ 最大値」を 1 行に並べる共通フィールド (docs/internal/adr/0021) */
 function NumField({ id, label, value, max, onChange, variant, disabled, title }: NumFieldProps) {
     const num = typeof value === 'number' ? value : parseNum(value);
     // 上限 0 は「達成」ではないので強調しない
@@ -690,7 +690,7 @@ function CharacterForm({ form, setForm, dirty, targetJob, setTargetJob, onSave, 
             setForm({ ...form, meritOther: { ...form.meritOther, [key]: '' } });
             return;
         }
-        // 各項目 0-5 に加えてグループ合計にも上限がある (docs/knowledge/status/merit_points.md)
+        // 各項目 0-5 に加えてグループ合計にも上限がある (docs/internal/knowledge/status/merit_points.md)
         const ranks = MERIT_OTHER_KEYS.map(([k]) => parseNum(form.meritOther[k]));
         const idx = MERIT_OTHER_KEYS.findIndex(([k]) => k === key);
         const v = clampWithinGroup(ranks, idx, parseNum(raw), MERIT_OTHER_MAX_RANK, MERIT_OTHER_GROUP_MAX_TOTAL);
@@ -843,7 +843,7 @@ function CharacterForm({ form, setForm, dirty, targetJob, setTargetJob, onSave, 
 
     return (
         <div id="charEditSection">
-            {/* スクロールしても保存できるよう上端に固定する (docs/adr/0021) */}
+            {/* スクロールしても保存できるよう上端に固定する (docs/internal/adr/0021) */}
             <div className="char-action-bar">
                 <span className="char-action-title" id="charEditTitle">
                     {form.editingName ? 'キャラクター編集' : '新規キャラクター'}

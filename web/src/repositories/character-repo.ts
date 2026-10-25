@@ -6,7 +6,7 @@
 // list() / save(arr) の 2 関数のみを公開。Supabase 側は save 時に
 // 既存と差分を取って upsert / delete する。
 //
-// 配列の順序が一覧の表示順そのもの (docs/adr/0022)。localStorage は JSON 配列なので
+// 配列の順序が一覧の表示順そのもの (docs/internal/adr/0022)。localStorage は JSON 配列なので
 // そのまま保たれるが、Supabase 側は position カラムに配列インデックスを書き、
 // list() で order('position') して復元する。position は行の列であって data jsonb には
 // 入れないため、UI 側が扱うレコードの形は変わらない。

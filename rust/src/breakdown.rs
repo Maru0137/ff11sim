@@ -1,4 +1,4 @@
-//! ステータス / プロパティ値のソース別内訳 (docs/adr/0016)。
+//! ステータス / プロパティ値のソース別内訳 (docs/internal/adr/0016)。
 //!
 //! `chara_to_status_result` (wasm.rs) と同じソース分解を「行」として公開する。
 //! 集計ロジック本体は `Chara::status_parts` / `Chara::job_trait_breakdown` /
@@ -6,8 +6,8 @@
 //! (レベル・ステータス・スキル由来の項) は剰余ではなく解析的に計算し、
 //! 「Σ行 + 装備 == 総合値」の恒等式はテストで担保する。
 //!
-//! 装備スロット別の寄与は JS 側 (equip-bonuses の per_slot_stats) が持つため、
-//! ここにはキャラクター由来の行のみを含む。
+//! 装備スロット別の寄与は `EquipSet::bonuses` (equip.rs) の `per_slot_stats` が求め、
+//! WASM の `equip_set_bonuses` で JS に渡るため、ここにはキャラクター由来の行のみを含む。
 
 use std::collections::BTreeMap;
 
@@ -300,7 +300,7 @@ pub fn chara_breakdown(chara: &Chara) -> StatusBreakdown {
     // --- スキル値 ---
     // キャラ由来行は effective_skill_parts で 基礎 (素キャップまで) / メリポ / ML に
     // 分解する (メリポ/ML はキャップ引き上げの増分として帰属)。装備スロット分は
-    // JS 側の per_slot_skill_bonuses が持つ (equip-bonuses)。
+    // `EquipSet::bonuses` (equip.rs) の `per_slot_skill_bonuses` が求める。
     let skill_parts = |kind: SkillKind| {
         effective_skill_parts(
             kind,

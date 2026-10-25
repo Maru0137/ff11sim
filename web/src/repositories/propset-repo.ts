@@ -1,4 +1,4 @@
-// プロパティセット (docs/adr/0015) の永続化を抽象化する repository。
+// プロパティセット (docs/internal/adr/0015) の永続化を抽象化する repository。
 // ゲスト (未ログイン): localStorage に PropsetDoc を JSON で保存
 // ログイン中: Supabase の property_sets テーブル (1 ユーザー 1 行、data jsonb)
 //

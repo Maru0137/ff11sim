@@ -1,4 +1,4 @@
-// 一覧のドラッグ並び替え (docs/adr/0022)。
+// 一覧のドラッグ並び替え (docs/internal/adr/0022)。
 // 「掴んだ要素を、落とした先の要素の位置へ挿入する」= EquipSetControls /
 // PropsetManageModal と同じ規則。配列の順序がそのまま表示順・保存順になる。
 

@@ -48,7 +48,7 @@ export const JP_CATEGORY_COUNT = 10;
 export const JP_MAX_RANK = 20;
 
 // メリットポイントの上限。基礎とスキルは項目ごとの上限だけだが、「その他」は
-// ジョブ別メリットと同じくグループ合計にも上限がある (docs/knowledge/status/merit_points.md)。
+// ジョブ別メリットと同じくグループ合計にも上限がある (docs/internal/knowledge/status/merit_points.md)。
 export const MERIT_BASE_MAX_RANK = 15;
 export const MERIT_SKILL_MAX_RANK = 8;
 export const MERIT_OTHER_MAX_RANK = 5;

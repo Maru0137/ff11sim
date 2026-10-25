@@ -1,5 +1,5 @@
 // 未保存の変更があるまま編集内容を失う操作をしたときの確認ダイアログ
-// (docs/adr/0020)。開閉は dirty-guard の guardStore が持つ。
+// (docs/internal/adr/0020)。開閉は dirty-guard の guardStore が持つ。
 import { useSyncExternalStore } from 'react';
 import {
     guardStore,

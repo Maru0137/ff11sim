@@ -491,7 +491,7 @@ pub fn calc_ranged_accuracy(agi: i32, weapon_skill: i32, equip_ranged_accuracy: 
         + equip_ranged_accuracy
 }
 
-/// 1 ヒットあたりの得TPを計算する (docs/knowledge/status/tp.md)。
+/// 1 ヒットあたりの得TPを計算する (docs/internal/knowledge/status/tp.md)。
 ///
 /// 隔から基本値を求め、ストアTPを掛ける。どちらも小数点以下切り捨て、
 /// 基本値の下限は 40。`delay` は武器構成ごとに `calc_melee_tp_delay` /
@@ -514,7 +514,7 @@ pub fn calc_tp_per_hit(delay: i32, store_tp: i32) -> i32 {
     (base.max(40) * (100 + store_tp)).div_euclid(100)
 }
 
-/// 近接の得TPに使う隔を求める (docs/knowledge/status/tp.md)。
+/// 近接の得TPに使う隔を求める (docs/internal/knowledge/status/tp.md)。
 ///
 /// - 格闘 (素手含む): (480 + メイン武器の隔 − マーシャルアーツ) ÷ 2
 /// - 二刀流 (サブスロットに隔を持つ武器): (メイン隔 + サブ隔) × (100 − 二刀流) ÷ 100 ÷ 2
@@ -675,7 +675,7 @@ mod tests {
 
     #[test]
     fn test_calc_tp_per_hit_ranges() {
-        // 各区間の起点と終点 (docs/knowledge/status/tp.md の表)
+        // 各区間の起点と終点 (docs/internal/knowledge/status/tp.md の表)
         assert_eq!(calc_tp_per_hit(180, 0), 61);
         assert_eq!(calc_tp_per_hit(181, 0), 61); // 61 + floor(1×88/360)
         assert_eq!(calc_tp_per_hit(233, 0), 73); // 61 + floor(53×88/360) = 61 + 12

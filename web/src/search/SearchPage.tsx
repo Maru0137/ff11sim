@@ -1,7 +1,7 @@
 // 装備検索ページの状態の所有者。フォーム状態・フィルタ行・検索結果・
 // オフセットをここで持ち、検索の実行 (WASM 呼び出し) もここから行う。
 //
-// 装備データと検索は Rust 側にある (docs/adr/0009, docs/adr/0010)。
+// 装備データと検索は Rust 側にある (docs/internal/adr/0009, docs/internal/adr/0010)。
 // items.json は WASM に埋め込まれているので JS からは読まない。
 import { useEffect, useRef, useState } from 'react';
 // スタイルは .search-page スコープに閉じている (index.css との衝突回避)

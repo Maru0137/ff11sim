@@ -5,7 +5,7 @@ on:
     branches:
       - main
   # 上流 (Windower/Resources) の更新をこちらの push と無関係に取り込むための定期実行。
-  # items.json はビルド時に上流から生成するため (docs/adr/0003)、再デプロイしない限り
+  # items.json はビルド時に上流から生成するため (docs/internal/adr/0003)、再デプロイしない限り
   # 配信中のデータが古いままになる。cron は UTC 指定: 15:00 UTC = 00:00 JST。
   schedule:
     - cron: '0 15 * * *'
@@ -24,7 +24,7 @@ concurrency:
 jobs:
   # 上流 (Windower/Resources) のリソースに変化があるかだけを先に判定する軽量ジョブ。
   # 前回ビルド時の blob SHA は、配信済みサイトの data/_build_metadata.json に
-  # 記録してある (docs/adr/0003)。取得に失敗した場合は changed=true に倒し、
+  # 記録してある (docs/internal/adr/0003)。取得に失敗した場合は changed=true に倒し、
   # 「判定できないならビルドする」安全側の挙動にする。
   detect-resource-changes:
     runs-on: ubuntu-latest
@@ -91,7 +91,7 @@ jobs:
           key: items-json-${{ needs.detect-resource-changes.outputs.digest }}-${{ hashFiles('scripts/parse_lua_to_json.py') }}
 
       # Rust より先に実行する必要がある。装備データは include_str! でバイナリに
-      # 埋め込まれるため (docs/adr/0009)、items.json が無いとコンパイルが通らない。
+      # 埋め込まれるため (docs/internal/adr/0009)、items.json が無いとコンパイルが通らない。
       # 上流ファイルの取得 / items.json 生成 / 検証 / _build_metadata.json 出力を
       # 1 コマンドで行う。ローカルでも同じコマンドで再現できる。
       - name: Build data
@@ -105,7 +105,7 @@ jobs:
         # 固定の文字列で、上流由来の値ではない。
         run: scripts/build_data.sh ${{ github.event_name == 'workflow_dispatch' && '--force' || '' }}
 
-      # 配信物には含めないので (docs/adr/0010)、公開後に中身を確認したいときは
+      # 配信物には含めないので (docs/internal/adr/0010)、公開後に中身を確認したいときは
       # ここから取得する。_build_metadata.json の commit で該当の実行を特定できる。
       - name: Upload items.json for debugging
         uses: actions/upload-artifact@v7
@@ -158,7 +158,7 @@ jobs:
         run: npm ci
 
       # web/ をそのまま配信する構成から、vite build の成果物 (dist/) を
-      # 配信する構成に変更した (docs/adr/0011)。
+      # 配信する構成に変更した (docs/internal/adr/0011)。
       - name: Build site
         run: npm run build
 

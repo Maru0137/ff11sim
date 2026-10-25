@@ -92,11 +92,17 @@ export async function createShare(
  * 共有 ID から装備セットを復元。誰でも (未ログインでも) 取得可能。
  */
 export async function loadSharedEquipSet(id: string): Promise<SharedEquipSetResult> {
+    // テーブルを直接 select させると ID で絞らない一括取得もできてしまうので、
+    // ID を引数に取る関数だけを使う (docs/adr/0008)
     const { data, error } = await supabase
-        .from('shared_equipsets')
-        .select('name, character_name, job, data, created_at')
-        .eq('id', id)
-        .maybeSingle();
+        .rpc('get_shared_equipset', { share_id: id })
+        .maybeSingle<{
+            name: string | null;
+            character_name: string | null;
+            job: string | null;
+            data: unknown;
+            created_at: string;
+        }>();
     if (error) throw error;
     if (!data) throw new Error('shared equipset not found');
 

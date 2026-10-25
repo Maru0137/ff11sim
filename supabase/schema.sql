@@ -56,7 +56,7 @@ create table public.items (
 
 -- ---------------------------------------------------------------------------
 -- 5. shared_equipsets: 装備セット共有機能用
---    ?share=<id> で誰でも閲覧可、認証ユーザーのみ作成可
+--    ?share=<id> の 1 件だけを get_shared_equipset() で誰でも閲覧可、認証ユーザーのみ作成可
 -- ---------------------------------------------------------------------------
 create table public.shared_equipsets (
   id uuid primary key default gen_random_uuid(),
@@ -105,12 +105,37 @@ create policy "anyone can read items" on public.items
 create policy "users can rw own property_sets" on public.property_sets
   for all using (auth.uid() = user_id) with check (auth.uid() = user_id);
 
-create policy "anyone can read shared equipsets" on public.shared_equipsets
-  for select using (true);
+-- 作成者以外の閲覧は get_shared_equipset() だけを通す (ID で絞らない select を許さない)
+create policy "owner can read own shared equipsets" on public.shared_equipsets
+  for select using (auth.uid() = user_id);
 create policy "authenticated users can create shared equipsets" on public.shared_equipsets
   for insert with check (auth.uid() = user_id);
 create policy "owner can delete shared equipsets" on public.shared_equipsets
   for delete using (auth.uid() = user_id);
+
+-- ---------------------------------------------------------------------------
+-- 共有の閲覧: 共有 ID を知っている 1 件だけを返す。user_id は返さない
+-- ---------------------------------------------------------------------------
+create or replace function public.get_shared_equipset(share_id uuid)
+returns table (
+  name text,
+  character_name text,
+  job text,
+  data jsonb,
+  created_at timestamptz
+)
+language sql
+stable
+security definer
+set search_path = ''
+as $$
+  select s.name, s.character_name, s.job, s.data, s.created_at
+  from public.shared_equipsets s
+  where s.id = share_id
+$$;
+
+revoke all on function public.get_shared_equipset(uuid) from public;
+grant execute on function public.get_shared_equipset(uuid) to anon, authenticated;
 
 -- ---------------------------------------------------------------------------
 -- updated_at 自動更新 trigger

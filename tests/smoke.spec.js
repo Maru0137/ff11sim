@@ -393,7 +393,16 @@ test('共有 URL (?share=) で装備セットが閲覧できる', async ({ page 
     },
     created_at: '2026-01-01T00:00:00Z',
   };
+  // 閲覧は ID で 1 件だけ返す関数を通す (docs/adr/0008)。テーブルを直接読みに来たら
+  // 全件取得できる経路に戻ったということなので失敗させる。
+  let directTableRead = false;
   await page.route('**/rest/v1/shared_equipsets*', (route) => {
+    directTableRead = true;
+    route.fulfill({ status: 500, body: '' });
+  });
+  let requestedShareId = null;
+  await page.route('**/rest/v1/rpc/get_shared_equipset*', (route) => {
+    requestedShareId = route.request().postDataJSON()?.share_id ?? null;
     // supabase-js の maybeSingle は Accept ヘッダでレスポンス形式が変わる
     const accept = route.request().headers()['accept'] || '';
     const body = accept.includes('vnd.pgrst.object')
@@ -408,6 +417,8 @@ test('共有 URL (?share=) で装備セットが閲覧できる', async ({ page 
   await expect(page.locator('body')).toHaveClass(/share-mode/);
   await expect(page.locator('#sharedHeader')).toBeVisible();
   await expect(page.locator('#sharedSetName')).toHaveText('shared-smoke');
+  expect(requestedShareId).toBe('00000000-0000-0000-0000-000000000000');
+  expect(directTableRead).toBe(false);
 
   // 共有 URL ではサイドバーのナビゲーションを出さない
   await expect(page.locator('[data-nav="equipsets"]')).toHaveCount(0);

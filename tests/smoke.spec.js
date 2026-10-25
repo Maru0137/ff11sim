@@ -393,7 +393,7 @@ test('共有 URL (?share=) で装備セットが閲覧できる', async ({ page 
     },
     created_at: '2026-01-01T00:00:00Z',
   };
-  // 閲覧は ID で 1 件だけ返す関数を通す (docs/adr/0008)。テーブルを直接読みに来たら
+  // 閲覧は ID で 1 件だけ返す関数を通す (docs/internal/adr/0008)。テーブルを直接読みに来たら
   // 全件取得できる経路に戻ったということなので失敗させる。
   let directTableRead = false;
   await page.route('**/rest/v1/shared_equipsets*', (route) => {

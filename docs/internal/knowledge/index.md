@@ -18,6 +18,7 @@ okf_version: "0.2"
 * [遠隔物理命中（飛命）](secondary_status/ranged_accuracy.md) - 遠隔攻撃が当たるかどうかに関わる物理命中。ゲームでは「飛命」と呼ぶ。
 * [魔法命中（魔命）](secondary_status/magic_accuracy.md) - 魔法や属性ウェポンスキルの命中率を求めるときに使う二次ステータス。ゲームでは「魔命」と呼ぶ。
 * [物理回避（回避）](secondary_status/physical_evasion.md) - 物理攻撃の回避率に関わる二次ステータス。近接攻撃と遠隔攻撃を問わず効く。ゲームでは「回避」と呼ぶ。
+* [魔法回避（魔回避）](secondary_status/magic_evasion.md) - 魔法の命中率を決めるとき、術者の魔法命中と比べる二次ステータス。ゲームでは「魔回避」と呼ぶ。
 * [防御力](secondary_status/defense.md) - 被ダメージに関係する二次ステータス。
 * [魔法防御力（魔防）](secondary_status/magic_defense.md) - 受ける魔法ダメージを決めるときに使う二次ステータス。固定値 100 から始まる。ゲームでは「魔防」と呼ぶ。
 * [スキル](secondary_status/skill.md) - キャラクターの技能を数値で表したもの。スキル値はスキルキャップで抑えられ、メリットポイントや装備を足した有効スキル値が二次ステータスとして効く。

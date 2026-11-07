@@ -310,7 +310,7 @@ item_search.rs  検索（説明文ステータスソートで equip_stats の抽
   （オグメントとカスタム説明は元から日本語で、経路 A のためだけに
   `convertAugmentJaToEn` の変換テーブルを通しており、そこが欠損源になる。
   またユーザー定義プロパティは任意語を扱うため原理的に英語へ寄せられない）。
-  条件ラベルの扱いは [docs/internal/knowledge/items/description_labels.md](../knowledge/items/description_labels.md)、
+  条件ラベルの扱いは [仕様書 0004 装備の解釈](../specs/0004-equip-interpretation.md)、
   英語側に残る既知の癖は [docs/internal/tech-debt/equip-stats-js-quirks.md](../tech-debt/equip-stats-js-quirks.md) を参照。
   本 ADR の完了後に別 ADR で扱う。
   （→ [ADR 0019](0019-japanese-as-single-interpretation-source.md) で扱った。）

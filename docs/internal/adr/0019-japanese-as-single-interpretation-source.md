@@ -25,7 +25,7 @@ decision-makers: Akira Maruoka
    オグメント文向けの語彙しか持たないため、表に無い語は経路 A だけが取りこぼす。
 2. **条件セグメントの扱いが違う**。経路 A は `コンビネーション:` `ユニティランク:`
    `潜在能力:` などを無条件に加算し、経路 B は除外する
-   （[docs/internal/knowledge/items/description_labels.md](../knowledge/items/description_labels.md)）。
+   （[仕様書 0004 装備の解釈](../specs/0004-equip-interpretation.md)）。
 
 計測（2026-08-15、全 15,452 件）: `description_ja` を現在の変換表に通して抽出すると、
 `description_en` からの抽出と **13,164 件で食い違う**。内訳は語彙の欠落が支配的で、
@@ -100,7 +100,7 @@ description_ja (アイテム説明文だけ)
   除去の範囲は**ソースによって変える**（2026-08-15 改訂。当初は全ソース「行末まで」だった）。
   アイテム説明文の改行はゲーム内表示の折り返しなので「次のラベルかテキスト末尾まで」、
   オグメント文とカスタム説明の改行は効果 1 件ごとの区切りなので「行末まで」
-  （[docs/internal/knowledge/items/description_labels.md](../knowledge/items/description_labels.md)）。
+  （[仕様書 0004 装備の解釈](../specs/0004-equip-interpretation.md)）。
   ソースごとに違うのは規則の分岐ではなく、同じ規則（ラベルは以降に及ぶ）を
   改行の意味が違う入力に当てはめた結果。
 - **コンビネーションは例外として加算する。** 本ツールは装備セットを組むためのもので、
@@ -205,8 +205,7 @@ description_ja (アイテム説明文だけ)
   AC30）。今の `rust/src/item_search.rs` は `description_ja` が無いとき `description_en` を読む。
   2026-10-25 の `build/items.json` では、`description_ja` が空で `description_en` を持つアイテムは 0 件で、
   直しても今のデータでは順位が変わらない
-  （[docs/internal/knowledge/items/description_labels.md](../knowledge/items/description_labels.md) の
-  「日本語の説明文を持たないアイテム」）。
+  （[仕様書 0004](../specs/0004-equip-interpretation.md) の「制約」）。
 
 検証されていないもの:
 
@@ -263,7 +262,7 @@ description_ja (アイテム説明文だけ)
   コンビネーションを除外対象から外すため、同 ADR の条件ラベルの記述を改訂する。
 * [ADR 0018](0018-equip-module-owns-interpretation.md) — 装備の解釈責務の集約。
   本 ADR はそのフォローアップとして挙げていた「英語経路と日本語経路の統一」に答える。
-* [docs/internal/knowledge/items/description_labels.md](../knowledge/items/description_labels.md) —
+* [仕様書 0004 装備の解釈](../specs/0004-equip-interpretation.md) —
   条件ラベルの適用範囲と一覧。コンビネーションの例外扱いを反映する。
 * [docs/internal/tech-debt/equip-stats-js-quirks.md](../tech-debt/equip-stats-js-quirks.md) —
   英語説明文の既知の癖。手順 4 で日本語入力では到達しなくなるものを整理する。

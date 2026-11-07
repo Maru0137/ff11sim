@@ -297,7 +297,7 @@ export async function computeStatusView(): Promise<StatusView | null> {
             V[id] = numOrDash(total);
         }
 
-        // 得TP (1 ヒットあたり、docs/internal/knowledge/status/tp.md)。近接は二刀流・格闘とも
+        // 得TP (1 ヒットあたり、docs/internal/knowledge/game_system/tp.md)。近接は二刀流・格闘とも
         // 両手で同じ値、遠隔はレンジ武器未装備なら null
         const tpGainMelee = totalStats.tp_per_hit_melee;
         const tpGainRanged = totalStats.tp_per_hit_ranged;

@@ -37,7 +37,7 @@ export interface PropertyValueContext {
         doubleShotTotal: number;
         tripleShotTotal: number;
         conserveMpTotal: number;
-        /** 1 ヒットあたりの得TP (docs/internal/knowledge/status/tp.md)。遠隔はレンジ武器未装備で null */
+        /** 1 ヒットあたりの得TP (docs/internal/knowledge/game_system/tp.md)。遠隔はレンジ武器未装備で null */
         tpGainMelee: number;
         tpGainRanged: number | null;
     };
@@ -139,7 +139,7 @@ export const BUILTIN_PROPERTY_ITEMS: BuiltinPropertyItem[] = [
     { id: 'accuracy', label: '命中', category: '近接',
       resolve: (c) => numOrDash(c.totalStats.main_accuracy),
       breakdown: { equipKey: 'accuracy', charKey: 'accuracy' } },
-    // 得TP: 隔とストアTPからの導出値 (docs/internal/knowledge/status/tp.md)。
+    // 得TP: 隔とストアTPからの導出値 (docs/internal/knowledge/game_system/tp.md)。
     // マルチアタックは考慮しない 1 ヒットあたりの値で、WS も同じ値を使う
     { id: 'tp_gain', label: '得TP', category: '近接',
       resolve: (c) => numOrDash(c.derived.tpGainMelee) },

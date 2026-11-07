@@ -11,8 +11,9 @@ FINAL FANTASY XI のキャラクター・装備・ダメージのシミュレー
 ## アイテムと装備
 
 **アイテム（Item）**:
-ゲーム側で定義された 1 つのアイテムのマスタデータ。読み取り専用で、id で識別する。
+ゲームに存在する物 1 つ。ff11sim はそのマスタデータを読み取り専用で持ち、id で識別する。装備品などの下位の種類は [docs/internal/knowledge/](docs/internal/knowledge/index.md) で定義する（例: [装備品](docs/internal/knowledge/items/equipment.md)）。
 _使わない_: 装備（マスタの意味で）
+_種別_: kind
 
 **アイテムデータ**:
 全アイテムのマスタデータの集まり。上流のゲームデータから生成する。
@@ -36,7 +37,7 @@ _使わない_: オグメント
 ユーザーが装備ごとに自由に書くテキスト。
 
 **スロット**:
-装備セットの中で装備 1 つを着ける枠で、16 個ある。名前はゲームでの名称（メインウェポン・左手の指など）で、画面には表示名（メイン・左指など）を出す。名称と表示名の対応は [docs/internal/knowledge/items/equipment_slots.md](docs/internal/knowledge/items/equipment_slots.md)。アイテムがどのスロットに着けられるかも、この語で言う。
+装備セットの中で装備 1 つを着ける枠で、16 個ある。名前はゲームでの名称（メインウェポン・左手の指など）で、画面には表示名（メイン・左指など）を出す。名称は [docs/internal/knowledge/items/equipment.md](docs/internal/knowledge/items/equipment.md)、表示名との対応は [data/equipment_slots.json](data/equipment_slots.json) の `label_ja`。アイテムがどのスロットに着けられるかも、この語で言う。
 _使わない_: 部位
 
 **装備（Equip）**:
@@ -61,7 +62,7 @@ _使わない_: カタログ項目
 ある計算の入力（[0007](docs/internal/specs/0007-status-calculation.md)）から求まる、プロパティの値の全体。計算で決まり、ユーザーは編集しない。
 
 **基本ステータス**:
-ステータスのうち、HP・MP と BP（STR・DEX・VIT・AGI・INT・MND・CHR）の 9 項目。BP の定義は [docs/internal/knowledge/status/base_stats.md](docs/internal/knowledge/status/base_stats.md)。
+ステータスのうち、HP・MP と BP（STR・DEX・VIT・AGI・INT・MND・CHR）の 9 項目。計算式は [docs/internal/knowledge/base_status/base_stats.md](docs/internal/knowledge/base_status/base_stats.md)。
 _使わない_: 基本 9 ステ
 
 ## 仕様書で定義する語

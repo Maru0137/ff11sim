@@ -123,7 +123,7 @@ decision-makers: Akira Maruoka
   メリットその他の合計上限は**既存コードに無かった制約**で、今回追加する
   （それまでは各欄 `max={5}` だけで合計 25 まで振れた）。
   上限の値は `web/src/constants.ts` に置き、根拠は
-  [docs/internal/knowledge/status/merit_points.md](../knowledge/status/merit_points.md) に記録する。
+  [docs/internal/knowledge/growth/merit_points.md](../knowledge/growth/merit_points.md) に記録する。
 - **スキル値の入力上限にメリットポイントを含めない**（2026-10-25 改訂。8.2）:
   スキル値の欄の上限（スキル値の入力上限）は、ジョブレベルが 1 以上の各ジョブについて、
   今のジョブレベルとマスターレベルでのそのスキルの上限を求めた、その最大値とする。
@@ -351,7 +351,7 @@ decision-makers: Akira Maruoka
 
 仕様書 0007 の grill（R1 の問い Q5。ユーザーの案）と、それに合わせた仕様書 0002 の制約で決定。
 
-* Good: 入力上限が、メリットポイントを足す前のスキル上限（[docs/internal/knowledge/status/skill_cap.md](../knowledge/status/skill_cap.md)）
+* Good: 入力上限が、メリットポイントを足す前のスキル上限（[docs/internal/knowledge/secondary_status/skill.md](../knowledge/secondary_status/skill.md)）
   と同じ基準になり、メリットポイントの分は計算で 1 度だけ効く
 * Good: スキルのメリットポイントを変えても入力上限が変わらず、追従が起きない（仕様書 0002 AC17）
 * Bad: 8.1 の時期に保存した値が入力上限を超えて残る（仕様書 0002 AC72 で、編集したときに丸める）
@@ -386,7 +386,7 @@ decision-makers: Akira Maruoka
 * [ADR 0013](0013-sidebar-spa-mantine.md) — サイドバー SPA とモバイル閾値 768px
 * [ADR 0020](0020-unsaved-changes-guard.md) — 未保存ガードと保存ボタンの活性
   （アクションバーの保存ボタン・未保存バッジ、および読み込み時にクランプしない根拠）
-* [docs/internal/knowledge/status/merit_points.md](../knowledge/status/merit_points.md) —
+* [docs/internal/knowledge/growth/merit_points.md](../knowledge/growth/merit_points.md) —
   メリットポイントの上限（項目ごと / グループ合計）とスキルメリットの効果
 * [仕様書 0002 キャラクターの管理](../specs/0002-character-management.md) — キャラクターの
   編集フォームの受け入れ基準（AC5〜AC17・AC31〜AC33・AC72）と、この ADR を改訂した制約

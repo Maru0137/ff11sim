@@ -239,7 +239,7 @@ AC12〜AC14。元は「素・装備・合計」の 3 列）。5 列は 1 つの�
 * [ADR 0010](0010-equipment-interpretation-in-rust.md) — 装備解釈を Rust に置く方針
 * [ADR 0014](0014-equipset-grid-modal.md) — Mantine Modal は React 専用モーダルに使い、開閉はローカル state
 * [ADR 0015](0015-property-sets.md) — プロパティセットとカタログ（本 ADR はカタログに breakdown メタを追加）
-* [魔命の用語規約と計算仕様](../knowledge/status/magic_accuracy.md) — 内訳非対応の実効魔命 (`macc_*`) の定義
+* [魔命の用語規約と計算仕様](../knowledge/secondary_status/magic_accuracy.md) — 内訳非対応の実効魔命 (`macc_*`) の定義
 * モックレビュー: https://claude.ai/code/artifact/056afaa7-d584-4eb8-9ddb-b18a13a8577f
 * 改訂 (2026-08-13): スキル値列（武器スキル/魔法スキル）の内訳対応を追加
   （`skillKey` / `weaponSlot` メタ、`per_slot_skill_bonuses`、Rust のスキル値列）。

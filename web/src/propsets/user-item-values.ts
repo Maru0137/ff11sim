@@ -14,7 +14,7 @@
 // 拾わない。適用範囲はソースで変わり、アイテム説明文は次のラベル/末尾まで、
 // オーグメント文とカスタム説明は行末まで。この規則はステータス計算と共通で、
 // コンビネーションだけは常時扱いで拾う (docs/internal/adr/0019、
-// docs/internal/knowledge/items/description_labels.md)。
+// docs/internal/specs/0004-equip-interpretation.md)。
 //
 // この層が持つのは「プロパティ名 → 表示 id (`user:<term>`)」の対応だけ。
 // これは UI 側の取り決めなので Rust には持たせていない。

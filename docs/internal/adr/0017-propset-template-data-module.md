@@ -149,6 +149,6 @@ decision-makers: Akira Maruoka
   grill（0003-Q5。2026-10-18 の 5 回目の問いの Q12 で 0007 の武器スキル値の求め方とあわせて再確認）で、矢弾スロットの投てき武器で遠隔攻撃するときも
   遠隔攻撃テンプレートの表を出すと決めたため改めた。レンジスロットに武器があるとき矢弾スロットに
   投てき武器を着けられないことはユーザーが弓・銃・投てき武器で確かめた
-  （[docs/internal/knowledge/items/equipment_slots.md](../knowledge/items/equipment_slots.md)）。
+  （[docs/internal/knowledge/items/equipment.md](../knowledge/items/equipment.md)）。
   楽器・風水鈴・釣り竿をレンジに着けたときは未確認（仕様書 0003 の D4）。
   Neutral の「条件フラグの追加は 3 箇所への追記」はこの追加にも当てはまる。

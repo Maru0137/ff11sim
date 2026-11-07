@@ -230,6 +230,7 @@ CI では実行しています。
 
 計算式を実装・修正したときは、根拠（wiki の URL など）と具体的な計算例を
 [docs/internal/knowledge/](docs/internal/knowledge/) に残してください。後から式の妥当性を検証できなくなるためです。
+書き方は [docs/internal/knowledge-format/README.md](docs/internal/knowledge-format/README.md) にあります。
 
 ### CI/CD
 

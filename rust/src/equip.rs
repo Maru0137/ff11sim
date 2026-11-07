@@ -82,7 +82,7 @@ impl Equip {
     /// ラベルの適用範囲はソースによって変える。アイテム説明文の改行はゲーム内表示の
     /// 折り返しなのでラベルは次のラベル/文末まで及ぶが、オグメント文の改行は
     /// wiki の `<br>` 由来で効果 1 件ごとの区切りなので行末まで
-    /// (docs/internal/knowledge/items/description_labels.md)。カスタム説明はユーザーが
+    /// (docs/internal/specs/0004-equip-interpretation.md)。カスタム説明はユーザーが
     /// 行単位で書くのでオグメント文に揃える。
     pub fn texts_ja(&self) -> Vec<String> {
         let mut texts = Vec::new();

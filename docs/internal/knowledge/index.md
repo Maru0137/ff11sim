@@ -2,26 +2,44 @@
 okf_version: "0.2"
 ---
 
-# ステータス
+# 基本ステータス
 
-* [命中 (Accuracy)](status/accuracy.md) - メインの命中と遠隔の命中（飛命）を、能力値・武器のスキル値・装備・命中ボーナスから求める式。
-* [攻撃力 (Attack)](status/attack.md) - メイン・サブ・遠隔の攻撃力のうち、加算で求める部分（加算枠）の式。
-* [攻撃力の乗算枠](status/attack_multiplier.md) - 攻撃力の加算枠に掛ける乗算枠の計算構造と、項目ごとの 256 分率の値。
-* [基本ステータス (HP / MP / STR / DEX / VIT / AGI / INT / MND / CHR)](status/base_stats.md) - HP・MP と 7 つの能力値を、種族・ジョブのグレードとレベル・マスターレベル・メリットポイントから求める式。
-* [防御力 (Defense)](status/defense.md) - 防御力を VIT・レベル・装備・防御ボーナスから求める式。
-* [回避 (Evasion)](status/evasion.md) - 回避を AGI・回避スキル・装備・回避ボーナスから求める式。
-* [魔命 (Magic Accuracy)](status/magic_accuracy.md) - 「魔命」が指す 2 つの値と、レジストの判定に使う実効の魔命の式。
-* [魔法攻撃力 (Magic Attack)](status/magic_attack.md) - 魔法攻撃力を固定値 100・装備・魔攻ボーナスから求める式。
-* [魔法防御力 (Magic Defense)](status/magic_defense.md) - 魔法防御力を固定値 100・装備・ジョブ特性・ギフト・ジョブポイントから求める式。
-* [メリットポイントの割り振りの上限](status/merit_points.md) - メリットポイントを割り振れる量の、項目ごととグループの合計の上限。
-* [スキル上限と有効スキル値](status/skill_cap.md) - スキル上限と、それを使って有効スキル値を求める式。
-* [得TP (TP per hit)](status/tp.md) - 1 ヒットで得られる TP を、武器の隔とストアTP から求める式。
+* [基本ステータス](base_status/base_stats.md) - HP・MP と 7 つの BP からなるステータス。
+
+# 二次ステータス
+
+* [二次ステータス](secondary_status/secondary_status.md) - ステータスのうち、基本ステータス以外のもの。
+* [物理攻撃力](secondary_status/physical_attack.md) - 二次ステータスのうち、物理攻撃の与ダメージに関わるもの。近接物理攻撃力と遠隔物理攻撃力がある。
+* [近接物理攻撃力（攻撃力）](secondary_status/melee_attack.md) - 近接攻撃の与ダメージに関わる物理攻撃力。ゲームでは「攻撃力」と呼ぶ。
+* [遠隔物理攻撃力（飛攻）](secondary_status/ranged_attack.md) - 遠隔攻撃の与ダメージに関わる物理攻撃力。ゲームでは「飛攻」と呼ぶ。
+* [魔法攻撃力（魔攻）](secondary_status/magic_attack.md) - 魔法の威力に関わる二次ステータス。固定値 100 から始まる。ゲームでは「魔攻」と呼ぶ。
+* [物理命中](secondary_status/physical_accuracy.md) - 二次ステータスのうち、物理攻撃が当たるかどうかに関わるもの。近接物理命中と遠隔物理命中がある。
+* [近接物理命中（命中）](secondary_status/melee_accuracy.md) - 近接攻撃が当たるかどうかに関わる物理命中。ゲームでは「命中」と呼ぶ。
+* [遠隔物理命中（飛命）](secondary_status/ranged_accuracy.md) - 遠隔攻撃が当たるかどうかに関わる物理命中。ゲームでは「飛命」と呼ぶ。
+* [魔法命中（魔命）](secondary_status/magic_accuracy.md) - 魔法や属性ウェポンスキルの命中率を求めるときに使う二次ステータス。ゲームでは「魔命」と呼ぶ。
+* [物理回避（回避）](secondary_status/physical_evasion.md) - 物理攻撃の回避率に関わる二次ステータス。近接攻撃と遠隔攻撃を問わず効く。ゲームでは「回避」と呼ぶ。
+* [防御力](secondary_status/defense.md) - 被ダメージに関係する二次ステータス。
+* [魔法防御力（魔防）](secondary_status/magic_defense.md) - 受ける魔法ダメージを決めるときに使う二次ステータス。固定値 100 から始まる。ゲームでは「魔防」と呼ぶ。
+* [スキル](secondary_status/skill.md) - キャラクターの技能を数値で表したもの。スキル値はスキルキャップで抑えられ、メリットポイントや装備を足した有効スキル値が二次ステータスとして効く。
 
 # ジョブ特性
 
-* [スマイト (Smite)](job_traits/smite.md) - ジョブ特性「スマイト」の習得条件、256 分率の効果値、攻撃力への効き方。
+* [ジョブ特性](job_traits/job_trait.md) - それぞれのジョブが持つ専門的な特徴。
+* [スマイト](job_traits/smite.md) - 格闘武器か両手武器を装備しているときに攻撃力を割合で上げるジョブ特性。
+
+# ジョブアビリティ
+
+* [ジョブアビリティ](job_abilities/job_ability.md) - ジョブ特有の特殊行動。使うと効果が出て、一定時間は使えなくなる。
+* [バーサク](job_abilities/berserk.md) - 使うと一定時間、攻撃力と飛攻が上がり、防御力が下がる戦士のジョブアビリティ。
 
 # アイテム
 
-* [日本語説明文の条件ラベル](items/description_labels.md) - アイテムの日本語の説明文に出る条件ラベルの意味・適用範囲・件数。
-* [装備スロットの名称](items/equipment_slots.md) - 16 個の装備スロットの名称と、レンジウェポンと矢弾に着けられるものの関係。
+* [装備品](items/equipment.md) - アイテムのうち、冒険者が身に着ける物。武器と防具があり、16 個の装備スロットに 1 つずつ着ける。
+
+# 育成
+
+* [メリットポイント](growth/merit_points.md) - レベル上限に達したキャラクターをレベルアップによらずに強化するための育成のポイント。
+
+# ゲームシステム
+
+* [得TP](game_system/tp.md) - 自分や外部からの行動で得る TP。特に自分の攻撃で得る TP を指す。

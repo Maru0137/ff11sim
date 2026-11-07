@@ -28,8 +28,8 @@ FINAL FANTASY XI のキャラクター・装備・ダメージのシミュレー
 
 - **ドメイン知識はリポジトリに記録する**: ゲーム仕様・計算式・検証結果などのナレッジは
   `docs/internal/knowledge/` の適切なパスに OKF（Open Knowledge Format）のバンドルとして記録する
-  (例: `docs/internal/knowledge/status/magic_accuracy.md`)。書き方（frontmatter・出典の番号・確度・末尾の節）は
-  [docs/internal/knowledge-format.md](docs/internal/knowledge-format.md) に従う。エージェントのセッションメモリには
+  (例: `docs/internal/knowledge/secondary_status/magic_accuracy.md`)。書き方（frontmatter・出典の番号・確度・末尾の節）は
+  [docs/internal/knowledge-format/README.md](docs/internal/knowledge-format/README.md) に従う。エージェントのセッションメモリには
   リポジトリに書けない情報のみを置き、リポジトリが記録すべき内容をメモリに残さない。
 - **設計判断は ADR に記録・追従する**: 設計上の決定は `docs/internal/adr/` に MADR 形式で記録する。
   設計に影響する変更を行うときは既存 ADR を確認し、実装との食い違いが生じる場合は

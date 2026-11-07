@@ -690,7 +690,7 @@ function CharacterForm({ form, setForm, dirty, targetJob, setTargetJob, onSave, 
             setForm({ ...form, meritOther: { ...form.meritOther, [key]: '' } });
             return;
         }
-        // 各項目 0-5 に加えてグループ合計にも上限がある (docs/internal/knowledge/status/merit_points.md)
+        // 各項目 0-5 に加えてグループ合計にも上限がある (docs/internal/knowledge/growth/merit_points.md)
         const ranks = MERIT_OTHER_KEYS.map(([k]) => parseNum(form.meritOther[k]));
         const idx = MERIT_OTHER_KEYS.findIndex(([k]) => k === key);
         const v = clampWithinGroup(ranks, idx, parseNum(raw), MERIT_OTHER_MAX_RANK, MERIT_OTHER_GROUP_MAX_TOTAL);

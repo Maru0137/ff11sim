@@ -23,7 +23,7 @@
 //!
 //! 条件ラベルの適用範囲だけはソースによって変わる (`LabelScopeMode`)。改行が
 //! 表示上の折り返しか効果の区切りかが、アイテム説明文とオグメント文で違うため
-//! (docs/internal/knowledge/items/description_labels.md)。
+//! (docs/internal/specs/0004-equip-interpretation.md)。
 //!
 //! # 英語説明文の扱い
 //!
@@ -674,7 +674,7 @@ pub fn extract_all_stats(description_en: &str) -> EquipStats {
     s.subtle_blow_2 = signed(&format!(r#""subtle blow ii"{WS}*([+-]){WS}*([0-9]+)"#));
     s.subtle_blow = signed(&format!(r#""subtle blow"{WS}*([+-]){WS}*([0-9]+)"#));
 
-    // 得TPの隔算出に使う 2 項目 (docs/internal/knowledge/status/tp.md)。
+    // 得TPの隔算出に使う 2 項目 (docs/internal/knowledge/game_system/tp.md)。
     // 数値を持たない「二刀流効果アップ」「マーシャルアーツ効果アップ」表記は
     // 符号を要求するこのパターンには一致しない
     s.dual_wield = signed(&format!(r#""dual wield"{WS}*([+-]){WS}*([0-9]+)"#));
@@ -1182,7 +1182,7 @@ pub fn convert_augment_ja_to_en(text: &str) -> String {
 const ALWAYS_ON_LABEL: &str = "コンビネーション";
 
 /// 条件ラベルの適用範囲。ソースによって改行の意味が違うので使い分ける
-/// (docs/internal/knowledge/items/description_labels.md)。
+/// (docs/internal/specs/0004-equip-interpretation.md)。
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum LabelScopeMode {
     /// 改行はゲーム内表示の折り返しで、効果の区切りではない。ラベルの効力は

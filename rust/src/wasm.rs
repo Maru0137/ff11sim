@@ -74,7 +74,7 @@ pub struct StatusResult {
     pub magic_evasion_bonus: i32,
     /// Store TP 総合値 (装備 + ジョブ特性 + メリット + ギフト + JPカテゴリ)
     pub store_tp: i32,
-    /// 近接 1 ヒットあたりの得TP (docs/internal/knowledge/status/tp.md)。
+    /// 近接 1 ヒットあたりの得TP (docs/internal/knowledge/game_system/tp.md)。
     /// 二刀流・格闘とも両手で同じ値になるためメイン/サブ共通。素手でも算出する
     pub tp_per_hit_melee: i32,
     /// 遠隔 1 ヒットあたりの得TP (レンジ武器未装備時は None)
@@ -870,7 +870,7 @@ pub(crate) fn chara_to_status_result(chara: &Chara) -> StatusResult {
         None => (None, None),
     };
 
-    // 得TP (docs/internal/knowledge/status/tp.md)。マルチアタックは考慮しない 1 ヒットあたりの値。
+    // 得TP (docs/internal/knowledge/game_system/tp.md)。マルチアタックは考慮しない 1 ヒットあたりの値。
     // マーシャルアーツは短縮量を正値で渡す (総合値は負値保持のため反転)
     let tp_per_hit_melee = calc_tp_per_hit(
         calc_melee_tp_delay(

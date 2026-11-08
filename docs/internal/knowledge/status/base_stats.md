@@ -7,7 +7,7 @@ status: draft
 
 # 基本ステータス
 
-基本ステータスは、[ステータス](../../../../CONTEXT.md)のうち、HP・MP と、STR・DEX・VIT・AGI・INT・MND・CHR の 7 つの BP を合わせた 9 項目のことである。
+基本ステータスは、[ステータス](status.md)のうち、HP・MP と、STR・DEX・VIT・AGI・INT・MND・CHR の 7 つの BP を合わせた 9 項目のことである。
 
 _種別_: subkind
 _上位_: ステータス

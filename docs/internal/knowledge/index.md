@@ -4,6 +4,7 @@ okf_version: "0.2"
 
 # ステータス
 
+* [ステータス](status/status.md) - キャラクターの強さを数値で表したもの。基本ステータスと二次ステータスに分かれる。
 * [基本ステータス](status/base_stats.md) - HP・MP と 7 つの BP からなるステータス。
 * [二次ステータス](status/secondary_status.md) - ステータスのうち、基本ステータス以外のもの。
 * [物理攻撃力](status/physical_attack.md) - 二次ステータスのうち、物理攻撃の与ダメージに関わるもの。近接物理攻撃力と遠隔物理攻撃力がある。

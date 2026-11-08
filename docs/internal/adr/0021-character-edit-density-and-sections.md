@@ -351,7 +351,7 @@ decision-makers: Akira Maruoka
 
 仕様書 0007 の grill（R1 の問い Q5。ユーザーの案）と、それに合わせた仕様書 0002 の制約で決定。
 
-* Good: 入力上限が、メリットポイントを足す前のスキル上限（[docs/internal/knowledge/secondary_status/skill.md](../knowledge/secondary_status/skill.md)）
+* Good: 入力上限が、メリットポイントを足す前のスキル上限（[docs/internal/knowledge/status/skill.md](../knowledge/status/skill.md)）
   と同じ基準になり、メリットポイントの分は計算で 1 度だけ効く
 * Good: スキルのメリットポイントを変えても入力上限が変わらず、追従が起きない（仕様書 0002 AC17）
 * Bad: 8.1 の時期に保存した値が入力上限を超えて残る（仕様書 0002 AC72 で、編集したときに丸める）

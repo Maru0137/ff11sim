@@ -1,5 +1,5 @@
 ---
-type: 二次ステータス
+type: ステータス
 title: "二次ステータス"
 description: "ステータスのうち、基本ステータス以外のもの。"
 status: draft
@@ -7,7 +7,7 @@ status: draft
 
 # 二次ステータス
 
-二次ステータスは、[ステータス](../../../../CONTEXT.md)のうち、[基本ステータス](../base_status/base_stats.md)以外のもののことである [1]。
+二次ステータスは、[ステータス](../../../../CONTEXT.md)のうち、[基本ステータス](base_stats.md)以外のもののことである [1]。
 
 _種別_: subkind
 _上位_: ステータス

@@ -1,5 +1,5 @@
 ---
-type: 基本ステータス
+type: ステータス
 title: "基本ステータス"
 description: "HP・MP と 7 つの BP からなるステータス。"
 status: draft
@@ -19,10 +19,10 @@ BP は、戦闘のいろいろな判定に影響する [1]。
 
 | BP | 影響するもの [1] | 説明しているナレッジ |
 |---|---|---|
-| STR | 物理攻撃の与ダメージ | [近接物理攻撃力](../secondary_status/melee_attack.md)、[遠隔物理攻撃力](../secondary_status/ranged_attack.md) |
-| DEX | 近接の命中、与クリティカル率 | [近接物理命中](../secondary_status/melee_accuracy.md) |
-| VIT | 被ダメージ | [防御力](../secondary_status/defense.md) |
-| AGI | 遠隔攻撃の命中、回避、被クリティカル率 | [遠隔物理命中](../secondary_status/ranged_accuracy.md)、[物理回避](../secondary_status/physical_evasion.md) |
+| STR | 物理攻撃の与ダメージ | [近接物理攻撃力](melee_attack.md)、[遠隔物理攻撃力](ranged_attack.md) |
+| DEX | 近接の命中、与クリティカル率 | [近接物理命中](melee_accuracy.md) |
+| VIT | 被ダメージ | [防御力](defense.md) |
+| AGI | 遠隔攻撃の命中、回避、被クリティカル率 | [遠隔物理命中](ranged_accuracy.md)、[物理回避](physical_evasion.md) |
 | INT | 魔法攻撃の与ダメージ | — |
 | MND | 弱体魔法・回復魔法 | — |
 | CHR | 呪歌、あやつるの判定 | — |

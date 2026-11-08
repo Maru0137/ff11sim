@@ -20,14 +20,14 @@ _インスタンス_: スマイト、物理攻撃力アップ、物理命中率�
 | ジョブ特性 | ナレッジ |
 |---|---|
 | スマイト | [スマイト](smite.md) |
-| 物理攻撃力アップ | [物理攻撃力](../secondary_status/physical_attack.md) の「物理攻撃力ボーナス」 |
-| 物理命中率アップ | [物理命中](../secondary_status/physical_accuracy.md) の「物理命中ボーナス」 |
-| 物理回避率アップ | [物理回避](../secondary_status/physical_evasion.md) の「物理回避ボーナス」 |
-| 物理防御力アップ | [防御力](../secondary_status/defense.md) の「防御ボーナス」 |
-| 魔法攻撃力アップ | [魔法攻撃力](../secondary_status/magic_attack.md) |
-| 魔法防御力アップ | [魔法防御力](../secondary_status/magic_defense.md) |
-| 魔法命中率アップ | [魔法命中（魔命）](../secondary_status/magic_accuracy.md) の「魔命ボーナス」 |
-| 最大HPアップ・最大MPアップ | [基本ステータス](../base_status/base_stats.md) の「ジョブ特性の補正」 |
+| 物理攻撃力アップ | [物理攻撃力](../status/physical_attack.md) の「物理攻撃力ボーナス」 |
+| 物理命中率アップ | [物理命中](../status/physical_accuracy.md) の「物理命中ボーナス」 |
+| 物理回避率アップ | [物理回避](../status/physical_evasion.md) の「物理回避ボーナス」 |
+| 物理防御力アップ | [防御力](../status/defense.md) の「防御ボーナス」 |
+| 魔法攻撃力アップ | [魔法攻撃力](../status/magic_attack.md) |
+| 魔法防御力アップ | [魔法防御力](../status/magic_defense.md) |
+| 魔法命中率アップ | [魔法命中（魔命）](../status/magic_accuracy.md) の「魔命ボーナス」 |
+| 最大HPアップ・最大MPアップ | [基本ステータス](../status/base_stats.md) の「ジョブ特性の補正」 |
 
 ## 共通の規則
 

@@ -62,7 +62,7 @@ _使わない_: カタログ項目
 ある計算の入力（[0007](docs/internal/specs/0007-status-calculation.md)）から求まる、プロパティの値の全体。計算で決まり、ユーザーは編集しない。
 
 **基本ステータス**:
-ステータスのうち、HP・MP と BP（STR・DEX・VIT・AGI・INT・MND・CHR）の 9 項目。計算式は [docs/internal/knowledge/base_status/base_stats.md](docs/internal/knowledge/base_status/base_stats.md)。
+ステータスのうち、HP・MP と BP（STR・DEX・VIT・AGI・INT・MND・CHR）の 9 項目。計算式は [docs/internal/knowledge/status/base_stats.md](docs/internal/knowledge/status/base_stats.md)。
 _使わない_: 基本 9 ステ
 
 ## 仕様書で定義する語
